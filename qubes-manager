@@ -1,0 +1,5 @@
+#!/usr/bin/python2.6
+import qubesmanager.main
+
+qubesmanager.main.main()
+

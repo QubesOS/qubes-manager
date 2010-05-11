@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Exec=qubes-manager
+Path=/var/lib/qubes
+Icon=/usr/share/qubes/icons/qubes.png
+Terminal=false
+Name=Qubes VM Manager
+GenericName=Qubes VM Manager
+StartupNotify=false
+Categories=System;
