@@ -168,8 +168,11 @@ class LoadChartWidget (QWidget):
         H = self.height() - 5
         N = len(self.load_history)
         if N > W/dx:
+            tail = N - W/dx
             N = W/dx
-            self.load_history.pop(0)
+            self.load_history = self.load_history[tail:]
+
+        assert len(self.load_history) == N
 
         for i in range (0, N-1):
             val = self.load_history[N- i - 1]
