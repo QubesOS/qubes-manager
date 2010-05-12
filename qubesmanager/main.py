@@ -620,6 +620,8 @@ class VmManagerWindow(QMainWindow):
                                      "<small>This will shutdown all the running applications within this VM.</small>".format(vm.name),
                                      QMessageBox.Yes | QMessageBox.Cancel)
 
+        app.processEvents()
+
         if reply == QMessageBox.Yes:
             try:
                 subprocess.check_call (["/usr/sbin/xm", "shutdown", vm.name])
