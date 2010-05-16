@@ -12,15 +12,18 @@ Vendor:		Invisible Things Lab
 License:	GPL
 URL:		http://fixme
 Requires:	python, PyQt4, qubes-core-dom0 >= 1.0.3, kdebase
-AutoReq:    0
+BuildRequires:	PyQt4-devel
+AutoReq:	0
 
 %define _builddir %(pwd)
 
 %description
 The Graphical Qubes VM Manager.
 
-%install
+%build
+make res
 
+%install
 mkdir -p $RPM_BUILD_ROOT/usr/bin/
 cp qubes-manager $RPM_BUILD_ROOT/usr/bin
 
