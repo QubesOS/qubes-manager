@@ -4,9 +4,8 @@ help:
 	@echo "make res  -- compile resources"
 
 rpms:	
-	rpmbuild --define "_rpmdir $(RPMS_DIR)" -bb qmgr.spec
+	rpmbuild --define "_rpmdir $(RPMS_DIR)" -bb rpm_spec/qmgr.spec
 	rpm --addsign $(RPMS_DIR)/x86_64/*.rpm
-
 
 res:
 	pyrcc4 -o qubesmanager/qrc_resources.py resources.qrc
