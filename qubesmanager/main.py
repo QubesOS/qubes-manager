@@ -220,7 +220,7 @@ class VmShutdownMonitor(QObject):
             return
 
         reply = QMessageBox.question(None, "VM Shutdown", 
-                                     "The VM <b>'{0}'</b> hasn't shutdown within the last {1} seconds, do you want to kill it?<br>".format(vm_name, vm_shutdown_timeout/1000),
+                                     "The VM <b>'{0}'</b> hasn't shutdown within the last {1} seconds, do you want to kill it?<br>".format(vm.name, vm_shutdown_timeout/1000),
                                      "Kill it!", "Wait another {0} seconds...".format(vm_shutdown_timeout/1000))
 
         if reply == 0:
