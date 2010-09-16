@@ -31,6 +31,7 @@ from qubes.qubes import QubesVmLabels
 from qubes.qubes import dry_run
 from qubes.qubes import qubes_guid_path
 from qubes.qubes import QubesDaemonPidfile
+from qubes.qubes import QubesHost
 
 import qubesmanager.qrc_resources
 import ui_newappvmdlg
@@ -185,6 +186,47 @@ class LoadChartWidget (QWidget):
             if val > 0:
                 p.drawLine (W - i*dx - dx, H , W - i*dx - dx, H - (H - 5) * val/100)
 
+class MemChartWidget (QWidget):
+
+    def __init__(self, vm, parent = None):
+        super (MemChartWidget, self).__init__(parent)
+        self.load = vm.get_mem()*100/qubes_host.memory_total if vm.is_running() else 0
+        assert self.load >= 0 and self.load <= 100, "mem = {0}".format(self.load)
+        self.load_history = [self.load]
+
+    def update_load (self, vm):
+        self.load = vm.get_mem()*100/qubes_host.memory_total if vm.is_running() else 0
+        assert self.load >= 0 and self.load <= 100, "load = {0}".format(self.load)
+        self.load_history.append (self.load)
+        self.repaint()
+
+    def paintEvent (self, Event = None):
+        p = QPainter (self)
+        dx = 4
+
+        W = self.width() 
+        H = self.height() - 5
+        N = len(self.load_history)
+        if N > W/dx:
+            tail = N - W/dx
+            N = W/dx
+            self.load_history = self.load_history[tail:]
+
+        assert len(self.load_history) == N
+
+        for i in range (0, N-1):
+            val = self.load_history[N- i - 1]
+            hue = 120
+            sat = 70 + val*(255-70)/100
+            color = QColor.fromHsv (hue, sat, 255)
+            pen = QPen (color)
+            pen.setWidth(dx-1)
+            p.setPen(pen)
+            if val > 0:
+                p.drawLine (W - i*dx - dx, H , W - i*dx - dx, H - (H - 5) * val/100)
+
+
+
 class VmRowInTable(object):
     def __init__(self, vm, row_no, table):
         self.vm = vm
@@ -198,10 +240,15 @@ class VmRowInTable(object):
         self.load_widget = LoadChartWidget(vm)
         table.setCellWidget(row_no, 1, self.load_widget)
 
+        self.mem_widget = MemChartWidget(vm)
+        table.setCellWidget(row_no, 2, self.mem_widget)
+
+
     def update(self, counter):
         self.info_widget.update_vm_state(self.vm)
         if counter % 3 == 0:
             self.load_widget.update_load(self.vm)
+            self.mem_widget.update_load(self.vm)
 
 class NewAppVmDlg (QDialog, ui_newappvmdlg.Ui_NewAppVMDlg):
     def __init__(self, parent = None):
@@ -247,7 +294,7 @@ class ThreadMonitor(QObject):
 
 
 class VmManagerWindow(QMainWindow):
-    columns_widths = [200, 150]
+    columns_widths = [200, 150, 150]
     row_height = 50
     max_visible_rows = 14
     update_interval = 1000 # in msec
@@ -310,6 +357,7 @@ class VmManagerWindow(QMainWindow):
         self.table.setAlternatingRowColors(True)
         self.table.verticalHeader().hide()
         self.table.horizontalHeader().hide()
+        #self.table.setHorizontalHeaderLabels (["VM name & state", "CPU Load", "Memory Use"])
         self.table.setGridStyle(Qt.NoPen)
         self.table.setSortingEnabled(False)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
@@ -735,6 +783,9 @@ def main():
             exit (0)
 
     lock.create_pidfile()
+
+    global qubes_host
+    qubes_host = QubesHost()
 
     global app
     app = QApplication(sys.argv)
