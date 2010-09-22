@@ -101,7 +101,7 @@ class VmInfoWidget (QWidget):
 
         layout1 = QHBoxLayout()
 
-        if vm.is_appvm():
+        if vm.is_appvm() or vm.is_disposablevm():
             label_tmpl = QLabel ("<i><font color=\"gray\">" + vm.template_vm.name + "</i></font>")
         elif vm.is_templete():
             label_tmpl = QLabel ("<i><font color=\"gray\">TemplateVM</i></font>")
@@ -442,7 +442,7 @@ class VmManagerWindow(QMainWindow):
         label_list = QubesVmLabels.values()
         label_list.sort(key=lambda l: l.index)
         for label in [label.name for label in label_list]:
-            for appvm in [vm for vm in vms_list if (vm.is_appvm() and vm.label.name == label)]:
+            for appvm in [vm for vm in vms_list if ((vm.is_appvm() or vm.is_disposablevm()) and vm.label.name == label)]:
                 vms_to_display.append(appvm)
 
         assert len(vms_to_display) == no_vms
