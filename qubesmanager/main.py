@@ -36,6 +36,8 @@ from qubes.qubes import QubesHost
 import qubesmanager.qrc_resources
 import ui_newappvmdlg
 
+from firewall import EditFwRulesDlg, QubesFirewallRulesModel
+
 from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
 
 import subprocess
@@ -328,6 +330,9 @@ class VmManagerWindow(QMainWindow):
         self.action_showcpuload = self.createAction ("Show/Hide CPU Load chart", slot=self.showcpuload, checkable=True,
                                              icon="showcpuload", tip="Show/Hide CPU Load chart")
 
+        self.action_editfwrules = self.createAction ("Edit VM Firewall rules", slot=self.edit_fw_rules,
+                                             icon="showcpuload", tip="Edit VM Firewall rules")
+
 
         self.action_removevm.setDisabled(True)
         self.action_resumevm.setDisabled(True)
@@ -341,7 +346,8 @@ class VmManagerWindow(QMainWindow):
         self.toolbar.setFloatable(False)
         self.addActions (self.toolbar, (self.action_createvm, self.action_removevm,
                                    None,
-                                   self.action_resumevm, self.action_pausevm, self.action_shutdownvm, self.action_updatevm,
+                                   self.action_resumevm, self.action_pausevm, self.action_shutdownvm,
+                                   self.action_updatevm, self.action_editfwrules,
                                    None,
                                    self.action_showcpuload,
                                    ))
@@ -491,6 +497,7 @@ class VmManagerWindow(QMainWindow):
         #self.action_resumevm.setEnabled(not vm.is_running())
         #self.action_pausevm.setEnabled(vm.is_running() and vm.qid != 0)
         self.action_shutdownvm.setEnabled(vm.is_running() and vm.qid != 0)
+        self.action_editfwrules.setEnabled(vm.is_networked() and (vm.is_appvm() or vm.is_disposablevm()))
 
     def closeEvent (self, event):
         self.hide()
@@ -684,6 +691,15 @@ class VmManagerWindow(QMainWindow):
     def showcpuload(self):
         pass
 
+    def edit_fw_rules(self):
+        vm = self.get_selected_vm()
+        dialog = EditFwRulesDlg()
+        model = QubesFirewallRulesModel()
+        model.set_vm(vm)
+        dialog.set_model(model)
+
+        if dialog.exec_():
+            model.apply_rules()
                    
 class QubesTrayIcon(QSystemTrayIcon):
     def __init__(self, icon):

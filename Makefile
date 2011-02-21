@@ -13,6 +13,8 @@ rpms:
 res:
 	pyrcc4 -o qubesmanager/qrc_resources.py resources.qrc
 	pyuic4 -o qubesmanager/ui_newappvmdlg.py newappvmdlg.ui
+	pyuic4 -o qubesmanager/ui_editfwrulesdlg.py editfwrulesdlg.ui
+	pyuic4 -o qubesmanager/ui_newfwruledlg.py newfwruledlg.ui
 
 update-repo:
 	ln -f $(RPMS_DIR)/x86_64/qubes-manager-*.rpm ../yum/r1/dom0/rpm/
