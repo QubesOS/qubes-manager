@@ -491,7 +491,7 @@ class VmManagerWindow(QMainWindow):
 
         self.action_removevm.setEnabled(not vm.installed_by_rpm and not vm.is_running())
         self.action_resumevm.setEnabled(not vm.is_running())
-        #self.action_pausevm.setEnabled(vm.is_running() and vm.qid != 0)
+        self.action_pausevm.setEnabled(vm.is_running() and vm.qid != 0)
         self.action_shutdownvm.setEnabled(vm.is_running() and vm.qid != 0)
         self.action_updatevm.setEnabled(vm.is_updateable() and not vm.is_running())
 
