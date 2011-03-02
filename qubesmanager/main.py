@@ -42,6 +42,8 @@ import subprocess
 import time
 import threading
 
+qubes_guid_path = '/usr/bin/qubes_guid'
+
 class QubesConfigFileWatcher(ProcessEvent):
     def __init__ (self, update_func):
         self.update_func = update_func
@@ -488,7 +490,7 @@ class VmManagerWindow(QMainWindow):
         # Update available actions:
 
         self.action_removevm.setEnabled(not vm.installed_by_rpm and not vm.is_running())
-        #self.action_resumevm.setEnabled(not vm.is_running())
+        self.action_resumevm.setEnabled(not vm.is_running())
         #self.action_pausevm.setEnabled(vm.is_running() and vm.qid != 0)
         self.action_shutdownvm.setEnabled(vm.is_running() and vm.qid != 0)
         self.action_updatevm.setEnabled(vm.is_updateable() and not vm.is_running())
@@ -655,7 +657,20 @@ class VmManagerWindow(QMainWindow):
         thread_monitor.set_finished()
 
     def resume_vm(self):
-        pass
+        vm = self.get_selected_vm()
+        assert not vm.is_running()
+
+        try:
+            vm.verify_files()
+            xid = vm.start()
+        except (IOError, OSError, QubesException) as err:
+            QMessageBox.warning (None, "Error starting VM!", "ERROR: {0}".format(err))
+            return
+
+        retcode = subprocess.call ([qubes_guid_path, "-d", str(xid), "-c", vm.label.color, "-i", vm.label.icon, "-l", str(vm.label.index)])
+        if (retcode != 0):
+            QMessageBox.warning (None, "Error starting VM!", "ERROR: Cannot start qubes_guid!")
+            return
  
     def pause_vm(self):
         pass
