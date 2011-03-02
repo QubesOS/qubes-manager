@@ -673,7 +673,13 @@ class VmManagerWindow(QMainWindow):
             return
  
     def pause_vm(self):
-        pass
+        vm = self.get_selected_vm()
+        assert vm.is_running()
+        try:
+            subprocess.check_call (["/usr/sbin/xm", "pause", vm.name])
+        except Exception as ex:
+            QMessageBox.warning (None, "Error pausing VM!", "ERROR: {0}".format(ex))
+            return
 
     def shutdown_vm(self):
         vm = self.get_selected_vm()
