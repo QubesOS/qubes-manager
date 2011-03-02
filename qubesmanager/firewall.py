@@ -149,61 +149,40 @@ class QubesFirewallRulesModel(QAbstractItemModel):
 
         self.clearChildren()
 
-        root = vm.get_firewall_conf()
-        for element in root:
-            try:
-                kwargs = { "allow": element.tag=="allow" }
-                attr_list = ("name", "address", "netmask", "port", "toport")
-
-                for attribute in attr_list:
-                    kwargs[attribute] = element.get(attribute)
-
-                kwargs["netmask"] = int(kwargs["netmask"])
-                kwargs["portBegin"] = int(kwargs["port"])
-                if kwargs["toport"] is not None:
-                    kwargs["portEnd"] = int(kwargs["toport"])
-                del(kwargs["port"])
-                del(kwargs["toport"])
-
-                self.appendChild(QubesFirewallRuleItem(**kwargs))
-
-            except (ValueError, LookupError) as err:
-                print "{0}: load error: {1}".format(
-                        os.path.basename(sys.argv[0]), err)
-                return False
-
-        return True
+        conf = vm.get_firewall_conf()
+        for rule in conf["rules"]:
+            self.appendChild(QubesFirewallRuleItem(
+                rule["name"], rule["allow"], rule["address"],
+                rule["netmask"], rule["portBegin"], rule["portEnd"]
+                ))
 
     def apply_rules(self):
         assert self.__vm is not None
 
-        root = xml.etree.ElementTree.Element(
-                "QubesFirwallRules",
-                policy="allow"
-        )
+        conf = { "allow": True, "rules": list() }
 
         for rule in self.children:
-            element = xml.etree.ElementTree.Element(
-                    "allow" if rule.allow else "deny",
-                    name=rule.name,
-                    address=rule.address,
-                    netmask=str(rule.netmask),
-                    port=str(rule.portBegin),
+            conf["rules"].append(
+                    {
+                        "allow": rule.allow,
+                        "name": rule.name,
+                        "address": rule.address,
+                        "netmask": rule.netmask,
+                        "portBegin": rule.portBegin,
+                        "portEnd": rule.portEnd
+                    }
             )
-            if rule.portEnd is not None:
-                element.set("toport", str(rule.portEnd)) 
-            root.append(element)
 
-        tree = xml.etree.ElementTree.ElementTree(root)
+        self.__vm.write_firewall_conf(conf)
 
-        try:
-            self.__vm.write_firewall_conf(tree)
-        except EnvironmentError as err:
-            print "{0}: save error: {1}".format(
-                    os.path.basename(sys.argv[0]), err)
-            return False
+        qvm_collection = QubesVmCollection()
+        qvm_collection.lock_db_for_reading()
+        qvm_collection.load()
+        qvm_collection.unlock_db()
 
-        return True
+        for vm in qvm_collection.values():
+            if vm.is_fwvm():
+                vm.write_iptables_xenstore_entry()
 
     def index(self, row, column, parent=QModelIndex()):
         if not self.hasIndex(row, column, parent):
@@ -261,7 +240,7 @@ class QubesFirewallRulesModel(QAbstractItemModel):
         self.endRemoveRows()
         index = self.createIndex(i, 0)
         self.dataChanged.emit(index, index)
-        
+
     def clearChildren(self):
         self.__children = list()
 
