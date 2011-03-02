@@ -319,8 +319,8 @@ class VmManagerWindow(QMainWindow):
         self.action_shutdownvm = self.createAction ("Shutdown VM", slot=self.shutdown_vm,
                                              icon="shutdownvm", tip="Shutdown a running VM")
 
-        self.action_updatevm = self.createAction ("Update VM", slot=None,
-                                             icon="updateable", tip="Update VM (only for 'updateable' VMs, e.g. templates)")
+        self.action_updatevm = self.createAction ("Commit VM changes", slot=self.update_vm,
+                                             icon="updateable", tip="Commit changes to template (only for 'updateable' template VMs); VM must be stopped")
 
         self.action_showallvms = self.createAction ("Show/Hide Inactive VMs", slot=None, checkable=True,
                                              icon="showallvms", tip="Show/Hide Inactive VMs")
@@ -491,6 +491,7 @@ class VmManagerWindow(QMainWindow):
         #self.action_resumevm.setEnabled(not vm.is_running())
         #self.action_pausevm.setEnabled(vm.is_running() and vm.qid != 0)
         self.action_shutdownvm.setEnabled(vm.is_running() and vm.qid != 0)
+        self.action_updatevm.setEnabled(vm.is_updateable() and not vm.is_running())
 
     def closeEvent (self, event):
         self.hide()
@@ -680,6 +681,15 @@ class VmManagerWindow(QMainWindow):
             trayIcon.showMessage ("Qubes Manager", "VM '{0}' is shutting down...".format(vm.name), msecs=3000)
             self.shutdown_monitor[vm.qid] = VmShutdownMonitor (vm)
             QTimer.singleShot (vm_shutdown_timeout, self.shutdown_monitor[vm.qid].check_if_vm_has_shutdown)
+
+    def update_vm(self):
+        vm = self.get_selected_vm()
+
+        try:
+            vm.commit_changes();
+        except Exception as ex:
+            QMessageBox.warning (None, "Error commiting changes!", "ERROR: {0}".format(ex))
+            return
 
     def showcpuload(self):
         pass
