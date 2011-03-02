@@ -22,16 +22,18 @@ The Graphical Qubes VM Manager.
 
 %build
 make res
+python -m compileall qubesmanager
+python -O -m compileall qubesmanager
 
 %install
 mkdir -p $RPM_BUILD_ROOT/usr/bin/
 cp qubes-manager $RPM_BUILD_ROOT/usr/bin
 
 mkdir -p $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager/
-cp qubesmanager/main.py $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/qrc_resources.py $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/__init__.py $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/ui_newappvmdlg.py $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/main.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/qrc_resources.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/__init__.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/ui_newappvmdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 
 mkdir -p $RPM_BUILD_ROOT/usr/share/applications
 cp qubes-manager.desktop $RPM_BUILD_ROOT/usr/share/applications
