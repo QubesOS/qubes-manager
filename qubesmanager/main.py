@@ -75,7 +75,7 @@ class VmStatusIcon(QLabel):
             icon = QIcon (":/dom0.png")
         elif vm.is_appvm():
             icon = QIcon (vm.label.icon_path)
-        elif vm.is_templete():
+        elif vm.is_template():
             icon = QIcon (":/templatevm.png")
         elif vm.is_netvm():
             icon = QIcon (":/netvm.png")
@@ -107,7 +107,7 @@ class VmInfoWidget (QWidget):
 
         if vm.is_appvm() or vm.is_disposablevm():
             label_tmpl = QLabel ("<i><font color=\"gray\">" + vm.template_vm.name + "</i></font>")
-        elif vm.is_templete():
+        elif vm.is_template():
             label_tmpl = QLabel ("<i><font color=\"gray\">TemplateVM</i></font>")
         elif vm.qid == 0:
             label_tmpl = QLabel ("<i><font color=\"gray\">AdminVM</i></font>")
@@ -444,7 +444,7 @@ class VmManagerWindow(QMainWindow):
 
         # Now, the templates...
         for tvm in vms_list:
-            if tvm.is_templete():
+            if tvm.is_template():
                 vms_to_display.append (tvm)
 
         label_list = QubesVmLabels.values()
@@ -524,7 +524,7 @@ class VmManagerWindow(QMainWindow):
             dialog.vmlabel.insertItem(i, label.name)
             dialog.vmlabel.setItemIcon (i, QIcon(label.icon_path))
 
-        template_vm_list = [vm for vm in self.qvm_collection.values() if vm.is_templete()]
+        template_vm_list = [vm for vm in self.qvm_collection.values() if vm.is_template()]
 
         default_index = 0
         for (i, vm) in enumerate(template_vm_list):
@@ -602,7 +602,7 @@ class VmManagerWindow(QMainWindow):
         self.qvm_collection.load()
         self.qvm_collection.unlock_db()
  
-        if vm.is_templete():
+        if vm.is_template():
             dependent_vms = self.qvm_collection.get_vms_based_on(vm.qid)
             if len(dependent_vms) > 0:
                 QMessageBox.warning (None, "Warning!", 
@@ -647,7 +647,7 @@ class VmManagerWindow(QMainWindow):
             self.qvm_collection.load()
 
             #TODO: the following two conditions should really be checked by qvm_collection.pop() overload...
-            if vm.is_templete() and qvm_collection.default_template_qid == vm.qid:
+            if vm.is_template() and qvm_collection.default_template_qid == vm.qid:
                 qvm_collection.default_template_qid = None
             if vm.is_netvm() and qvm_collection.default_netvm_qid == vm.qid:
                 qvm_collection.default_netvm_qid = None
