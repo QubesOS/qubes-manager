@@ -31,9 +31,12 @@ cp qubes-manager $RPM_BUILD_ROOT/usr/bin
 
 mkdir -p $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager/
 cp qubesmanager/main.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/firewall.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/qrc_resources.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/__init__.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/ui_newappvmdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/ui_newfwruledlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/ui_editfwrulesdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 
 mkdir -p $RPM_BUILD_ROOT/usr/share/applications
 cp qubes-manager.desktop $RPM_BUILD_ROOT/usr/share/applications
@@ -58,12 +61,21 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitearch}/qubesmanager/main.py
 %{python_sitearch}/qubesmanager/main.pyc
 %{python_sitearch}/qubesmanager/main.pyo
+%{python_sitearch}/qubesmanager/firewall.py
+%{python_sitearch}/qubesmanager/firewall.pyc
+%{python_sitearch}/qubesmanager/firewall.pyo
 %{python_sitearch}/qubesmanager/qrc_resources.py
 %{python_sitearch}/qubesmanager/qrc_resources.pyc
 %{python_sitearch}/qubesmanager/qrc_resources.pyo
 %{python_sitearch}/qubesmanager/ui_newappvmdlg.py
 %{python_sitearch}/qubesmanager/ui_newappvmdlg.pyc
 %{python_sitearch}/qubesmanager/ui_newappvmdlg.pyo
+%{python_sitearch}/qubesmanager/ui_newfwruledlg.py
+%{python_sitearch}/qubesmanager/ui_newfwruledlg.pyc
+%{python_sitearch}/qubesmanager/ui_newfwruledlg.pyo
+%{python_sitearch}/qubesmanager/ui_editfwrulesdlg.py
+%{python_sitearch}/qubesmanager/ui_editfwrulesdlg.pyc
+%{python_sitearch}/qubesmanager/ui_editfwrulesdlg.pyo
 
 
 /usr/share/applications/qubes-manager.desktop
