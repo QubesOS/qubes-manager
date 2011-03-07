@@ -48,7 +48,7 @@ class QubesConfigFileWatcher(ProcessEvent):
     def __init__ (self, update_func):
         self.update_func = update_func
         pass
-    
+
     def process_IN_CLOSE_WRITE (self, event):
         self.update_func()
 
@@ -211,7 +211,7 @@ class LoadChartWidget (QWidget):
         p = QPainter (self)
         dx = 4
 
-        W = self.width() 
+        W = self.width()
         H = self.height() - 5
         N = len(self.load_history)
         if N > W/dx:
@@ -250,7 +250,7 @@ class MemChartWidget (QWidget):
         p = QPainter (self)
         dx = 4
 
-        W = self.width() 
+        W = self.width()
         H = self.height() - 5
         N = len(self.load_history)
         if N > W/dx:
@@ -316,7 +316,7 @@ class VmShutdownMonitor(QObject):
         if not vm.is_running():
             return
 
-        reply = QMessageBox.question(None, "VM Shutdown", 
+        reply = QMessageBox.question(None, "VM Shutdown",
                                      "The VM <b>'{0}'</b> hasn't shutdown within the last {1} seconds, do you want to kill it?<br>".format(vm.name, vm_shutdown_timeout/1000),
                                      "Kill it!", "Wait another {0} seconds...".format(vm_shutdown_timeout/1000))
 
@@ -398,7 +398,7 @@ class VmManagerWindow(QMainWindow):
                                    None,
                                    self.action_showcpuload,
                                    ))
-        
+
         self.table = QTableWidget()
         self.setCentralWidget(self.table)
         self.table.clear()
@@ -617,7 +617,7 @@ class VmManagerWindow(QMainWindow):
             progress.setCancelButton(None)
             progress.setModal(True)
             progress.show()
-            
+
             while not thread_monitor.is_finished():
                 app.processEvents()
                 time.sleep (0.1)
@@ -662,18 +662,18 @@ class VmManagerWindow(QMainWindow):
         self.qvm_collection.lock_db_for_reading()
         self.qvm_collection.load()
         self.qvm_collection.unlock_db()
- 
+
         if vm.is_templete():
             dependent_vms = self.qvm_collection.get_vms_based_on(vm.qid)
             if len(dependent_vms) > 0:
-                QMessageBox.warning (None, "Warning!", 
+                QMessageBox.warning (None, "Warning!",
                                      "This Template VM cannot be removed, because there is at least one AppVM that is based on it.<br>"
                                      "<small>If you want to remove this Template VM and all the AppVMs based on it,"
                                      "you should first remove each individual AppVM that uses this template.</small>")
 
                 return
 
-        reply = QMessageBox.question(None, "VM Removal Confirmation", 
+        reply = QMessageBox.question(None, "VM Removal Confirmation",
                                      "Are you sure you want to remove the VM <b>'{0}'</b>?<br>"
                                      "<small>All data on this VM's private storage will be lost!</small>".format(vm.name),
                                      QMessageBox.Yes | QMessageBox.Cancel)
@@ -690,7 +690,7 @@ class VmManagerWindow(QMainWindow):
             progress.setCancelButton(None)
             progress.setModal(True)
             progress.show()
-            
+
             while not thread_monitor.is_finished():
                 app.processEvents()
                 time.sleep (0.1)
@@ -726,7 +726,7 @@ class VmManagerWindow(QMainWindow):
 
     def resume_vm(self):
         pass
- 
+
     def pause_vm(self):
         pass
 
@@ -734,7 +734,7 @@ class VmManagerWindow(QMainWindow):
         vm = self.get_selected_vm()
         assert vm.is_running()
 
-        reply = QMessageBox.question(None, "VM Shutdown Confirmation", 
+        reply = QMessageBox.question(None, "VM Shutdown Confirmation",
                                      "Are you sure you want to power down the VM <b>'{0}'</b>?<br>"
                                      "<small>This will shutdown all the running applications within this VM.</small>".format(vm.name),
                                      QMessageBox.Yes | QMessageBox.Cancel)
@@ -765,7 +765,7 @@ class VmManagerWindow(QMainWindow):
 
         if dialog.exec_():
             model.apply_rules()
-                   
+
 class QubesTrayIcon(QSystemTrayIcon):
     def __init__(self, icon):
         QSystemTrayIcon.__init__(self, icon)
