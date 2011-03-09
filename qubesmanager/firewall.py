@@ -69,6 +69,7 @@ class EditFwRulesDlg (QDialog, ui_editfwrulesdlg.Ui_EditFwRulesDlg):
 
     def edit_rule_button_pressed(self):
         dialog = NewFwRuleDlg()
+        dialog.set_ok_enabled(True)
         row = self.rulesTreeView.selectedIndexes().pop().row()
         item = self.__model.children[row]
         dialog.addressEdit.setText(item.address)
