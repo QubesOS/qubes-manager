@@ -765,6 +765,29 @@ class VmManagerWindow(QMainWindow):
 
         if dialog.exec_():
             model.apply_rules()
+            QTimer.singleShot(5000, self.check_apply_fw_rules)
+
+    def check_apply_fw_rules(self):
+        qvm_collection = QubesVmCollection()
+        qvm_collection.lock_db_for_reading()
+        qvm_collection.load()
+        qvm_collection.unlock_db()
+
+        for vm in qvm_collection.values():
+            if vm.is_fwvm():
+                error_file = "/local/domain/{0}/qubes_iptables_error".format(vm.get_xid())
+
+                error = subprocess.Popen(
+                        ["/usr/bin/xenstore-read", error_file],
+                        stdout=subprocess.PIPE).communicate()[0]
+                if error != "":
+                    trayIcon.showMessage (
+                            "Error applying firewall rules on '{0}'!".format(vm.name),
+                            "ERROR: {0}".format(error.decode('string_escape')),
+                            QSystemTrayIcon.Critical
+                        )
+                    retcode = subprocess.check_call (
+                            ["/usr/bin/xenstore-write", error_file, ""])
 
 class QubesTrayIcon(QSystemTrayIcon):
     def __init__(self, icon):
