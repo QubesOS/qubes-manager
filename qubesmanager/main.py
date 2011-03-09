@@ -570,6 +570,7 @@ class VmManagerWindow(QMainWindow):
 
 
     def do_create_appvm (self, vmname, label, template_vm, thread_monitor):
+        vm = None
         try:
             self.qvm_collection.lock_db_for_writing()
             self.qvm_collection.load()
@@ -580,7 +581,8 @@ class VmManagerWindow(QMainWindow):
             self.qvm_collection.save()
         except Exception as ex:
             thread_monitor.set_error_msg (str(ex))
-            vm.remove_from_disk()
+            if vm:
+                vm.remove_from_disk()
         finally:
             self.qvm_collection.unlock_db()
 
