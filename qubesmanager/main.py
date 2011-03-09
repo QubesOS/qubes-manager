@@ -781,6 +781,7 @@ class VmManagerWindow(QMainWindow):
                         ["/usr/bin/xenstore-read", error_file],
                         stdout=subprocess.PIPE).communicate()[0]
                 if error != "":
+                    vm.rules_applied = False
                     trayIcon.showMessage (
                             "Error applying firewall rules on '{0}'!".format(vm.name),
                             "ERROR: {0}".format(error.decode('string_escape')),
@@ -788,6 +789,8 @@ class VmManagerWindow(QMainWindow):
                         )
                     retcode = subprocess.check_call (
                             ["/usr/bin/xenstore-write", error_file, ""])
+                else:
+                    vm.rules_applied = True
 
 class QubesTrayIcon(QSystemTrayIcon):
     def __init__(self, icon):
