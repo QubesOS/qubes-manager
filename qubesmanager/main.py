@@ -700,7 +700,7 @@ class VmManagerWindow(QMainWindow):
             if thread_monitor.success:
                 trayIcon.showMessage ("Qubes Manager", "VM '{0}' has been removed.".format(vm.name), msecs=3000)
             else:
-                QMessageBox.warning (None, "Error removing M!", "ERROR: {0}".format(thread_monitor.error_msg))
+                QMessageBox.warning (None, "Error removing VM!", "ERROR: {0}".format(thread_monitor.error_msg))
 
     def do_remove_vm (self, vm, thread_monitor):
         try:
