@@ -853,7 +853,7 @@ class QubesTrayIcon(QSystemTrayIcon):
             # Handle the right click normally, i.e. display the context menu
             return
         else:
-            show_manager()
+            toggle_manager()
 
     def addActions(self, target, actions):
         for action in actions:
@@ -883,6 +883,11 @@ class QubesTrayIcon(QSystemTrayIcon):
 def show_manager():
     manager_window.show()
 
+def toggle_manager():
+    if manager_window.isVisible():
+        manager_window.hide()
+    else:
+        manager_window.show()
 
 def exit_app():
     notifier.stop()
