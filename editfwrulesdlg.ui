@@ -7,48 +7,76 @@
     <x>0</x>
     <y>0</y>
     <width>500</width>
-    <height>280</height>
+    <height>335</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Edit Firewall Rules</string>
+   <string>VM Firewall</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_3">
+   <item>
+    <widget class="QRadioButton" name="policyAllowRadioButton">
+     <property name="text">
+      <string>Allow network access except...</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QRadioButton" name="policyDenyRadioButton">
+     <property name="text">
+      <string>Deny network access except...</string>
+     </property>
+    </widget>
+   </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <property name="sizeConstraint">
       <enum>QLayout::SetMaximumSize</enum>
      </property>
      <item>
-      <widget class="QTreeView" name="rulesTreeView">
-       <property name="rootIsDecorated">
-        <bool>false</bool>
-       </property>
-       <property name="uniformRowHeights">
-        <bool>false</bool>
-       </property>
-       <property name="itemsExpandable">
-        <bool>false</bool>
-       </property>
-       <property name="allColumnsShowFocus">
-        <bool>true</bool>
-       </property>
-       <property name="expandsOnDoubleClick">
-        <bool>true</bool>
-       </property>
-       <attribute name="headerDefaultSectionSize">
-        <number>40</number>
-       </attribute>
-       <attribute name="headerStretchLastSection">
-        <bool>false</bool>
-       </attribute>
-       <attribute name="headerDefaultSectionSize">
-        <number>40</number>
-       </attribute>
-       <attribute name="headerStretchLastSection">
-        <bool>false</bool>
-       </attribute>
-      </widget>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QTreeView" name="rulesTreeView">
+         <property name="rootIsDecorated">
+          <bool>false</bool>
+         </property>
+         <property name="uniformRowHeights">
+          <bool>false</bool>
+         </property>
+         <property name="itemsExpandable">
+          <bool>false</bool>
+         </property>
+         <property name="allColumnsShowFocus">
+          <bool>true</bool>
+         </property>
+         <property name="expandsOnDoubleClick">
+          <bool>true</bool>
+         </property>
+         <attribute name="headerDefaultSectionSize">
+          <number>40</number>
+         </attribute>
+         <attribute name="headerStretchLastSection">
+          <bool>false</bool>
+         </attribute>
+         <attribute name="headerDefaultSectionSize">
+          <number>40</number>
+         </attribute>
+         <attribute name="headerStretchLastSection">
+          <bool>false</bool>
+         </attribute>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="dnsCheckBox">
+         <property name="text">
+          <string>Allow DNS queries</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
       <layout class="QVBoxLayout" name="verticalLayout">
@@ -103,10 +131,13 @@
   </layout>
  </widget>
  <tabstops>
+  <tabstop>policyAllowRadioButton</tabstop>
+  <tabstop>policyDenyRadioButton</tabstop>
+  <tabstop>dnsCheckBox</tabstop>
+  <tabstop>rulesTreeView</tabstop>
   <tabstop>newRuleButton</tabstop>
   <tabstop>editRuleButton</tabstop>
   <tabstop>deleteRuleButton</tabstop>
-  <tabstop>rulesTreeView</tabstop>
   <tabstop>buttonBox</tabstop>
  </tabstops>
  <resources/>
@@ -118,8 +149,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
+     <x>320</x>
+     <y>330</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>
@@ -134,8 +165,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
+     <x>252</x>
+     <y>330</y>
     </hint>
     <hint type="destinationlabel">
      <x>157</x>

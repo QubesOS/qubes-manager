@@ -21,6 +21,7 @@
 
 import sys
 import os
+import re
 import xml.etree.ElementTree
 
 from PyQt4.QtCore import *
@@ -28,10 +29,7 @@ from PyQt4.QtGui import *
 
 from qubes.qubes import QubesVmCollection
 from qubes.qubes import QubesException
-from qubes.qubes import qubes_store_filename
-from qubes.qubes import QubesVmLabels
 from qubes.qubes import dry_run
-from qubes.qubes import qubes_guid_path
 
 import ui_editfwrulesdlg
 import ui_newfwruledlg
@@ -41,69 +39,130 @@ class EditFwRulesDlg (QDialog, ui_editfwrulesdlg.Ui_EditFwRulesDlg):
         super (EditFwRulesDlg, self).__init__(parent)
         self.setupUi(self)
         self.newRuleButton.clicked.connect(self.new_rule_button_pressed)
+        self.editRuleButton.clicked.connect(self.edit_rule_button_pressed)
         self.deleteRuleButton.clicked.connect(self.delete_rule_button_pressed)
+        self.policyAllowRadioButton.toggled.connect(self.policy_radio_toggled)
+        self.dnsCheckBox.toggled.connect(self.dns_checkbox_toggled)
 
     def set_model(self, model):
         self.__model = model
         self.rulesTreeView.setModel(model)
         self.rulesTreeView.header().setResizeMode(QHeaderView.ResizeToContents)
         self.rulesTreeView.header().setResizeMode(0, QHeaderView.Stretch)
+        self.set_allow(model.allow)
+        self.dnsCheckBox.setChecked(model.allowDns)
+        self.setWindowTitle(model.get_vm_name() + " firewall")
+
+    def set_allow(self, allow):
+        self.policyAllowRadioButton.setChecked(allow)
+        self.policyDenyRadioButton.setChecked(not allow)
+
+    def policy_radio_toggled(self, on):
+        self.__model.allow = self.policyAllowRadioButton.isChecked()
+
+    def dns_checkbox_toggled(self, on):
+        self.__model.allowDns = on
 
     def new_rule_button_pressed(self):
         dialog = NewFwRuleDlg()
+        self.run_rule_dialog(dialog)
 
+    def edit_rule_button_pressed(self):
+        dialog = NewFwRuleDlg()
+        dialog.set_ok_enabled(True)
+        row = self.rulesTreeView.selectedIndexes().pop().row()
+        item = self.__model.children[row]
+        dialog.addressEdit.setText(item.address)
+        service = self.__model.get_service_name(item.portBegin)
+        dialog.serviceComboBox.insertItem(0, service)
+        dialog.serviceComboBox.setCurrentIndex(0)
+        self.run_rule_dialog(dialog, row)
+
+    def run_rule_dialog(self, dialog, row = None):
         if dialog.exec_():
-            name = dialog.nameEdit.text()
-            allow = dialog.allowCheckBox.isChecked()
             address = dialog.addressEdit.text()
-            netmask = dialog.netmasks[dialog.netmaskComboBox.currentIndex()]
-            portBegin = dialog.portBeginSpinBox.value()
-            portEnd   = dialog.portEndSpinBox.value()
-            if portEnd <= portBegin:
-                portEnd = None
+            service = dialog.serviceComboBox.currentText()
+            port = None
 
-            if portBegin == 0 and portEnd is None:
-                return
+            try:
+                port = int(service)
+            except (TypeError, ValueError) as ex:
+                port = self.__model.get_service_port(service)
 
-            if name == "":
-                QMessageBox.warning(None, "Incorrect name", "You need to name the rule.")
-                return
-
-            if address == "":
-                QMessageBox.warning(None, "Incorrect address", "Pleas give an address for the rule.")
-                return
-
-            self.__model.appendChild(QubesFirewallRuleItem(name, allow, address, netmask, portBegin, portEnd))
+            if port is not None:
+                item = QubesFirewallRuleItem(address, 32, port, None)
+                if row is not None:
+                    self.__model.setChild(row, item)
+                else:
+                    self.__model.appendChild(item)
+            else:
+                QMessageBox.warning(None, "Invalid service name", "Service '{0} is unknown.".format(service))
 
     def delete_rule_button_pressed(self):
         for i in set([index.row() for index in self.rulesTreeView.selectedIndexes()]):
             self.__model.removeChild(i)
+
+class QIPAddressValidator(QValidator):
+    def __init__(self, parent = None):
+        super (QIPAddressValidator, self).__init__(parent)
+
+    def validate(self, input, pos):
+        hostname = input
+
+        if len(hostname) > 255 or len(hostname) == 0:
+            return (QValidator.Intermediate, pos)
+
+        if hostname[-1:] == ".":
+            hostname = hostname[:-1]
+
+        if hostname[-1:] == "-":
+            return (QValidator.Intermediate, pos)
+
+        allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+        if all(allowed.match(x) for x in hostname.split(".")):
+            return (QValidator.Acceptable, pos)
+
+        return (QValidator.Invalid, pos)
 
 class NewFwRuleDlg (QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
     def __init__(self, parent = None):
         super (NewFwRuleDlg, self).__init__(parent)
         self.setupUi(self)
 
-        self.netmasks = [ 32, 24, 16, 0 ]
-        for mask in self.netmasks:
-            self.netmaskComboBox.addItem(str(mask))
+        self.set_ok_enabled(False)
+        self.addressEdit.setValidator(QIPAddressValidator())
+        self.addressEdit.editingFinished.connect(self.address_editing_finished)
+        self.serviceComboBox.setValidator(QRegExpValidator(QRegExp("[a-z][a-z0-9-]+|[0-9]+", Qt.CaseInsensitive), None))
+
+        self.serviceComboBox.setInsertPolicy(QComboBox.InsertAtBottom)
+        self.populate_services_combo()
+        self.serviceComboBox.setInsertPolicy(QComboBox.InsertAtTop)
+
+    def populate_services_combo(self):
+        displayed_services = [
+                'http', 'https', 'ftp', 'ftps',
+                'smtp', 'pop3', 'pop3s', 'imap', 'imaps', 'nntp', 'nntps',
+                'ssh', 'telnet', 'telnets', 'ntp', 'snmp',
+                'ldap', 'ldaps', 'irc', 'ircs', 'xmpp-client',
+                'syslog', 'printer', 'nfs', 'x11',
+            ]
+        for service in displayed_services:
+            self.serviceComboBox.addItem(service)
+
+    def address_editing_finished(self):
+        self.set_ok_enabled(True)
+
+    def set_ok_enabled(self, on):
+        ok_button = self.buttonBox.button(QDialogButtonBox.Ok)
+        if ok_button is not None:
+            ok_button.setEnabled(on)
 
 class QubesFirewallRuleItem(object):
-    def __init__(self, name = str(), allow = bool(), address = str(), netmask = 32, portBegin = 0, portEnd = None):
-        self.__name = name
-        self.__allow = allow
+    def __init__(self, address = str(), netmask = 32, portBegin = 0, portEnd = None):
         self.__address = address
         self.__netmask = netmask
         self.__portBegin = portBegin
         self.__portEnd = portEnd
-
-    @property
-    def name(self):
-        return self.__name
-
-    @property
-    def allow(self):
-        return self.__allow
 
     @property
     def address(self):
@@ -129,20 +188,36 @@ class QubesFirewallRulesModel(QAbstractItemModel):
         QAbstractItemModel.__init__(self, parent)
 
         self.__columnValues = {
-                0: lambda x: self.children[x].name,
-                1: lambda x: self.children[x].address,
-                2: lambda x: "/{0}".format(self.children[x].netmask),
-                3: lambda x: "{0}-{1}".format(self.children[x].portBegin, self.children[x].portEnd) if self.children[x].portEnd is not None \
-                        else self.children[x].portBegin,
-                4: lambda x: "ALLOW" if self.children[x].allow else "DENY",
+                0: lambda x: self.children[x].address,
+                1: lambda x: "{0}-{1}".format(self.children[x].portBegin, self.children[x].portEnd) if self.children[x].portEnd is not None \
+                        else self.get_service_name(self.children[x].portBegin),
         }
         self.__columnNames = {
-                0: "Name",
-                1: "Address",
-                2: "Mask",
-                3: "Port(s)",
-                4: "Allow",
+                0: "Address",
+                1: "Service",
         }
+
+        self.__services = list()
+        pattern = re.compile("(?P<name>[a-z][a-z0-9-]+)\s+(?P<port>[0-9]+)/(?P<protocol>[a-z]+)", re.IGNORECASE)
+        f = open('/etc/services', 'r')
+        for line in f:
+            match = pattern.match(line)
+            if match is not None:
+                service = match.groupdict()
+                self.__services.append( (service["name"], int(service["port"]), service["protocol"]) )
+        f.close()
+
+    def get_service_name(self, port):
+        for service in self.__services:
+            if service[1] == port:
+                return service[0]
+        return str(port)
+
+    def get_service_port(self, name):
+        for service in self.__services:
+            if service[0] == name:
+                return service[1]
+        return None
 
     def set_vm(self, vm):
         self.__vm = vm
@@ -150,22 +225,26 @@ class QubesFirewallRulesModel(QAbstractItemModel):
         self.clearChildren()
 
         conf = vm.get_firewall_conf()
+
+        self.allow = conf["allow"]
+        self.allowDns = conf["allowDns"]
+
         for rule in conf["rules"]:
             self.appendChild(QubesFirewallRuleItem(
-                rule["name"], rule["allow"], rule["address"],
-                rule["netmask"], rule["portBegin"], rule["portEnd"]
+                rule["address"], rule["netmask"], rule["portBegin"], rule["portEnd"]
                 ))
+
+    def get_vm_name(self):
+        return self.__vm.name
 
     def apply_rules(self):
         assert self.__vm is not None
 
-        conf = { "allow": True, "rules": list() }
+        conf = { "allow": self.allow, "allowDns": self.allowDns, "rules": list() }
 
         for rule in self.children:
             conf["rules"].append(
                     {
-                        "allow": rule.allow,
-                        "name": rule.name,
                         "address": rule.address,
                         "netmask": rule.netmask,
                         "portBegin": rule.portBegin,
@@ -239,6 +318,11 @@ class QubesFirewallRulesModel(QAbstractItemModel):
         del self.children[i]
         self.endRemoveRows()
         index = self.createIndex(i, 0)
+        self.dataChanged.emit(index, index)
+
+    def setChild(self, i, child):
+        self.children[i] = child
+        index = self.createIndex(i, 0, child)
         self.dataChanged.emit(index, index)
 
     def clearChildren(self):
