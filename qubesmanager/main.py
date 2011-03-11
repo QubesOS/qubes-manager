@@ -380,7 +380,7 @@ class VmManagerWindow(QMainWindow):
                                              icon="showcpuload", tip="Show/Hide CPU Load chart")
 
         self.action_editfwrules = self.createAction ("Edit VM Firewall rules", slot=self.edit_fw_rules,
-                                             icon="showcpuload", tip="Edit VM Firewall rules")
+                                             icon="firewall", tip="Edit VM Firewall rules")
 
 
         self.action_removevm.setDisabled(True)

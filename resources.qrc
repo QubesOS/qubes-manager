@@ -17,5 +17,6 @@
 <file alias="pausevm.png">icons/pausevm.png</file>
 <file alias="showallvms.png">icons/showallvms.png</file>
 <file alias="showcpuload.png">icons/showcpuload.png</file>
+<file alias="firewall.png">icons/firewall.png</file>
 </qresource>
 </RCC>
