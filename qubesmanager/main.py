@@ -348,6 +348,7 @@ class VmManagerWindow(QMainWindow):
     row_height = 50
     max_visible_rows = 14
     update_interval = 1000 # in msec
+    fw_rules_apply_check_interval = 5000
     show_inactive_vms = True
     columns_states = { 0: [0, 1], 1: [0, 2, 3] }
 
@@ -443,6 +444,7 @@ class VmManagerWindow(QMainWindow):
         self.counter = 0
         self.shutdown_monitor = {}
         QTimer.singleShot (self.update_interval, self.update_table)
+        QTimer.singleShot (self.fw_rules_apply_check_interval, self.check_apply_fw_rules)
 
     def addActions(self, target, actions):
         for action in actions:
@@ -765,7 +767,6 @@ class VmManagerWindow(QMainWindow):
 
         if dialog.exec_():
             model.apply_rules()
-            QTimer.singleShot(5000, self.check_apply_fw_rules)
 
     def check_apply_fw_rules(self):
         qvm_collection = QubesVmCollection()
@@ -780,6 +781,7 @@ class VmManagerWindow(QMainWindow):
                 error = subprocess.Popen(
                         ["/usr/bin/xenstore-read", error_file],
                         stdout=subprocess.PIPE).communicate()[0]
+                error = error.strip(" \n\t")
                 if error != "":
                     vm.rules_applied = False
                     trayIcon.showMessage (
@@ -791,6 +793,8 @@ class VmManagerWindow(QMainWindow):
                             ["/usr/bin/xenstore-write", error_file, ""])
                 else:
                     vm.rules_applied = True
+
+        QTimer.singleShot(self.fw_rules_apply_check_interval, self.check_apply_fw_rules)
 
 class QubesTrayIcon(QSystemTrayIcon):
     def __init__(self, icon):
