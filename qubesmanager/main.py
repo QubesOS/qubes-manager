@@ -793,6 +793,7 @@ class VmManagerWindow(QMainWindow):
             except Exception as ex:
                 QMessageBox.warning (None, "Error commiting changes!", "ERROR: {0}".format(ex))
                 return
+            trayIcon.showMessage ("Qubes Manager", "Changes to template '{0}' commited.".format(vm.name), msecs=3000)
 
     def showcpuload(self):
         self.__cpugraphs = self.action_showcpuload.isChecked()
