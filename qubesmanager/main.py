@@ -778,12 +778,21 @@ class VmManagerWindow(QMainWindow):
 
     def update_vm(self):
         vm = self.get_selected_vm()
+        assert not vm.is_running()
 
-        try:
-            vm.commit_changes();
-        except Exception as ex:
-            QMessageBox.warning (None, "Error commiting changes!", "ERROR: {0}".format(ex))
-            return
+        reply = QMessageBox.question(None, "VM Update Confirmation",
+                                     "Are you sure you want to commit template <b>'{0}'</b> changes?<br>"
+                                     "<small>AppVMs will see the changes after restart.</small>".format(vm.name),
+                                     QMessageBox.Yes | QMessageBox.Cancel)
+
+        app.processEvents()
+
+        if reply == QMessageBox.Yes:
+            try:
+                vm.commit_changes();
+            except Exception as ex:
+                QMessageBox.warning (None, "Error commiting changes!", "ERROR: {0}".format(ex))
+                return
 
     def showcpuload(self):
         self.__cpugraphs = self.action_showcpuload.isChecked()
