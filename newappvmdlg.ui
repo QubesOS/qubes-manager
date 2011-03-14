@@ -73,10 +73,7 @@
         </spacer>
        </item>
        <item row="2" column="0" colspan="2">
-        <widget class="QCheckBox" name="checkBox_2">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
+        <widget class="QCheckBox" name="allow_networking">
          <property name="text">
           <string>Allow networking</string>
          </property>

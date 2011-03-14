@@ -613,8 +613,10 @@ class VmManagerWindow(QMainWindow):
             label = label_list[dialog.vmlabel.currentIndex()]
             template_vm = template_vm_list[dialog.template_name.currentIndex()]
 
+            allow_networking = dialog.allow_networking.isChecked()
+
             thread_monitor = ThreadMonitor()
-            thread = threading.Thread (target=self.do_create_appvm, args=(vmname, label, template_vm, thread_monitor))
+            thread = threading.Thread (target=self.do_create_appvm, args=(vmname, label, template_vm, allow_networking, thread_monitor))
             thread.daemon = True
             thread.start()
 
@@ -635,7 +637,7 @@ class VmManagerWindow(QMainWindow):
                 QMessageBox.warning (None, "Error creating AppVM!", "ERROR: {0}".format(thread_monitor.error_msg))
 
 
-    def do_create_appvm (self, vmname, label, template_vm, thread_monitor):
+    def do_create_appvm (self, vmname, label, template_vm, allow_networking, thread_monitor):
         vm = None
         try:
             self.qvm_collection.lock_db_for_writing()
@@ -644,6 +646,10 @@ class VmManagerWindow(QMainWindow):
             vm = self.qvm_collection.add_new_appvm(vmname, template_vm, label = label)
             vm.create_on_disk(verbose=False)
             vm.add_to_xen_storage()
+            firewall = vm.get_firewall_conf()
+            firewall["allow"] = allow_networking
+            firewall["allowDns"] = allow_networking
+            vm.write_firewall_conf(firewall)
             self.qvm_collection.save()
         except Exception as ex:
             thread_monitor.set_error_msg (str(ex))
