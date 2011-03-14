@@ -260,7 +260,7 @@ class QubesFirewallRulesModel(QAbstractItemModel):
         qvm_collection.unlock_db()
 
         for vm in qvm_collection.values():
-            if vm.is_fwvm():
+            if vm.is_proxyvm():
                 vm.write_iptables_xenstore_entry()
 
     def index(self, row, column, parent=QModelIndex()):

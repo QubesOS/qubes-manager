@@ -44,6 +44,8 @@ import subprocess
 import time
 import threading
 
+qubes_guid_path = '/usr/bin/qubes_guid'
+
 class QubesConfigFileWatcher(ProcessEvent):
     def __init__ (self, update_func):
         self.update_func = update_func
@@ -73,7 +75,7 @@ class VmStatusIcon(QLabel):
             icon = QIcon (":/dom0.png")
         elif vm.is_appvm():
             icon = QIcon (vm.label.icon_path)
-        elif vm.is_templete():
+        elif vm.is_template():
             icon = QIcon (":/templatevm.png")
         elif vm.is_netvm():
             icon = QIcon (":/netvm.png")
@@ -105,7 +107,7 @@ class VmInfoWidget (QWidget):
 
         if vm.is_appvm() or vm.is_disposablevm():
             label_tmpl = QLabel ("<i><font color=\"gray\">" + vm.template_vm.name + "</i></font>")
-        elif vm.is_templete():
+        elif vm.is_template():
             label_tmpl = QLabel ("<i><font color=\"gray\">TemplateVM</i></font>")
         elif vm.qid == 0:
             label_tmpl = QLabel ("<i><font color=\"gray\">AdminVM</i></font>")
@@ -371,8 +373,8 @@ class VmManagerWindow(QMainWindow):
         self.action_shutdownvm = self.createAction ("Shutdown VM", slot=self.shutdown_vm,
                                              icon="shutdownvm", tip="Shutdown a running VM")
 
-        self.action_updatevm = self.createAction ("Update VM", slot=None,
-                                             icon="updateable", tip="Update VM (only for 'updateable' VMs, e.g. templates)")
+        self.action_updatevm = self.createAction ("Commit VM changes", slot=self.update_vm,
+                                             icon="updateable", tip="Commit changes to template (only for 'updateable' template VMs); VM must be stopped")
 
         self.action_showallvms = self.createAction ("Show/Hide Inactive VMs", slot=None, checkable=True,
                                              icon="showallvms", tip="Show/Hide Inactive VMs")
@@ -491,7 +493,7 @@ class VmManagerWindow(QMainWindow):
 
         # Now, the templates...
         for tvm in vms_list:
-            if tvm.is_templete():
+            if tvm.is_template():
                 vms_to_display.append (tvm)
 
         label_list = QubesVmLabels.values()
@@ -552,9 +554,10 @@ class VmManagerWindow(QMainWindow):
         # Update available actions:
 
         self.action_removevm.setEnabled(not vm.installed_by_rpm and not vm.is_running())
-        #self.action_resumevm.setEnabled(not vm.is_running())
-        #self.action_pausevm.setEnabled(vm.is_running() and vm.qid != 0)
+        self.action_resumevm.setEnabled(not vm.is_running())
+        self.action_pausevm.setEnabled(vm.is_running() and vm.qid != 0)
         self.action_shutdownvm.setEnabled(vm.is_running() and vm.qid != 0)
+        self.action_updatevm.setEnabled(vm.is_updateable() and not vm.is_running())
         self.action_editfwrules.setEnabled(vm.is_networked() and (vm.is_appvm() or vm.is_disposablevm()))
 
     def get_minimum_table_width(self):
@@ -587,7 +590,7 @@ class VmManagerWindow(QMainWindow):
             dialog.vmlabel.insertItem(i, label.name)
             dialog.vmlabel.setItemIcon (i, QIcon(label.icon_path))
 
-        template_vm_list = [vm for vm in self.qvm_collection.values() if vm.is_templete()]
+        template_vm_list = [vm for vm in self.qvm_collection.values() if vm.is_template()]
 
         default_index = 0
         for (i, vm) in enumerate(template_vm_list):
@@ -633,6 +636,7 @@ class VmManagerWindow(QMainWindow):
 
 
     def do_create_appvm (self, vmname, label, template_vm, thread_monitor):
+        vm = None
         try:
             self.qvm_collection.lock_db_for_writing()
             self.qvm_collection.load()
@@ -643,7 +647,8 @@ class VmManagerWindow(QMainWindow):
             self.qvm_collection.save()
         except Exception as ex:
             thread_monitor.set_error_msg (str(ex))
-            vm.remove_from_disk()
+            if vm:
+                vm.remove_from_disk()
         finally:
             self.qvm_collection.unlock_db()
 
@@ -664,8 +669,8 @@ class VmManagerWindow(QMainWindow):
         self.qvm_collection.lock_db_for_reading()
         self.qvm_collection.load()
         self.qvm_collection.unlock_db()
-
-        if vm.is_templete():
+ 
+        if vm.is_template():
             dependent_vms = self.qvm_collection.get_vms_based_on(vm.qid)
             if len(dependent_vms) > 0:
                 QMessageBox.warning (None, "Warning!",
@@ -710,7 +715,7 @@ class VmManagerWindow(QMainWindow):
             self.qvm_collection.load()
 
             #TODO: the following two conditions should really be checked by qvm_collection.pop() overload...
-            if vm.is_templete() and qvm_collection.default_template_qid == vm.qid:
+            if vm.is_template() and qvm_collection.default_template_qid == vm.qid:
                 qvm_collection.default_template_qid = None
             if vm.is_netvm() and qvm_collection.default_netvm_qid == vm.qid:
                 qvm_collection.default_netvm_qid = None
@@ -727,10 +732,29 @@ class VmManagerWindow(QMainWindow):
         thread_monitor.set_finished()
 
     def resume_vm(self):
-        pass
+        vm = self.get_selected_vm()
+        assert not vm.is_running()
 
+        try:
+            vm.verify_files()
+            xid = vm.start()
+        except (IOError, OSError, QubesException) as err:
+            QMessageBox.warning (None, "Error starting VM!", "ERROR: {0}".format(err))
+            return
+
+        retcode = subprocess.call ([qubes_guid_path, "-d", str(xid), "-c", vm.label.color, "-i", vm.label.icon, "-l", str(vm.label.index)])
+        if (retcode != 0):
+            QMessageBox.warning (None, "Error starting VM!", "ERROR: Cannot start qubes_guid!")
+            return
+ 
     def pause_vm(self):
-        pass
+        vm = self.get_selected_vm()
+        assert vm.is_running()
+        try:
+            subprocess.check_call (["/usr/sbin/xm", "pause", vm.name])
+        except Exception as ex:
+            QMessageBox.warning (None, "Error pausing VM!", "ERROR: {0}".format(ex))
+            return
 
     def shutdown_vm(self):
         vm = self.get_selected_vm()
@@ -754,6 +778,25 @@ class VmManagerWindow(QMainWindow):
             self.shutdown_monitor[vm.qid] = VmShutdownMonitor (vm)
             QTimer.singleShot (vm_shutdown_timeout, self.shutdown_monitor[vm.qid].check_if_vm_has_shutdown)
 
+    def update_vm(self):
+        vm = self.get_selected_vm()
+        assert not vm.is_running()
+
+        reply = QMessageBox.question(None, "VM Update Confirmation",
+                                     "Are you sure you want to commit template <b>'{0}'</b> changes?<br>"
+                                     "<small>AppVMs will see the changes after restart.</small>".format(vm.name),
+                                     QMessageBox.Yes | QMessageBox.Cancel)
+
+        app.processEvents()
+
+        if reply == QMessageBox.Yes:
+            try:
+                vm.commit_changes();
+            except Exception as ex:
+                QMessageBox.warning (None, "Error commiting changes!", "ERROR: {0}".format(ex))
+                return
+            trayIcon.showMessage ("Qubes Manager", "Changes to template '{0}' commited.".format(vm.name), msecs=3000)
+
     def showcpuload(self):
         self.__cpugraphs = self.action_showcpuload.isChecked()
         self.update_table_columns()
@@ -775,7 +818,7 @@ class VmManagerWindow(QMainWindow):
         qvm_collection.unlock_db()
 
         for vm in qvm_collection.values():
-            if vm.is_fwvm():
+            if vm.is_proxyvm():
                 error_file = "/local/domain/{0}/qubes_iptables_error".format(vm.get_xid())
 
                 error = subprocess.Popen(
@@ -824,7 +867,7 @@ class QubesTrayIcon(QSystemTrayIcon):
             # Handle the right click normally, i.e. display the context menu
             return
         else:
-            show_manager()
+            toggle_manager()
 
     def addActions(self, target, actions):
         for action in actions:
@@ -854,6 +897,11 @@ class QubesTrayIcon(QSystemTrayIcon):
 def show_manager():
     manager_window.show()
 
+def toggle_manager():
+    if manager_window.isVisible():
+        manager_window.hide()
+    else:
+        manager_window.show()
 
 def exit_app():
     notifier.stop()
