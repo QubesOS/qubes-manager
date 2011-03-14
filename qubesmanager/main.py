@@ -49,9 +49,8 @@ qubes_guid_path = '/usr/bin/qubes_guid'
 class QubesConfigFileWatcher(ProcessEvent):
     def __init__ (self, update_func):
         self.update_func = update_func
-        pass
 
-    def process_IN_CLOSE_WRITE (self, event):
+    def process_IN_MODIFY (self, event):
         self.update_func()
 
 class VmStatusIcon(QLabel):
@@ -964,7 +963,7 @@ def main():
     global manager_window
     manager_window = VmManagerWindow()
     wm = WatchManager()
-    mask = EventsCodes.OP_FLAGS.get('IN_CLOSE_WRITE')
+    mask = EventsCodes.OP_FLAGS.get('IN_MODIFY')
 
     global notifier
     notifier = ThreadedNotifier(wm, QubesConfigFileWatcher(manager_window.mark_table_for_update))
