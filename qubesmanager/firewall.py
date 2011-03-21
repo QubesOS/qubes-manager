@@ -75,31 +75,56 @@ class EditFwRulesDlg (QDialog, ui_editfwrulesdlg.Ui_EditFwRulesDlg):
     def edit_rule_button_pressed(self):
         dialog = NewFwRuleDlg()
         dialog.set_ok_enabled(True)
-        row = self.rulesTreeView.selectedIndexes().pop().row()
-        item = self.__model.children[row]
-        dialog.addressEdit.setText(item.address)
-        service = self.__model.get_service_name(item.portBegin)
-        dialog.serviceComboBox.insertItem(0, service)
-        dialog.serviceComboBox.setCurrentIndex(0)
-        self.run_rule_dialog(dialog, row)
+        selected = self.rulesTreeView.selectedIndexes()
+        if len(selected) > 0:
+            row = self.rulesTreeView.selectedIndexes().pop().row()
+            address = self.__model.get_column_string(0, row).replace(' ', '')
+            dialog.addressComboBox.setItemText(0, address)
+            dialog.addressComboBox.setCurrentIndex(0)
+            service = self.__model.get_column_string(1, row)
+            dialog.serviceComboBox.setItemText(0, service)
+            dialog.serviceComboBox.setCurrentIndex(0)
+            self.run_rule_dialog(dialog, row)
 
     def run_rule_dialog(self, dialog, row = None):
         if dialog.exec_():
-            address = dialog.addressEdit.text()
-            service = dialog.serviceComboBox.currentText()
+            address = str(dialog.addressComboBox.currentText())
+            service = str(dialog.serviceComboBox.currentText())
             port = None
+            port2 = None
 
+            unmask = address.split("/", 1)
+            if len(unmask) == 2:
+                address = unmask[0]
+                netmask = int(unmask[1])
+            else:
+                netmask = 32
+
+            if address == "*":
+                address = "0.0.0.0"
+                netmask = 0
+
+            if service == "*":
+                service = "0"
             try:
-                port = int(service)
+                range = service.split("-", 1)
+                if len(range) == 2:
+                    port = int(range[0])
+                    port2 = int(range[1])
+                else:
+                    port = int(service)
             except (TypeError, ValueError) as ex:
                 port = self.__model.get_service_port(service)
 
             if port is not None:
-                item = QubesFirewallRuleItem(address, 32, port, None)
-                if row is not None:
-                    self.__model.setChild(row, item)
+                if port2 is not None and port2 <= port:
+                    QMessageBox.warning(None, "Invalid service ports range", "Port {0} is lower than port {1}.".format(port2, port))
                 else:
-                    self.__model.appendChild(item)
+                    item = QubesFirewallRuleItem(address, netmask, port, port2)
+                    if row is not None:
+                        self.__model.setChild(row, item)
+                    else:
+                        self.__model.appendChild(item)
             else:
                 QMessageBox.warning(None, "Invalid service name", "Service '{0} is unknown.".format(service))
 
@@ -112,10 +137,27 @@ class QIPAddressValidator(QValidator):
         super (QIPAddressValidator, self).__init__(parent)
 
     def validate(self, input, pos):
-        hostname = input
+        hostname = str(input)
 
         if len(hostname) > 255 or len(hostname) == 0:
             return (QValidator.Intermediate, pos)
+
+        if hostname == "*":
+            return (QValidator.Acceptable, pos)
+
+        unmask = hostname.split("/", 1)
+        if len(unmask) == 2:
+            hostname = unmask[0]
+            mask = unmask[1]
+            if mask.isdigit() or mask == "":
+                if re.match("^([0-9]{1,3}\.){3}[0-9]{1,3}$", hostname) is None:
+                    return (QValidator.Invalid, pos)
+                if mask != "":
+                    mask = int(unmask[1])
+                    if mask < 0 or mask > 32:
+                        return (QValidator.Invalid, pos)
+            else:
+                return (QValidator.Invalid, pos)
 
         if hostname[-1:] == ".":
             hostname = hostname[:-1]
@@ -135,22 +177,31 @@ class NewFwRuleDlg (QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
         self.setupUi(self)
 
         self.set_ok_enabled(False)
-        self.addressEdit.setValidator(QIPAddressValidator())
-        self.addressEdit.editingFinished.connect(self.address_editing_finished)
-        self.serviceComboBox.setValidator(QRegExpValidator(QRegExp("[a-z][a-z0-9-]+|[0-9]+", Qt.CaseInsensitive), None))
+        self.addressComboBox.setValidator(QIPAddressValidator())
+        self.addressComboBox.editTextChanged.connect(self.address_editing_finished)
+        self.serviceComboBox.setValidator(QRegExpValidator(QRegExp("[a-z][a-z0-9-]+|[0-9]+(-[0-9]+)?", Qt.CaseInsensitive), None))
 
         self.serviceComboBox.setInsertPolicy(QComboBox.InsertAtBottom)
-        self.populate_services_combo()
+        self.populate_combos()
         self.serviceComboBox.setInsertPolicy(QComboBox.InsertAtTop)
 
-    def populate_services_combo(self):
+    def populate_combos(self):
+        example_addresses = [
+                "", "www.example.com",
+                "192.168.1.100", "192.168.0.0/16",
+                "*"
+            ]
         displayed_services = [
+                '',
                 'http', 'https', 'ftp', 'ftps',
                 'smtp', 'pop3', 'pop3s', 'imap', 'imaps', 'nntp', 'nntps',
                 'ssh', 'telnet', 'telnets', 'ntp', 'snmp',
                 'ldap', 'ldaps', 'irc', 'ircs', 'xmpp-client',
                 'syslog', 'printer', 'nfs', 'x11',
+                '*', '1024-1234'
             ]
+        for address in example_addresses:
+            self.addressComboBox.addItem(address)
         for service in displayed_services:
             self.serviceComboBox.addItem(service)
 
@@ -193,8 +244,11 @@ class QubesFirewallRulesModel(QAbstractItemModel):
         QAbstractItemModel.__init__(self, parent)
 
         self.__columnValues = {
-                0: lambda x: self.children[x].address,
-                1: lambda x: "{0}-{1}".format(self.children[x].portBegin, self.children[x].portEnd) if self.children[x].portEnd is not None \
+                0: lambda x: "*" if self.children[x].address == "0.0.0.0" and self.children[x].netmask == 0 \
+                        else self.children[x].address + ("" if self.children[x].netmask == 32 \
+                        else " /{0}".format(self.children[x].netmask)),
+                1: lambda x: "*" if self.children[x].portBegin == 0 \
+                        else "{0}-{1}".format(self.children[x].portBegin, self.children[x].portEnd) if self.children[x].portEnd is not None \
                         else self.get_service_name(self.children[x].portBegin),
         }
         self.__columnNames = {
@@ -223,6 +277,9 @@ class QubesFirewallRulesModel(QAbstractItemModel):
             if service[0] == name:
                 return service[1]
         return None
+
+    def get_column_string(self, col, row):
+        return self.__columnValues[col](row)
 
     def set_vm(self, vm):
         self.__vm = vm
