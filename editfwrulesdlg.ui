@@ -67,14 +67,28 @@
         </widget>
        </item>
        <item>
-        <widget class="QCheckBox" name="dnsCheckBox">
-         <property name="text">
-          <string>Allow DNS queries</string>
-         </property>
-         <property name="checked">
-          <bool>true</bool>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <item>
+          <widget class="QCheckBox" name="dnsCheckBox">
+           <property name="text">
+            <string>Allow DNS queries</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="icmpCheckBox">
+           <property name="text">
+            <string>Allow ICMP traffic</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
       </layout>
      </item>
@@ -133,11 +147,12 @@
  <tabstops>
   <tabstop>policyAllowRadioButton</tabstop>
   <tabstop>policyDenyRadioButton</tabstop>
-  <tabstop>dnsCheckBox</tabstop>
   <tabstop>rulesTreeView</tabstop>
   <tabstop>newRuleButton</tabstop>
   <tabstop>editRuleButton</tabstop>
   <tabstop>deleteRuleButton</tabstop>
+  <tabstop>dnsCheckBox</tabstop>
+  <tabstop>icmpCheckBox</tabstop>
   <tabstop>buttonBox</tabstop>
  </tabstops>
  <resources/>

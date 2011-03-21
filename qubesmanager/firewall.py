@@ -43,6 +43,7 @@ class EditFwRulesDlg (QDialog, ui_editfwrulesdlg.Ui_EditFwRulesDlg):
         self.deleteRuleButton.clicked.connect(self.delete_rule_button_pressed)
         self.policyAllowRadioButton.toggled.connect(self.policy_radio_toggled)
         self.dnsCheckBox.toggled.connect(self.dns_checkbox_toggled)
+        self.icmpCheckBox.toggled.connect(self.icmp_checkbox_toggled)
 
     def set_model(self, model):
         self.__model = model
@@ -51,6 +52,7 @@ class EditFwRulesDlg (QDialog, ui_editfwrulesdlg.Ui_EditFwRulesDlg):
         self.rulesTreeView.header().setResizeMode(0, QHeaderView.Stretch)
         self.set_allow(model.allow)
         self.dnsCheckBox.setChecked(model.allowDns)
+        self.icmpCheckBox.setChecked(model.allowIcmp)
         self.setWindowTitle(model.get_vm_name() + " firewall")
 
     def set_allow(self, allow):
@@ -62,6 +64,9 @@ class EditFwRulesDlg (QDialog, ui_editfwrulesdlg.Ui_EditFwRulesDlg):
 
     def dns_checkbox_toggled(self, on):
         self.__model.allowDns = on
+
+    def icmp_checkbox_toggled(self, on):
+        self.__model.allowIcmp = on
 
     def new_rule_button_pressed(self):
         dialog = NewFwRuleDlg()
@@ -228,6 +233,7 @@ class QubesFirewallRulesModel(QAbstractItemModel):
 
         self.allow = conf["allow"]
         self.allowDns = conf["allowDns"]
+        self.allowIcmp = conf["allowIcmp"]
 
         for rule in conf["rules"]:
             self.appendChild(QubesFirewallRuleItem(
@@ -240,7 +246,11 @@ class QubesFirewallRulesModel(QAbstractItemModel):
     def apply_rules(self):
         assert self.__vm is not None
 
-        conf = { "allow": self.allow, "allowDns": self.allowDns, "rules": list() }
+        conf = { "allow": self.allow,
+                "allowDns": self.allowDns,
+                "allowIcmp": self.allowIcmp,
+                "rules": list()
+            }
 
         for rule in self.children:
             conf["rules"].append(
