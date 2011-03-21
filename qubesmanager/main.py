@@ -813,6 +813,10 @@ class VmManagerWindow(QMainWindow):
         model.set_vm(vm)
         dialog.set_model(model)
 
+        if vm.netvm_vm is not None and not vm.netvm_vm.is_proxyvm():
+            QMessageBox.warning (None, "VM configuration problem!", "The '{0}' AppVM is not network connected to a FirewallVM!<p>".format(vm.name) +\
+                    "You may edit the '{0}' VM firewall rules, but these will not take any effect until you connect it to a working Firewall VM.".format(vm.name))
+
         if dialog.exec_():
             model.apply_rules()
 
