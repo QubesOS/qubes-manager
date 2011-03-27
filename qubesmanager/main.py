@@ -827,7 +827,7 @@ class VmManagerWindow(QMainWindow):
         qvm_collection.unlock_db()
 
         for vm in qvm_collection.values():
-            if vm.is_proxyvm():
+            if vm.is_proxyvm() and vm.is_running():
                 error_file = "/local/domain/{0}/qubes_iptables_error".format(vm.get_xid())
 
                 error = subprocess.Popen(
