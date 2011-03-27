@@ -740,6 +740,13 @@ class VmManagerWindow(QMainWindow):
         vm = self.get_selected_vm()
         assert not vm.is_running()
 
+        if vm.is_paused():
+            try:
+                subprocess.check_call (["/usr/sbin/xm", "unpause", vm.name])
+            except Exception as ex:
+                QMessageBox.warning (None, "Error unpausing VM!", "ERROR: {0}".format(ex))
+            return
+
         try:
             vm.verify_files()
             xid = vm.start()
