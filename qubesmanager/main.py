@@ -747,17 +747,36 @@ class VmManagerWindow(QMainWindow):
                 QMessageBox.warning (None, "Error unpausing VM!", "ERROR: {0}".format(ex))
             return
 
+        thread_monitor = ThreadMonitor()
+        thread = threading.Thread (target=self.do_start_vm, args=(vm, thread_monitor))
+        thread.daemon = True
+        thread.start()
+
+        trayIcon.showMessage ("Qubes Manager", "Starting '{0}'...".format(vm.name), msecs=3000)
+
+        while not thread_monitor.is_finished():
+            app.processEvents()
+            time.sleep (0.1)
+
+        if thread_monitor.success:
+            trayIcon.showMessage ("Qubes Manager", "VM '{0}' has been started.".format(vm.name), msecs=3000)
+        else:
+            QMessageBox.warning (None, "Error starting VM!", "ERROR: {0}".format(thread_monitor.error_msg))
+
+    def do_start_vm(self, vm, thread_monitor):
         try:
             vm.verify_files()
             xid = vm.start()
-        except (IOError, OSError, QubesException) as err:
-            QMessageBox.warning (None, "Error starting VM!", "ERROR: {0}".format(err))
+        except Exception as ex:
+            thread_monitor.set_error_msg(str(ex))
+            thread_monitor.set_finished()
             return
 
         retcode = subprocess.call ([qubes_guid_path, "-d", str(xid), "-c", vm.label.color, "-i", vm.label.icon, "-l", str(vm.label.index)])
         if (retcode != 0):
-            QMessageBox.warning (None, "Error starting VM!", "ERROR: Cannot start qubes_guid!")
-            return
+            hread_monitor.set_error_msg("Cannot start qubes_guid!")
+
+        thread_monitor.set_finished()
  
     def pause_vm(self):
         vm = self.get_selected_vm()
