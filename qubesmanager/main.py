@@ -557,7 +557,7 @@ class VmManagerWindow(QMainWindow):
         self.action_pausevm.setEnabled(vm.is_running() and vm.qid != 0)
         self.action_shutdownvm.setEnabled(vm.is_running() and vm.qid != 0)
         self.action_updatevm.setEnabled(vm.is_updateable() and not vm.is_running())
-        self.action_editfwrules.setEnabled(vm.is_networked() and (vm.is_appvm() or vm.is_disposablevm()))
+        self.action_editfwrules.setEnabled(vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
 
     def get_minimum_table_width(self):
         tbl_W = 0
