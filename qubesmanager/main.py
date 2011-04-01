@@ -350,7 +350,7 @@ class VmManagerWindow(QMainWindow):
     max_visible_rows = 14
     update_interval = 1000 # in msec
     fw_rules_apply_check_interval = 5000
-    show_inactive_vms = True
+    show_inactive_vms = False
     columns_states = { 0: [0, 1], 1: [0, 2, 3] }
 
     def __init__(self, parent=None):
@@ -375,7 +375,7 @@ class VmManagerWindow(QMainWindow):
         self.action_updatevm = self.createAction ("Commit VM changes", slot=self.update_vm,
                                              icon="updateable", tip="Commit changes to template (only for 'updateable' template VMs); VM must be stopped")
 
-        self.action_showallvms = self.createAction ("Show/Hide Inactive VMs", slot=None, checkable=True,
+        self.action_showallvms = self.createAction ("Show/Hide Inactive VMs", slot=self.toggle_inactive_view, checkable=True,
                                              icon="showallvms", tip="Show/Hide Inactive VMs")
 
         self.action_showcpuload = self.createAction ("Show/Hide CPU Load chart", slot=self.showcpuload, checkable=True,
@@ -399,6 +399,7 @@ class VmManagerWindow(QMainWindow):
                                    self.action_updatevm, self.action_editfwrules,
                                    None,
                                    self.action_showcpuload,
+                                   self.action_showallvms,
                                    ))
 
         self.table = QTableWidget()
@@ -831,6 +832,11 @@ class VmManagerWindow(QMainWindow):
     def showcpuload(self):
         self.__cpugraphs = self.action_showcpuload.isChecked()
         self.update_table_columns()
+
+    def toggle_inactive_view(self):
+	self.show_inactive_vms = self.action_showallvms.isChecked()
+	self.mark_table_for_update()
+	self.update_table (out_of_schedule = True)
 
     def edit_fw_rules(self):
         vm = self.get_selected_vm()
