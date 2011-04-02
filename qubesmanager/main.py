@@ -326,6 +326,8 @@ class VmShutdownMonitor(QObject):
     def check_if_vm_has_shutdown(self):
         vm = self.vm
         if not vm.is_running():
+            if vm.is_template():
+                trayIcon.showMessage ("Qubes Manager", "You have just modified template '{0}'. You should restart VMs based on it!".format(vm.name), msecs=3000)
             return
 
         reply = QMessageBox.question(None, "VM Shutdown",
