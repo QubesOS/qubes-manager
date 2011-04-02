@@ -138,6 +138,8 @@ class VmInfoWidget (QWidget):
 
         self.setLayout(layout3)
 
+        self.previous_outdated = False
+
     def set_icon(self, icon_path, enabled = True):
         label_icon = QLabel()
         icon = QIcon (icon_path)
@@ -149,6 +151,14 @@ class VmInfoWidget (QWidget):
 
     def update_vm_state (self, vm):
         self.vm_icon.update()
+
+    def update_outdated(self, vm):
+        outdated = vm.is_outdated()
+        if outdated != self.previous_outdated:
+            if outdated:
+                self.label_name.setStyleSheet("* { color: red }")
+            else:
+                self.label_name.setStyleSheet("* { }")
 
 class VmUsageWidget (QWidget):
     def __init__(self, vm, parent = None):
@@ -300,6 +310,7 @@ class VmRowInTable(object):
             self.usage_widget.update_load(self.vm)
             self.load_widget.update_load(self.vm)
             self.mem_widget.update_load(self.vm)
+            self.info_widget.update_outdated(self.vm)
 
 class NewAppVmDlg (QDialog, ui_newappvmdlg.Ui_NewAppVMDlg):
     def __init__(self, parent = None):
