@@ -426,10 +426,15 @@ class VmManagerWindow(QMainWindow):
 
         self.connect(self.table, SIGNAL("itemSelectionChanged()"), self.table_selection_changed)
 
+        self.setFixedWidth (self.get_minimum_table_width())
         self.fill_table()
 
-        tbl_W = self.get_minimum_table_width()
+        self.counter = 0
+        self.shutdown_monitor = {}
+        QTimer.singleShot (self.update_interval, self.update_table)
+        QTimer.singleShot (self.fw_rules_apply_check_interval, self.check_apply_fw_rules)
 
+    def set_table_geom_height(self):
         # TODO: '6' -- WTF?!
         tbl_H = self.toolbar.height() + 6 + \
                 self.table.horizontalHeader().height() + 6
@@ -440,12 +445,8 @@ class VmManagerWindow(QMainWindow):
         for i in range (0, n):
             tbl_H += self.table.rowHeight(i)
 
-        self.setGeometry(self.x(), self.y(), self.x() + tbl_W, self.y() + tbl_H)
+        self.setFixedHeight(tbl_H)
 
-        self.counter = 0
-        self.shutdown_monitor = {}
-        QTimer.singleShot (self.update_interval, self.update_table)
-        QTimer.singleShot (self.fw_rules_apply_check_interval, self.check_apply_fw_rules)
 
     def addActions(self, target, actions):
         for action in actions:
@@ -519,6 +520,7 @@ class VmManagerWindow(QMainWindow):
             row_no += 1
 
         self.table.setRowCount(row_no)
+        self.set_table_geom_height()
         self.vms_list = vms_list
         self.vms_in_table = vms_in_table
         self.reload_table = False
