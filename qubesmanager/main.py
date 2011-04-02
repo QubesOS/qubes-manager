@@ -60,14 +60,14 @@ class VmStatusIcon(QLabel):
         (icon_pixmap, icon_sz) = self.set_vm_icon(self.vm)
         self.setPixmap (icon_pixmap)
         self.setFixedSize (icon_sz)
-        self.previous_power_state = vm.is_running()
+        self.previous_power_state = vm.last_power_state
 
     def update(self):
-        if self.previous_power_state != self.vm.is_running():
+        if self.previous_power_state != self.vm.last_power_state:
             (icon_pixmap, icon_sz) = self.set_vm_icon(self.vm)
             self.setPixmap (icon_pixmap)
             self.setFixedSize (icon_sz)
-            self.previous_power_state = self.vm.is_running()
+            self.previous_power_state = self.vm.last_power_state
 
     def set_vm_icon(self, vm):
         if vm.qid == 0:
@@ -82,7 +82,7 @@ class VmStatusIcon(QLabel):
             icon = QIcon()
 
         icon_sz = QSize (VmManagerWindow.row_height * 0.8, VmManagerWindow.row_height * 0.8)
-        if vm.is_running():
+        if vm.last_power_state:
             icon_pixmap = icon.pixmap(icon_sz)
         else:
             icon_pixmap = icon.pixmap(icon_sz, QIcon.Disabled)
@@ -99,7 +99,7 @@ class VmInfoWidget (QWidget):
 
         label_name = QLabel (vm.name)
 
-        self.vm_running = vm.is_running()
+        self.vm_running = vm.last_power_state
         layout0.addWidget(label_name, alignment=Qt.AlignLeft)
 
         layout1 = QHBoxLayout()
@@ -159,7 +159,8 @@ class VmUsageWidget (QWidget):
         self.cpu_widget.setMinimum(0)
         self.cpu_widget.setMaximum(100)
         self.mem_widget.setMinimum(0)
-        self.mem_widget.setMaximum(100)
+        self.mem_widget.setMaximum(qubes_host.memory_total/(1024*1024))
+        self.mem_widget.setFormat ("%v MB");
         self.cpu_label = QLabel("CPU")
         self.mem_label = QLabel("MEM")
 
@@ -180,10 +181,8 @@ class VmUsageWidget (QWidget):
         self.update_load(vm)
 
     def update_load(self, vm):
-        self.cpu_load = vm.get_cpu_total_load() if vm.is_running() else 0
-        assert self.cpu_load >= 0 and self.cpu_load <= 100, "load = {0}".format(self.load)
-        self.mem_load = vm.get_mem()*100/qubes_host.memory_total if vm.is_running() else 0
-        assert self.mem_load >= 0 and self.mem_load <= 100, "mem = {0}".format(self.load)
+        self.cpu_load = vm.get_cpu_total_load() if vm.last_power_state else 0
+        self.mem_load = vm.get_mem()/(1024*1024) if vm.last_power_state else 0
 
         self.cpu_widget.setValue(self.cpu_load)
         self.mem_widget.setValue(self.mem_load)
@@ -198,12 +197,12 @@ class LoadChartWidget (QWidget):
 
     def __init__(self, vm, parent = None):
         super (LoadChartWidget, self).__init__(parent)
-        self.load = vm.get_cpu_total_load() if vm.is_running() else 0
+        self.load = vm.get_cpu_total_load() if vm.last_power_state else 0
         assert self.load >= 0 and self.load <= 100, "load = {0}".format(self.load)
         self.load_history = [self.load]
 
     def update_load (self, vm):
-        self.load = vm.get_cpu_total_load() if vm.is_running() else 0
+        self.load = vm.get_cpu_total_load() if vm.last_power_state else 0
         assert self.load >= 0 and self.load <= 100, "load = {0}".format(self.load)
         self.load_history.append (self.load)
         self.repaint()
@@ -237,12 +236,12 @@ class MemChartWidget (QWidget):
 
     def __init__(self, vm, parent = None):
         super (MemChartWidget, self).__init__(parent)
-        self.load = vm.get_mem()*100/qubes_host.memory_total if vm.is_running() else 0
+        self.load = vm.get_mem()*100/qubes_host.memory_total if vm.last_power_state else 0
         assert self.load >= 0 and self.load <= 100, "mem = {0}".format(self.load)
         self.load_history = [self.load]
 
     def update_load (self, vm):
-        self.load = vm.get_mem()*100/qubes_host.memory_total if vm.is_running() else 0
+        self.load = vm.get_mem()*100/qubes_host.memory_total if vm.last_power_state else 0
         assert self.load >= 0 and self.load <= 100, "load = {0}".format(self.load)
         self.load_history.append (self.load)
         self.repaint()
@@ -478,10 +477,9 @@ class VmManagerWindow(QMainWindow):
         self.qvm_collection.load()
         self.qvm_collection.unlock_db()
 
-        if self.show_inactive_vms:
-            vms_list = [vm for vm in self.qvm_collection.values()]
-        else:
-            vms_list = [vm for vm in self.qvm_collection.values() if vm.is_running()]
+        vms_list = [vm for vm in self.qvm_collection.values()]
+        for vm in vms_list:
+            vm.last_power_state = vm.is_running()
 
         no_vms = len (vms_list)
         vms_to_display = []
@@ -512,10 +510,15 @@ class VmManagerWindow(QMainWindow):
 
         vms_in_table = []
 
-        for (row_no, vm) in enumerate(vms_list):
+        row_no = 0
+        for vm in vms_list:
+            if (not self.show_inactive_vms) and (not vm.last_power_state):
+                continue
             vm_row = VmRowInTable (vm, row_no, self.table)
             vms_in_table.append (vm_row)
+            row_no += 1
 
+        self.table.setRowCount(row_no)
         self.vms_list = vms_list
         self.vms_in_table = vms_in_table
         self.reload_table = False
@@ -526,7 +529,15 @@ class VmManagerWindow(QMainWindow):
 
     # When calling update_table() directly, always use out_of_schedule=True!
     def update_table(self, out_of_schedule=False):
-        if self.reload_table:
+
+        some_vms_have_changed_power_state = False
+        for vm in self.vms_list:
+            state = vm.is_running();
+            if vm.last_power_state != state:
+                vm.last_power_state = state
+                some_vms_have_changed_power_state = True
+
+        if self.reload_table or ((not self.show_inactive_vms) and some_vms_have_changed_power_state): 
             self.fill_table()
 
         for vm_row in self.vms_in_table:
@@ -553,11 +564,11 @@ class VmManagerWindow(QMainWindow):
 
         # Update available actions:
 
-        self.action_removevm.setEnabled(not vm.installed_by_rpm and not vm.is_running())
-        self.action_resumevm.setEnabled(not vm.is_running())
-        self.action_pausevm.setEnabled(vm.is_running() and vm.qid != 0)
-        self.action_shutdownvm.setEnabled(vm.is_running() and vm.qid != 0)
-        self.action_updatevm.setEnabled(vm.is_updateable() and not vm.is_running())
+        self.action_removevm.setEnabled(not vm.installed_by_rpm and not vm.last_power_state)
+        self.action_resumevm.setEnabled(not vm.last_power_state)
+        self.action_pausevm.setEnabled(vm.last_power_state and vm.qid != 0)
+        self.action_shutdownvm.setEnabled(vm.last_power_state and vm.qid != 0)
+        self.action_updatevm.setEnabled(vm.is_updateable() and not vm.last_power_state)
         self.action_editfwrules.setEnabled(vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
 
     def get_minimum_table_width(self):
@@ -834,9 +845,9 @@ class VmManagerWindow(QMainWindow):
         self.update_table_columns()
 
     def toggle_inactive_view(self):
-	self.show_inactive_vms = self.action_showallvms.isChecked()
-	self.mark_table_for_update()
-	self.update_table (out_of_schedule = True)
+        self.show_inactive_vms = self.action_showallvms.isChecked()
+        self.mark_table_for_update()
+        self.update_table(out_of_schedule = True)
 
     def edit_fw_rules(self):
         vm = self.get_selected_vm()
