@@ -532,20 +532,21 @@ class VmManagerWindow(QMainWindow):
     # When calling update_table() directly, always use out_of_schedule=True!
     def update_table(self, out_of_schedule=False):
 
-        some_vms_have_changed_power_state = False
-        for vm in self.vms_list:
-            state = vm.is_running();
-            if vm.last_power_state != state:
-                vm.last_power_state = state
-                some_vms_have_changed_power_state = True
+        if manager_window.isVisible():
+            some_vms_have_changed_power_state = False
+            for vm in self.vms_list:
+                state = vm.is_running();
+                if vm.last_power_state != state:
+                    vm.last_power_state = state
+                    some_vms_have_changed_power_state = True
 
-        if self.reload_table or ((not self.show_inactive_vms) and some_vms_have_changed_power_state): 
-            self.fill_table()
+            if self.reload_table or ((not self.show_inactive_vms) and some_vms_have_changed_power_state): 
+                self.fill_table()
 
-        for vm_row in self.vms_in_table:
-            vm_row.update(self.counter)
+            for vm_row in self.vms_in_table:
+                vm_row.update(self.counter)
 
-        self.table_selection_changed()
+            self.table_selection_changed()
 
         if not out_of_schedule:
             self.counter += 1
