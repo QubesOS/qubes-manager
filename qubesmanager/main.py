@@ -104,8 +104,10 @@ class VmInfoWidget (QWidget):
 
         layout1 = QHBoxLayout()
 
-        if vm.is_appvm() or vm.is_disposablevm():
-            self.label_tmpl = QLabel ("<i><font color=\"gray\">" + (vm.template_vm.name if vm.template_vm is not None else "--") + "</i></font>")
+        if vm.template_vm is not None:
+            self.label_tmpl = QLabel ("<i><font color=\"gray\">" + (vm.template_vm.name) + "</i></font>")
+        elif vm.is_appvm(): # and vm.template_vm is None
+            self.label_tmpl = QLabel ("<i><font color=\"gray\">StandaloneVM</i></font>")
         elif vm.is_template():
             self.label_tmpl = QLabel ("<i><font color=\"gray\">TemplateVM</i></font>")
         elif vm.qid == 0:
