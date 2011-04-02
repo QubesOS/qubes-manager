@@ -97,23 +97,23 @@ class VmInfoWidget (QWidget):
 
         layout0 = QHBoxLayout()
 
-        label_name = QLabel (vm.name)
+        self.label_name = QLabel (vm.name)
 
         self.vm_running = vm.is_running()
-        layout0.addWidget(label_name, alignment=Qt.AlignLeft)
+        layout0.addWidget(self.label_name, alignment=Qt.AlignLeft)
 
         layout1 = QHBoxLayout()
 
         if vm.is_appvm() or vm.is_disposablevm():
-            label_tmpl = QLabel ("<i><font color=\"gray\">" + (vm.template_vm.name if vm.template_vm is not None else "--") + "</i></font>")
+            self.label_tmpl = QLabel ("<i><font color=\"gray\">" + (vm.template_vm.name if vm.template_vm is not None else "--") + "</i></font>")
         elif vm.is_template():
-            label_tmpl = QLabel ("<i><font color=\"gray\">TemplateVM</i></font>")
+            self.label_tmpl = QLabel ("<i><font color=\"gray\">TemplateVM</i></font>")
         elif vm.qid == 0:
-            label_tmpl = QLabel ("<i><font color=\"gray\">AdminVM</i></font>")
+            self.label_tmpl = QLabel ("<i><font color=\"gray\">AdminVM</i></font>")
         elif vm.is_netvm():
-            label_tmpl = QLabel ("<i><font color=\"gray\">NetVM</i></font>")
+            self.label_tmpl = QLabel ("<i><font color=\"gray\">NetVM</i></font>")
         else:
-            label_tmpl = QLabel ("")
+            self.label_tmpl = QLabel ("")
 
         label_icon_networked = self.set_icon(":/networking.png", vm.is_networked())
         layout1.addWidget(label_icon_networked, alignment=Qt.AlignLeft)
@@ -122,7 +122,7 @@ class VmInfoWidget (QWidget):
             label_icon_updtbl = self.set_icon(":/updateable.png", True)
             layout1.addWidget(label_icon_updtbl, alignment=Qt.AlignLeft)
 
-        layout1.addWidget(label_tmpl, alignment=Qt.AlignLeft)
+        layout1.addWidget(self.label_tmpl, alignment=Qt.AlignLeft)
 
         layout1.addStretch()
 
