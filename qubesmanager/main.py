@@ -493,9 +493,9 @@ class VmManagerWindow(QMainWindow):
         self.qvm_collection.unlock_db()
 
         if self.show_inactive_vms:
-            vms_list = [vm for vm in self.qvm_collection.values()]
+            vms_list = [vm for vm in self.qvm_collection.values() if not vm.internal]
         else:
-            vms_list = [vm for vm in self.qvm_collection.values() if vm.is_running()]
+            vms_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_running()]
 
         no_vms = len (vms_list)
         vms_to_display = []
@@ -604,7 +604,7 @@ class VmManagerWindow(QMainWindow):
             dialog.vmlabel.insertItem(i, label.name)
             dialog.vmlabel.setItemIcon (i, QIcon(label.icon_path))
 
-        template_vm_list = [vm for vm in self.qvm_collection.values() if vm.is_template()]
+        template_vm_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_template()]
 
         default_index = 0
         for (i, vm) in enumerate(template_vm_list):
