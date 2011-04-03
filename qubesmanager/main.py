@@ -789,7 +789,7 @@ class VmManagerWindow(QMainWindow):
 
         retcode = subprocess.call ([qubes_guid_path, "-d", str(xid), "-c", vm.label.color, "-i", vm.label.icon, "-l", str(vm.label.index)])
         if (retcode != 0):
-            hread_monitor.set_error_msg("Cannot start qubes_guid!")
+            thread_monitor.set_error_msg("Cannot start qubes_guid!")
 
         thread_monitor.set_finished()
  
