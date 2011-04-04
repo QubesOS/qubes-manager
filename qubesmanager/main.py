@@ -97,23 +97,25 @@ class VmInfoWidget (QWidget):
 
         layout0 = QHBoxLayout()
 
-        label_name = QLabel (vm.name)
+        self.label_name = QLabel (vm.name)
 
         self.vm_running = vm.last_power_state
-        layout0.addWidget(label_name, alignment=Qt.AlignLeft)
+        layout0.addWidget(self.label_name, alignment=Qt.AlignLeft)
 
         layout1 = QHBoxLayout()
 
-        if vm.is_appvm() or vm.is_disposablevm():
-            label_tmpl = QLabel ("<i><font color=\"gray\">" + (vm.template_vm.name if vm.template_vm is not None else "--") + "</i></font>")
+        if vm.template_vm is not None:
+            self.label_tmpl = QLabel ("<i><font color=\"gray\">" + (vm.template_vm.name) + "</i></font>")
+        elif vm.is_appvm(): # and vm.template_vm is None
+            self.label_tmpl = QLabel ("<i><font color=\"gray\">StandaloneVM</i></font>")
         elif vm.is_template():
-            label_tmpl = QLabel ("<i><font color=\"gray\">TemplateVM</i></font>")
+            self.label_tmpl = QLabel ("<i><font color=\"gray\">TemplateVM</i></font>")
         elif vm.qid == 0:
-            label_tmpl = QLabel ("<i><font color=\"gray\">AdminVM</i></font>")
+            self.label_tmpl = QLabel ("<i><font color=\"gray\">AdminVM</i></font>")
         elif vm.is_netvm():
-            label_tmpl = QLabel ("<i><font color=\"gray\">NetVM</i></font>")
+            self.label_tmpl = QLabel ("<i><font color=\"gray\">NetVM</i></font>")
         else:
-            label_tmpl = QLabel ("")
+            self.label_tmpl = QLabel ("")
 
         label_icon_networked = self.set_icon(":/networking.png", vm.is_networked())
         layout1.addWidget(label_icon_networked, alignment=Qt.AlignLeft)
@@ -122,7 +124,7 @@ class VmInfoWidget (QWidget):
             label_icon_updtbl = self.set_icon(":/updateable.png", True)
             layout1.addWidget(label_icon_updtbl, alignment=Qt.AlignLeft)
 
-        layout1.addWidget(label_tmpl, alignment=Qt.AlignLeft)
+        layout1.addWidget(self.label_tmpl, alignment=Qt.AlignLeft)
 
         layout1.addStretch()
 
@@ -138,6 +140,8 @@ class VmInfoWidget (QWidget):
 
         self.setLayout(layout3)
 
+        self.previous_outdated = False
+
     def set_icon(self, icon_path, enabled = True):
         label_icon = QLabel()
         icon = QIcon (icon_path)
@@ -149,6 +153,14 @@ class VmInfoWidget (QWidget):
 
     def update_vm_state (self, vm):
         self.vm_icon.update()
+
+    def update_outdated(self, vm):
+        outdated = vm.is_outdated()
+        if outdated != self.previous_outdated:
+            if outdated:
+                self.label_name.setStyleSheet("* { color: red }")
+            else:
+                self.label_name.setStyleSheet("* { }")
 
 class VmUsageWidget (QWidget):
     def __init__(self, vm, parent = None):
@@ -299,6 +311,7 @@ class VmRowInTable(object):
             self.usage_widget.update_load(self.vm)
             self.load_widget.update_load(self.vm)
             self.mem_widget.update_load(self.vm)
+            self.info_widget.update_outdated(self.vm)
 
 class NewAppVmDlg (QDialog, ui_newappvmdlg.Ui_NewAppVMDlg):
     def __init__(self, parent = None):
@@ -314,6 +327,8 @@ class VmShutdownMonitor(QObject):
     def check_if_vm_has_shutdown(self):
         vm = self.vm
         if not vm.is_running():
+            if vm.is_template():
+                trayIcon.showMessage ("Qubes Manager", "You have just modified template '{0}'. You should restart VMs based on it!".format(vm.name), msecs=3000)
             return
 
         reply = QMessageBox.question(None, "VM Shutdown",
@@ -515,6 +530,8 @@ class VmManagerWindow(QMainWindow):
         for vm in vms_list:
             if (not self.show_inactive_vms) and (not vm.last_power_state):
                 continue
+            if vm.internal:
+                continue
             vm_row = VmRowInTable (vm, row_no, self.table)
             vms_in_table.append (vm_row)
             row_no += 1
@@ -604,7 +621,7 @@ class VmManagerWindow(QMainWindow):
             dialog.vmlabel.insertItem(i, label.name)
             dialog.vmlabel.setItemIcon (i, QIcon(label.icon_path))
 
-        template_vm_list = [vm for vm in self.qvm_collection.values() if vm.is_template()]
+        template_vm_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_template()]
 
         default_index = 0
         for (i, vm) in enumerate(template_vm_list):
@@ -789,7 +806,7 @@ class VmManagerWindow(QMainWindow):
 
         retcode = subprocess.call ([qubes_guid_path, "-d", str(xid), "-c", vm.label.color, "-i", vm.label.icon, "-l", str(vm.label.index)])
         if (retcode != 0):
-            hread_monitor.set_error_msg("Cannot start qubes_guid!")
+            thread_monitor.set_error_msg("Cannot start qubes_guid!")
 
         thread_monitor.set_finished()
  
