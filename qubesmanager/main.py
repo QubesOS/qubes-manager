@@ -160,7 +160,7 @@ class VmInfoWidget (QWidget):
             if outdated:
                 self.label_name.setStyleSheet("* { color: red }")
             else:
-                self.label_name.setStyleSheet("* { }")
+                self.label_name.setStyleSheet("* { color: normal }")
 
 class VmUsageWidget (QWidget):
     def __init__(self, vm, parent = None):
