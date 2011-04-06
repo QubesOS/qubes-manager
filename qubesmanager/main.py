@@ -441,8 +441,10 @@ class VmManagerWindow(QMainWindow):
 
         self.connect(self.table, SIGNAL("itemSelectionChanged()"), self.table_selection_changed)
 
+        cur_pos = self.pos()
         self.setFixedWidth (self.get_minimum_table_width())
         self.fill_table()
+        self.move(cur_pos)
 
         self.counter = 0
         self.shutdown_monitor = {}
