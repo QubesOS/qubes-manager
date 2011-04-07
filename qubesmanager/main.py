@@ -158,7 +158,7 @@ class VmInfoWidget (QWidget):
         outdated = vm.is_outdated()
         if outdated != self.previous_outdated:
             if outdated:
-                self.label_name.setText(vm.name + "<small><font color=\"gray\"> (outdated)</font></small>")
+                self.label_name.setText(vm.name + "<small><font color=\"red\"> (outdated)</font></small>")
             else:
                 self.label_name.setText(vm.name)
         self.previous_outdated = outdated
