@@ -159,8 +159,10 @@ class VmInfoWidget (QWidget):
         if outdated != self.previous_outdated:
             if outdated:
                 self.label_name.setStyleSheet("* { color: red }")
+                self.label_name.setText(vm.name + " (outdated)")
             else:
                 self.label_name.setStyleSheet("* { color: normal }")
+                self.label_name.setText(vm.name)
 
 class VmUsageWidget (QWidget):
     def __init__(self, vm, parent = None):
@@ -328,7 +330,7 @@ class VmShutdownMonitor(QObject):
         vm = self.vm
         if not vm.is_running():
             if vm.is_template():
-                trayIcon.showMessage ("Qubes Manager", "You have just modified template '{0}'. You should restart VMs based on it!".format(vm.name), msecs=3000)
+                trayIcon.showMessage ("Qubes Manager", "You have just modified template '{0}'. You should now restart all the VMs based on it, so they could see the changes.".format(vm.name), msecs=8000)
             return
 
         reply = QMessageBox.question(None, "VM Shutdown",
