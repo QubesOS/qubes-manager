@@ -410,7 +410,7 @@ class VmManagerWindow(QMainWindow):
         self.addActions (self.toolbar, (self.action_createvm, self.action_removevm,
                                    None,
                                    self.action_resumevm, self.action_shutdownvm,
-                                   self.action_updatevm, self.action_editfwrules,
+                                   self.action_editfwrules,
                                    None,
                                    self.action_showcpuload,
                                    self.action_showallvms,
