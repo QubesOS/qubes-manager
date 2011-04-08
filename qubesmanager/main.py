@@ -406,6 +406,8 @@ class VmManagerWindow(QMainWindow):
         self.action_shutdownvm.setDisabled(True)
         self.action_updatevm.setDisabled(True)
 
+        self.action_showallvms.setChecked(self.show_inactive_vms)
+
         self.toolbar = self.addToolBar ("Toolbar")
         self.toolbar.setFloatable(False)
         self.addActions (self.toolbar, (self.action_createvm, self.action_removevm,
