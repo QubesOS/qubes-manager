@@ -365,7 +365,7 @@ class VmManagerWindow(QMainWindow):
     max_visible_rows = 14
     update_interval = 1000 # in msec
     fw_rules_apply_check_interval = 5000
-    show_inactive_vms = True
+    show_inactive_vms = False
     columns_states = { 0: [0, 1], 1: [0, 2, 3] }
 
     def __init__(self, parent=None):
