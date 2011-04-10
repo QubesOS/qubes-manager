@@ -605,8 +605,9 @@ class VmManagerWindow(QMainWindow):
         return tbl_W
 
     def closeEvent (self, event):
-        self.hide()
-        event.ignore()
+        if event.spontaneous(): # There is something borked in Qt, as the logic here is inverted on X11
+            self.hide()
+            event.ignore()
 
     def create_appvm(self):
         dialog = NewAppVmDlg()
