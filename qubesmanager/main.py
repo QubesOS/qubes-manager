@@ -379,7 +379,7 @@ class VmManagerWindow(QMainWindow):
                                              icon="removevm", tip="Remove an existing AppVM (must be stopped first)")
 
         self.action_resumevm = self.createAction ("Start/Resume VM", slot=self.resume_vm,
-                                             icon="resumevm", tip="Start/Resusme a VM")
+                                             icon="resumevm", tip="Start/Resume a VM")
 
         self.action_pausevm = self.createAction ("Pause VM", slot=self.pause_vm,
                                              icon="pausevm", tip="Pause a running VM")
