@@ -28,9 +28,11 @@ python -O -m compileall qubesmanager
 %install
 mkdir -p $RPM_BUILD_ROOT/usr/bin/
 cp qubes-manager $RPM_BUILD_ROOT/usr/bin
+cp qubes-appmenu-select $RPM_BUILD_ROOT/usr/bin
 
 mkdir -p $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager/
 cp qubesmanager/main.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/appmenu_select.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/firewall.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/qrc_resources.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/__init__.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
@@ -55,12 +57,16 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 /usr/bin/qubes-manager
+/usr/bin/qubes-appmenu-select
 %{python_sitearch}/qubesmanager/__init__.py
 %{python_sitearch}/qubesmanager/__init__.pyo
 %{python_sitearch}/qubesmanager/__init__.pyc
 %{python_sitearch}/qubesmanager/main.py
 %{python_sitearch}/qubesmanager/main.pyc
 %{python_sitearch}/qubesmanager/main.pyo
+%{python_sitearch}/qubesmanager/appmenu_select.py
+%{python_sitearch}/qubesmanager/appmenu_select.pyc
+%{python_sitearch}/qubesmanager/appmenu_select.pyo
 %{python_sitearch}/qubesmanager/firewall.py
 %{python_sitearch}/qubesmanager/firewall.pyc
 %{python_sitearch}/qubesmanager/firewall.pyo
