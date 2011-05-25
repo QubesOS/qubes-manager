@@ -35,6 +35,7 @@ from qubes.qubes import QubesHost
 
 import qubesmanager.qrc_resources
 import ui_newappvmdlg
+from appmenu_select import AppmenuSelectWindow
 
 from firewall import EditFwRulesDlg, QubesFirewallRulesModel
 
@@ -388,8 +389,8 @@ class VmManagerWindow(QMainWindow):
         self.action_shutdownvm = self.createAction ("Shutdown VM", slot=self.shutdown_vm,
                                              icon="shutdownvm", tip="Shutdown a running VM")
 
-        self.action_updatevm = self.createAction ("Commit VM changes", slot=self.update_vm,
-                                             icon="updateable", tip="Commit changes to template (only for 'updateable' template VMs); VM must be stopped")
+        self.action_appmenus = self.createAction ("Select VM applications", slot=self.appmenus_select,
+                                             icon="root", tip="Select applications present in menu for this VM")
 
         self.action_showallvms = self.createAction ("Show/Hide Inactive VMs", slot=self.toggle_inactive_view, checkable=True,
                                              icon="showallvms", tip="Show/Hide Inactive VMs")
@@ -405,7 +406,7 @@ class VmManagerWindow(QMainWindow):
         self.action_resumevm.setDisabled(True)
         self.action_pausevm.setDisabled(True)
         self.action_shutdownvm.setDisabled(True)
-        self.action_updatevm.setDisabled(True)
+        self.action_appmenus.setDisabled(True)
 
         self.action_showallvms.setChecked(self.show_inactive_vms)
 
@@ -414,7 +415,7 @@ class VmManagerWindow(QMainWindow):
         self.addActions (self.toolbar, (self.action_createvm, self.action_removevm,
                                    None,
                                    self.action_resumevm, self.action_shutdownvm,
-                                   self.action_editfwrules,
+                                   self.action_editfwrules, self.action_appmenus,
                                    None,
                                    self.action_showcpuload,
                                    self.action_showallvms,
@@ -594,7 +595,7 @@ class VmManagerWindow(QMainWindow):
         self.action_resumevm.setEnabled(not vm.last_power_state)
         self.action_pausevm.setEnabled(vm.last_power_state and vm.qid != 0)
         self.action_shutdownvm.setEnabled(not vm.is_netvm() and vm.last_power_state and vm.qid != 0)
-        self.action_updatevm.setEnabled(vm.is_updateable() and not vm.last_power_state)
+        self.action_appmenus.setEnabled(not vm.is_netvm())
         self.action_editfwrules.setEnabled(vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
 
     def get_minimum_table_width(self):
@@ -847,6 +848,11 @@ class VmManagerWindow(QMainWindow):
             trayIcon.showMessage ("Qubes Manager", "VM '{0}' is shutting down...".format(vm.name), msecs=3000)
             self.shutdown_monitor[vm.qid] = VmShutdownMonitor (vm)
             QTimer.singleShot (vm_shutdown_timeout, self.shutdown_monitor[vm.qid].check_if_vm_has_shutdown)
+
+    def appmenus_select(self):
+        vm = self.get_selected_vm()
+        select_window = AppmenuSelectWindow(vm)
+        select_window.exec_()
 
     def update_vm(self):
         vm = self.get_selected_vm()
