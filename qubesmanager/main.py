@@ -166,7 +166,7 @@ class VmInfoWidget (QWidget):
         self.previous_outdated = outdated
 
 class VmUsageWidget (QWidget):
-    def __init__(self, vm, parent = None):
+    def __init__(self, vm, cpu_load = 0, parent = None):
         super (VmUsageWidget, self).__init__(parent)
 
         self.cpu_widget = QProgressBar()
@@ -174,7 +174,7 @@ class VmUsageWidget (QWidget):
         self.cpu_widget.setMinimum(0)
         self.cpu_widget.setMaximum(100)
         self.mem_widget.setMinimum(0)
-        self.mem_widget.setMaximum(qubes_host.memory_total/(1024*1024))
+        self.mem_widget.setMaximum(qubes_host.memory_total/1024)
         self.mem_widget.setFormat ("%v MB");
         self.cpu_label = QLabel("CPU")
         self.mem_label = QLabel("MEM")
@@ -193,11 +193,11 @@ class VmUsageWidget (QWidget):
 
         self.setLayout(layout)
 
-        self.update_load(vm)
+        self.update_load(vm, cpu_load)
 
-    def update_load(self, vm):
-        self.cpu_load = vm.get_cpu_total_load() if vm.last_power_state else 0
-        self.mem_load = vm.get_mem()/(1024*1024) if vm.last_power_state else 0
+    def update_load(self, vm, cpu_load):
+        self.cpu_load = cpu_load if vm.last_power_state else 0
+        self.mem_load = vm.get_mem()/1024 if vm.last_power_state else 0
 
         self.cpu_widget.setValue(self.cpu_load)
         self.mem_widget.setValue(self.mem_load)
@@ -210,14 +210,14 @@ class VmUsageWidget (QWidget):
 
 class LoadChartWidget (QWidget):
 
-    def __init__(self, vm, parent = None):
+    def __init__(self, vm, cpu_load = 0, parent = None):
         super (LoadChartWidget, self).__init__(parent)
-        self.load = vm.get_cpu_total_load() if vm.last_power_state else 0
+        self.load = cpu_load if vm.last_power_state else 0
         assert self.load >= 0 and self.load <= 100, "load = {0}".format(self.load)
         self.load_history = [self.load]
 
-    def update_load (self, vm):
-        self.load = vm.get_cpu_total_load() if vm.last_power_state else 0
+    def update_load (self, vm, cpu_load):
+        self.load = cpu_load if vm.last_power_state else 0
         assert self.load >= 0 and self.load <= 100, "load = {0}".format(self.load)
         self.load_history.append (self.load)
         self.repaint()
@@ -308,11 +308,11 @@ class VmRowInTable(object):
         table.setCellWidget(row_no, 3, self.mem_widget)
 
 
-    def update(self, counter):
+    def update(self, counter, cpu_load = None):
         self.info_widget.update_vm_state(self.vm)
-        if counter % 3 == 0:
-            self.usage_widget.update_load(self.vm)
-            self.load_widget.update_load(self.vm)
+        if cpu_load is not None:
+            self.usage_widget.update_load(self.vm, cpu_load)
+            self.load_widget.update_load(self.vm, cpu_load)
             self.mem_widget.update_load(self.vm)
             self.info_widget.update_outdated(self.vm)
 
@@ -453,6 +453,8 @@ class VmManagerWindow(QMainWindow):
 
         self.counter = 0
         self.shutdown_monitor = {}
+        self.last_measure_results = {}
+        self.last_measure_time = time.time()
         QTimer.singleShot (self.update_interval, self.update_table)
         QTimer.singleShot (self.fw_rules_apply_check_interval, self.check_apply_fw_rules)
 
@@ -567,8 +569,21 @@ class VmManagerWindow(QMainWindow):
             if self.reload_table or ((not self.show_inactive_vms) and some_vms_have_changed_power_state): 
                 self.fill_table()
 
-            for vm_row in self.vms_in_table:
-                vm_row.update(self.counter)
+            if self.counter % 3 == 0 or out_of_schedule:
+                (self.last_measure_time, self.last_measure_results) = \
+                    qubes_host.measure_cpu_usage(self.last_measure_results,
+                    self.last_measure_time)
+
+                for vm_row in self.vms_in_table:
+                    cur_cpu_load = None
+                    if vm_row.vm.get_xid() in self.last_measure_results:
+                        cur_cpu_load = self.last_measure_results[vm_row.vm.xid]['cpu_usage']
+                    else:
+                        cur_cpu_load = 0
+                    vm_row.update(self.counter, cpu_load = cur_cpu_load)
+            else:
+                for vm_row in self.vms_in_table:
+                    vm_row.update(self.counter)
 
             self.table_selection_changed()
 
