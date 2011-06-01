@@ -987,6 +987,7 @@ def toggle_manager():
         manager_window.hide()
     else:
         manager_window.show()
+        manager_window.update_table(True)
 
 def exit_app():
     notifier.stop()
