@@ -366,7 +366,6 @@ class VmManagerWindow(QMainWindow):
     row_height = 50
     max_visible_rows = 14
     update_interval = 1000 # in msec
-    fw_rules_apply_check_interval = 5000
     show_inactive_vms = True
     columns_states = { 0: [0, 1], 1: [0, 2, 3] }
 
@@ -456,7 +455,6 @@ class VmManagerWindow(QMainWindow):
         self.last_measure_results = {}
         self.last_measure_time = time.time()
         QTimer.singleShot (self.update_interval, self.update_table)
-        QTimer.singleShot (self.fw_rules_apply_check_interval, self.check_apply_fw_rules)
 
     def set_table_geom_height(self):
         # TODO: '6' -- WTF?!
@@ -910,34 +908,6 @@ class VmManagerWindow(QMainWindow):
 
         if dialog.exec_():
             model.apply_rules()
-
-    def check_apply_fw_rules(self):
-        qvm_collection = QubesVmCollection()
-        qvm_collection.lock_db_for_reading()
-        qvm_collection.load()
-        qvm_collection.unlock_db()
-
-        for vm in qvm_collection.values():
-            if vm.is_proxyvm() and vm.is_running():
-                error_file = "/local/domain/{0}/qubes_iptables_error".format(vm.get_xid())
-
-                error = subprocess.Popen(
-                        ["/usr/bin/xenstore-read", error_file],
-                        stdout=subprocess.PIPE).communicate()[0]
-                error = error.strip(" \n\t")
-                if error != "":
-                    vm.rules_applied = False
-                    trayIcon.showMessage (
-                            "Error applying firewall rules on '{0}'!".format(vm.name),
-                            "ERROR: {0}".format(error.decode('string_escape')),
-                            QSystemTrayIcon.Critical
-                        )
-                    retcode = subprocess.check_call (
-                            ["/usr/bin/xenstore-write", error_file, ""])
-                else:
-                    vm.rules_applied = True
-
-        QTimer.singleShot(self.fw_rules_apply_check_interval, self.check_apply_fw_rules)
 
 class QubesTrayIcon(QSystemTrayIcon):
     def __init__(self, icon):
