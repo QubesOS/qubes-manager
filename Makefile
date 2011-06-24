@@ -22,6 +22,10 @@ update-repo-current:
 	ln -f $(RPMS_DIR)/x86_64/qubes-manager-*$(VERSION)*.rpm ../yum/current-release/current/dom0/rpm/
 	cd ../yum && ./update_repo.sh
 
+update-repo-current-testing:
+	ln -f $(RPMS_DIR)/x86_64/qubes-manager-*$(VERSION)*.rpm ../yum/current-release/current-testing/dom0/rpm/
+	cd ../yum && ./update_repo.sh
+
 update-repo-unstable:
 	ln -f $(RPMS_DIR)/x86_64/qubes-manager-*$(VERSION)*.rpm ../yum/current-release/unstable/dom0/rpm/
 	cd ../yum && ./update_repo.sh
