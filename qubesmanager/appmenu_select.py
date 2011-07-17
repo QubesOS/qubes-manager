@@ -82,12 +82,25 @@ class AppmenuSelectWindow(QDialog):
     def __init__(self, vm, parent=None):
         super(AppmenuSelectWindow, self).__init__(parent)
 
+#        self.action_reload = self.createAction ("Reload", slot=self.reload_templates,
+#                                             icon="root", tip="Reload application list from VM")
+#        self.action_save = self.createAction ("Save", slot=self.save_and_apply,
+#                                             icon="updateable", tip="Save and apply setting")
+#        self.toolbar = self.addToolBar ("Toolbar")
+#        self.toolbar.setFloatable(False)
+#        self.addActions (self.toolbar, (self.action_reload, self.action_save,
+#                                   ))
+
+
         self.gridLayout = QGridLayout(self)
 
+        self.reload_button = QPushButton("Reload")
         self.buttonBox = QDialogButtonBox(self)
         self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel|QDialogButtonBox.Ok)
+        self.connect(self.reload_button, SIGNAL("clicked()"), self.reload_templates)
         self.connect(self.buttonBox, SIGNAL("accepted()"), self.save_and_apply)
         self.connect(self.buttonBox, SIGNAL("rejected()"), self.reject)
+        self.buttonBox.addButton(self.reload_button, QDialogButtonBox.ActionRole)
 
         self.table = QTableWidget(self)
         self.table.clear()
@@ -144,6 +157,16 @@ class AppmenuSelectWindow(QDialog):
         if checkable:
             action.setCheckable(True)
         return action
+
+    def reload_templates(self):
+        if not self.source_vm.is_running():
+            QMessageBox.warning(None, "Qubes Appmenu Select Warning",
+                "VM must '{0}' be running to retrieve applications list from it.".format(self.source_vm.name))
+            return
+
+        subprocess.check_call(['qvm-sync-appmenus', self.source_vm.name])
+        self.fill_table()
+        self.load_list_of_selected()
 
     def fill_table(self):
 
