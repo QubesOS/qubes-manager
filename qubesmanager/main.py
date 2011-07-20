@@ -697,7 +697,6 @@ class VmManagerWindow(QMainWindow):
 
             vm = self.qvm_collection.add_new_appvm(vmname, template_vm, label = label)
             vm.create_on_disk(verbose=False)
-            vm.add_to_xen_storage()
             firewall = vm.get_firewall_conf()
             firewall["allow"] = allow_networking
             firewall["allowDns"] = allow_networking
@@ -778,7 +777,6 @@ class VmManagerWindow(QMainWindow):
             if vm.is_netvm() and qvm_collection.default_netvm_qid == vm.qid:
                 qvm_collection.default_netvm_qid = None
 
-            vm.remove_from_xen_storage()
             vm.remove_from_disk()
             self.qvm_collection.pop(vm.qid)
             self.qvm_collection.save()
