@@ -218,7 +218,12 @@ class LoadChartWidget (QWidget):
 
     def update_load (self, vm, cpu_load):
         self.load = cpu_load if vm.last_power_state else 0
-        assert self.load >= 0 and self.load <= 100, "load = {0}".format(self.load)
+        assert self.load >= 0, "load = {0}".format(self.load)
+        # assert self.load >= 0 and self.load <= 100, "load = {0}".format(self.load)
+        if self.load > 100:
+            # FIXME: This is an ugly workaround :/
+            self.load = 100
+
         self.load_history.append (self.load)
         self.repaint()
 
