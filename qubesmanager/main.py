@@ -379,7 +379,7 @@ class ThreadMonitor(QObject):
 
 
 class VmManagerWindow(QMainWindow):
-    columns_widths = [200, 200, 150, 150]
+    columns_widths = [250, 200, 150, 150]
     row_height = 50
     max_visible_rows = 14
     update_interval = 1000 # in msec
