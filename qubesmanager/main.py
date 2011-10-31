@@ -32,6 +32,7 @@ from qubes.qubes import dry_run
 from qubes.qubes import qubes_guid_path
 from qubes.qubes import QubesDaemonPidfile
 from qubes.qubes import QubesHost
+from qubes import qubesutils
 
 import qubesmanager.qrc_resources
 import ui_newappvmdlg
@@ -46,6 +47,7 @@ import time
 import threading
 from datetime import datetime,timedelta
 
+updates_stat_file = 'last_update.stat'
 qubes_guid_path = '/usr/bin/qubes_guid'
 
 class QubesConfigFileWatcher(ProcessEvent):
@@ -397,6 +399,9 @@ class VmManagerWindow(QMainWindow):
         self.action_appmenus = self.createAction ("Select VM applications", slot=self.appmenus_select,
                                              icon="root", tip="Select applications present in menu for this VM")
 
+        self.action_updatevm = self.createAction ("Update VM", slot=self.update_vm,
+                                             icon="updateable", tip="Update VM system")
+
         self.action_showallvms = self.createAction ("Show/Hide Inactive VMs", slot=self.toggle_inactive_view, checkable=True,
                                              icon="showallvms", tip="Show/Hide Inactive VMs")
 
@@ -412,6 +417,7 @@ class VmManagerWindow(QMainWindow):
         self.action_pausevm.setDisabled(True)
         self.action_shutdownvm.setDisabled(True)
         self.action_appmenus.setDisabled(True)
+        self.action_updatevm.setDisabled(True)
 
         self.action_showallvms.setChecked(self.show_inactive_vms)
 
@@ -421,6 +427,7 @@ class VmManagerWindow(QMainWindow):
                                    None,
                                    self.action_resumevm, self.action_shutdownvm,
                                    self.action_editfwrules, self.action_appmenus,
+                                   self.action_updatevm,
                                    None,
                                    self.action_showcpuload,
                                    self.action_showallvms,
@@ -616,6 +623,7 @@ class VmManagerWindow(QMainWindow):
         self.action_shutdownvm.setEnabled(not vm.is_netvm() and vm.last_power_state and vm.qid != 0)
         self.action_appmenus.setEnabled(not vm.is_netvm())
         self.action_editfwrules.setEnabled(vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
+        self.action_updatevm.setEnabled(vm.is_updateable())
 
     def get_minimum_table_width(self):
         tbl_W = 0
@@ -873,22 +881,40 @@ class VmManagerWindow(QMainWindow):
 
     def update_vm(self):
         vm = self.get_selected_vm()
-        assert not vm.is_running()
 
-        reply = QMessageBox.question(None, "VM Update Confirmation",
-                                     "Are you sure you want to commit template <b>'{0}'</b> changes?<br>"
-                                     "<small>AppVMs will see the changes after restart.</small>".format(vm.name),
-                                     QMessageBox.Yes | QMessageBox.Cancel)
+        if not vm.is_running():
+            reply = QMessageBox.question(None, "VM Update Confirmation",
+                    "VM need to be running for update. Do you want to start this VM?<br>",
+                    QMessageBox.Yes | QMessageBox.Cancel)
+            if reply != QMessageBox.Yes:
+                return
+            trayIcon.showMessage ("Qubes Manager", "Starting '{0}'...".format(vm.name), msecs=3000)
 
         app.processEvents()
 
-        if reply == QMessageBox.Yes:
-            try:
-                vm.commit_changes();
-            except Exception as ex:
-                QMessageBox.warning (None, "Error commiting changes!", "ERROR: {0}".format(ex))
-                return
-            trayIcon.showMessage ("Qubes Manager", "Changes to template '{0}' commited.".format(vm.name), msecs=3000)
+        thread_monitor = ThreadMonitor()
+        thread = threading.Thread (target=self.do_update_vm, args=(vm, thread_monitor))
+        thread.daemon = True
+        thread.start()
+
+        while not thread_monitor.is_finished():
+            app.processEvents()
+            time.sleep (0.2)
+
+        if thread_monitor.success:
+            # gpk-update-viewer was started, don't know if user installs updates, but touch stat file anyway
+            open(vm.dir_path + '/' + updates_stat_file, 'w').close()
+        else:
+            QMessageBox.warning (None, "Error VM update!", "ERROR: {0}".format(thread_monitor.error_msg))
+
+    def do_update_vm(self, vm, thread_monitor):
+        try:
+            qubesutils.run_in_vm(vm, "user:gpk-update-viewer", verbose=False, autostart=True)
+        except Exception as ex:
+            thread_monitor.set_error_msg(str(ex))
+            thread_monitor.set_finished()
+            return
+        thread_monitor.set_finished()
 
     def showcpuload(self):
         self.__cpugraphs = self.action_showcpuload.isChecked()
