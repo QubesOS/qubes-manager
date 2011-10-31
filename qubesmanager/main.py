@@ -21,6 +21,7 @@
 #
 
 import sys
+import os
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
@@ -49,6 +50,8 @@ from datetime import datetime,timedelta
 
 updates_stat_file = 'last_update.stat'
 qubes_guid_path = '/usr/bin/qubes_guid'
+
+update_suggestion_interval = 14 # 14 days
 
 class QubesConfigFileWatcher(ProcessEvent):
     def __init__ (self, update_func):
@@ -166,6 +169,12 @@ class VmInfoWidget (QWidget):
             else:
                 self.label_name.setText(vm.name)
         self.previous_outdated = outdated
+        if vm.is_updateable():
+            stat_file = vm.dir_path + '/' + updates_stat_file
+            if not os.path.exists(stat_file) or \
+                time.time() - os.path.getmtime(stat_file) > \
+                update_suggestion_interval * 24 * 3600:
+                    self.label_name.setText(vm.name + "<small><font color=\"red\"> (check update)</font></small>")
 
 class VmUsageWidget (QWidget):
     def __init__(self, vm, cpu_load = 0, parent = None):
