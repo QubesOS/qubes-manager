@@ -32,4 +32,3 @@ update-repo-unstable:
 
 update-repo-installer:
 	ln -f $(RPMS_DIR)/x86_64/qubes-manager-*$(VERSION)*.rpm ../installer/yum/qubes-dom0/rpm/
-	cd ../installer/yum && ./update_repo.sh
