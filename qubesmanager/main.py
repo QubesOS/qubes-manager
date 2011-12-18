@@ -632,7 +632,7 @@ class VmManagerWindow(QMainWindow):
         self.action_shutdownvm.setEnabled(not vm.is_netvm() and vm.last_power_state and vm.qid != 0)
         self.action_appmenus.setEnabled(not vm.is_netvm())
         self.action_editfwrules.setEnabled(vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
-        self.action_updatevm.setEnabled(vm.is_updateable())
+        self.action_updatevm.setEnabled(vm.is_updateable() or vm.qid == 0)
 
     def get_minimum_table_width(self):
         tbl_W = 0
@@ -910,15 +910,19 @@ class VmManagerWindow(QMainWindow):
             app.processEvents()
             time.sleep (0.2)
 
-        if thread_monitor.success:
-            # gpk-update-viewer was started, don't know if user installs updates, but touch stat file anyway
-            open(vm.dir_path + '/' + updates_stat_file, 'w').close()
-        else:
-            QMessageBox.warning (None, "Error VM update!", "ERROR: {0}".format(thread_monitor.error_msg))
+        if vm.qid != 0:    
+            if thread_monitor.success:
+                # gpk-update-viewer was started, don't know if user installs updates, but touch stat file anyway
+                open(vm.dir_path + '/' + updates_stat_file, 'w').close()
+            else:
+                QMessageBox.warning (None, "Error VM update!", "ERROR: {0}".format(thread_monitor.error_msg))
 
     def do_update_vm(self, vm, thread_monitor):
         try:
-            qubesutils.run_in_vm(vm, "user:gpk-update-viewer", verbose=False, autostart=True)
+            if vm.qid == 0:
+                subprocess.check_call (["/usr/bin/qvm-dom0-update", "--gui"])
+            else:
+                qubesutils.run_in_vm(vm, "user:gpk-update-viewer", verbose=False, autostart=True)
         except Exception as ex:
             thread_monitor.set_error_msg(str(ex))
             thread_monitor.set_finished()
