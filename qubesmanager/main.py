@@ -148,6 +148,7 @@ class VmInfoWidget (QWidget):
         self.setLayout(layout3)
 
         self.previous_outdated = False
+        self.previous_update_recommended = False
 
     def set_icon(self, icon_path, enabled = True):
         label_icon = QLabel()
@@ -170,11 +171,20 @@ class VmInfoWidget (QWidget):
                 self.label_name.setText(vm.name)
         self.previous_outdated = outdated
         if vm.is_updateable():
+            update_recommended = self.previous_update_recommended
             stat_file = vm.dir_path + '/' + updates_stat_file
             if not os.path.exists(stat_file) or \
                 time.time() - os.path.getmtime(stat_file) > \
                 update_suggestion_interval * 24 * 3600:
+                    update_recommended = True
+            else:
+                update_recommended = False
+            if update_recommended != self.previous_update_recommended:
+                if update_recommended:
                     self.label_name.setText(vm.name + "<small><font color=\"red\"> (check update)</font></small>")
+                else:
+                    self.label_name.setText(vm.name)
+                self.previous_update_recommended = update_recommended
 
 class VmUsageWidget (QWidget):
     def __init__(self, vm, cpu_load = 0, parent = None):
