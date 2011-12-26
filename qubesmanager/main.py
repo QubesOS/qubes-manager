@@ -181,7 +181,7 @@ class VmInfoWidget (QWidget):
                 update_recommended = False
             if update_recommended != self.previous_update_recommended:
                 if update_recommended:
-                    self.label_name.setText(vm.name + "<small><font color=\"red\"> (check update)</font></small>")
+                    self.label_name.setText(vm.name + "<small><font color=\"#CCCC00\"> (check updates)</font></small>")
                 else:
                     self.label_name.setText(vm.name)
                 self.previous_update_recommended = update_recommended
