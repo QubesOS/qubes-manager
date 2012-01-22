@@ -37,6 +37,7 @@ from qubes import qubesutils
 
 import qubesmanager.qrc_resources
 import ui_newappvmdlg
+from ui_mainwindow import *
 from appmenu_select import AppmenuSelectWindow
 
 from firewall import EditFwRulesDlg, QubesFirewallRulesModel
@@ -102,132 +103,114 @@ class VmInfoWidget (QWidget):
     def __init__(self, vm, parent = None):
         super (VmInfoWidget, self).__init__(parent)
 
-        layout0 = QHBoxLayout()
+        layout = QHBoxLayout ()
 
         self.label_name = QLabel (vm.name)
-
-        self.vm_running = vm.last_power_state
-        layout0.addWidget(self.label_name, alignment=Qt.AlignLeft)
-
-        layout1 = QHBoxLayout()
-
-        if vm.template_vm is not None:
-            self.label_tmpl = QLabel ("<i><font color=\"gray\">" + (vm.template_vm.name) + "</i></font>")
-        elif vm.is_appvm(): # and vm.template_vm is None
-            self.label_tmpl = QLabel ("<i><font color=\"gray\">StandaloneVM</i></font>")
-        elif vm.is_template():
-            self.label_tmpl = QLabel ("<i><font color=\"gray\">TemplateVM</i></font>")
-        elif vm.qid == 0:
-            self.label_tmpl = QLabel ("<i><font color=\"gray\">AdminVM</i></font>")
-        elif vm.is_netvm():
-            self.label_tmpl = QLabel ("<i><font color=\"gray\">NetVM</i></font>")
-        else:
-            self.label_tmpl = QLabel ("")
-
-        label_icon_networked = self.set_icon(":/networking.png", vm.is_networked())
-        layout1.addWidget(label_icon_networked, alignment=Qt.AlignLeft)
-
-        if vm.is_updateable():
-            label_icon_updtbl = self.set_icon(":/updateable.png", True)
-            layout1.addWidget(label_icon_updtbl, alignment=Qt.AlignLeft)
-
-        layout1.addWidget(self.label_tmpl, alignment=Qt.AlignLeft)
-
-        layout1.addStretch()
-
-        layout2 = QVBoxLayout ()
-        layout2.addLayout(layout0)
-        layout2.addLayout(layout1)
-
-        layout3 = QHBoxLayout ()
         self.vm_icon = VmStatusIcon(vm)
-        layout3.addWidget(self.vm_icon)
-        layout3.addSpacing (10)
-        layout3.addLayout(layout2)
 
-        self.setLayout(layout3)
+        layout.addWidget(self.vm_icon)
+        layout.addSpacing (10)
+        layout.addWidget(self.label_name, alignment=Qt.AlignLeft)
 
-        self.previous_outdated = False
-        self.previous_update_recommended = False
-
-    def set_icon(self, icon_path, enabled = True):
-        label_icon = QLabel()
-        icon = QIcon (icon_path)
-        icon_sz = QSize (VmManagerWindow.row_height * 0.3, VmManagerWindow.row_height * 0.3)
-        icon_pixmap = icon.pixmap(icon_sz, QIcon.Disabled if not enabled else QIcon.Normal)
-        label_icon.setPixmap (icon_pixmap)
-        label_icon.setFixedSize (icon_sz)
-        return label_icon
-
+        self.setLayout(layout)
+        
     def update_vm_state (self, vm):
         self.vm_icon.update()
 
-    def update_outdated(self, vm):
-        outdated = vm.is_outdated()
-        if outdated != self.previous_outdated:
-            if outdated:
-                self.label_name.setText(vm.name + "<small><font color=\"red\"> (outdated)</font></small>")
-            else:
-                self.label_name.setText(vm.name)
-        self.previous_outdated = outdated
-        if vm.is_updateable():
-            update_recommended = self.previous_update_recommended
-            stat_file = vm.dir_path + '/' + updates_stat_file
-            if not os.path.exists(stat_file) or \
-                time.time() - os.path.getmtime(stat_file) > \
-                update_suggestion_interval * 24 * 3600:
-                    update_recommended = True
-            else:
-                update_recommended = False
-            if update_recommended != self.previous_update_recommended:
-                if update_recommended:
-                    self.label_name.setText(vm.name + "<small><font color=\"#CCCC00\"> (check updates)</font></small>")
-                else:
-                    self.label_name.setText(vm.name)
-                self.previous_update_recommended = update_recommended
+   
 
-class VmUsageWidget (QWidget):
-    def __init__(self, vm, cpu_load = 0, parent = None):
-        super (VmUsageWidget, self).__init__(parent)
 
-        self.cpu_widget = QProgressBar()
-        self.mem_widget = QProgressBar()
-        self.cpu_widget.setMinimum(0)
-        self.cpu_widget.setMaximum(100)
-        self.mem_widget.setMinimum(0)
-        self.mem_widget.setMaximum(qubes_host.memory_total/1024)
-        self.mem_widget.setFormat ("%v MB");
-        self.cpu_label = QLabel("CPU")
-        self.mem_label = QLabel("MEM")
-
-        layout_cpu = QHBoxLayout()
-        layout_cpu.addWidget(self.cpu_label)
-        layout_cpu.addWidget(self.cpu_widget)
-
-        layout_mem = QHBoxLayout()
-        layout_mem.addWidget(self.mem_label)
-        layout_mem.addWidget(self.mem_widget)
-
+class VmTemplateWidget (QWidget):
+    def __init__(self, vm, parent=None):
+        super(VmTemplateWidget, self).__init__(parent)
+        
         layout = QVBoxLayout()
-        layout.addLayout(layout_cpu)
-        layout.addLayout(layout_mem)
+        self.info_label = None
+        if vm.template_vm is not None:
+            self.label_tmpl = QLabel ("<font color=\"black\">" + (vm.template_vm.name) + "</font>")
+        else:
+            self.label_tmpl = QLabel ("<font color=\"black\">None</font>")
+            if vm.is_appvm(): # and vm.template_vm is None
+                self.info_label = QLabel ("<i><font color=\"gray\">StandaloneVM</i></font>")
+            elif vm.is_template():
+                self.info_label = QLabel ("<i><font color=\"gray\">TemplateVM</i></font>")
+            elif vm.qid == 0:
+                self.info_label = QLabel ("<i><font color=\"gray\">AdminVM</i></font>")
+            elif vm.is_netvm():
+                self.info_label = QLabel ("<i><font color=\"gray\">NetVM</i></font>")
+            else:
+                self.info_label = QLabel ("<i><font color=\"gray\">---</i></font>")
+
+
+        layout.addWidget(self.label_tmpl, alignment=Qt.AlignHCenter)
+        if self.info_label != None:
+            layout.addWidget(self.info_label, alignment=Qt.AlignHCenter)
 
         self.setLayout(layout)
 
-        self.update_load(vm, cpu_load)
 
-    def update_load(self, vm, cpu_load):
-        self.cpu_load = cpu_load if vm.last_power_state else 0
-        self.mem_load = vm.get_mem()/1024 if vm.last_power_state else 0
 
-        self.cpu_widget.setValue(self.cpu_load)
-        self.mem_widget.setValue(self.mem_load)
+class VmIconWidget (QWidget):
+    def __init__(self, icon_path, enabled=True, parent=None):
+        super(VmIconWidget, self).__init__(parent)
 
-    def resizeEvent(self, Event = None):
-        label_width = max(self.mem_label.width(), self.cpu_label.width())
-        self.mem_label.setMinimumWidth(label_width)
-        self.cpu_label.setMinimumWidth(label_width)
-        super (VmUsageWidget, self).resizeEvent(Event)
+        label_icon = QLabel()
+        icon = QIcon (icon_path)
+        icon_sz = QSize (VmManagerWindow.row_height * 0.8, VmManagerWindow.row_height * 0.3)
+        icon_pixmap = icon.pixmap(icon_sz, QIcon.Disabled if not enabled else QIcon.Normal)
+        label_icon.setPixmap (icon_pixmap)
+        label_icon.setFixedSize (icon_sz)
+        
+        layout = QVBoxLayout()
+        layout.addWidget(label_icon)
+        self.setLayout(layout)
+
+
+class VmNetvmWidget (QWidget):
+    def __init__(self, vm, parent=None):
+        super(VmNetvmWidget, self).__init__(parent)
+
+        layout = QHBoxLayout()
+        self.icon = VmIconWidget(":/networking.png", vm.is_networked())
+        
+        if vm.is_netvm():
+            self.label_nvm = QLabel ("<font color=\"black\">self</font>")
+        elif vm.netvm_vm is not None:
+            self.label_nvm = QLabel ("<font color=\"black\">" + (vm.netvm_vm.name) + "</font>")
+        else:
+            self.label_nvm = QLabel ("<font color=\"black\">None</font>")
+
+        layout.addWidget(self.icon, alignment=Qt.AlignLeft)
+        layout.addWidget(self.label_nvm, alignment=Qt.AlignHCenter)
+        self.setLayout(layout)
+            
+
+
+class VmUsageBarWidget (QWidget):
+    def __init__(self, min, max, format, label, update_func, vm, load, parent = None):
+        super (VmUsageBarWidget, self).__init__(parent)
+
+        self.min = min
+        self.max = max
+        self.update_func = update_func
+
+        self.widget = QProgressBar()
+        self.widget.setMinimum(min)
+        self.widget.setMaximum(max)
+        self.widget.setFormat(format);
+        self.label = QLabel(label)
+
+        layout = QHBoxLayout()
+        layout.addWidget(self.label)
+        layout.addWidget(self.widget)
+
+        self.setLayout(layout)
+
+        self.update_load(vm, load)
+
+    def update_load(self, vm, load):
+        self.widget.setValue(self.update_func(vm, load))
+
 
 class LoadChartWidget (QWidget):
 
@@ -313,6 +296,54 @@ class MemChartWidget (QWidget):
                 p.drawLine (W - i*dx - dx, H , W - i*dx - dx, H - (H - 5) * val/100)
 
 
+class VmUpdateInfoWidget(QWidget):
+
+    def __init__(self, vm, parent = None):
+        super (VmUpdateInfoWidget, self).__init__(parent)
+        layout = QVBoxLayout ()
+        self.label = QLabel("")
+        layout.addWidget(self.label)
+        if vm.is_updateable():
+            self.updateable_widget = VmIconWidget(":/updateable.png", True)
+            layout.addWidget(self.updateable_widget, alignment=Qt.AlignHCenter)
+        self.setLayout(layout)
+
+        self.previous_outdated = False
+        self.previous_update_recommended = False
+
+    def update_outdated(self, vm):
+        outdated = vm.is_outdated()
+        if outdated and not self.previous_outdated:
+            self.label.setText("<b><font color=\"red\"> (outdated)</font></b>")
+        
+        self.previous_outdated = outdated
+        if vm.is_updateable():
+            update_recommended = self.previous_update_recommended
+            stat_file = vm.dir_path + '/' + updates_stat_file
+            if not os.path.exists(stat_file) or \
+                time.time() - os.path.getmtime(stat_file) > \
+                update_suggestion_interval * 24 * 3600:
+                    update_recommended = True
+            else:
+                update_recommended = False
+            if update_recommended and not self.previous_update_recommended:
+                self.label.setText("<b><font color=\"#CCCC00\"> (check updates)</font></b>")
+                self.previous_update_recommended = update_recommended
+
+
+class VmBlockDevicesWidget(QWidget):
+    def __init__(self, vm, parent=None):
+        super(VmBlockDevicesWidget, self).__init__(parent)
+
+        combo = QComboBox()
+        combo.addItem("USB dummy1")
+        combo.addItem("USB dummy2")
+        combo.addItem("USB dummy3")
+
+        layout = QVBoxLayout()
+        layout.addWidget(combo)
+        self.setLayout(layout)
+
 
 class VmRowInTable(object):
     def __init__(self, vm, row_no, table):
@@ -324,23 +355,41 @@ class VmRowInTable(object):
         self.info_widget = VmInfoWidget(vm)
         table.setCellWidget(row_no, 0, self.info_widget)
 
-        self.usage_widget = VmUsageWidget(vm)
-        table.setCellWidget(row_no, 1, self.usage_widget)
+        self.template_widget = VmTemplateWidget(vm)
+        table.setCellWidget(row_no, 1, self.template_widget)
+
+        self.netvm_widget = VmNetvmWidget(vm)
+        table.setCellWidget(row_no, 2, self.netvm_widget)
+
+        self.cpu_usage_widget = VmUsageBarWidget(0, 100, "", "CPU", 
+                            lambda vm, val: val if vm.last_power_state else 0, vm, 0)
+        table.setCellWidget(row_no, 3, self.cpu_usage_widget)
 
         self.load_widget = LoadChartWidget(vm)
-        table.setCellWidget(row_no, 2, self.load_widget)
+        table.setCellWidget(row_no, 4, self.load_widget)
+
+        self.mem_usage_widget = VmUsageBarWidget(0, qubes_host.memory_total/1024, "%v MB", "MEM", 
+                            lambda vm, val: vm.get_mem()/1024 if vm.last_power_state else 0, vm, 0)
+        table.setCellWidget(row_no, 5, self.mem_usage_widget)
 
         self.mem_widget = MemChartWidget(vm)
-        table.setCellWidget(row_no, 3, self.mem_widget)
+        table.setCellWidget(row_no, 6, self.mem_widget)
+ 
+        self.updateinfo_widget = VmUpdateInfoWidget(vm)
+        table.setCellWidget(row_no, 7, self.updateinfo_widget)
+
+        self.blockdevices_widget = VmBlockDevicesWidget(vm)
+        table.setCellWidget(row_no, 8, self.blockdevices_widget)
 
 
     def update(self, counter, cpu_load = None):
         self.info_widget.update_vm_state(self.vm)
         if cpu_load is not None:
-            self.usage_widget.update_load(self.vm, cpu_load)
+            self.cpu_usage_widget.update_load(self.vm, cpu_load)
+            self.mem_usage_widget.update_load(self.vm, None)
             self.load_widget.update_load(self.vm, cpu_load)
             self.mem_widget.update_load(self.vm)
-            self.info_widget.update_outdated(self.vm)
+            self.updateinfo_widget.update_outdated(self.vm)
 
 class NewAppVmDlg (QDialog, ui_newappvmdlg.Ui_NewAppVMDlg):
     def __init__(self, parent = None):
@@ -388,100 +437,40 @@ class ThreadMonitor(QObject):
         self.event_finished.set()
 
 
-class VmManagerWindow(QMainWindow):
-    columns_widths = [250, 200, 150, 150]
+class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     row_height = 50
     max_visible_rows = 14
     update_interval = 1000 # in msec
     show_inactive_vms = True
     columns_states = { 0: [0, 1], 1: [0, 2, 3] }
+    columns_indices = { "Name": 0,
+                        "Template": 1,
+                        "NetVM": 2,
+                        "CPU": 3,
+                        "CPU Graph": 4,
+                        "MEM": 5,
+                        "MEM Graph": 6,
+                        "Update Info": 7,
+                        "Block Device": 8 }
+
+
 
     def __init__(self, parent=None):
-        super(VmManagerWindow, self).__init__(parent)
-
-
-        self.action_createvm = self.createAction ("Create AppVM", slot=self.create_appvm,
-                                             icon="createvm", tip="Create a new AppVM")
-
-        self.action_removevm = self.createAction ("Remove AppVM", slot=self.remove_appvm,
-                                             icon="removevm", tip="Remove an existing AppVM (must be stopped first)")
-
-        self.action_resumevm = self.createAction ("Start/Resume VM", slot=self.resume_vm,
-                                             icon="resumevm", tip="Start/Resume a VM")
-
-        self.action_pausevm = self.createAction ("Pause VM", slot=self.pause_vm,
-                                             icon="pausevm", tip="Pause a running VM")
-
-        self.action_shutdownvm = self.createAction ("Shutdown VM", slot=self.shutdown_vm,
-                                             icon="shutdownvm", tip="Shutdown a running VM")
-
-        self.action_appmenus = self.createAction ("Select VM applications", slot=self.appmenus_select,
-                                             icon="root", tip="Select applications present in menu for this VM")
-
-        self.action_updatevm = self.createAction ("Update VM", slot=self.update_vm,
-                                             icon="updateable", tip="Update VM system")
-
-        self.action_showallvms = self.createAction ("Show/Hide Inactive VMs", slot=self.toggle_inactive_view, checkable=True,
-                                             icon="showallvms", tip="Show/Hide Inactive VMs")
-
-        self.action_showcpuload = self.createAction ("Show/Hide CPU Load chart", slot=self.showcpuload, checkable=True,
-                                             icon="showcpuload", tip="Show/Hide CPU Load chart")
-
-        self.action_editfwrules = self.createAction ("Edit VM Firewall rules", slot=self.edit_fw_rules,
-                                             icon="firewall", tip="Edit VM Firewall rules")
-
-
-        self.action_removevm.setDisabled(True)
-        self.action_resumevm.setDisabled(True)
-        self.action_pausevm.setDisabled(True)
-        self.action_shutdownvm.setDisabled(True)
-        self.action_appmenus.setDisabled(True)
-        self.action_updatevm.setDisabled(True)
-
-        self.action_showallvms.setChecked(self.show_inactive_vms)
-
-        self.toolbar = self.addToolBar ("Toolbar")
-        self.toolbar.setFloatable(False)
-        self.addActions (self.toolbar, (self.action_createvm, self.action_removevm,
-                                   None,
-                                   self.action_resumevm, self.action_shutdownvm,
-                                   self.action_editfwrules, self.action_appmenus,
-                                   self.action_updatevm,
-                                   None,
-                                   self.action_showcpuload,
-                                   self.action_showallvms,
-                                   ))
-
-        self.table = QTableWidget()
-        self.setCentralWidget(self.table)
-        self.table.clear()
-        self.table.setColumnCount(len(VmManagerWindow.columns_widths))
-        for (col, width) in enumerate (VmManagerWindow.columns_widths):
-            self.table.setColumnWidth (col, width)
-
-        self.table.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        self.table.horizontalHeader().setResizeMode(0, QHeaderView.Fixed)
-        self.table.setAlternatingRowColors(True)
-        self.table.verticalHeader().hide()
-        self.table.horizontalHeader().hide()
-        self.table.setGridStyle(Qt.NoPen)
-        self.table.setSortingEnabled(False)
-        self.table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.table.setSelectionMode(QTableWidget.SingleSelection)
-
-        self.__cpugraphs = self.action_showcpuload.isChecked()
-        self.update_table_columns()
-
+        super(VmManagerWindow, self).__init__()
+        self.setupUi(self)
+        self.toolbar = self.toolBar
+        
         self.qvm_collection = QubesVmCollection()
-        self.setWindowTitle("Qubes VM Manager")
-
+        
         self.connect(self.table, SIGNAL("itemSelectionChanged()"), self.table_selection_changed)
-
+        
         cur_pos = self.pos()
-        self.setFixedWidth (self.get_minimum_table_width())
+        self.table.setColumnWidth(0, 200)
         self.fill_table()
         self.move(cur_pos)
-
+        
+        self.update_table_columns()
+        
         self.counter = 0
         self.shutdown_monitor = {}
         self.last_measure_results = {}
@@ -490,41 +479,25 @@ class VmManagerWindow(QMainWindow):
 
     def set_table_geom_height(self):
         # TODO: '6' -- WTF?!
-        tbl_H = self.toolbar.height() + 6 + \
-                self.table.horizontalHeader().height() + 6
+        tbl_H = self.toolbar.height() + \
+                self.table.horizontalHeader().height() + \
+                self.centralwidget.layout().contentsMargins().top() +\
+                self.centralwidget.layout().contentsMargins().bottom()
 
         n = self.table.rowCount();
-        if n > VmManagerWindow.max_visible_rows:
-            n = VmManagerWindow.max_visible_rows
+
+        if n > 6:
+            for i in range(0,n-1):
+                tbl_H += self.table.rowHeight(i)
+        else:
+            tbl_H += self.table.verticalHeader().height()
+        """
+        if n > self.max_visible_rows:
+            n = self.max_visible_rows
         for i in range (0, n):
-            tbl_H += self.table.rowHeight(i)
+            tbl_H += self.table.rowHeight(i) """
 
-        self.setFixedHeight(tbl_H)
-
-
-    def addActions(self, target, actions):
-        for action in actions:
-            if action is None:
-                target.addSeparator()
-            else:
-                target.addAction(action)
-
-
-    def createAction(self, text, slot=None, shortcut=None, icon=None,
-                     tip=None, checkable=False, signal="triggered()"):
-        action = QAction(text, self)
-        if icon is not None:
-            action.setIcon(QIcon(":/%s.png" % icon))
-        if shortcut is not None:
-            action.setShortcut(shortcut)
-        if tip is not None:
-            action.setToolTip(tip)
-            action.setStatusTip(tip)
-        if slot is not None:
-            self.connect(action, SIGNAL(signal), slot)
-        if checkable:
-            action.setCheckable(True)
-        return action
+        self.setMinimumHeight(tbl_H)
 
 
     def get_vms_list(self):
@@ -559,7 +532,7 @@ class VmManagerWindow(QMainWindow):
         return vms_to_display
 
     def fill_table(self):
-        self.table.clear()
+        #self.table.clear()
         vms_list = self.get_vms_list()
         self.table.setRowCount(len(vms_list))
 
@@ -622,14 +595,17 @@ class VmManagerWindow(QMainWindow):
             QTimer.singleShot (self.update_interval, self.update_table)
 
     def update_table_columns(self):
-        state = 1 if self.__cpugraphs else 0
-        columns = self.columns_states[state]
+        #for i in range(0, self.table.columnCount()):
+		#TODO make elegant column visibility actions
+            #self.table.setColumnHidden(i, False)
 
-        for i in range(0, self.table.columnCount()):
-            enabled = columns.count(i) > 0
-            self.table.setColumnHidden(i, not enabled)
+        width = self.table.horizontalHeader().length() +\
+                self.table.verticalScrollBar().width() +\
+                self.centralwidget.layout().contentsMargins().left() +\
+                self.centralwidget.layout().contentsMargins().right()
 
-        self.setMinimumWidth(self.get_minimum_table_width())
+        self.table.setFixedWidth( width )
+        self.setFixedWidth( width)
 
     def table_selection_changed (self):
         vm = self.get_selected_vm()
@@ -644,13 +620,6 @@ class VmManagerWindow(QMainWindow):
         self.action_editfwrules.setEnabled(vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
         self.action_updatevm.setEnabled(vm.is_updateable() or vm.qid == 0)
 
-    def get_minimum_table_width(self):
-        tbl_W = 0
-        for (col, w) in enumerate(VmManagerWindow.columns_widths):
-            if not self.table.isColumnHidden(col):
-                tbl_W += w
-
-        return tbl_W
 
     def closeEvent (self, event):
         if event.spontaneous(): # There is something borked in Qt, as the logic here is inverted on X11
@@ -961,6 +930,36 @@ class VmManagerWindow(QMainWindow):
 
         if dialog.exec_():
             model.apply_rules()
+
+    
+    def showhide_collumn(self, col_num, show):
+        self.table.setColumnHidden( col_num, not show)
+        self.update_table_columns()
+        
+    def on_actionTemplate_toggled(self, checked):
+        self.showhide_collumn( 1, checked)
+
+    def on_actionNetVM_toggled(self, checked):
+        self.showhide_collumn( 2, checked)
+    
+    def on_actionCPU_toggled(self, checked):
+        self.showhide_collumn( 3, checked)
+    
+    def on_actionCPU_Graph_toggled(self, checked):
+        self.showhide_collumn( 4, checked)    
+
+    def on_actionMEM_toggled(self, checked):
+        self.showhide_collumn( 5, checked)   
+    
+    def on_actionMEM_Graph_toggled(self, checked):
+        self.showhide_collumn( 6, checked)
+
+    def on_actionUpdate_Info_toggled(self, checked):
+        self.showhide_collumn( 7, checked)    
+
+    def on_actionBlock_Devices_toggled(self, checked):
+        self.showhide_collumn( 8, checked)    
+
 
 class QubesTrayIcon(QSystemTrayIcon):
     def __init__(self, icon):
