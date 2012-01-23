@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Qubes VM Manager</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="enabled">
@@ -238,7 +238,6 @@
    <addaction name="action_updatevm"/>
    <addaction name="separator"/>
    <addaction name="action_showallvms"/>
-   <addaction name="action_showgraphs"/>
   </widget>
   <action name="action_createvm">
    <property name="icon">

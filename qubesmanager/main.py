@@ -478,7 +478,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         QTimer.singleShot (self.update_interval, self.update_table)
 
     def set_table_geom_height(self):
-        # TODO: '6' -- WTF?!
         tbl_H = self.toolbar.height() + \
                 self.table.horizontalHeader().height() + \
                 self.centralwidget.layout().contentsMargins().top() +\
@@ -486,6 +485,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         n = self.table.rowCount();
 
+        """
         if n > 6:
             for i in range(0,n-1):
                 tbl_H += self.table.rowHeight(i)
@@ -495,7 +495,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         if n > self.max_visible_rows:
             n = self.max_visible_rows
         for i in range (0, n):
-            tbl_H += self.table.rowHeight(i) """
+            tbl_H += self.table.rowHeight(i)
 
         self.setMinimumHeight(tbl_H)
 
@@ -626,9 +626,11 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.hide()
             event.ignore()
 
-    def create_appvm(self):
+    @pyqtSlot(name='on_action_createvm_triggered')
+    def action_createvm_triggered(self):
         dialog = NewAppVmDlg()
 
+        print "Create VM triggered!\n"
 
         # Theoretically we should be locking for writing here and unlock
         # only after the VM creation finished. But the code would be more messy...
@@ -720,7 +722,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         vm = self.vms_in_table[row_index].vm
         return vm
 
-    def remove_appvm(self):
+    @pyqtSlot(name='on_action_removevm_triggered')
+    def action_removevm_triggered(self):
         vm = self.get_selected_vm()
         assert not vm.is_running()
         assert not vm.installed_by_rpm
@@ -789,7 +792,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         thread_monitor.set_finished()
 
-    def resume_vm(self):
+    @pyqtSlot(name='on_action_resumevm_triggered')
+    def action_resumevm_triggered(self):
         vm = self.get_selected_vm()
         assert not vm.is_running()
 
@@ -831,7 +835,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         thread_monitor.set_finished()
  
-    def pause_vm(self):
+    @pyqtSlot(name='on_action_pausevm_triggered')
+    def action_pausevm_triggered(self):
         vm = self.get_selected_vm()
         assert vm.is_running()
         try:
@@ -840,7 +845,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             QMessageBox.warning (None, "Error pausing VM!", "ERROR: {0}".format(ex))
             return
 
-    def shutdown_vm(self):
+    @pyqtSlot(name='on_action_shutdownvm_triggered')
+    def action_shutdownvm_triggered(self):
         vm = self.get_selected_vm()
         assert vm.is_running()
 
@@ -862,12 +868,14 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.shutdown_monitor[vm.qid] = VmShutdownMonitor (vm)
             QTimer.singleShot (vm_shutdown_timeout, self.shutdown_monitor[vm.qid].check_if_vm_has_shutdown)
 
-    def appmenus_select(self):
+    @pyqtSlot(name='on_action_appmenus_triggered')
+    def action_appmenus_triggered(self):
         vm = self.get_selected_vm()
         select_window = AppmenuSelectWindow(vm)
         select_window.exec_()
 
-    def update_vm(self):
+    @pyqtSlot(name='on_action_updatevm_triggered')
+    def action_updatevm_triggered(self):
         vm = self.get_selected_vm()
 
         if not vm.is_running():
@@ -908,16 +916,14 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             return
         thread_monitor.set_finished()
 
-    def showcpuload(self):
-        self.__cpugraphs = self.action_showcpuload.isChecked()
-        self.update_table_columns()
-
-    def toggle_inactive_view(self):
+    @pyqtSlot(name='on_action_showallvms_triggered')
+    def action_showallvms_triggered(self):
         self.show_inactive_vms = self.action_showallvms.isChecked()
         self.mark_table_for_update()
         self.update_table(out_of_schedule = True)
 
-    def edit_fw_rules(self):
+    @pyqtSlot(name='on_action_editfwrules_triggered')
+    def action_editfwrules_triggered(self):
         vm = self.get_selected_vm()
         dialog = EditFwRulesDlg()
         model = QubesFirewallRulesModel()
