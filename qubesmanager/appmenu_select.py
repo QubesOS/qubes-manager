@@ -42,21 +42,14 @@ import time
 import threading
 from operator import itemgetter
 
+from multiselectwidget import *
+
 whitelisted_filename = 'whitelisted-appmenus.list'
 
-class AppRowInTable(object):
-    def __init__(self, filename, name, row_no, table):
+class AppListWidgetItem(QListWidgetItem):
+    def __init__(self, name, filename, parent = None):
+        super(AppListWidgetItem, self).__init__(name, parent)
         self.filename = filename
-        self.row_no = row_no
-
-        table.setRowHeight (row_no, AppmenuSelectWindow.row_height)
-
-        self.name_widget = QTableWidgetItem(name)
-        self.name_widget.setFlags (Qt.ItemIsSelectable | Qt.ItemIsEnabled )
-        table.setItem(row_no, 0, self.name_widget)
-
-        self.appvm_widget = QCheckBox()
-        table.setCellWidget(row_no, 1, self.appvm_widget)
 
 class ThreadMonitor(QObject):
     def __init__(self):
@@ -89,23 +82,10 @@ class AppmenuSelectWindow(QDialog):
         self.connect(self.buttonBox, SIGNAL("accepted()"), self.save_and_apply)
         self.connect(self.buttonBox, SIGNAL("rejected()"), self.reject)
 
-        self.table = QTableWidget(self)
-        self.table.clear()
-        self.table.setColumnCount(2)
-        self.table.setColumnWidth (0, 200)
-        self.table.setColumnWidth (1, 40)
+        self.app_list = MultiSelectWidget(self)
 
-        self.table.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        self.table.horizontalHeader().setResizeMode(1, QHeaderView.Fixed)
-        self.table.setAlternatingRowColors(True)
-        self.table.verticalHeader().hide()
-        self.table.horizontalHeader().show()
-        self.table.setGridStyle(Qt.NoPen)
-        self.table.setSortingEnabled(True)
-        self.table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.table.setSelectionMode(QTableWidget.SingleSelection)
-
-        self.gridLayout.addWidget(self.table, 0, 0, 1, 1)
+        
+        self.gridLayout.addWidget(self.app_list, 0, 0, 1, 1)
         self.gridLayout.addWidget(self.buttonBox, 1, 0, 1, 1)
 
         self.vm = vm
@@ -114,86 +94,57 @@ class AppmenuSelectWindow(QDialog):
         else:
             self.source_vm = self.vm
         self.setWindowTitle("Qubes Appmenus for %s" % vm.name)
-        self.resize(250,500)
+        self.resize(600,600)
 
-        self.fill_table()
-        self.load_list_of_selected()
+        self.fill_apps_list()
 
     def reject(self):
         self.done(0)
-
-    def addActions(self, target, actions):
-        for action in actions:
-            if action is None:
-                target.addSeparator()
-            else:
-                target.addAction(action)
-
-    def createAction(self, text, slot=None, shortcut=None, icon=None,
-                     tip=None, checkable=False, signal="triggered()"):
-        action = QAction(text, self)
-        if icon is not None:
-            action.setIcon(QIcon(":/%s.png" % icon))
-        if shortcut is not None:
-            action.setShortcut(shortcut)
-        if tip is not None:
-            action.setToolTip(tip)
-            action.setStatusTip(tip)
-        if slot is not None:
-            self.connect(action, SIGNAL(signal), slot)
-        if checkable:
-            action.setCheckable(True)
-        return action
-
-    def fill_table(self):
+ 
+    def fill_apps_list(self):
 
         template_dir = self.source_vm.appmenus_templates_dir
 
         template_file_list = os.listdir(template_dir)
 
-        self.table.clear()
-        self.table.setHorizontalHeaderLabels(['Name', 'VM'])
-        self.table.setRowCount(len(template_file_list))
+        whitelisted = []
+        if os.path.exists(self.vm.dir_path + '/' + whitelisted_filename):
+            f = open(self.vm.dir_path + '/' + whitelisted_filename, 'r')
+            whitelisted = [item.strip() for item in f]
+            f.close()
 
-        row_no = 0
-        appmenus = []
+        self.app_list.clear()
+
+
+        available_appmenus = []
         for template_file in template_file_list:
             desktop_template = open(template_dir + '/' + template_file, 'r')
             for line in desktop_template:
                 if line.startswith("Name=%VMNAME%: "):
                     desktop_name = line.partition('Name=%VMNAME%: ')[2].strip()
-                    row = AppRowInTable (template_file, desktop_name, row_no, self.table)
-                    appmenus.append(row)
-                    row_no += 1
+                    available_appmenus.append( (template_file, desktop_name) )
                     break
             desktop_template.close()
 
-        self.table.setRowCount(row_no)
-        self.appmenus = appmenus
-        self.table.sortItems(0)
+        whitelisted_appmenus = [a for a in available_appmenus if a[0] in whitelisted]
+        available_appmenus = [a for a in available_appmenus if a[0] not in whitelisted]
+                
+        for a in available_appmenus:
+            self.app_list.available_list.addItem( AppListWidgetItem(a[1], a[0]))
 
-    def load_list_of_selected(self):
-        if not os.path.exists(self.vm.dir_path + '/' + whitelisted_filename):
-            # select none
-            for row in self.appmenus:
-                row.appvm_widget.setCheckState(Qt.Unchecked)
-            return
-
-        f = open(self.vm.dir_path + '/' + whitelisted_filename, 'r')
-        whitelisted = [item.strip() for item in f]
-        f.close()
-        for row in self.appmenus:
-            if row.filename in whitelisted:
-                row.appvm_widget.setCheckState(Qt.Checked)
-            else:
-                row.appvm_widget.setCheckState(Qt.Unchecked)
+        for a in whitelisted_appmenus:
+            self.app_list.selected_list.addItem( AppListWidgetItem(a[1], a[0]))
+   
+        self.app_list.available_list.sortItems()
+        self.app_list.selected_list.sortItems()
 
     def save_list_of_selected(self):
         whitelisted = open(self.vm.dir_path + '/' + whitelisted_filename, 'w')
-        for row in self.appmenus:
-            if row.appvm_widget.checkState() == Qt.Checked:
-                whitelisted.write(row.filename + '\n')
-        whitelisted.close()
+        for i in range(self.app_list.selected_list.count()):
+            item = self.app_list.selected_list.item(i)
+            whitelisted.write(item.filename + '\n')
+        whitelisted.close()        
+ 
 
     def save_and_apply(self):
         self.save_list_of_selected()

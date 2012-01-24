@@ -10,6 +10,8 @@ class MultiSelectWidget(Ui_MultiSelectWidget, QWidget):
         self.setupUi(self);
         self.add_selected_button.clicked.connect(self.add_selected)
         self.remove_selected_button.clicked.connect(self.remove_selected)
+        self.available_list.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.selected_list.setSelectionMode(QAbstractItemView.ExtendedSelection)
 
     def switch_selected(self, src, dst):
         selected = src.selectedItems()
@@ -19,15 +21,18 @@ class MultiSelectWidget(Ui_MultiSelectWidget, QWidget):
             item = src.takeItem(row)
             dst.addItem(item)
 
-
     def add_selected(self):
-        print "Add selected triggered!"
-        self.switch_selected(self.available_list, self.selected_list)        
+        self.switch_selected(self.available_list, self.selected_list)
+        self.selected_list.sortItems()
 
 
     def remove_selected(self):
-        print "Remove selected triggered!"
         self.switch_selected(self.selected_list, self.available_list)        
+        self.available_list.sortItems()
+
+    def clear(self):
+        self.available_list.clear()
+        self.selected_list.clear()
 
         
 
