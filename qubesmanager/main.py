@@ -35,7 +35,7 @@ from qubes.qubes import QubesDaemonPidfile
 from qubes.qubes import QubesHost
 from qubes import qubesutils
 
-import qubesmanager.qrc_resources
+import qubesmanager.resources_rc
 import ui_newappvmdlg
 from ui_mainwindow import *
 from appmenu_select import AppmenuSelectWindow

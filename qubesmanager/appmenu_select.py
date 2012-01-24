@@ -33,7 +33,7 @@ from qubes.qubes import QubesDaemonPidfile
 from qubes.qubes import QubesHost
 from qubes.qubes import qrexec_client_path
 
-import qubesmanager.qrc_resources
+import qubesmanager.resources_rc
 
 from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
 
