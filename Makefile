@@ -6,5 +6,5 @@ res:
 	pyuic4 -o qubesmanager/ui_newappvmdlg.py newappvmdlg.ui
 	pyuic4 -o qubesmanager/ui_editfwrulesdlg.py editfwrulesdlg.ui
 	pyuic4 -o qubesmanager/ui_newfwruledlg.py newfwruledlg.ui
-
+	pyuic4 -o qubesmanager/ui_multiselectwidget.py multiselectwidget.ui
 clean:
