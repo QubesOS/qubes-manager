@@ -125,26 +125,22 @@ class VmTemplateWidget (QWidget):
         super(VmTemplateWidget, self).__init__(parent)
         
         layout = QVBoxLayout()
-        self.info_label = None
         if vm.template_vm is not None:
             self.label_tmpl = QLabel ("<font color=\"black\">" + (vm.template_vm.name) + "</font>")
         else:
-            self.label_tmpl = QLabel ("<font color=\"black\">None</font>")
             if vm.is_appvm(): # and vm.template_vm is None
-                self.info_label = QLabel ("<i><font color=\"gray\">StandaloneVM</i></font>")
+                self.label_tmpl = QLabel ("<i><font color=\"gray\">StandaloneVM</i></font>")
             elif vm.is_template():
-                self.info_label = QLabel ("<i><font color=\"gray\">TemplateVM</i></font>")
+                self.label_tmpl = QLabel ("<i><font color=\"gray\">TemplateVM</i></font>")
             elif vm.qid == 0:
-                self.info_label = QLabel ("<i><font color=\"gray\">AdminVM</i></font>")
+                self.label_tmpl = QLabel ("<i><font color=\"gray\">AdminVM</i></font>")
             elif vm.is_netvm():
-                self.info_label = QLabel ("<i><font color=\"gray\">NetVM</i></font>")
+                self.label_tmpl = QLabel ("<i><font color=\"gray\">NetVM</i></font>")
             else:
-                self.info_label = QLabel ("<i><font color=\"gray\">---</i></font>")
+                self.label_tmpl = QLabel ("<i><font color=\"gray\">---</i></font>")
 
 
         layout.addWidget(self.label_tmpl, alignment=Qt.AlignHCenter)
-        if self.info_label != None:
-            layout.addWidget(self.info_label, alignment=Qt.AlignHCenter)
 
         self.setLayout(layout)
 
@@ -300,12 +296,9 @@ class VmUpdateInfoWidget(QWidget):
 
     def __init__(self, vm, parent = None):
         super (VmUpdateInfoWidget, self).__init__(parent)
-        layout = QVBoxLayout ()
-        self.label = QLabel("")
-        layout.addWidget(self.label)
-        if vm.is_updateable():
-            self.updateable_widget = VmIconWidget(":/updateable.png", True)
-            layout.addWidget(self.updateable_widget, alignment=Qt.AlignHCenter)
+        layout = QHBoxLayout ()
+        self.label = QLabel("---")
+        layout.addWidget(self.label, alignment=Qt.AlignCenter)
         self.setLayout(layout)
 
         self.previous_outdated = False
@@ -314,7 +307,7 @@ class VmUpdateInfoWidget(QWidget):
     def update_outdated(self, vm):
         outdated = vm.is_outdated()
         if outdated and not self.previous_outdated:
-            self.label.setText("<b><font color=\"red\"> (outdated)</font></b>")
+            self.label.setText("<font color=\"red\">outdated</font>")
         
         self.previous_outdated = outdated
         if vm.is_updateable():
@@ -326,9 +319,10 @@ class VmUpdateInfoWidget(QWidget):
                     update_recommended = True
             else:
                 update_recommended = False
+                self.label.setText("<font color=\"green\">OK</font>")
             if update_recommended and not self.previous_update_recommended:
-                self.label.setText("<b><font color=\"#CCCC00\"> (check updates)</font></b>")
-                self.previous_update_recommended = update_recommended
+                self.label.setText("<font color=\"#CCCC00\">check updates</font>")
+            self.previous_update_recommended = update_recommended
 
 
 class VmBlockDevicesWidget(QWidget):
@@ -438,11 +432,10 @@ class ThreadMonitor(QObject):
 
 
 class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
-    row_height = 50
-    max_visible_rows = 14
+    row_height = 30
+    max_visible_rows = 7
     update_interval = 1000 # in msec
     show_inactive_vms = True
-    columns_states = { 0: [0, 1], 1: [0, 2, 3] }
     columns_indices = { "Name": 0,
                         "Template": 1,
                         "NetVM": 2,
@@ -466,11 +459,24 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         
         cur_pos = self.pos()
         self.table.setColumnWidth(0, 200)
+        self.setSizeIncrement(QtCore.QSize(200, 30))
+        self.centralwidget.setSizeIncrement(QtCore.QSize(200, 30))
+        self.table.setSizeIncrement(QtCore.QSize(200, 30))
         self.fill_table()
         self.move(cur_pos)
-        
+            
+        self.table.setColumnHidden( self.columns_indices["NetVM"], True)
+        self.actionNetVM.setChecked(False)
+        self.table.setColumnHidden( self.columns_indices["CPU Graph"], True)
+        self.actionCPU_Graph.setChecked(False)
+        self.table.setColumnHidden( self.columns_indices["MEM Graph"], True)
+        self.actionMEM_Graph.setChecked(False)
+        self.table.setColumnHidden( self.columns_indices["Block Device"], True)
+        self.actionBlock_Devices.setChecked(False)
+
         self.update_table_columns()
-        
+        self.set_table_geom_height()
+
         self.counter = 0
         self.shutdown_monitor = {}
         self.last_measure_results = {}
@@ -478,26 +484,34 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         QTimer.singleShot (self.update_interval, self.update_table)
 
     def set_table_geom_height(self):
-        tbl_H = self.toolbar.height() + \
-                self.table.horizontalHeader().height() + \
+        minH =  self.table.horizontalHeader().height() + \
+                2*self.table.contentsMargins().top() +\
                 self.centralwidget.layout().contentsMargins().top() +\
-                self.centralwidget.layout().contentsMargins().bottom()
+                self.centralwidget.layout().contentsMargins().bottom() 
+                #self.table.contentsMargins().bottom()  # this is huge, dunno why
+                #2*self.centralwidget.layout().verticalSpacing() # and this is negative...
 
+        #All this sizing is kind of magic, so change it only if you have to
+        #or if you know what you're doing :)
+               
         n = self.table.rowCount();
 
-        """
-        if n > 6:
-            for i in range(0,n-1):
-                tbl_H += self.table.rowHeight(i)
-        else:
-            tbl_H += self.table.verticalHeader().height()
-        """
         if n > self.max_visible_rows:
-            n = self.max_visible_rows
-        for i in range (0, n):
-            tbl_H += self.table.rowHeight(i)
+            for i in range (0, self.max_visible_rows):
+                minH += self.table.rowHeight(i)
+            maxH = minH
+            for i in range (self.max_visible_rows, n):
+                maxH += self.table.rowHeight(i)
+        else:
+            for i in range (n):
+                minH += self.table.rowHeight(i)
+            maxH = minH
 
-        self.setMinimumHeight(tbl_H)
+        self.centralwidget.setMinimumHeight(minH)
+        maxH += self.menubar.height() + self.statusbar.height() +\
+                self.toolbar.height()
+        self.setMaximumHeight(maxH)
+        self.adjustSize()
 
 
     def get_vms_list(self):
@@ -549,7 +563,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             row_no += 1
 
         self.table.setRowCount(row_no)
-        self.set_table_geom_height()
         self.vms_list = vms_list
         self.vms_in_table = vms_in_table
         self.reload_table = False
@@ -595,9 +608,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             QTimer.singleShot (self.update_interval, self.update_table)
 
     def update_table_columns(self):
-        #for i in range(0, self.table.columnCount()):
-		#TODO make elegant column visibility actions
-            #self.table.setColumnHidden(i, False)
 
         width = self.table.horizontalHeader().length() +\
                 self.table.verticalScrollBar().width() +\
@@ -937,7 +947,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         if dialog.exec_():
             model.apply_rules()
 
-    
+
     def showhide_collumn(self, col_num, show):
         self.table.setColumnHidden( col_num, not show)
         self.update_table_columns()
