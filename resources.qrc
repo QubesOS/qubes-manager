@@ -1,22 +1,25 @@
-<!DOCTYPE RCC><RCC version="1.0">
-<qresource>
-<file alias="qubes.png">icons/qubes.png</file>
-<file alias="appvm.png">icons/appvm.png</file>
-<file alias="netvm.png">icons/netvm.png</file>
-<file alias="networking.png">icons/networking.png</file>
-<file alias="dom0.png">icons/dom0.png</file>
-<file alias="storagevm.png">icons/storagevm.png</file>
-<file alias="templatevm.png">icons/templatevm.png</file>
-<file alias="updateable.png">icons/updateable.png</file>
-<file alias="home.png">icons/home.png</file>
-<file alias="root.png">icons/root.png</file>
-<file alias="createvm.png">icons/createvm.png</file>
-<file alias="removevm.png">icons/removevm.png</file>
-<file alias="shutdownvm.png">icons/shutdownvm.png</file>
-<file alias="resumevm.png">icons/resumevm.png</file>
-<file alias="pausevm.png">icons/pausevm.png</file>
-<file alias="showallvms.png">icons/showallvms.png</file>
-<file alias="showcpuload.png">icons/showcpuload.png</file>
-<file alias="firewall.png">icons/firewall.png</file>
-</qresource>
+<RCC>
+  <qresource>
+    <file alias="on.png">icons/on.png</file>
+    <file alias="appsprefs.png">icons/appsprefs.png</file>
+    <file alias="newfirewall.png">icons/newfirewall.png</file>
+    <file alias="qubes.png">icons/qubes.png</file>
+    <file alias="appvm.png">icons/appvm.png</file>
+    <file alias="netvm.png">icons/netvm.png</file>
+    <file alias="networking.png">icons/networking.png</file>
+    <file alias="dom0.png">icons/dom0.png</file>
+    <file alias="storagevm.png">icons/storagevm.png</file>
+    <file alias="templatevm.png">icons/templatevm.png</file>
+    <file alias="updateable.png">icons/updateable.png</file>
+    <file alias="home.png">icons/home.png</file>
+    <file alias="root.png">icons/root.png</file>
+    <file alias="createvm.png">icons/createvm.png</file>
+    <file alias="removevm.png">icons/removevm.png</file>
+    <file alias="shutdownvm.png">icons/shutdownvm.png</file>
+    <file alias="resumevm.png">icons/resumevm.png</file>
+    <file alias="pausevm.png">icons/pausevm.png</file>
+    <file alias="showallvms.png">icons/showallvms.png</file>
+    <file alias="showcpuload.png">icons/showcpuload.png</file>
+    <file alias="firewall.png">icons/firewall.png</file>
+  </qresource>
 </RCC>

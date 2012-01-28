@@ -16,6 +16,9 @@
     <verstretch>0</verstretch>
    </sizepolicy>
   </property>
+  <property name="contextMenuPolicy">
+   <enum>Qt::DefaultContextMenu</enum>
+  </property>
   <property name="windowTitle">
    <string>Qubes VM Manager</string>
   </property>
@@ -64,6 +67,12 @@
         <width>200</width>
         <height>30</height>
        </size>
+      </property>
+      <property name="contextMenuPolicy">
+       <enum>Qt::ActionsContextMenu</enum>
+      </property>
+      <property name="acceptDrops">
+       <bool>false</bool>
       </property>
       <property name="lineWidth">
        <number>0</number>
@@ -243,6 +252,7 @@
    <addaction name="action_resumevm"/>
    <addaction name="action_pausevm"/>
    <addaction name="action_shutdownvm"/>
+   <addaction name="action_settings"/>
    <addaction name="action_editfwrules"/>
    <addaction name="action_appmenus"/>
    <addaction name="action_updatevm"/>
@@ -327,7 +337,7 @@
    </property>
    <property name="icon">
     <iconset resource="resources.qrc">
-     <normaloff>:/root.png</normaloff>:/root.png</iconset>
+     <normaloff>:/appsprefs.png</normaloff>:/appsprefs.png</iconset>
    </property>
    <property name="text">
     <string>Select VM applications</string>
@@ -359,9 +369,9 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
-     <selectedoff>:/showallvms.png</selectedoff>
-    </iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/showallvms.png</normaloff>
+     <selectedoff>:/showallvms.png</selectedoff>:/showallvms.png</iconset>
    </property>
    <property name="text">
     <string>Show/Hide inactive VMs</string>
@@ -373,7 +383,7 @@
   <action name="action_editfwrules">
    <property name="icon">
     <iconset resource="resources.qrc">
-     <normaloff>:/firewall.png</normaloff>:/firewall.png</iconset>
+     <normaloff>:/newfirewall.png</normaloff>:/newfirewall.png</iconset>
    </property>
    <property name="text">
     <string>Edit VM Firewall rules</string>
@@ -493,6 +503,18 @@
    </property>
    <property name="text">
     <string>Update Info</string>
+   </property>
+  </action>
+  <action name="action_settings">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/root.png</normaloff>:/root.png</iconset>
+   </property>
+   <property name="text">
+    <string>Settings</string>
+   </property>
+   <property name="toolTip">
+    <string>VM Settings</string>
    </property>
   </action>
  </widget>
