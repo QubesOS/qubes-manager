@@ -42,6 +42,7 @@ from appmenu_select import AppmenuSelectWindow
 from settings import VMSettingsWindow
 from restore import RestoreVMsWindow
 from backup import BackupVMsWindow
+from global_settings import GlobalSettingsWindow
 
 from firewall import EditFwRulesDlg, QubesFirewallRulesModel
 
@@ -957,6 +958,11 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         if dialog.exec_():
             model.apply_rules()
+
+    @pyqtSlot(name='on_action_global_settings_triggered')
+    def action_global_settings_triggered(self):
+        global_settings_window = GlobalSettingsWindow()
+        global_settings_window.exec_()
 
 
     @pyqtSlot(name='on_action_restore_triggered')

@@ -186,6 +186,7 @@
     <property name="title">
      <string>Options</string>
     </property>
+    <addaction name="action_global_settings"/>
     <addaction name="action_backup"/>
     <addaction name="action_restore"/>
    </widget>
@@ -514,6 +515,11 @@
   <action name="action_backup">
    <property name="text">
     <string>Backup VMs</string>
+   </property>
+  </action>
+  <action name="action_global_settings">
+   <property name="text">
+    <string>Global settings</string>
    </property>
   </action>
  </widget>
