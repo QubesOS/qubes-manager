@@ -128,19 +128,6 @@
        <property name="text">
         <string>Name</string>
        </property>
-       <property name="font">
-        <font>
-         <weight>50</weight>
-         <bold>false</bold>
-        </font>
-       </property>
-       <property name="background">
-        <color>
-         <red>0</red>
-         <green>0</green>
-         <blue>0</blue>
-        </color>
-       </property>
       </column>
       <column>
        <property name="text">
@@ -199,6 +186,8 @@
     <property name="title">
      <string>Options</string>
     </property>
+    <addaction name="action_backup"/>
+    <addaction name="action_restore"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -515,6 +504,16 @@
    </property>
    <property name="toolTip">
     <string>VM Settings</string>
+   </property>
+  </action>
+  <action name="action_restore">
+   <property name="text">
+    <string>Restore VMs from backup</string>
+   </property>
+  </action>
+  <action name="action_backup">
+   <property name="text">
+    <string>Backup VMs</string>
    </property>
   </action>
  </widget>

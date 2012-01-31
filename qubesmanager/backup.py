@@ -40,15 +40,15 @@ import time
 import threading
 from operator import itemgetter
 
-from ui_restoredlg import *
+from ui_backupdlg import *
 from multiselectwidget import *
 
 
 
-class RestoreVMsWindow(Ui_Restore, QWizard):
+class BackupVMsWindow(Ui_Backup, QWizard):
 
     def __init__(self, parent=None):
-        super(RestoreVMsWindow, self).__init__(parent)
+        super(BackupVMsWindow, self).__init__(parent)
 
         self.setupUi(self)
 
@@ -61,6 +61,8 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.selectVMsWidget.available_list.addItem("templateVM1")
         
         self.connect(self, SIGNAL("currentIdChanged(int)"), self.current_page_changed)
+
+
        
     def reject(self):
         self.done(0)
@@ -68,9 +70,6 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
     def save_and_apply(self):
         pass
 
-    def current_page_changed(self, id):
-        self.button(self.CancelButton).setDisabled(id==3)
- 
     @pyqtSlot(name='on_selectPathButton_clicked')
     def selectPathButton_clicked(self):
         self.path = self.pathLineEdit.text()
@@ -78,6 +77,10 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         if newPath:
             self.pathLineEdit.setText(newPath)
             self.path = newPath
+
+    def current_page_changed(self, id):
+        self.button(self.CancelButton).setDisabled(id==3)
+            
 
 # Bases on the original code by:
 # Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
@@ -119,10 +122,10 @@ def main():
     qvm_collection.load()
     qvm_collection.unlock_db()
 
-    global restore_window
-    restore_window = RestoreVMsWindow()
+    global backup_window
+    backup_window = BackupVMsWindow()
 
-    restore_window.show()
+    backup_window.show()
 
     app.exec_()
     app.exit()

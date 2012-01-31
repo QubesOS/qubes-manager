@@ -20,6 +20,8 @@ res:
 	pyuic4 -o qubesmanager/ui_newfwruledlg.py newfwruledlg.ui
 	pyuic4 -o qubesmanager/ui_multiselectwidget.py multiselectwidget.ui
 	pyuic4 -o qubesmanager/ui_settingsdlg.py settingsdlg.ui
+	pyuic4 -o qubesmanager/ui_restoredlg.py restoredlg.ui
+	pyuic4 -o qubesmanager/ui_backupdlg.py backupdlg.ui
 
 update-repo-current:
 	ln -f $(RPMS_DIR)/x86_64/qubes-manager-*$(VERSION)*.rpm ../yum/current-release/current/dom0/rpm/

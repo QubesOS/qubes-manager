@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Restore</class>
- <widget class="QWizard" name="Restore">
+ <class>Backup</class>
+ <widget class="QWizard" name="Backup">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Qubes Restore VMs</string>
+   <string>Qubes Backup VMs</string>
   </property>
   <property name="locale">
    <locale language="English" country="UnitedStates"/>
@@ -20,7 +20,43 @@
    <set>QWizard::NoBackButtonOnLastPage|QWizard::NoBackButtonOnStartPage</set>
   </property>
   <widget class="QWizardPage" name="wizardPage1">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QLabel" name="label_4">
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+        <weight>75</weight>
+        <italic>false</italic>
+        <bold>true</bold>
+        <underline>false</underline>
+       </font>
+      </property>
+      <property name="text">
+       <string>Select VMs to backup:</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWizardPage" name="wizardPage">
    <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="1">
+     <widget class="QLabel" name="label_3">
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+        <weight>75</weight>
+        <italic>false</italic>
+        <bold>true</bold>
+        <underline>false</underline>
+       </font>
+      </property>
+      <property name="text">
+       <string>Select backup  destination directory:</string>
+      </property>
+     </widget>
+    </item>
     <item row="1" column="0">
      <widget class="QLabel" name="label">
       <property name="text">
@@ -28,7 +64,7 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="1" colspan="2">
+    <item row="1" column="1">
      <widget class="QComboBox" name="comboBox">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
@@ -74,115 +110,6 @@
        <string>...</string>
       </property>
      </widget>
-    </item>
-    <item row="0" column="1">
-     <widget class="QLabel" name="label_3">
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-        <weight>75</weight>
-        <italic>false</italic>
-        <bold>true</bold>
-        <underline>false</underline>
-       </font>
-      </property>
-      <property name="text">
-       <string>Select backup source location:</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
-  <widget class="QWizardPage" name="wizardPage">
-   <layout class="QVBoxLayout" name="verticalLayout">
-    <item>
-     <widget class="QLabel" name="label_4">
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-        <weight>75</weight>
-        <italic>false</italic>
-        <bold>true</bold>
-        <underline>false</underline>
-       </font>
-      </property>
-      <property name="text">
-       <string>Select VMs to restore:</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QWidget" name="selectVMsWidget" native="true"/>
-    </item>
-    <item>
-     <widget class="QLabel" name="label_5">
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-        <weight>75</weight>
-        <italic>false</italic>
-        <bold>true</bold>
-        <underline>false</underline>
-       </font>
-      </property>
-      <property name="text">
-       <string>Restore options:</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="0">
-       <widget class="QCheckBox" name="skip_broken">
-        <property name="toolTip">
-         <string>Do not restore VMs that have missing templates or netvms.</string>
-        </property>
-        <property name="text">
-         <string>skip broken</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QCheckBox" name="skip_conflicting">
-        <property name="toolTip">
-         <string>Do not restore VMs that are already present on the host.</string>
-        </property>
-        <property name="text">
-         <string>skip conflicting</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2">
-       <widget class="QCheckBox" name="ignore_uname_mismatch">
-        <property name="toolTip">
-         <string>Ignore dom0 username mismatch while restoring homedir.</string>
-        </property>
-        <property name="text">
-         <string>ignore username mismatch</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QCheckBox" name="ignore_missing">
-        <property name="toolTip">
-         <string>Ignore missing templates or netvms, restore VMs anyway.</string>
-        </property>
-        <property name="text">
-         <string>ignore missing</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QCheckBox" name="force_root">
-        <property name="toolTip">
-         <string>Force to run, even with root privileges.</string>
-        </property>
-        <property name="text">
-         <string>force root</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
     </item>
    </layout>
   </widget>
@@ -251,7 +178,7 @@ p, li { white-space: pre-wrap; }
        </font>
       </property>
       <property name="text">
-       <string>Restore in progress...</string>
+       <string>Backup in progress...</string>
       </property>
      </widget>
     </item>

@@ -39,6 +39,9 @@ import qubesmanager.resources_rc
 import ui_newappvmdlg
 from ui_mainwindow import *
 from appmenu_select import AppmenuSelectWindow
+from settings import VMSettingsWindow
+from restore import RestoreVMsWindow
+from backup import BackupVMsWindow
 
 from firewall import EditFwRulesDlg, QubesFirewallRulesModel
 
@@ -601,7 +604,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 for vm_row in self.vms_in_table:
                     vm_row.update(self.counter)
 
-            self.table_selection_changed()
+            #self.table_selection_changed()
 
         if not out_of_schedule:
             self.counter += 1
@@ -615,13 +618,13 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 self.centralwidget.layout().contentsMargins().right()
 
         self.table.setFixedWidth( width )
-        self.setFixedWidth( width)
 
     def table_selection_changed (self):
+
         vm = self.get_selected_vm()
 
         # Update available actions:
-
+        self.action_settings.setEnabled(True)
         self.action_removevm.setEnabled(not vm.installed_by_rpm and not vm.last_power_state)
         self.action_resumevm.setEnabled(not vm.last_power_state)
         self.action_pausevm.setEnabled(vm.last_power_state and vm.qid != 0)
@@ -878,6 +881,13 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.shutdown_monitor[vm.qid] = VmShutdownMonitor (vm)
             QTimer.singleShot (vm_shutdown_timeout, self.shutdown_monitor[vm.qid].check_if_vm_has_shutdown)
 
+    @pyqtSlot(name='on_action_settings_triggered')
+    def action_settings_triggered(self):
+        vm = self.get_selected_vm()
+        settings_window = VMSettingsWindow(vm)
+        settings_window.exec_()
+   
+
     @pyqtSlot(name='on_action_appmenus_triggered')
     def action_appmenus_triggered(self):
         vm = self.get_selected_vm()
@@ -931,6 +941,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.show_inactive_vms = self.action_showallvms.isChecked()
         self.mark_table_for_update()
         self.update_table(out_of_schedule = True)
+        self.set_table_geom_height()
 
     @pyqtSlot(name='on_action_editfwrules_triggered')
     def action_editfwrules_triggered(self):
@@ -946,6 +957,18 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         if dialog.exec_():
             model.apply_rules()
+
+
+    @pyqtSlot(name='on_action_restore_triggered')
+    def action_restore_triggered(self):
+        restore_window = RestoreVMsWindow()
+        restore_window.exec_()
+
+    @pyqtSlot(name='on_action_backup_triggered')
+    def action_backup_triggered(self):
+        backup_window = BackupVMsWindow()
+        backup_window.exec_()
+
 
 
     def showhide_collumn(self, col_num, show):
