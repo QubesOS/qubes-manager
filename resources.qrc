@@ -1,5 +1,13 @@
 <RCC>
   <qresource>
+    <file alias="pencil.png">icons/pencil.png</file>
+    <file alias="edit.png">icons/edit.png</file>
+    <file alias="add.png">icons/add.png</file>
+    <file alias="flag-blue.png">icons/flag-blue.png</file>
+    <file alias="flag-green.png">icons/flag-green.png</file>
+    <file alias="flag-red.png">icons/flag-red.png</file>
+    <file alias="flag-yellow.png">icons/flag-yellow.png</file>
+    <file alias="remove.png">icons/remove.png</file>
     <file alias="on.png">icons/on.png</file>
     <file alias="appsprefs.png">icons/appsprefs.png</file>
     <file alias="newfirewall.png">icons/newfirewall.png</file>

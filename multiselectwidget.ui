@@ -87,6 +87,13 @@
       </spacer>
      </item>
      <item>
+      <widget class="QPushButton" name="add_all_button">
+       <property name="text">
+        <string>&gt;&gt;</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="add_selected_button">
        <property name="text">
         <string>&gt;</string>
@@ -97,6 +104,13 @@
       <widget class="QPushButton" name="remove_selected_button">
        <property name="text">
         <string>&lt;</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="remove_all_button">
+       <property name="text">
+        <string>&lt;&lt;</string>
        </property>
       </widget>
      </item>

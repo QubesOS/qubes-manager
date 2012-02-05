@@ -53,7 +53,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.setupUi(self)
 
         self.selectVMsWidget = MultiSelectWidget(self)
-        self.verticalLayout.insertWidget(1, self.selectVMsWidget)
+        self.selectVMsLayout.insertWidget(1, self.selectVMsWidget)
 
         self.selectVMsWidget.available_list.addItem("netVM1")
         self.selectVMsWidget.available_list.addItem("appVM1")

@@ -50,10 +50,12 @@ from multiselectwidget import *
 
 class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
-    def __init__(self, vm, parent=None):
+    def __init__(self, vm, init_page=0, parent=None):
         super(VMSettingsWindow, self).__init__(parent)
 
         self.setupUi(self)
+        if init_page in range(self.tabWidget.count()):
+            self.tabWidget.setCurrentIndex(init_page)
 
         self.connect(self.buttonBox, SIGNAL("accepted()"), self.save_and_apply)
         self.connect(self.buttonBox, SIGNAL("rejected()"), self.reject)
