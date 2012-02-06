@@ -266,6 +266,8 @@ class ChartWidget (QWidget):
         super (ChartWidget, self).__init__(parent)
         self.update_func = update_func
         self.hue = hue
+        if hue < 0 or hue > 255:
+            self.hue = 255
         self.load = load
         assert self.load >= 0 and self.load <= 100, "load = {0}".format(self.load)
         self.load_history = [self.load]
@@ -273,14 +275,12 @@ class ChartWidget (QWidget):
 
     def update_load (self, vm, load):
         self.load = self.update_func(vm, load)
-        assert self.load >= 0 and self.load <= 100, "load = {0}".format(self.load)
 
-        #This was in LoadChartWidget - double # means the line was a comment.
-        #assert self.load >= 0, "load = {0}".format(self.load)
-        # # assert self.load >= 0 and self.load <= 100, "load = {0}".format(self.load)
-        # if self.load > 100:
-        #    # FIXME: This is an ugly workaround :/
-        #    self.load = 100
+        assert self.load >= 0, "load = {0}".format(self.load)
+        # assert self.load >= 0 and self.load <= 100, "load = {0}".format(self.load)
+        if self.load > 100:
+            # FIXME: This is an ugly workaround for cpu_load:/
+            self.load = 100
 
         self.load_history.append (self.load)
         self.tableItem.set_value(self.load)
