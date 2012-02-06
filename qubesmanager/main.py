@@ -104,6 +104,18 @@ class VmStatusIcon(QLabel):
 
 class VmInfoWidget (QWidget):
 
+    class VmInfoItem (QTableWidgetItem):
+        def __init__(self, value):
+            super(VmInfoWidget.VmInfoItem, self).__init__()
+            self.value = value
+
+        def set_value(self, value):
+            self.value = value            
+        
+        def __lt__(self, other):
+            return self.value < other.value
+
+
     def __init__(self, vm, parent = None):
         super (VmInfoWidget, self).__init__(parent)
 
@@ -117,6 +129,8 @@ class VmInfoWidget (QWidget):
         layout.addWidget(self.label_name, alignment=Qt.AlignLeft)
 
         self.setLayout(layout)
+
+        self.tableItem = self.VmInfoItem(vm.name)
         
     def update_vm_state (self, vm):
         self.vm_icon.update()
@@ -124,30 +138,30 @@ class VmInfoWidget (QWidget):
    
 
 
-class VmTemplateWidget (QWidget):
-    def __init__(self, vm, parent=None):
-        super(VmTemplateWidget, self).__init__(parent)
+class VmTemplateItem (QTableWidgetItem):
+    def __init__(self, vm):
+        super(VmTemplateItem, self).__init__()
         
-        layout = QVBoxLayout()
         if vm.template_vm is not None:
-            self.label_tmpl = QLabel ("<font color=\"black\">" + (vm.template_vm.name) + "</font>")
+            self.setText(vm.template_vm.name)
         else:
+            font = QFont()
+            font.setStyle(QFont.StyleItalic)
+            self.setFont(font)
+            self.setTextColor(QColor("gray"))
+
             if vm.is_appvm(): # and vm.template_vm is None
-                self.label_tmpl = QLabel ("<i><font color=\"gray\">StandaloneVM</i></font>")
+                self.setText("StandaloneVM")
             elif vm.is_template():
-                self.label_tmpl = QLabel ("<i><font color=\"gray\">TemplateVM</i></font>")
+                self.setText("TemplateVM")
             elif vm.qid == 0:
-                self.label_tmpl = QLabel ("<i><font color=\"gray\">AdminVM</i></font>")
+                self.setText("AdminVM")
             elif vm.is_netvm():
-                self.label_tmpl = QLabel ("<i><font color=\"gray\">NetVM</i></font>")
+                self.setText("NetVM")
             else:
-                self.label_tmpl = QLabel ("<i><font color=\"gray\">---</i></font>")
+                self.setText("---")
 
-
-        layout.addWidget(self.label_tmpl, alignment=Qt.AlignHCenter)
-
-        self.setLayout(layout)
-
+        self.setTextAlignment(Qt.AlignHCenter)
 
 
 class VmIconWidget (QWidget):
@@ -166,33 +180,42 @@ class VmIconWidget (QWidget):
         self.setLayout(layout)
 
 
-class VmNetvmWidget (QWidget):
-    def __init__(self, vm, parent=None):
-        super(VmNetvmWidget, self).__init__(parent)
+class VmNetvmItem (QTableWidgetItem):
+    def __init__(self, vm):
+        super(VmNetvmItem, self).__init__()
 
-        layout = QHBoxLayout()
-        self.icon = VmIconWidget(":/networking.png", vm.is_networked())
-        
         if vm.is_netvm():
-            self.label_nvm = QLabel ("<font color=\"black\">self</font>")
+            self.setText("self")
         elif vm.netvm_vm is not None:
-            self.label_nvm = QLabel ("<font color=\"black\">" + (vm.netvm_vm.name) + "</font>")
+            self.setText(vm.netvm_vm.name)
         else:
-            self.label_nvm = QLabel ("<font color=\"black\">None</font>")
+            self.setText("---")
 
-        layout.addWidget(self.icon, alignment=Qt.AlignLeft)
-        layout.addWidget(self.label_nvm, alignment=Qt.AlignHCenter)
-        self.setLayout(layout)
-            
+        self.setTextAlignment(Qt.AlignHCenter)
+
 
 
 class VmUsageBarWidget (QWidget):
+
+    class VmUsageBarItem (QTableWidgetItem):
+        def __init__(self, value):
+            super(VmUsageBarWidget.VmUsageBarItem, self).__init__()
+            self.value = value
+
+        def set_value(self, value):
+            self.value = value            
+        
+        def __lt__(self, other):
+            return self.value < other.value
+
     def __init__(self, min, max, format, update_func, vm, load, parent = None):
         super (VmUsageBarWidget, self).__init__(parent)
+        
 
         self.min = min
         self.max = max
         self.update_func = update_func
+        self.value = min
 
         self.widget = QProgressBar()
         self.widget.setMinimum(min)
@@ -215,30 +238,52 @@ class VmUsageBarWidget (QWidget):
         layout.addWidget(self.widget)
 
         self.setLayout(layout)
+        self.tableItem = self.VmUsageBarItem(min)
 
         self.update_load(vm, load)
 
+    
+        
     def update_load(self, vm, load):
-        self.widget.setValue(self.update_func(vm, load))
+        self.value = self.update_func(vm, load)
+        self.widget.setValue(self.value)
+        self.tableItem.set_value(self.value)
 
+class ChartWidget (QWidget):
+    
+    class ChartItem (QTableWidgetItem):
+        def __init__(self, value):
+            super(ChartWidget.ChartItem, self).__init__()
+            self.value = value
 
-class LoadChartWidget (QWidget):
+        def set_value(self, value):
+            self.value = value            
+        
+        def __lt__(self, other):
+            return self.value < other.value
 
-    def __init__(self, vm, cpu_load = 0, parent = None):
-        super (LoadChartWidget, self).__init__(parent)
-        self.load = cpu_load if vm.last_power_state else 0
+    def __init__(self, vm, update_func, hue, load = 0, parent = None):
+        super (ChartWidget, self).__init__(parent)
+        self.update_func = update_func
+        self.hue = hue
+        self.load = load
         assert self.load >= 0 and self.load <= 100, "load = {0}".format(self.load)
         self.load_history = [self.load]
+        self.tableItem = ChartWidget.ChartItem(self.load)
 
-    def update_load (self, vm, cpu_load):
-        self.load = cpu_load if vm.last_power_state else 0
-        assert self.load >= 0, "load = {0}".format(self.load)
-        # assert self.load >= 0 and self.load <= 100, "load = {0}".format(self.load)
-        if self.load > 100:
-            # FIXME: This is an ugly workaround :/
-            self.load = 100
+    def update_load (self, vm, load):
+        self.load = self.update_func(vm, load)
+        assert self.load >= 0 and self.load <= 100, "load = {0}".format(self.load)
+
+        #This was in LoadChartWidget - double # means the line was a comment.
+        #assert self.load >= 0, "load = {0}".format(self.load)
+        # # assert self.load >= 0 and self.load <= 100, "load = {0}".format(self.load)
+        # if self.load > 100:
+        #    # FIXME: This is an ugly workaround :/
+        #    self.load = 100
 
         self.load_history.append (self.load)
+        self.tableItem.set_value(self.load)
         self.repaint()
 
     def paintEvent (self, Event = None):
@@ -257,56 +302,35 @@ class LoadChartWidget (QWidget):
 
         for i in range (0, N-1):
             val = self.load_history[N- i - 1]
-            hue = 200
             sat = 70 + val*(255-70)/100
-            color = QColor.fromHsv (hue, sat, 255)
+            color = QColor.fromHsv (self.hue, sat, 255)
             pen = QPen (color)
             pen.setWidth(dx-1)
             p.setPen(pen)
             if val > 0:
                 p.drawLine (W - i*dx - dx, H , W - i*dx - dx, H - (H - 5) * val/100)
 
-class MemChartWidget (QWidget):
-
-    def __init__(self, vm, parent = None):
-        super (MemChartWidget, self).__init__(parent)
-        self.load = vm.get_mem()*100/qubes_host.memory_total if vm.last_power_state else 0
-        assert self.load >= 0 and self.load <= 100, "mem = {0}".format(self.load)
-        self.load_history = [self.load]
-
-    def update_load (self, vm):
-        self.load = vm.get_mem()*100/qubes_host.memory_total if vm.last_power_state else 0
-        assert self.load >= 0 and self.load <= 100, "load = {0}".format(self.load)
-        self.load_history.append (self.load)
-        self.repaint()
-
-    def paintEvent (self, Event = None):
-        p = QPainter (self)
-        dx = 4
-
-        W = self.width()
-        H = self.height() - 5
-        N = len(self.load_history)
-        if N > W/dx:
-            tail = N - W/dx
-            N = W/dx
-            self.load_history = self.load_history[tail:]
-
-        assert len(self.load_history) == N
-
-        for i in range (0, N-1):
-            val = self.load_history[N- i - 1]
-            hue = 120
-            sat = 70 + val*(255-70)/100
-            color = QColor.fromHsv (hue, sat, 255)
-            pen = QPen (color)
-            pen.setWidth(dx-1)
-            p.setPen(pen)
-            if val > 0:
-                p.drawLine (W - i*dx - dx, H , W - i*dx - dx, H - (H - 5) * val/100)
 
 
 class VmUpdateInfoWidget(QWidget):
+
+    class VmUpdateInfoItem (QTableWidgetItem):
+        def __init__(self, value):
+            super(VmUpdateInfoWidget.VmUpdateInfoItem, self).__init__()
+            self.value = value
+
+        def set_value(self, value):
+            self.value = value            
+        
+        def __lt__(self, other):
+            if self.value == "outdated":
+                return other.value == "outdated"
+            elif self.value == "update":
+                return other.value == "outdated" or other.value == "update"
+            elif self.value == "ok":
+                return other.value == "outdated" or other.value == "update" or other.value == "ok"
+            else:
+                return True
 
     def __init__(self, vm, show_text=True, parent = None):
         super (VmUpdateInfoWidget, self).__init__(parent)
@@ -322,6 +346,8 @@ class VmUpdateInfoWidget(QWidget):
 
         self.previous_outdated = False
         self.previous_update_recommended = None
+        self.value = None
+        self.tableItem = VmUpdateInfoWidget.VmUpdateInfoItem(self.value)
 
     def update_outdated(self, vm):
         outdated = vm.is_outdated()
@@ -346,7 +372,8 @@ class VmUpdateInfoWidget(QWidget):
             self.previous_update_recommended = update_recommended
 
     def update_status_widget(self, state):
-        
+        self.value = state
+        self.tableItem.set_value(state)
         if state == "ok":
             label_text = ""
             icon_path = ":/flag-green.png"
@@ -393,32 +420,41 @@ class VmRowInTable(object):
 
         self.info_widget = VmInfoWidget(vm)
         table.setCellWidget(row_no, 0, self.info_widget)
+        table.setItem(row_no, 0, self.info_widget.tableItem)
 
         self.upd_widget = VmUpdateInfoWidget(vm, False)
         table.setCellWidget(row_no, 1, self.upd_widget)
+        table.setItem(row_no, 1, self.upd_widget.tableItem)
 
-        self.template_widget = VmTemplateWidget(vm)
-        table.setCellWidget(row_no, 2, self.template_widget)
-
-        self.netvm_widget = VmNetvmWidget(vm)
-        table.setCellWidget(row_no, 3, self.netvm_widget)
+        self.template_widget = VmTemplateItem(vm)
+        table.setItem(row_no, 2, self.template_widget)
+                
+        self.netvm_widget = VmNetvmItem(vm)
+        table.setItem(row_no, 3, self.netvm_widget)
 
         self.cpu_usage_widget = VmUsageBarWidget(0, 100, "", 
                             lambda vm, val: val if vm.last_power_state else 0, vm, 0)
         table.setCellWidget(row_no, 4, self.cpu_usage_widget)
+        table.setItem(row_no, 4, self.cpu_usage_widget.tableItem)
 
-        self.load_widget = LoadChartWidget(vm)
+        #self.load_widget = LoadChartWidget(vm)
+        self.load_widget = ChartWidget(vm, lambda vm, val: val if vm.last_power_state else 0, 200, 0 )
         table.setCellWidget(row_no, 5, self.load_widget)
+        table.setItem(row_no, 5, self.load_widget.tableItem)
 
         self.mem_usage_widget = VmUsageBarWidget(0, qubes_host.memory_total/1024, "%v MB", 
                             lambda vm, val: vm.get_mem()/1024 if vm.last_power_state else 0, vm, 0)
         table.setCellWidget(row_no, 6, self.mem_usage_widget)
+        table.setItem(row_no, 6, self.mem_usage_widget.tableItem)
 
-        self.mem_widget = MemChartWidget(vm)
+
+        self.mem_widget = ChartWidget(vm, lambda vm, val: vm.get_mem()*100/qubes_host.memory_total if vm.last_power_state else 0, 120, 0)
         table.setCellWidget(row_no, 7, self.mem_widget)
+        table.setItem(row_no, 7, self.mem_widget.tableItem)
  
         self.updateinfo_widget = VmUpdateInfoWidget(vm, True)
         table.setCellWidget(row_no, 8, self.updateinfo_widget)
+        table.setItem(row_no, 8, self.updateinfo_widget.tableItem)
 
         self.blockdevices_widget = VmBlockDevicesWidget(vm)
         table.setCellWidget(row_no, 9, self.blockdevices_widget)
@@ -430,7 +466,7 @@ class VmRowInTable(object):
             self.cpu_usage_widget.update_load(self.vm, cpu_load)
             self.mem_usage_widget.update_load(self.vm, None)
             self.load_widget.update_load(self.vm, cpu_load)
-            self.mem_widget.update_load(self.vm)
+            self.mem_widget.update_load(self.vm, None)
             self.updateinfo_widget.update_outdated(self.vm)
             self.upd_widget.update_outdated(self.vm)
 
@@ -528,7 +564,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.actionBlock_Devices.setChecked(False)
         self.table.setColumnWidth(self.columns_indices["Upd"], 50)
 
-        #self.table.setFrameShape(QFrame.NoFrame)
+        self.table.sortItems(self.columns_indices["MEM"], Qt.DescendingOrder)
+
         self.table.setContentsMargins(0,0,0,0)
         self.centralwidget.layout().setContentsMargins(0,0,0,0)
         self.layout().setContentsMargins(0,0,0,0)
@@ -609,7 +646,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         return vms_to_display
 
     def fill_table(self):
-        #self.table.clear()
+        self.table.setSortingEnabled(False)
+        self.table.clearContents()
         vms_list = self.get_vms_list()
         self.table.setRowCount(len(vms_list))
 
@@ -629,6 +667,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.vms_list = vms_list
         self.vms_in_table = vms_in_table
         self.reload_table = False
+        self.table.setSortingEnabled(True)
 
 
     def mark_table_for_update(self):
