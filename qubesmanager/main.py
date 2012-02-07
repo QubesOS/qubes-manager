@@ -651,7 +651,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         vms_list = self.get_vms_list()
         self.table.setRowCount(len(vms_list))
 
-        vms_in_table = []
+        vms_in_table = {}
 
         row_no = 0
         for vm in vms_list:
@@ -660,7 +660,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             if vm.internal:
                 continue
             vm_row = VmRowInTable (vm, row_no, self.table)
-            vms_in_table.append (vm_row)
+            vms_in_table[vm.name] = vm_row
             row_no += 1
 
         self.table.setRowCount(row_no)
@@ -692,7 +692,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                     qubes_host.measure_cpu_usage(self.last_measure_results,
                     self.last_measure_time)
 
-                for vm_row in self.vms_in_table:
+                for vm_row in self.vms_in_table.values():
                     cur_cpu_load = None
                     if vm_row.vm.get_xid() in self.last_measure_results:
                         cur_cpu_load = self.last_measure_results[vm_row.vm.xid]['cpu_usage']
@@ -700,7 +700,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         cur_cpu_load = 0
                     vm_row.update(self.counter, cpu_load = cur_cpu_load)
             else:
-                for vm_row in self.vms_in_table:
+                for vm_row in self.vms_in_table.values():
                     vm_row.update(self.counter)
 
             #self.table_selection_changed()
@@ -831,9 +831,11 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
 
     def get_selected_vm(self):
+        #vm selection relies on the VmInfo widget's value used for sorting by VM name
         row_index = self.table.currentRow()
-        assert self.vms_in_table[row_index] is not None
-        vm = self.vms_in_table[row_index].vm
+        vm_name = self.table.item(row_index, self.columns_indices["Name"]).value
+        assert self.vms_in_table[vm_name] is not None
+        vm = self.vms_in_table[vm_name].vm
         return vm
 
     @pyqtSlot(name='on_action_removevm_triggered')
