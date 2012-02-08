@@ -683,6 +683,15 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         self.table.sortItems(self.columns_indices["MEM"], Qt.DescendingOrder)
 
+        self.table.addAction(self.action_settings)
+        self.table.addAction(self.action_removevm)
+        self.table.addAction(self.action_resumevm)
+        self.table.addAction(self.action_pausevm)
+        self.table.addAction(self.action_shutdownvm)
+        self.table.addAction(self.action_appmenus)
+        self.table.addAction(self.action_editfwrules)
+        self.table.addAction(self.action_updatevm)
+
         self.table.setContentsMargins(0,0,0,0)
         self.centralwidget.layout().setContentsMargins(0,0,0,0)
         self.layout().setContentsMargins(0,0,0,0)

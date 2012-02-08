@@ -90,6 +90,9 @@
       <property name="lineWidth">
        <number>0</number>
       </property>
+      <property name="verticalScrollBarPolicy">
+       <enum>Qt::ScrollBarAlwaysOn</enum>
+      </property>
       <property name="alternatingRowColors">
        <bool>true</bool>
       </property>
@@ -230,21 +233,15 @@
     <property name="title">
      <string>View</string>
     </property>
-    <widget class="QMenu" name="menuColumns_visibility">
-     <property name="title">
-      <string>Columns visibility</string>
-     </property>
-     <addaction name="actionUpd"/>
-     <addaction name="actionTemplate"/>
-     <addaction name="actionNetVM"/>
-     <addaction name="actionCPU"/>
-     <addaction name="actionCPU_Graph"/>
-     <addaction name="actionMEM"/>
-     <addaction name="actionMEM_Graph"/>
-     <addaction name="actionUpdate_Info"/>
-     <addaction name="actionBlock_Devices"/>
-    </widget>
-    <addaction name="menuColumns_visibility"/>
+    <addaction name="actionUpd"/>
+    <addaction name="actionTemplate"/>
+    <addaction name="actionNetVM"/>
+    <addaction name="actionCPU"/>
+    <addaction name="actionCPU_Graph"/>
+    <addaction name="actionMEM"/>
+    <addaction name="actionMEM_Graph"/>
+    <addaction name="actionUpdate_Info"/>
+    <addaction name="actionBlock_Devices"/>
    </widget>
    <addaction name="menuOptions"/>
    <addaction name="menuView"/>
@@ -252,6 +249,9 @@
   <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
     <string>toolBar</string>
+   </property>
+   <property name="allowedAreas">
+    <set>Qt::BottomToolBarArea|Qt::TopToolBarArea</set>
    </property>
    <property name="floatable">
     <bool>false</bool>
@@ -550,6 +550,9 @@
   </action>
   <action name="actionUpd">
    <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
     <bool>true</bool>
    </property>
    <property name="text">
