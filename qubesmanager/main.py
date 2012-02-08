@@ -398,21 +398,133 @@ class VmUpdateInfoWidget(QWidget):
 
 
 class VmBlockDevicesWidget(QWidget):
-    def __init__(self, vm, parent=None):
+    def __init__(self, vm, block_manager,  parent=None):
         super(VmBlockDevicesWidget, self).__init__(parent)
 
-        combo = QComboBox()
-        combo.addItem("USB dummy1")
-        combo.addItem("USB dummy2")
-        combo.addItem("USB dummy3")
+        self.vm = vm
+        self.block_manager = block_manager
+        self.free_devs = self.block_manager.free_devs
+        self.att_devs = self.block_manager.attached_devs
+
+        self.combo = QComboBox()
 
         layout = QVBoxLayout()
-        layout.addWidget(combo)
+        layout.addWidget(self.combo)
         self.setLayout(layout)
+        
+        self.connect(self.combo, SIGNAL("activated(int)"), self.combo_activated)
+
+    def update(self, vm):
+        self.combo.clear()
+        self.combo.addItem("None")
+        for a in self.att_devs:
+            if self.att_devs[a]['attached_to']['vm'] == vm.name:
+                att = self.att_devs[a]['dev'] + ": " + unicode(self.att_devs[a]['size']) + " " + self.att_devs[a]['desc']
+                self.combo.addItem(att, QVariant(a))
+                self.combo.setCurrentIndex(1)
+                break
+        if self.combo.count() == 1:
+            for d in self.free_devs:
+                str = self.free_devs[d]['dev'] + ": " + unicode(self.free_devs[d]['size']) + " " + self.free_devs[d]['desc']
+                self.combo.addItem(str, QVariant(d))
+        self.prev_idx = self.combo.currentIndex();
+
+    def combo_activated(self, idx):
+        if idx == self.prev_idx:    #nothing has changed
+            return
+        #there was a change
+        if self.combo.currentText() != "None": #device attached:
+            self.prev_idx = idx
+            dev_name = str(self.combo.itemData(idx).toString())
+            self.block_manager.attach_device(self.vm, dev_name)
+
+        else:
+            dev_name = str(self.combo.itemData(self.prev_idx).toString())
+            self.prev_idx = idx
+            self.block_manager.detach_device(self.vm, dev_name)
+
+   
+
+class QubesBlockDevicesManager():
+    def __init__(self, qvm_collection):
+        self.qvm_collection = qvm_collection
+        self.attached_devs = {}
+        self.free_devs = {}
+
+        self.current_blk = {}
+        self.current_attached = {}
+        self.devs_changed = False
+
+    def update(self):
+        blk = qubesutils.block_list()
+        for b in blk:
+            att = qubesutils.block_check_attached(None, blk[b]['device'], backend_xid = blk[b]['xid'])
+            if b in self.current_blk:
+                if blk[b] == self.current_blk[b]:
+                    if self.current_attached[b] != att: #devices the same, sth with attaching changed
+                        self.current_attached[b] = att
+                        self.devs_changed = True
+                else:   #device changed ?!
+                    self.current_blk[b] = blk[b]
+                    self.current_attached[b] = att
+                    self.devs_changed = True
+            else: #new device
+                self.current_blk[b] = blk[b]
+                self.current_attached[b] = att
+                self.devs_changed = True
+
+        for b in self.current_blk:
+            if b not in blk:
+                del self.current_blk[b]
+                del current_attached[b]
+                self.devs_changed = True
+
+        if self.devs_changed == True:
+            self.devs_changed = False
+            self.__update_blk_entries__()
+            return True
+        else:
+            return False
+
+
+    def __update_blk_entries__(self):
+        self.free_devs.clear()
+        self.attached_devs.clear()
+
+        for b in self.current_attached:
+            if self.current_attached[b]:
+                self.attached_devs[b] = self.__make_entry__(b, self.current_blk[b], self.current_attached[b])
+            else:
+                self.free_devs[b] = self.__make_entry__(b, self.current_blk[b], None)
+                
+    def __make_entry__(self, k, dev, att):
+        size_str = qubesutils.bytes_to_kmg(dev['size'])
+        entry = {   'dev': dev['device'],
+                    'backend_name': dev['vm'],
+                    'desc': dev['desc'],
+                    'size': size_str,
+                    'attached_to': att, }
+        return entry
+
+    def attach_device(self, vm, dev):
+        backend_vm_name = self.free_devs[dev]['backend_name']
+        dev_id = self.free_devs[dev]['dev']
+        backend_vm = self.qvm_collection.get_vm_by_name(backend_vm_name)
+        trayIcon.showMessage ("Qubes Manager", "{0} - attaching {1}".format(vm.name, dev), msecs=3000)
+        qubesutils.block_attach(vm, backend_vm, dev_id)
+        self.devs_changed = True
+      
+    def detach_device(self, vm, dev_name):
+        dev_id = self.attached_devs[dev_name]['attached_to']['devid']
+        vm_xid = self.attached_devs[dev_name]['attached_to']['xid']
+        trayIcon.showMessage ("Qubes Manager", "{0} - detaching {1}".format(vm.name, dev_name), msecs=3000)
+        qubesutils.block_detach(None, dev_id, vm_xid)
+        self.devs_changed = True
+
 
 
 class VmRowInTable(object):
-    def __init__(self, vm, row_no, table):
+    def __init__(self, vm, row_no, table, block_manager):
         self.vm = vm
         self.row_no = row_no
 
@@ -456,12 +568,13 @@ class VmRowInTable(object):
         table.setCellWidget(row_no, 8, self.updateinfo_widget)
         table.setItem(row_no, 8, self.updateinfo_widget.tableItem)
 
-        self.blockdevices_widget = VmBlockDevicesWidget(vm)
+        self.blockdevices_widget = VmBlockDevicesWidget(vm, block_manager)
         table.setCellWidget(row_no, 9, self.blockdevices_widget)
 
 
-    def update(self, counter, cpu_load = None):
+    def update(self, counter, update_devs = False, cpu_load = None):
         self.info_widget.update_vm_state(self.vm)
+        self.blockdevices_widget.setEnabled(self.vm.is_running())
         if cpu_load is not None:
             self.cpu_usage_widget.update_load(self.vm, cpu_load)
             self.mem_usage_widget.update_load(self.vm, None)
@@ -469,6 +582,8 @@ class VmRowInTable(object):
             self.mem_widget.update_load(self.vm, None)
             self.updateinfo_widget.update_outdated(self.vm)
             self.upd_widget.update_outdated(self.vm)
+        if self.blockdevices_widget.isEnabled() and update_devs:
+            self.blockdevices_widget.update(self.vm)
 
 class NewAppVmDlg (QDialog, ui_newappvmdlg.Ui_NewAppVMDlg):
     def __init__(self, parent = None):
@@ -541,6 +656,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.toolbar = self.toolBar
         
         self.qvm_collection = QubesVmCollection()
+        self.blkManager = QubesBlockDevicesManager(self.qvm_collection)
         
         self.connect(self.table, SIGNAL("itemSelectionChanged()"), self.table_selection_changed)
         
@@ -563,6 +679,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.table.setColumnHidden( self.columns_indices["Block Device"], True)
         self.actionBlock_Devices.setChecked(False)
         self.table.setColumnWidth(self.columns_indices["Upd"], 50)
+        self.table.setColumnWidth(self.columns_indices["Block Device"], 250)
 
         self.table.sortItems(self.columns_indices["MEM"], Qt.DescendingOrder)
 
@@ -659,7 +776,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 continue
             if vm.internal:
                 continue
-            vm_row = VmRowInTable (vm, row_no, self.table)
+            vm_row = VmRowInTable (vm, row_no, self.table, self.blkManager)
             vms_in_table[vm.name] = vm_row
             row_no += 1
 
@@ -675,7 +792,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
     # When calling update_table() directly, always use out_of_schedule=True!
     def update_table(self, out_of_schedule=False):
-
         if manager_window.isVisible():
             some_vms_have_changed_power_state = False
             for vm in self.vms_list:
@@ -684,8 +800,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                     vm.last_power_state = state
                     some_vms_have_changed_power_state = True
 
+            update_devs = self.update_block_devices()
             if self.reload_table or ((not self.show_inactive_vms) and some_vms_have_changed_power_state): 
                 self.fill_table()
+                update_devs=True
 
             if self.counter % 3 == 0 or out_of_schedule:
                 (self.last_measure_time, self.last_measure_results) = \
@@ -698,10 +816,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         cur_cpu_load = self.last_measure_results[vm_row.vm.xid]['cpu_usage']
                     else:
                         cur_cpu_load = 0
-                    vm_row.update(self.counter, cpu_load = cur_cpu_load)
+                    vm_row.update(self.counter, update_devs=update_devs, cpu_load = cur_cpu_load)
             else:
                 for vm_row in self.vms_in_table.values():
-                    vm_row.update(self.counter)
+                    vm_row.update(self.counter, update_devs=update_devs)
 
             #self.table_selection_changed()
 
@@ -719,20 +837,40 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.centralwidget.setFixedWidth(table_width)
         self.setFixedWidth(table_width)
 
+    def update_block_devices(self):
+        if self.table.isColumnHidden( self.columns_indices['Block Device']):
+            return False
+
+        if self.blkManager.update():
+            return True
+        else:
+            return False
+
 
     def table_selection_changed (self):
 
         vm = self.get_selected_vm()
 
-        # Update available actions:
-        self.action_settings.setEnabled(True)
-        self.action_removevm.setEnabled(not vm.installed_by_rpm and not vm.last_power_state)
-        self.action_resumevm.setEnabled(not vm.last_power_state)
-        self.action_pausevm.setEnabled(vm.last_power_state and vm.qid != 0)
-        self.action_shutdownvm.setEnabled(not vm.is_netvm() and vm.last_power_state and vm.qid != 0)
-        self.action_appmenus.setEnabled(not vm.is_netvm())
-        self.action_editfwrules.setEnabled(vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
-        self.action_updatevm.setEnabled(vm.is_updateable() or vm.qid == 0)
+        if vm != None:
+            # Update available actions:
+            self.action_settings.setEnabled(True)
+            self.action_removevm.setEnabled(not vm.installed_by_rpm and not vm.last_power_state)
+            self.action_resumevm.setEnabled(not vm.last_power_state)
+            self.action_pausevm.setEnabled(vm.last_power_state and vm.qid != 0)
+            self.action_shutdownvm.setEnabled(not vm.is_netvm() and vm.last_power_state and vm.qid != 0)
+            self.action_appmenus.setEnabled(not vm.is_netvm())
+            self.action_editfwrules.setEnabled(vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
+            self.action_updatevm.setEnabled(vm.is_updateable() or vm.qid == 0)
+        else:
+            self.action_settings.setEnabled(False)
+            self.action_removevm.setEnabled(False)
+            self.action_resumevm.setEnabled(False)
+            self.action_pausevm.setEnabled(False)
+            self.action_shutdownvm.setEnabled(False)
+            self.action_appmenus.setEnabled(False)
+            self.action_editfwrules.setEnabled(False)
+            self.action_updatevm.setEnabled(False)
+
 
 
     def closeEvent (self, event):
@@ -743,8 +881,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot(name='on_action_createvm_triggered')
     def action_createvm_triggered(self):
         dialog = NewAppVmDlg()
-
-        print "Create VM triggered!\n"
 
         # Theoretically we should be locking for writing here and unlock
         # only after the VM creation finished. But the code would be more messy...
@@ -833,10 +969,13 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def get_selected_vm(self):
         #vm selection relies on the VmInfo widget's value used for sorting by VM name
         row_index = self.table.currentRow()
-        vm_name = self.table.item(row_index, self.columns_indices["Name"]).value
-        assert self.vms_in_table[vm_name] is not None
-        vm = self.vms_in_table[vm_name].vm
-        return vm
+        if row_index != None:
+            vm_name = self.table.item(row_index, self.columns_indices["Name"]).value
+            assert self.vms_in_table[vm_name] is not None
+            vm = self.vms_in_table[vm_name].vm
+            return vm
+        else:
+            return None
 
     @pyqtSlot(name='on_action_removevm_triggered')
     def action_removevm_triggered(self):
@@ -1109,7 +1248,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.showhide_collumn( self.columns_indices['Update Info'], checked)    
 
     def on_actionBlock_Devices_toggled(self, checked):
-        self.showhide_collumn( self.columns_indices['Block Device'], checked)    
+        self.showhide_collumn( self.columns_indices['Block Device'], checked)
+
+
 
 
 class QubesTrayIcon(QSystemTrayIcon):
