@@ -46,6 +46,7 @@ from operator import itemgetter
 from ui_settingsdlg import *
 from multiselectwidget import *
 from appmenu_select import *
+from firewall import *
 
 
 class VMSettingsWindow(Ui_SettingsDialog, QDialog):
@@ -59,6 +60,13 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
     def __init__(self, vm, app, init_page="basic", parent=None):
         super(VMSettingsWindow, self).__init__(parent)
 
+        self.app = app
+        self.vm = vm
+        if self.vm.template_vm:
+            self.source_vm = self.vm.template_vm
+        else:
+            self.source_vm = self.vm
+ 
         self.setupUi(self)
         if init_page in self.tabs_indices:
             idx = self.tabs_indices[init_page]
@@ -68,19 +76,29 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.connect(self.buttonBox, SIGNAL("accepted()"), self.save_and_apply)
         self.connect(self.buttonBox, SIGNAL("rejected()"), self.reject)
 
-        self.app_list = MultiSelectWidget(self)
-        self.dev_list = MultiSelectWidget(self)
-        
-        self.apps_layout.addWidget(self.app_list)
-        self.devices_layout.addWidget(self.dev_list)
+        self.tabWidget.currentChanged.connect(self.current_tab_changed)
 
-        self.app = app
-        self.vm = vm
-        if self.vm.template_vm:
-            self.source_vm = self.vm.template_vm
-        else:
-            self.source_vm = self.vm
-         
+        ###### firewall tab
+
+        model = QubesFirewallRulesModel()
+        model.set_vm(vm)
+        self.set_fw_model(model)
+
+        
+        self.newRuleButton.clicked.connect(self.new_rule_button_pressed)
+        self.editRuleButton.clicked.connect(self.edit_rule_button_pressed)
+        self.deleteRuleButton.clicked.connect(self.delete_rule_button_pressed)
+        self.policyAllowRadioButton.toggled.connect(self.policy_radio_toggled)
+        self.dnsCheckBox.toggled.connect(self.dns_checkbox_toggled)
+        self.icmpCheckBox.toggled.connect(self.icmp_checkbox_toggled)
+
+        ####### devices tab
+        self.dev_list = MultiSelectWidget(self)
+        self.devices_layout.addWidget(self.dev_list)
+ 
+        ####### apps tab
+        self.app_list = MultiSelectWidget(self)
+        self.apps_layout.addWidget(self.app_list)
         self.AppListManager = AppmenuSelectManager(self.vm, self.app_list)
 
     def reject(self):
@@ -113,8 +131,105 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.done(0)
 
     def __save_changes__(self, thread_monitor):
+        self.fw_model.apply_rules()
         self.AppListManager.save_appmenu_select_changes()
         thread_monitor.set_finished()
+
+    def current_tab_changed(self, idx):
+        if idx == self.tabs_indices["firewall"]:
+            if self.vm.netvm_vm is not None and not self.vm.netvm_vm.is_proxyvm():
+                QMessageBox.warning (None, "VM configuration problem!", "The '{0}' AppVM is not network connected to a FirewallVM!<p>".format(self.vm.name) +\
+                    "You may edit the '{0}' VM firewall rules, but these will not take any effect until you connect it to a working Firewall VM.".format(self.vm.name))
+
+
+
+    ######### firewall tab related
+
+    def set_fw_model(self, model):
+        self.fw_model = model
+        self.rulesTreeView.setModel(model)
+        self.rulesTreeView.header().setResizeMode(QHeaderView.ResizeToContents)
+        self.rulesTreeView.header().setResizeMode(0, QHeaderView.Stretch)
+        self.set_allow(model.allow)
+        self.dnsCheckBox.setChecked(model.allowDns)
+        self.icmpCheckBox.setChecked(model.allowIcmp)
+
+    def set_allow(self, allow):
+        self.policyAllowRadioButton.setChecked(allow)
+        self.policyDenyRadioButton.setChecked(not allow)
+
+    def policy_radio_toggled(self, on):
+        self.fw_model.allow = self.policyAllowRadioButton.isChecked()
+
+    def dns_checkbox_toggled(self, on):
+        self.fw_model.allowDns = on
+
+    def icmp_checkbox_toggled(self, on):
+        self.fw_model.allowIcmp = on
+
+    def new_rule_button_pressed(self):
+        dialog = NewFwRuleDlg()
+        self.run_rule_dialog(dialog)
+
+    def edit_rule_button_pressed(self):
+        dialog = NewFwRuleDlg()
+        dialog.set_ok_enabled(True)
+        selected = self.rulesTreeView.selectedIndexes()
+        if len(selected) > 0:
+            row = self.rulesTreeView.selectedIndexes().pop().row()
+            address = self.fw_model.get_column_string(0, row).replace(' ', '')
+            dialog.addressComboBox.setItemText(0, address)
+            dialog.addressComboBox.setCurrentIndex(0)
+            service = self.fw_model.get_column_string(1, row)
+            dialog.serviceComboBox.setItemText(0, service)
+            dialog.serviceComboBox.setCurrentIndex(0)
+            self.run_rule_dialog(dialog, row)
+
+    def delete_rule_button_pressed(self):
+        for i in set([index.row() for index in self.rulesTreeView.selectedIndexes()]):
+            self.fw_model.removeChild(i)
+
+    def run_rule_dialog(self, dialog, row = None):
+        if dialog.exec_():
+            address = str(dialog.addressComboBox.currentText())
+            service = str(dialog.serviceComboBox.currentText())
+            port = None
+            port2 = None
+
+            unmask = address.split("/", 1)
+            if len(unmask) == 2:
+                address = unmask[0]
+                netmask = int(unmask[1])
+            else:
+                netmask = 32
+
+            if address == "*":
+                address = "0.0.0.0"
+                netmask = 0
+
+            if service == "*":
+                service = "0"
+            try:
+                range = service.split("-", 1)
+                if len(range) == 2:
+                    port = int(range[0])
+                    port2 = int(range[1])
+                else:
+                    port = int(service)
+            except (TypeError, ValueError) as ex:
+                port = self.fw_model.get_service_port(service)
+
+            if port is not None:
+                if port2 is not None and port2 <= port:
+                    QMessageBox.warning(None, "Invalid service ports range", "Port {0} is lower than port {1}.".format(port2, port))
+                else:
+                    item = QubesFirewallRuleItem(address, netmask, port, port2)
+                    if row is not None:
+                        self.fw_model.setChild(row, item)
+                    else:
+                        self.fw_model.appendChild(item)
+            else:
+                QMessageBox.warning(None, "Invalid service name", "Service '{0} is unknown.".format(service))
 
 
 # Bases on the original code by:

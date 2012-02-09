@@ -43,8 +43,6 @@ from restore import RestoreVMsWindow
 from backup import BackupVMsWindow
 from global_settings import GlobalSettingsWindow
 
-from firewall import EditFwRulesDlg, QubesFirewallRulesModel
-
 from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
 
 import subprocess
@@ -1198,17 +1196,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot(name='on_action_editfwrules_triggered')
     def action_editfwrules_triggered(self):
         vm = self.get_selected_vm()
-        dialog = EditFwRulesDlg()
-        model = QubesFirewallRulesModel()
-        model.set_vm(vm)
-        dialog.set_model(model)
-
-        if vm.netvm_vm is not None and not vm.netvm_vm.is_proxyvm():
-            QMessageBox.warning (None, "VM configuration problem!", "The '{0}' AppVM is not network connected to a FirewallVM!<p>".format(vm.name) +\
-                    "You may edit the '{0}' VM firewall rules, but these will not take any effect until you connect it to a working Firewall VM.".format(vm.name))
-
-        if dialog.exec_():
-            model.apply_rules()
+        settings_window = VMSettingsWindow(vm, app, "firewall")
+        settings_window.exec_()
 
     @pyqtSlot(name='on_action_global_settings_triggered')
     def action_global_settings_triggered(self):
