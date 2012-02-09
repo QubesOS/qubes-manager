@@ -94,7 +94,7 @@ def main():
     qvm_collection.unlock_db()
 
     global global_window
-    global_window = GlobalSetingsWindow()
+    global_window = GlobalSettingsWindow()
 
     global_window.show()
 

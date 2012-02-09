@@ -38,7 +38,6 @@ from qubes import qubesutils
 import qubesmanager.resources_rc
 import ui_newappvmdlg
 from ui_mainwindow import *
-from appmenu_select import AppmenuSelectWindow
 from settings import VMSettingsWindow
 from restore import RestoreVMsWindow
 from backup import BackupVMsWindow
@@ -1136,15 +1135,16 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot(name='on_action_settings_triggered')
     def action_settings_triggered(self):
         vm = self.get_selected_vm()
-        settings_window = VMSettingsWindow(vm, 1)
+        settings_window = VMSettingsWindow(vm, app, "basic")
         settings_window.exec_()
    
 
     @pyqtSlot(name='on_action_appmenus_triggered')
     def action_appmenus_triggered(self):
         vm = self.get_selected_vm()
-        select_window = AppmenuSelectWindow(vm)
-        select_window.exec_()
+        settings_window = VMSettingsWindow(vm, app, "applications")
+        settings_window.exec_()
+
 
     @pyqtSlot(name='on_action_updatevm_triggered')
     def action_updatevm_triggered(self):

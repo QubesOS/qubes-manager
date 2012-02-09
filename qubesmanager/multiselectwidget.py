@@ -46,10 +46,3 @@ class MultiSelectWidget(Ui_MultiSelectWidget, QWidget):
         self.available_list.clear()
         self.selected_list.clear()
 
-        
-
-if __name__ == "__main__":
-    app = QtGui.QApplication(sys.argv)
-    ui = MultiSelectWidget()
-    ui.show()
-    sys.exit(app.exec_())

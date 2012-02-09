@@ -69,38 +69,19 @@ class ThreadMonitor(QObject):
         self.event_finished.set()
 
 
-class AppmenuSelectWindow(QDialog):
-    row_height = 20
+class AppmenuSelectManager:
+    def __init__(self, vm, apps_multiselect, parent=None):
 
-    def __init__(self, vm, parent=None):
-        super(AppmenuSelectWindow, self).__init__(parent)
-
-        self.gridLayout = QGridLayout(self)
-
-        self.buttonBox = QDialogButtonBox(self)
-        self.buttonBox.setStandardButtons(QDialogButtonBox.Cancel|QDialogButtonBox.Ok)
-        self.connect(self.buttonBox, SIGNAL("accepted()"), self.save_and_apply)
-        self.connect(self.buttonBox, SIGNAL("rejected()"), self.reject)
-
-        self.app_list = MultiSelectWidget(self)
-
+        self.app_list = apps_multiselect # this is a multiselect wiget
         
-        self.gridLayout.addWidget(self.app_list, 0, 0, 1, 1)
-        self.gridLayout.addWidget(self.buttonBox, 1, 0, 1, 1)
-
         self.vm = vm
         if self.vm.template_vm:
             self.source_vm = self.vm.template_vm
         else:
             self.source_vm = self.vm
-        self.setWindowTitle("Qubes Appmenus for %s" % vm.name)
-        self.resize(600,600)
 
         self.fill_apps_list()
 
-    def reject(self):
-        self.done(0)
- 
     def fill_apps_list(self):
 
         template_dir = self.source_vm.appmenus_templates_dir
@@ -146,73 +127,8 @@ class AppmenuSelectWindow(QDialog):
         whitelisted.close()        
  
 
-    def save_and_apply(self):
+    def save_appmenu_select_changes(self):
         self.save_list_of_selected()
         subprocess.check_call([qubes_appmenu_remove_cmd, self.vm.name])
         subprocess.check_call([qubes_appmenu_create_cmd, self.source_vm.appmenus_templates_dir, self.vm.name])
-        self.done(0)
-
-# Bases on the original code by:
-# Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
-
-def handle_exception( exc_type, exc_value, exc_traceback ):
-    import sys
-    import os.path
-    import traceback
-
-    filename, line, dummy, dummy = traceback.extract_tb( exc_traceback ).pop()
-    filename = os.path.basename( filename )
-    error    = "%s: %s" % ( exc_type.__name__, exc_value )
-
-    QMessageBox.critical(None, "Houston, we have a problem...",
-                         "Whoops. A critical error has occured. This is most likely a bug "
-                         "in Qubes Appmenu Select application.<br><br>"
-                         "<b><i>%s</i></b>" % error +
-                         "at <b>line %d</b> of file <b>%s</b>.<br/><br/>"
-                         % ( line, filename ))
-
-    #sys.exit(1)
-
-def main():
-
-
-    global qubes_host
-    qubes_host = QubesHost()
-
-    global app
-    app = QApplication(sys.argv)
-    app.setOrganizationName("The Qubes Project")
-    app.setOrganizationDomain("http://qubes-os.org")
-    app.setApplicationName("Qubes Appmenu Select")
-    app.setWindowIcon(QIcon(":/qubes.png"))
-
-    sys.excepthook = handle_exception
-
-    qvm_collection = QubesVmCollection()
-    qvm_collection.lock_db_for_reading()
-    qvm_collection.load()
-    qvm_collection.unlock_db()
-
-    vm = None
-
-    if len(sys.argv) > 1:
-        vm = qvm_collection.get_vm_by_name(sys.argv[1])
-        if vm is None or vm.qid not in qvm_collection:
-            QMessageBox.critical(None, "Qubes Appmenu Select Error",
-                    "A VM with the name '{0}' does not exist in the system.".format(sys.argv[1]))
-            sys.exit(1)
-    else:
-        vms_list = [vm.name for vm in qvm_collection.values() if (vm.is_appvm() or vm.is_template())]
-        vmname = QInputDialog.getItem(None, "Select VM", "Select VM:", vms_list, editable = False)
-        if not vmname[1]:
-            sys.exit(1)
-        vm = qvm_collection.get_vm_by_name(vmname[0])
-
-    global manager_window
-    select_window = AppmenuSelectWindow(vm)
-
-    select_window.show()
-
-    app.exec_()
-    app.exit()
 

@@ -45,17 +45,25 @@ from operator import itemgetter
 
 from ui_settingsdlg import *
 from multiselectwidget import *
-
+from appmenu_select import *
 
 
 class VMSettingsWindow(Ui_SettingsDialog, QDialog):
+    tabs_indices = {"basic": 0,
+                    "advanced": 1,
+                    "firewall": 2,
+                    "devices": 3,
+                    "applications": 4,
+                    "services": 5,}
 
-    def __init__(self, vm, init_page=0, parent=None):
+    def __init__(self, vm, app, init_page="basic", parent=None):
         super(VMSettingsWindow, self).__init__(parent)
 
         self.setupUi(self)
-        if init_page in range(self.tabWidget.count()):
-            self.tabWidget.setCurrentIndex(init_page)
+        if init_page in self.tabs_indices:
+            idx = self.tabs_indices[init_page]
+            assert (idx in range(self.tabWidget.count()))
+            self.tabWidget.setCurrentIndex(idx)
 
         self.connect(self.buttonBox, SIGNAL("accepted()"), self.save_and_apply)
         self.connect(self.buttonBox, SIGNAL("rejected()"), self.reject)
@@ -66,21 +74,48 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.apps_layout.addWidget(self.app_list)
         self.devices_layout.addWidget(self.dev_list)
 
+        self.app = app
         self.vm = vm
         if self.vm.template_vm:
             self.source_vm = self.vm.template_vm
         else:
             self.source_vm = self.vm
-
-        
-        #self.fill_apps_list()
-        #self.fill_devices_list()
+         
+        self.AppListManager = AppmenuSelectManager(self.vm, self.app_list)
 
     def reject(self):
         self.done(0)
 
-    def save_and_apply(self):
+    #needed not to close the dialog before applying changes
+    def accept(self):
         pass
+
+    def save_and_apply(self):
+        thread_monitor = ThreadMonitor()
+        thread = threading.Thread (target=self.__save_changes__, args=(thread_monitor,))
+        thread.daemon = True
+        thread.start()
+        
+        progress = QProgressDialog ("Applying settings to <b>{0}</b>...".format(self.vm.name), "", 0, 0)
+        progress.setCancelButton(None)
+        progress.setModal(True)
+        progress.show()
+
+        while not thread_monitor.is_finished():
+            self.app.processEvents()
+            time.sleep (0.1)
+
+        progress.hide()
+        
+        if not thread_monitor.success:
+            QMessageBox.warning (None, "Error while changing settings for {0}!", "ERROR: {1}".format(self.vm.namethread_monitor.error_msg))
+
+        self.done(0)
+
+    def __save_changes__(self, thread_monitor):
+        self.AppListManager.save_appmenu_select_changes()
+        thread_monitor.set_finished()
+
 
 # Bases on the original code by:
 # Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
@@ -100,8 +135,6 @@ def handle_exception( exc_type, exc_value, exc_traceback ):
                          "<b><i>%s</i></b>" % error +
                          "at <b>line %d</b> of file <b>%s</b>.<br/><br/>"
                          % ( line, filename ))
-
-
 
 
 def main():
@@ -137,14 +170,14 @@ def main():
             sys.exit(1)
         vm = qvm_collection.get_vm_by_name(vmname[0])
 
+
     global settings_window
-    settings_window = VMSettingsWindow(vm)
+    settings_window = VMSettingsWindow(vm, app, "basic")
 
     settings_window.show()
 
     app.exec_()
     app.exit()
-
 
 
 if __name__ == "__main__":
