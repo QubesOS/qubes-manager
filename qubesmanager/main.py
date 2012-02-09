@@ -473,10 +473,10 @@ class QubesBlockDevicesManager():
                 self.current_attached[b] = att
                 self.devs_changed = True
 
-        for b in self.current_blk:
+        for b in self.current_blk: #remove devices that are not there anymore
             if b not in blk:
                 del self.current_blk[b]
-                del current_attached[b]
+                del self.current_attached[b]
                 self.devs_changed = True
 
         if self.devs_changed == True:
