@@ -200,11 +200,6 @@
       </column>
       <column>
        <property name="text">
-        <string>Update Info</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
         <string>Block Devices</string>
        </property>
       </column>
@@ -240,7 +235,6 @@
     <addaction name="actionCPU_Graph"/>
     <addaction name="actionMEM"/>
     <addaction name="actionMEM_Graph"/>
-    <addaction name="actionUpdate_Info"/>
     <addaction name="actionBlock_Devices"/>
    </widget>
    <addaction name="menuOptions"/>
@@ -508,17 +502,6 @@
    </property>
    <property name="text">
     <string>Block Devices</string>
-   </property>
-  </action>
-  <action name="actionUpdate_Info">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Update Info</string>
    </property>
   </action>
   <action name="action_settings">

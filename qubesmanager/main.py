@@ -561,12 +561,8 @@ class VmRowInTable(object):
         table.setCellWidget(row_no, 7, self.mem_widget)
         table.setItem(row_no, 7, self.mem_widget.tableItem)
  
-        self.updateinfo_widget = VmUpdateInfoWidget(vm, True)
-        table.setCellWidget(row_no, 8, self.updateinfo_widget)
-        table.setItem(row_no, 8, self.updateinfo_widget.tableItem)
-
         self.blockdevices_widget = VmBlockDevicesWidget(vm, block_manager)
-        table.setCellWidget(row_no, 9, self.blockdevices_widget)
+        table.setCellWidget(row_no, 8, self.blockdevices_widget)
 
 
     def update(self, counter, update_devs = False, cpu_load = None):
@@ -577,7 +573,6 @@ class VmRowInTable(object):
             self.mem_usage_widget.update_load(self.vm, None)
             self.load_widget.update_load(self.vm, cpu_load)
             self.mem_widget.update_load(self.vm, None)
-            self.updateinfo_widget.update_outdated(self.vm)
             self.upd_widget.update_outdated(self.vm)
         if self.blockdevices_widget.isEnabled() and update_devs:
             self.blockdevices_widget.update(self.vm)
@@ -642,8 +637,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         "CPU Graph": 5,
                         "MEM": 6,
                         "MEM Graph": 7,
-                        "Update Info": 8,
-                        "Block Device": 9 }
+                        "Block Device": 8 }
 
 
 
@@ -667,8 +661,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             
         self.table.setColumnHidden( self.columns_indices["NetVM"], True)
         self.actionNetVM.setChecked(False)
-        self.table.setColumnHidden( self.columns_indices["Update Info"], True)
-        self.actionUpdate_Info.setChecked(False)
         self.table.setColumnHidden( self.columns_indices["CPU Graph"], True)
         self.actionCPU_Graph.setChecked(False)
         self.table.setColumnHidden( self.columns_indices["MEM Graph"], True)
@@ -1241,9 +1233,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     
     def on_actionMEM_Graph_toggled(self, checked):
         self.showhide_collumn( self.columns_indices['MEM Graph'], checked)
-
-    def on_actionUpdate_Info_toggled(self, checked):
-        self.showhide_collumn( self.columns_indices['Update Info'], checked)    
 
     def on_actionBlock_Devices_toggled(self, checked):
         self.showhide_collumn( self.columns_indices['Block Device'], checked)
