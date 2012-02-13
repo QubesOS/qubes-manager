@@ -102,15 +102,15 @@ class VmStatusIcon(QLabel):
 class VmInfoWidget (QWidget):
 
     class VmInfoItem (QTableWidgetItem):
-        def __init__(self, value):
+        def __init__(self, name, qid):
             super(VmInfoWidget.VmInfoItem, self).__init__()
-            self.value = value
+            self.value = (name, qid)
 
         def set_value(self, value):
             self.value = value            
         
         def __lt__(self, other):
-            return self.value < other.value
+            return self.value[0] < other.value[0] #compare vm.name
 
 
     def __init__(self, vm, parent = None):
@@ -127,7 +127,7 @@ class VmInfoWidget (QWidget):
 
         self.setLayout(layout)
 
-        self.tableItem = self.VmInfoItem(vm.name)
+        self.tableItem = self.VmInfoItem(vm.name, vm.qid)
         
     def update_vm_state (self, vm):
         self.vm_icon.update()
@@ -783,7 +783,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             if vm.internal:
                 continue
             vm_row = VmRowInTable (vm, row_no, self.table, self.blkManager)
-            vms_in_table[vm.name] = vm_row
+            vms_in_table[vm.qid] = vm_row
             row_no += 1
 
         self.table.setRowCount(row_no)
@@ -976,9 +976,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         #vm selection relies on the VmInfo widget's value used for sorting by VM name
         row_index = self.table.currentRow()
         if row_index != None:
-            vm_name = self.table.item(row_index, self.columns_indices["Name"]).value
-            assert self.vms_in_table[vm_name] is not None
-            vm = self.vms_in_table[vm_name].vm
+            (vm_name, qid) = self.table.item(row_index, self.columns_indices["Name"]).value
+            assert self.vms_in_table[qid] is not None
+            vm = self.vms_in_table[qid].vm
             return vm
         else:
             return None
@@ -1133,14 +1133,14 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot(name='on_action_settings_triggered')
     def action_settings_triggered(self):
         vm = self.get_selected_vm()
-        settings_window = VMSettingsWindow(vm, app, "basic")
+        settings_window = VMSettingsWindow(vm, app, self.qvm_collection, "basic")
         settings_window.exec_()
    
 
     @pyqtSlot(name='on_action_appmenus_triggered')
     def action_appmenus_triggered(self):
         vm = self.get_selected_vm()
-        settings_window = VMSettingsWindow(vm, app, "applications")
+        settings_window = VMSettingsWindow(vm, app, self.qvm_collection, "applications")
         settings_window.exec_()
 
 

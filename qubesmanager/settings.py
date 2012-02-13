@@ -27,6 +27,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
 from qubes.qubes import QubesVmCollection
+from qubes.qubes import QubesVmLabels
 from qubes.qubes import QubesException
 from qubes.qubes import qubes_appmenu_create_cmd
 from qubes.qubes import qubes_appmenu_remove_cmd
@@ -57,10 +58,11 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                     "applications": 4,
                     "services": 5,}
 
-    def __init__(self, vm, app, init_page="basic", parent=None):
+    def __init__(self, vm, app, qvm_collection, init_page="basic", parent=None):
         super(VMSettingsWindow, self).__init__(parent)
 
         self.app = app
+        self.qvm_collection = qvm_collection
         self.vm = vm
         if self.vm.template_vm:
             self.source_vm = self.vm.template_vm
@@ -77,6 +79,9 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.connect(self.buttonBox, SIGNAL("rejected()"), self.reject)
 
         self.tabWidget.currentChanged.connect(self.current_tab_changed)
+
+        ###### basic tab
+        self.__init_basic_tab__()
 
         ###### firewall tab
 
@@ -97,9 +102,12 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.devices_layout.addWidget(self.dev_list)
  
         ####### apps tab
-        self.app_list = MultiSelectWidget(self)
-        self.apps_layout.addWidget(self.app_list)
-        self.AppListManager = AppmenuSelectManager(self.vm, self.app_list)
+        if not vm.is_netvm():
+            self.app_list = MultiSelectWidget(self)
+            self.apps_layout.addWidget(self.app_list)
+            self.AppListManager = AppmenuSelectManager(self.vm, self.app_list)
+        else:
+            self.tabWidget.setTabEnabled(self.tabs_indices["applications"], False)
 
     def reject(self):
         self.done(0)
@@ -126,13 +134,18 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         progress.hide()
         
         if not thread_monitor.success:
-            QMessageBox.warning (None, "Error while changing settings for {0}!", "ERROR: {1}".format(self.vm.namethread_monitor.error_msg))
+            QMessageBox.warning (None, "Error while changing settings for {0}!", "ERROR: {1}".format(self.vm.name, thread_monitor.error_msg))
 
         self.done(0)
 
     def __save_changes__(self, thread_monitor):
-        self.fw_model.apply_rules()
-        self.AppListManager.save_appmenu_select_changes()
+        ret = self.__apply_basic_tab__()
+        if len(ret) > 0 :
+            thread_monitor.set_error_msg('\n'.join(ret))
+            thread_monitor.set_finished()
+            return
+        #self.fw_model.apply_rules()
+        #self.AppListManager.save_appmenu_select_changes()
         thread_monitor.set_finished()
 
     def current_tab_changed(self, idx):
@@ -142,6 +155,97 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                     "You may edit the '{0}' VM firewall rules, but these will not take any effect until you connect it to a working Firewall VM.".format(self.vm.name))
 
 
+
+    ######### basic tab
+
+    def __init_basic_tab__(self):
+        self.vmname.setText(self.vm.name)
+        
+        #self.qvm_collection.lock_db_for_reading()
+        #self.qvm_collection.load()
+        #self.qvm_collection.unlock_db()
+        
+        self.label_list = QubesVmLabels.values()
+        self.label_list.sort(key=lambda l: l.index)
+        self.label_idx = 0
+        for (i, label) in enumerate(self.label_list):
+            if label == self.vm.label:
+                self.label_idx = i
+            self.vmlabel.insertItem(i, label.name)
+            self.vmlabel.setItemIcon (i, QIcon(label.icon_path))
+        self.vmlabel.setCurrentIndex(self.label_idx)
+
+        if not self.vm.is_template() and self.vm.template_vm is not None:
+            template_vm_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_template()]
+            self.template_idx = 0
+            for (i, vm) in enumerate(template_vm_list):
+                text = vm.name
+                if vm is self.qvm_collection.get_default_template_vm():
+                    text += " (default)"
+                if vm.qid == self.vm.template_vm.qid:
+                    self.template_idx = i
+                    text += " (current)"
+                self.template_name.insertItem(i, text)
+            self.template_name.setCurrentIndex(self.template_idx)
+        else:
+            self.template_name.setEnabled(False)
+
+        if not self.vm.is_netvm():
+            netvm_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_netvm()]
+            self.netvm_idx = 0
+            for (i, vm) in enumerate(netvm_list):
+                text = vm.name
+                if vm is self.qvm_collection.get_default_netvm_vm():
+                    text += " (default)"
+                if vm.qid == self.vm.netvm_vm.qid:
+                    self.netvm_idx = i
+                    text += " (current)"
+                self.netVM.insertItem(i, text)
+            self.netVM.setCurrentIndex(self.netvm_idx)
+        else:
+            self.netVM.setEnabled(False)
+
+        #self.vmname.selectAll()
+        #self.vmname.setFocus()
+
+    def __apply_basic_tab__(self):
+        msg = []
+
+        if self.vm.is_running():
+            msg.append("Can't change settings of a running VM.")
+            msg.append("telemele")
+            return msg
+
+        # vmname changed
+        vmname = str(self.vmname.text())
+        if self.vm.name != vmname:
+            if self.qvm_collection.get_vm_by_name(vmname) is not None:
+                msg.append("A VM named <b>{0}</b> already exists in the system!".format(vmname))
+            else:
+                oldname = self.vm.name
+                try:
+                    self.qvm_collection.lock_db_for_writing()
+                    self.vm.pre_rename(vmname)
+                    self.vm.set_name(vmname)
+                    self.vm.post_rename(oldname)
+                    self.qvm_collection.save()
+                except Exception as ex:
+                    msg.append(str(ex))
+                finally:
+                    self.qvm_collection.unlock_db()
+
+        #vm label changed
+        if self.vmlabel.currentIndex() != self.label_idx:
+            label = self.label_list[self.vmlabel.currentIndex()]
+            self.qvm_collection.lock_db_for_writing()
+            self.vm.label = label
+            self.qvm_collection.save()
+            self.qvm_collection.unlock_db()
+
+        return msg
+
+       # template_vm = template_vm_list[dialog.template_name.currentIndex()]
+       # allow_networking = dialog.allow_networking.isChecked()
 
     ######### firewall tab related
 
@@ -287,7 +391,7 @@ def main():
 
 
     global settings_window
-    settings_window = VMSettingsWindow(vm, app, "basic")
+    settings_window = VMSettingsWindow(vm, app, qvm_collection, "basic")
 
     settings_window.show()
 
