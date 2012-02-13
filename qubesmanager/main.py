@@ -205,7 +205,7 @@ class VmUsageBarWidget (QWidget):
         def __lt__(self, other):
             return self.value < other.value
 
-    def __init__(self, min, max, format, update_func, vm, load, parent = None):
+    def __init__(self, min, max, format, update_func, vm, load, hue=210, parent = None):
         super (VmUsageBarWidget, self).__init__(parent)
         
 
@@ -220,14 +220,16 @@ class VmUsageBarWidget (QWidget):
         self.widget.setFormat(format);
 
         self.widget.setStyleSheet(
-                                    "QProgressBar:horizontal{ \
-                                        border: 1px solid lightblue;\
-                                        border-radius: 4px;\
+                                    "QProgressBar:horizontal{" +\
+                                        "border: 1px solid hsv({0}, 100, 250);".format(hue) +\
+                                        "border-radius: 4px;\
                                         background: white;\
                                         text-align: center;\
                                     }\
                                     QProgressBar::chunk:horizontal {\
-                                        background: qlineargradient(x1: 0, y1: 0.5, x2: 1, y2: 0.5, stop: 0 hsv(210, 170, 207), stop: 1 white);\
+                                        background: qlineargradient(x1: 0, y1: 0.5, x2: 1, y2: 0.5, " +\
+                                        "stop: 0 hsv({0}, 170, 207),".format(hue) +
+                                        " stop: 1 white); \
                                     }"
             )
 
@@ -521,6 +523,9 @@ class QubesBlockDevicesManager():
 
 
 class VmRowInTable(object):
+    cpu_graph_hue = 210
+    mem_graph_hue = 120
+
     def __init__(self, vm, row_no, table, block_manager):
         self.vm = vm
         self.row_no = row_no
@@ -541,23 +546,22 @@ class VmRowInTable(object):
         self.netvm_widget = VmNetvmItem(vm)
         table.setItem(row_no, 3, self.netvm_widget)
 
-        self.cpu_usage_widget = VmUsageBarWidget(0, 100, "", 
-                            lambda vm, val: val if vm.last_power_state else 0, vm, 0)
+        self.cpu_usage_widget = VmUsageBarWidget(0, 100, "%v %", 
+                            lambda vm, val: val if vm.last_power_state else 0, vm, 0, self.cpu_graph_hue)
         table.setCellWidget(row_no, 4, self.cpu_usage_widget)
         table.setItem(row_no, 4, self.cpu_usage_widget.tableItem)
 
-        #self.load_widget = LoadChartWidget(vm)
-        self.load_widget = ChartWidget(vm, lambda vm, val: val if vm.last_power_state else 0, 200, 0 )
+        self.load_widget = ChartWidget(vm, lambda vm, val: val if vm.last_power_state else 0, self.cpu_graph_hue, 0 )
         table.setCellWidget(row_no, 5, self.load_widget)
         table.setItem(row_no, 5, self.load_widget.tableItem)
 
         self.mem_usage_widget = VmUsageBarWidget(0, qubes_host.memory_total/1024, "%v MB", 
-                            lambda vm, val: vm.get_mem()/1024 if vm.last_power_state else 0, vm, 0)
+                            lambda vm, val: vm.get_mem()/1024 if vm.last_power_state else 0, vm, 0, self.mem_graph_hue)
         table.setCellWidget(row_no, 6, self.mem_usage_widget)
         table.setItem(row_no, 6, self.mem_usage_widget.tableItem)
 
 
-        self.mem_widget = ChartWidget(vm, lambda vm, val: vm.get_mem()*100/qubes_host.memory_total if vm.last_power_state else 0, 120, 0)
+        self.mem_widget = ChartWidget(vm, lambda vm, val: vm.get_mem()*100/qubes_host.memory_total if vm.last_power_state else 0, self.mem_graph_hue, 0)
         table.setCellWidget(row_no, 7, self.mem_widget)
         table.setItem(row_no, 7, self.mem_widget.tableItem)
  
