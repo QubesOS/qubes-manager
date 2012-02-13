@@ -1196,7 +1196,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot(name='on_action_editfwrules_triggered')
     def action_editfwrules_triggered(self):
         vm = self.get_selected_vm()
-        settings_window = VMSettingsWindow(vm, app, "firewall")
+        settings_window = VMSettingsWindow(vm, app, self.qvm_collection, "firewall")
         settings_window.exec_()
 
     @pyqtSlot(name='on_action_global_settings_triggered')

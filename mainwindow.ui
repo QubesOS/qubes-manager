@@ -399,7 +399,7 @@
   <action name="action_editfwrules">
    <property name="icon">
     <iconset resource="resources.qrc">
-     <normaloff>:/newfirewall.png</normaloff>:/newfirewall.png</iconset>
+     <normaloff>:/redfirewall.png</normaloff>:/redfirewall.png</iconset>
    </property>
    <property name="text">
     <string>Edit VM Firewall rules</string>
