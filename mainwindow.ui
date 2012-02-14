@@ -82,7 +82,7 @@
        </size>
       </property>
       <property name="contextMenuPolicy">
-       <enum>Qt::ActionsContextMenu</enum>
+       <enum>Qt::CustomContextMenu</enum>
       </property>
       <property name="acceptDrops">
        <bool>false</bool>
@@ -198,11 +198,6 @@
         <string>Memory usage graph</string>
        </property>
       </column>
-      <column>
-       <property name="text">
-        <string>Block Devices</string>
-       </property>
-      </column>
      </widget>
     </item>
    </layout>
@@ -235,7 +230,6 @@
     <addaction name="actionCPU_Graph"/>
     <addaction name="actionMEM"/>
     <addaction name="actionMEM_Graph"/>
-    <addaction name="actionBlock_Devices"/>
    </widget>
    <addaction name="menuOptions"/>
    <addaction name="menuView"/>
@@ -257,11 +251,12 @@
     <bool>false</bool>
    </attribute>
    <addaction name="action_createvm"/>
-   <addaction name="separator"/>
    <addaction name="action_removevm"/>
+   <addaction name="separator"/>
    <addaction name="action_resumevm"/>
    <addaction name="action_pausevm"/>
    <addaction name="action_shutdownvm"/>
+   <addaction name="separator"/>
    <addaction name="action_settings"/>
    <addaction name="action_editfwrules"/>
    <addaction name="action_appmenus"/>
@@ -491,17 +486,6 @@
    </property>
    <property name="text">
     <string>NetVM</string>
-   </property>
-  </action>
-  <action name="actionBlock_Devices">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Block Devices</string>
    </property>
   </action>
   <action name="action_settings">

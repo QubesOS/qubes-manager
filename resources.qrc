@@ -1,5 +1,6 @@
 <RCC>
   <qresource>
+    <file alias="mount.png">icons/mount.png</file>
     <file alias="pencil.png">icons/pencil.png</file>
     <file alias="redfirewall.png">icons/redfirewall.png</file>
     <file alias="edit.png">icons/edit.png</file>
