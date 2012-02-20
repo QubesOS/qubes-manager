@@ -5,6 +5,8 @@ from ui_multiselectwidget import *
 
 class MultiSelectWidget(Ui_MultiSelectWidget, QWidget):
 
+    __pyqtSignals__ = ("selected_changed()",)
+
     def __init__(self, parent=None):
         super(MultiSelectWidget, self).__init__()
         self.setupUi(self);
@@ -23,18 +25,20 @@ class MultiSelectWidget(Ui_MultiSelectWidget, QWidget):
             item = src.takeItem(row)
             dst.addItem(item)
         dst.sortItems()
+        self.emit(SIGNAL("selected_changed()"))
 
     def add_selected(self):
         self.switch_selected(self.available_list, self.selected_list)
 
     def remove_selected(self):
-        self.switch_selected(self.selected_list, self.available_list)        
-
+        self.switch_selected(self.selected_list, self.available_list)    
+   
     def move_all(self, src, dst):
         while src.count() > 0:
             item = src.takeItem(0)
             dst.addItem(item)
         dst.sortItems()
+        self.emit(SIGNAL("selected_changed()"))
 
     def add_all(self):
         self.move_all(self.available_list, self.selected_list)

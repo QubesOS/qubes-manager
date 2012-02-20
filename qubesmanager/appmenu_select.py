@@ -39,9 +39,10 @@ from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, Pro
 
 import subprocess
 import time
-import threading
+
 from operator import itemgetter
 
+from thread_monitor import *
 from multiselectwidget import *
 
 whitelisted_filename = 'whitelisted-appmenus.list'
@@ -51,22 +52,6 @@ class AppListWidgetItem(QListWidgetItem):
         super(AppListWidgetItem, self).__init__(name, parent)
         self.filename = filename
 
-class ThreadMonitor(QObject):
-    def __init__(self):
-        self.success = True
-        self.error_msg = None
-        self.event_finished = threading.Event()
-
-    def set_error_msg(self, error_msg):
-        self.success = False
-        self.error_msg = error_msg
-        self.set_finished()
-
-    def is_finished(self):
-        return self.event_finished.is_set()
-
-    def set_finished(self):
-        self.event_finished.set()
 
 
 class AppmenuSelectManager:

@@ -145,7 +145,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             thread_monitor.set_finished()
             return
         #self.fw_model.apply_rules()
-        #self.AppListManager.save_appmenu_select_changes()
+        self.AppListManager.save_appmenu_select_changes()
         thread_monitor.set_finished()
 
     def current_tab_changed(self, idx):

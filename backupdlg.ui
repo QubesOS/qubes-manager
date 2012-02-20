@@ -19,7 +19,7 @@
   <property name="options">
    <set>QWizard::NoBackButtonOnLastPage|QWizard::NoBackButtonOnStartPage</set>
   </property>
-  <widget class="QWizardPage" name="wizardPage1">
+  <widget class="QWizardPage" name="select_vms_page">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="QLabel" name="label_4">
@@ -39,7 +39,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage">
+  <widget class="QWizardPage" name="select_dir_page">
    <layout class="QHBoxLayout" name="horizontalLayout">
     <item>
      <widget class="QGroupBox" name="groupBox">
@@ -55,7 +55,7 @@
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QComboBox" name="comboBox">
+        <widget class="QComboBox" name="dev_combobox">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -92,10 +92,10 @@
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QLineEdit" name="pathLineEdit"/>
+        <widget class="QLineEdit" name="dir_line_edit"/>
        </item>
        <item row="1" column="2">
-        <widget class="QToolButton" name="selectPathButton">
+        <widget class="QToolButton" name="select_path_button">
          <property name="text">
           <string>...</string>
          </property>
@@ -106,7 +106,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage2">
+  <widget class="QWizardPage" name="confirm_page">
    <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
      <widget class="QLabel" name="label_6">
@@ -157,7 +157,7 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage_2">
+  <widget class="QWizardPage" name="commit_page">
    <layout class="QVBoxLayout" name="verticalLayout_3">
     <item>
      <widget class="QLabel" name="label_8">
@@ -176,7 +176,7 @@ p, li { white-space: pre-wrap; }
      </widget>
     </item>
     <item>
-     <widget class="QProgressBar" name="progressBar">
+     <widget class="QProgressBar" name="progress_bar">
       <property name="value">
        <number>24</number>
       </property>

@@ -42,12 +42,12 @@ from settings import VMSettingsWindow
 from restore import RestoreVMsWindow
 from backup import BackupVMsWindow
 from global_settings import GlobalSettingsWindow
+from thread_monitor import *
 
 from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
 
 import subprocess
 import time
-import threading
 from datetime import datetime,timedelta
 
 updates_stat_file = 'last_update.stat'
@@ -485,23 +485,6 @@ class VmShutdownMonitor(QObject):
             vm.force_shutdown()
         else:
             QTimer.singleShot (vm_shutdown_timeout, self.check_if_vm_has_shutdown)
-
-class ThreadMonitor(QObject):
-    def __init__(self):
-        self.success = True
-        self.error_msg = None
-        self.event_finished = threading.Event()
-
-    def set_error_msg(self, error_msg):
-        self.success = False
-        self.error_msg = error_msg
-        self.set_finished()
-
-    def is_finished(self):
-        return self.event_finished.is_set()
-
-    def set_finished(self):
-        self.event_finished.set()
 
 
 class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
@@ -1105,7 +1088,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
     @pyqtSlot(name='on_action_backup_triggered')
     def action_backup_triggered(self):
-        backup_window = BackupVMsWindow()
+        backup_window = BackupVMsWindow(app, self.qvm_collection, self.blk_manager)
         backup_window.exec_()
 
 
@@ -1151,8 +1134,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         action = self.blk_menu.addAction(QIcon(":/remove.png"), str)
                         action.setData(QVariant(d))
 
-            if self.blk_menu.isEmpty() and len(self.blk_manager.free_devs) > 0:
+            if len(self.blk_manager.free_devs) > 0:
                 for d in self.blk_manager.free_devs:
+                    if d.startswith(vm.name):
+                        continue
                     str = "Attach  " + d + " " + unicode(self.blk_manager.free_devs[d]['size']) + " " + self.blk_manager.free_devs[d]['desc']
                     action = self.blk_menu.addAction(QIcon(":/add.png"), str)
                     action.setData(QVariant(d))

@@ -19,7 +19,7 @@
   <property name="options">
    <set>QWizard::NoBackButtonOnLastPage|QWizard::NoBackButtonOnStartPage</set>
   </property>
-  <widget class="QWizardPage" name="wizardPage1">
+  <widget class="QWizardPage" name="select_dir_page">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="QGroupBox" name="groupBox_2">
@@ -111,7 +111,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage">
+  <widget class="QWizardPage" name="select_vms_page">
    <layout class="QVBoxLayout" name="verticalLayout_4">
     <item>
      <widget class="QGroupBox" name="seletVMsGroupbox">
@@ -184,7 +184,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage2">
+  <widget class="QWizardPage" name="confirm_page">
    <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
      <widget class="QLabel" name="label_6">
@@ -235,7 +235,7 @@ p, li { white-space: pre-wrap; }
     </item>
    </layout>
   </widget>
-  <widget class="QWizardPage" name="wizardPage_2">
+  <widget class="QWizardPage" name="commit_page">
    <layout class="QVBoxLayout" name="verticalLayout_3">
     <item>
      <widget class="QLabel" name="label_8">
