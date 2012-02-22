@@ -22,11 +22,14 @@
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
       <widget class="QTabWidget" name="tabWidget">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
        <property name="locale">
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>2</number>
+        <number>5</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -86,7 +89,7 @@
             <item row="3" column="0" colspan="2">
              <widget class="QCheckBox" name="checkBox">
               <property name="enabled">
-               <bool>true</bool>
+               <bool>false</bool>
               </property>
               <property name="text">
                <string>Include in backups by default</string>
@@ -101,6 +104,9 @@
          </item>
          <item>
           <widget class="QGroupBox" name="groupBox_4">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="title">
             <string>Info</string>
            </property>
@@ -153,6 +159,9 @@
          </item>
          <item>
           <widget class="QGroupBox" name="groupBox">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="title">
             <string>Disk storage</string>
            </property>
@@ -160,7 +169,7 @@
             <item row="0" column="1">
              <widget class="QSpinBox" name="priv_size">
               <property name="enabled">
-               <bool>true</bool>
+               <bool>false</bool>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -206,6 +215,9 @@
         </layout>
        </widget>
        <widget class="QWidget" name="advanced_tab">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <attribute name="title">
          <string>Advanced</string>
         </attribute>
@@ -604,6 +616,9 @@
         </layout>
        </widget>
        <widget class="QWidget" name="devices_tab">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <attribute name="title">
          <string>Devices</string>
         </attribute>
@@ -628,6 +643,9 @@
         </layout>
        </widget>
        <widget class="QWidget" name="services_tab">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <attribute name="title">
          <string>Services</string>
         </attribute>
