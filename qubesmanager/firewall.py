@@ -31,106 +31,8 @@ from qubes.qubes import QubesVmCollection
 from qubes.qubes import QubesException
 from qubes.qubes import dry_run
 
-import ui_editfwrulesdlg
 import ui_newfwruledlg
 
-class EditFwRulesDlg (QDialog, ui_editfwrulesdlg.Ui_EditFwRulesDlg):
-    def __init__(self, parent = None):
-        super (EditFwRulesDlg, self).__init__(parent)
-        self.setupUi(self)
-        self.newRuleButton.clicked.connect(self.new_rule_button_pressed)
-        self.editRuleButton.clicked.connect(self.edit_rule_button_pressed)
-        self.deleteRuleButton.clicked.connect(self.delete_rule_button_pressed)
-        self.policyAllowRadioButton.toggled.connect(self.policy_radio_toggled)
-        self.dnsCheckBox.toggled.connect(self.dns_checkbox_toggled)
-        self.icmpCheckBox.toggled.connect(self.icmp_checkbox_toggled)
-
-    def set_model(self, model):
-        self.__model = model
-        self.rulesTreeView.setModel(model)
-        self.rulesTreeView.header().setResizeMode(QHeaderView.ResizeToContents)
-        self.rulesTreeView.header().setResizeMode(0, QHeaderView.Stretch)
-        self.set_allow(model.allow)
-        self.dnsCheckBox.setChecked(model.allowDns)
-        self.icmpCheckBox.setChecked(model.allowIcmp)
-        self.setWindowTitle(model.get_vm_name() + " firewall")
-
-    def set_allow(self, allow):
-        self.policyAllowRadioButton.setChecked(allow)
-        self.policyDenyRadioButton.setChecked(not allow)
-
-    def policy_radio_toggled(self, on):
-        self.__model.allow = self.policyAllowRadioButton.isChecked()
-
-    def dns_checkbox_toggled(self, on):
-        self.__model.allowDns = on
-
-    def icmp_checkbox_toggled(self, on):
-        self.__model.allowIcmp = on
-
-    def new_rule_button_pressed(self):
-        dialog = NewFwRuleDlg()
-        self.run_rule_dialog(dialog)
-
-    def edit_rule_button_pressed(self):
-        dialog = NewFwRuleDlg()
-        dialog.set_ok_enabled(True)
-        selected = self.rulesTreeView.selectedIndexes()
-        if len(selected) > 0:
-            row = self.rulesTreeView.selectedIndexes().pop().row()
-            address = self.__model.get_column_string(0, row).replace(' ', '')
-            dialog.addressComboBox.setItemText(0, address)
-            dialog.addressComboBox.setCurrentIndex(0)
-            service = self.__model.get_column_string(1, row)
-            dialog.serviceComboBox.setItemText(0, service)
-            dialog.serviceComboBox.setCurrentIndex(0)
-            self.run_rule_dialog(dialog, row)
-
-    def run_rule_dialog(self, dialog, row = None):
-        if dialog.exec_():
-            address = str(dialog.addressComboBox.currentText())
-            service = str(dialog.serviceComboBox.currentText())
-            port = None
-            port2 = None
-
-            unmask = address.split("/", 1)
-            if len(unmask) == 2:
-                address = unmask[0]
-                netmask = int(unmask[1])
-            else:
-                netmask = 32
-
-            if address == "*":
-                address = "0.0.0.0"
-                netmask = 0
-
-            if service == "*":
-                service = "0"
-            try:
-                range = service.split("-", 1)
-                if len(range) == 2:
-                    port = int(range[0])
-                    port2 = int(range[1])
-                else:
-                    port = int(service)
-            except (TypeError, ValueError) as ex:
-                port = self.__model.get_service_port(service)
-
-            if port is not None:
-                if port2 is not None and port2 <= port:
-                    QMessageBox.warning(None, "Invalid service ports range", "Port {0} is lower than port {1}.".format(port2, port))
-                else:
-                    item = QubesFirewallRuleItem(address, netmask, port, port2)
-                    if row is not None:
-                        self.__model.setChild(row, item)
-                    else:
-                        self.__model.appendChild(item)
-            else:
-                QMessageBox.warning(None, "Invalid service name", "Service '{0} is unknown.".format(service))
-
-    def delete_rule_button_pressed(self):
-        for i in set([index.row() for index in self.rulesTreeView.selectedIndexes()]):
-            self.__model.removeChild(i)
 
 class QIPAddressValidator(QValidator):
     def __init__(self, parent = None):
@@ -397,3 +299,4 @@ class QubesFirewallRulesModel(QAbstractItemModel):
 
     def __len__(self):
         return len(self.children)
+

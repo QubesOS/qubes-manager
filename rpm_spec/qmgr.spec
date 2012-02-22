@@ -33,12 +33,25 @@ cp qubes-appmenu-select $RPM_BUILD_ROOT/usr/bin
 mkdir -p $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager/
 cp qubesmanager/main.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/appmenu_select.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/backup.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/backup_utils.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/firewall.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/qrc_resources.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/global_settings.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/multiselectwidget.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/restore.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/settings.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/thread_monitor.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/resources_rc.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/__init__.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/ui_backupdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/ui_editfwrulesdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/ui_globalsettingsdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/ui_mainwindow.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/ui_multiselectwidget.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/ui_newappvmdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/ui_newfwruledlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/ui_editfwrulesdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/ui_restoredlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/ui_settingsdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 
 mkdir -p $RPM_BUILD_ROOT/usr/share/applications
 cp qubes-manager.desktop $RPM_BUILD_ROOT/usr/share/applications
@@ -67,21 +80,60 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitearch}/qubesmanager/appmenu_select.py
 %{python_sitearch}/qubesmanager/appmenu_select.pyc
 %{python_sitearch}/qubesmanager/appmenu_select.pyo
+%{python_sitearch}/qubesmanager/backup.py
+%{python_sitearch}/qubesmanager/backup.pyc
+%{python_sitearch}/qubesmanager/backup.pyo
+%{python_sitearch}/qubesmanager/backup_utils.py
+%{python_sitearch}/qubesmanager/backup_utils.pyc
+%{python_sitearch}/qubesmanager/backup_utils.pyo
 %{python_sitearch}/qubesmanager/firewall.py
 %{python_sitearch}/qubesmanager/firewall.pyc
 %{python_sitearch}/qubesmanager/firewall.pyo
-%{python_sitearch}/qubesmanager/qrc_resources.py
-%{python_sitearch}/qubesmanager/qrc_resources.pyc
-%{python_sitearch}/qubesmanager/qrc_resources.pyo
+%{python_sitearch}/qubesmanager/global_settings.py
+%{python_sitearch}/qubesmanager/global_settings.pyc
+%{python_sitearch}/qubesmanager/global_settings.pyo
+%{python_sitearch}/qubesmanager/multiselectwidget.py
+%{python_sitearch}/qubesmanager/multiselectwidget.pyc
+%{python_sitearch}/qubesmanager/multiselectwidget.pyo
+%{python_sitearch}/qubesmanager/restore.py
+%{python_sitearch}/qubesmanager/restore.pyc
+%{python_sitearch}/qubesmanager/restore.pyo
+%{python_sitearch}/qubesmanager/settings.py
+%{python_sitearch}/qubesmanager/settings.pyc
+%{python_sitearch}/qubesmanager/settings.pyo
+%{python_sitearch}/qubesmanager/thread_monitor.py
+%{python_sitearch}/qubesmanager/thread_monitor.pyc
+%{python_sitearch}/qubesmanager/thread_monitor.pyo
+%{python_sitearch}/qubesmanager/resources_rc.py
+%{python_sitearch}/qubesmanager/resources_rc.pyc
+%{python_sitearch}/qubesmanager/resources_rc.pyo
+%{python_sitearch}/qubesmanager/ui_backupdlg.py
+%{python_sitearch}/qubesmanager/ui_backupdlg.pyc
+%{python_sitearch}/qubesmanager/ui_backupdlg.pyo
+%{python_sitearch}/qubesmanager/ui_editfwrulesdlg.py
+%{python_sitearch}/qubesmanager/ui_editfwrulesdlg.pyc
+%{python_sitearch}/qubesmanager/ui_editfwrulesdlg.pyo
+%{python_sitearch}/qubesmanager/ui_globalsettingsdlg.py
+%{python_sitearch}/qubesmanager/ui_globalsettingsdlg.pyc
+%{python_sitearch}/qubesmanager/ui_globalsettingsdlg.pyo
+%{python_sitearch}/qubesmanager/ui_mainwindow.py
+%{python_sitearch}/qubesmanager/ui_mainwindow.pyc
+%{python_sitearch}/qubesmanager/ui_mainwindow.pyo
+%{python_sitearch}/qubesmanager/ui_multiselectwidget.py
+%{python_sitearch}/qubesmanager/ui_multiselectwidget.pyc
+%{python_sitearch}/qubesmanager/ui_multiselectwidget.pyo
 %{python_sitearch}/qubesmanager/ui_newappvmdlg.py
 %{python_sitearch}/qubesmanager/ui_newappvmdlg.pyc
 %{python_sitearch}/qubesmanager/ui_newappvmdlg.pyo
 %{python_sitearch}/qubesmanager/ui_newfwruledlg.py
 %{python_sitearch}/qubesmanager/ui_newfwruledlg.pyc
 %{python_sitearch}/qubesmanager/ui_newfwruledlg.pyo
-%{python_sitearch}/qubesmanager/ui_editfwrulesdlg.py
-%{python_sitearch}/qubesmanager/ui_editfwrulesdlg.pyc
-%{python_sitearch}/qubesmanager/ui_editfwrulesdlg.pyo
+%{python_sitearch}/qubesmanager/ui_restoredlg.py
+%{python_sitearch}/qubesmanager/ui_restoredlg.pyc
+%{python_sitearch}/qubesmanager/ui_restoredlg.pyo
+%{python_sitearch}/qubesmanager/ui_settingsdlg.py
+%{python_sitearch}/qubesmanager/ui_settingsdlg.pyc
+%{python_sitearch}/qubesmanager/ui_settingsdlg.pyo
 
 
 /usr/share/applications/qubes-manager.desktop
