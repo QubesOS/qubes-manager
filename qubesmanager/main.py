@@ -189,15 +189,14 @@ class VmNetvmItem (QTableWidgetItem):
     def __init__(self, vm):
         super(VmNetvmItem, self).__init__()
 
-        if vm.is_netvm():
-            self.setText("self")
+        if vm.is_netvm() and not vm.is_proxyvm():
+            self.setText("n/a")
         elif vm.netvm_vm is not None:
             self.setText(vm.netvm_vm.name)
         else:
             self.setText("---")
 
         self.setTextAlignment(Qt.AlignHCenter)
-
 
 
 class VmUsageBarWidget (QWidget):
