@@ -30,54 +30,197 @@ from qubes.qubes import QubesVmCollection
 from qubes.qubes import QubesException
 from qubes.qubes import QubesDaemonPidfile
 from qubes.qubes import QubesHost
-
+from qubes.qubes import qubes_base_dir
 import qubesmanager.resources_rc
 
 from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
 
 import subprocess
 import time
-import threading
 from operator import itemgetter
+from thread_monitor import *
+
+from qubes import qubesutils
 
 from ui_restoredlg import *
 from multiselectwidget import *
+
+from backup_utils import *
 
 
 
 class RestoreVMsWindow(Ui_Restore, QWizard):
 
-    def __init__(self, parent=None):
+    __pyqtSignals__ = ("restore_progress(int)",)
+
+    def __init__(self, app, qvm_collection, blk_manager, parent=None):
         super(RestoreVMsWindow, self).__init__(parent)
+
+        self.app = app
+        self.qvm_collection = qvm_collection
+        self.blk_manager = blk_manager
+
+        self.dev_mount_path = None
+        self.backup_dir = None
+        self.restore_options = None
+        self.backup_vms_list = None
+        self.func_output = []
+
+        self.excluded = {}
+
+        for vm in self.qvm_collection.values():
+            if vm.qid == 0:
+                self.vm = vm
+                break;
+        
+        assert self.vm != None
 
         self.setupUi(self)
 
-        self.selectVMsWidget = MultiSelectWidget(self)
-        self.selectVMsLayout.insertWidget(1, self.selectVMsWidget)
+        self.select_vms_widget = MultiSelectWidget(self)
+        self.select_vms_layout.insertWidget(1, self.select_vms_widget)
 
-        self.selectVMsWidget.available_list.addItem("netVM1")
-        self.selectVMsWidget.available_list.addItem("appVM1")
-        self.selectVMsWidget.available_list.addItem("appVM2")
-        self.selectVMsWidget.available_list.addItem("templateVM1")
-        
         self.connect(self, SIGNAL("currentIdChanged(int)"), self.current_page_changed)
-       
-    def reject(self):
-        self.done(0)
+        self.connect(self.dev_combobox, SIGNAL("activated(int)"), self.dev_combobox_activated)
+        self.connect(self, SIGNAL("restore_progress(QString)"), self.commit_text_edit.append)
 
-    def save_and_apply(self):
-        pass
+        self.select_dir_page.isComplete = self.has_selected_dir
+        self.select_vms_page.isComplete = self.has_selected_vms
+        #FIXME
+        #this causes to run isComplete() twice, I don't know why
+        self.select_vms_page.connect(self.select_vms_widget, SIGNAL("selected_changed()"), SIGNAL("completeChanged()")) 
 
-    def current_page_changed(self, id):
-        self.button(self.CancelButton).setDisabled(id==3)
+        fill_devs_list(self)
+        self.__init_restore_options__()
+
+
+    def dev_combobox_activated(self, idx):
+        dev_combobox_activated(self, idx)
+                   
+
+    @pyqtSlot(name='on_select_path_button_clicked')
+    def select_path_button_clicked(self):
+        select_path_button_clicked(self)
+
+    def on_ignore_missing_toggled(self, checked):
+        self.restore_options['use-default-template'] = checked
+        self.restore_options['use-default-netvm'] = checked
+
+    def on_ignore_uname_mismatch_toggled(self, checked):
+        self.restore_options['ignore-username-mismatch'] = checked
+
+    def on_skip_dom0_toggled(self, checked):
+        self.restore_options['dom0-home'] = checked
+
+
+    def __fill_vms_list__(self):
+        if self.backup_vms_list != None:
+            return
+
+        self.select_vms_widget.selected_list.clear()
+        self.select_vms_widget.available_list.clear()
+        
+        self.vms_to_restore = qubesutils.backup_restore_prepare(str(self.backup_dir), self.restore_options, self.qvm_collection)
+        for vmname in self.vms_to_restore:
+            self.select_vms_widget.available_list.addItem(vmname)
+
+    def __init_restore_options__(self):
+        if not self.restore_options:
+            self.restore_options = {}
+            qubesutils.backup_restore_set_defaults(self.restore_options)
+    
+        if 'use-default-template' in self.restore_options and 'use-default-netvm' in self.restore_options:
+            val = self.restore_options['use-default-template'] and self.restore_options['use-default-netvm']
+            self.ignore_missing.setChecked(val)
+        else:
+            self.ignore_missing.setChecked(False)
+
+        if 'ignore-username-mismatch' in self.restore_options:
+            self.ignore_uname_mismatch.setChecked(self.restore_options['ignore-username-mismatch'])
+
+        if 'dom0-home' in self.restore_options:
+            self.skip_dom0.setChecked(self.restore_options['dom0-home'])
+
+
  
-    @pyqtSlot(name='on_selectPathButton_clicked')
-    def selectPathButton_clicked(self):
-        self.path = self.pathLineEdit.text()
-        newPath = QFileDialog.getExistingDirectory(self, 'Select backup directory.')
-        if newPath:
-            self.pathLineEdit.setText(newPath)
-            self.path = newPath
+    def gather_output(self, s):
+        self.func_output.append(s)
+
+    def restore_error_output(self, s):
+        self.emit(SIGNAL("restore_progress(QString)"), '<font color="red">{0}</font>'.format(s))
+        
+
+    def restore_output(self, s):
+        self.emit(SIGNAL("restore_progress(QString)"),'<font color="black">{0}</font>'.format(s))
+
+
+    def __do_restore__(self, thread_monitor):
+        err_msg = []
+        self.qvm_collection.lock_db_for_writing()
+        try:
+            qubesutils.backup_restore_do(str(self.backup_dir), self.vms_to_restore, self.qvm_collection, self.restore_output, self.restore_error_output)
+        except Exception as ex:
+            err_msg.append(str(ex))
+
+        self.qvm_collection.unlock_db()
+        if len(err_msg) > 0 :
+            thread_monitor.set_error_msg('\n'.join(err_msg))
+            self.emit(SIGNAL("restore_progress(QString)"),'<b><font color="red">{0}</font></b>'.format("Finished with errors!"))
+        else:
+            self.emit(SIGNAL("restore_progress(QString)"),'<font color="green">{0}</font>'.format("Finished successfully!"))
+
+        thread_monitor.set_finished()
+
+ 
+    def current_page_changed(self, id):
+
+        if self.currentPage() is self.select_vms_page:
+            self.__fill_vms_list__()
+
+        elif self.currentPage() is self.confirm_page:
+            for v in self.excluded:
+                self.vms_to_restore[v] = self.excluded[v]
+            self.excluded = {}
+            for i in range(self.select_vms_widget.available_list.count()):
+                vmname =  self.select_vms_widget.available_list.item(i).text()
+                self.excluded[str(vmname)] = self.vms_to_restore[str(vmname)]
+                del self.vms_to_restore[str(vmname)]
+
+            del self.func_output[:]
+            qubesutils.backup_restore_print_summary(self.vms_to_restore, print_callback = self.gather_output)
+            self.confirm_text_edit.setReadOnly(True)
+            self.confirm_text_edit.setFontFamily("Monospace")
+            self.confirm_text_edit.setText("\n".join(self.func_output))
+
+
+        elif self.currentPage() is self.commit_page:
+            self.button(self.CancelButton).setDisabled(True)
+            self.button(self.FinishButton).setDisabled(True)
+            
+            self.thread_monitor = ThreadMonitor()
+            thread = threading.Thread (target= self.__do_restore__ , args=(self.thread_monitor,))
+            thread.daemon = True
+            thread.start()
+
+            while not self.thread_monitor.is_finished():
+                self.app.processEvents()
+                time.sleep (0.1)
+
+            #if not self.thread_monitor.success:
+                #QMessageBox.warning (None, "Backup error!", "ERROR: {1}".format(self.vm.name, self.thread_monitor.error_msg))
+
+            umount_device(self.dev_mount_path)
+            self.button(self.FinishButton).setEnabled(True)
+ 
+
+
+    def has_selected_dir(self):
+        return self.backup_dir != None
+            
+    def has_selected_vms(self):
+        return self.select_vms_widget.selected_list.count() > 0
+
+
 
 # Bases on the original code by:
 # Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>

@@ -1083,7 +1083,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
     @pyqtSlot(name='on_action_restore_triggered')
     def action_restore_triggered(self):
-        restore_window = RestoreVMsWindow()
+        restore_window = RestoreVMsWindow(app, self.qvm_collection, self.blk_manager)
         restore_window.exec_()
 
     @pyqtSlot(name='on_action_backup_triggered')

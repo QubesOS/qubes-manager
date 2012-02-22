@@ -47,7 +47,7 @@
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QComboBox" name="comboBox">
+        <widget class="QComboBox" name="dev_combobox">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -84,12 +84,54 @@
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QLineEdit" name="pathLineEdit"/>
+        <widget class="QLineEdit" name="dir_line_edit"/>
        </item>
        <item row="1" column="2">
-        <widget class="QToolButton" name="selectPathButton">
+        <widget class="QToolButton" name="select_path_button">
          <property name="text">
           <string>...</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <widget class="QGroupBox" name="options_groupbox">
+      <property name="font">
+       <font>
+        <weight>50</weight>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="title">
+       <string>Restore options</string>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="0" column="0">
+        <widget class="QCheckBox" name="ignore_missing">
+         <property name="toolTip">
+          <string>Ignore missing templates or netvms, restore VMs anyway.</string>
+         </property>
+         <property name="text">
+          <string>ignore missing</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QCheckBox" name="skip_dom0">
+         <property name="text">
+          <string>skip dom0</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QCheckBox" name="ignore_uname_mismatch">
+         <property name="toolTip">
+          <string>Ignore dom0 username mismatch while restoring homedir.</string>
+         </property>
+         <property name="text">
+          <string>ignore username mismatch</string>
          </property>
         </widget>
        </item>
@@ -114,72 +156,11 @@
   <widget class="QWizardPage" name="select_vms_page">
    <layout class="QVBoxLayout" name="verticalLayout_4">
     <item>
-     <widget class="QGroupBox" name="seletVMsGroupbox">
+     <widget class="QGroupBox" name="select_vms_groupbox">
       <property name="title">
        <string>VMs to restore</string>
       </property>
-      <layout class="QVBoxLayout" name="selectVMsLayout"/>
-     </widget>
-    </item>
-    <item>
-     <widget class="QGroupBox" name="groupBox">
-      <property name="font">
-       <font>
-        <weight>50</weight>
-        <bold>false</bold>
-       </font>
-      </property>
-      <property name="title">
-       <string>Restore options</string>
-      </property>
-      <layout class="QGridLayout" name="gridLayout_2">
-       <item row="0" column="0">
-        <widget class="QCheckBox" name="skip_broken">
-         <property name="font">
-          <font>
-           <weight>50</weight>
-           <bold>false</bold>
-          </font>
-         </property>
-         <property name="toolTip">
-          <string>Do not restore VMs that have missing templates or netvms.</string>
-         </property>
-         <property name="text">
-          <string>skip broken</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QCheckBox" name="ignore_missing">
-         <property name="toolTip">
-          <string>Ignore missing templates or netvms, restore VMs anyway.</string>
-         </property>
-         <property name="text">
-          <string>ignore missing</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="2">
-        <widget class="QCheckBox" name="skip_conflicting">
-         <property name="toolTip">
-          <string>Do not restore VMs that are already present on the host.</string>
-         </property>
-         <property name="text">
-          <string>skip conflicting</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0" colspan="2">
-        <widget class="QCheckBox" name="ignore_uname_mismatch">
-         <property name="toolTip">
-          <string>Ignore dom0 username mismatch while restoring homedir.</string>
-         </property>
-         <property name="text">
-          <string>ignore username mismatch</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
+      <layout class="QVBoxLayout" name="select_vms_layout"/>
      </widget>
     </item>
    </layout>
@@ -203,7 +184,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QTextEdit" name="textEdit">
+     <widget class="QTextEdit" name="confirm_text_edit">
       <property name="html">
        <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
@@ -238,33 +219,7 @@ p, li { white-space: pre-wrap; }
   <widget class="QWizardPage" name="commit_page">
    <layout class="QVBoxLayout" name="verticalLayout_3">
     <item>
-     <widget class="QLabel" name="label_8">
-      <property name="font">
-       <font>
-        <pointsize>9</pointsize>
-        <weight>50</weight>
-        <italic>false</italic>
-        <bold>false</bold>
-        <underline>false</underline>
-       </font>
-      </property>
-      <property name="text">
-       <string>Restore in progress...</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QProgressBar" name="progressBar">
-      <property name="value">
-       <number>24</number>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-      <property name="invertedAppearance">
-       <bool>false</bool>
-      </property>
-     </widget>
+     <widget class="QTextEdit" name="commit_text_edit"/>
     </item>
    </layout>
   </widget>

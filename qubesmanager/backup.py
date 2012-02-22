@@ -47,6 +47,7 @@ from string import replace
 from ui_backupdlg import *
 from multiselectwidget import *
 
+from backup_utils import *
 
 
 class BackupVMsWindow(Ui_Backup, QWizard):
@@ -63,6 +64,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.qvm_collection = qvm_collection
         self.blk_manager = blk_manager
 
+        self.dev_mount_path = None
         self.backup_dir = None
         self.func_output = []
 
@@ -91,7 +93,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.select_vms_page.connect(self.select_vms_widget, SIGNAL("selected_changed()"), SIGNAL("completeChanged()")) 
 
         self.__fill_vms_list__()
-        self.__fill_devs_list__()
+        fill_devs_list(self)
 
     def __fill_vms_list__(self):
         for vm in self.qvm_collection.values():
@@ -110,112 +112,14 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             self.to_backup.append(vm.name)
             self.select_vms_widget.available_list.addItem(vm.name)
 
-    def __fill_devs_list__(self):
-        self.dev_combobox.clear()
-        self.dev_combobox.addItem("None")
-        for a in self.blk_manager.attached_devs:
-            if self.blk_manager.attached_devs[a]['attached_to']['vm'] == self.vm.name :
-                att = a + " " + unicode(self.blk_manager.attached_devs[a]['size']) + " " + self.blk_manager.attached_devs[a]['desc']
-                self.dev_combobox.addItem(att, QVariant(a))
-        for a in self.blk_manager.free_devs:
-            att = a + " " + unicode(self.blk_manager.free_devs[a]['size']) + " " + self.blk_manager.free_devs[a]['desc']
-            self.dev_combobox.addItem(att, QVariant(a))
-        self.dev_combobox.setCurrentIndex(0) #current selected is null ""
-        self.prev_dev_idx = 0
-        self.dir_line_edit.clear()
-        self.dir_line_edit.setEnabled(False)
-        self.select_path_button.setEnabled(False)
-
-    def __check_if_mounted__(self, dev_path):
-        mounts_file = open("/proc/mounts")
-        for m in list(mounts_file):
-            if m.startswith(dev_path):
-                print m
-                return m.split(" ")[1]
-        return None
-
-    def __mount_device__(self, dev_path):
-        try:
-            mount_dir_name = "backup" + replace(str(datetime.now()),' ', '-').split(".")[0]
-            pmount_cmd = ["pmount", dev_path, mount_dir_name]
-            res = subprocess.check_call(pmount_cmd)
-            print "pmount device res: ", res
-        except Exception as ex:
-            QMessageBox.warning (None, "Error mounting selected device!", "ERROR: {0}".format(ex))
-            return None
-        if res == 0:
-            self.dev_mount_path = "/media/"+mount_dir_name
-            return self.dev_mount_path
-
-    def __umount_device__(self, dev_mount_path):
-        try:
-            pumount_cmd = ["pumount", dev_mount_path]
-            res = subprocess.check_call(pumount_cmd)
-            print "pumount device res: ", res
-        except Exception as ex:
-            QMessageBox.warning (None, "Could not unmount backup device!", "ERROR: {0}".format(ex))
-
-
-
-    def __enable_dir_line_edit__(self, boolean):
-        self.dir_line_edit.setEnabled(boolean)
-        self.select_path_button.setEnabled(boolean)      
-
-
+ 
     def dev_combobox_activated(self, idx):
-        print self.dev_combobox.currentText()
-        if idx == self.prev_dev_idx:    #nothing has changed
-            return
-        #there was a change
-        self.prev_dev_idx = idx
-
-        self.dir_line_edit.setText("")
-        self.backup_dir = None
-        self.dev_mount_path = None
-        self.__enable_dir_line_edit__(False)
-
-        if self.dev_combobox.currentText() != "None":   #An existing device chosen 
-            dev_name = str(self.dev_combobox.itemData(idx).toString())
-
-            if dev_name in self.blk_manager.free_devs:
-                if dev_name.startswith(self.vm.name):       # originally attached to dom0
-                    dev_path = "/dev/"+dev_name.split(":")[1]
-                    print "device from dom0 - no need to attach"
-
-                else:       # originally attached to another domain, eg. usbvm
-                    print "device from " + dev_name.split(":")[0]
-                    #attach it to dom0, then treat it as an attached device
-                    self.blk_manager.attach_device(self.vm, dev_name)
-
-            if dev_name in self.blk_manager.attached_devs:       #is attached to dom0
-                print "device attached as " + self.blk_manager.attached_devs[dev_name]['attached_to']['frontend']
-                assert self.blk_manager.attached_devs[dev_name]['attached_to']['vm'] == self.vm.name
-
-                dev_path = "/dev/" + self.blk_manager.attached_devs[dev_name]['attached_to']['frontend']
-
-            #check if device mounted
-            self.dev_mount_path = self.__check_if_mounted__(dev_path)
-            if self.dev_mount_path != None:
-                self.__enable_dir_line_edit__(True)
-            else:
-                self.dev_mount_path = self.__mount_device__(dev_path)
-                if self.dev_mount_path != None:
-                    self.__enable_dir_line_edit__(True)
-
-        self.select_dir_page.emit(SIGNAL("completeChanged()"))
-
+        dev_combobox_activated(self, idx)
                    
 
     @pyqtSlot(name='on_select_path_button_clicked')
     def select_path_button_clicked(self):
-        self.backup_dir = self.dir_line_edit.text()
-        file_dialog = QFileDialog()
-        file_dialog.setReadOnly(True)
-        new_path = file_dialog.getExistingDirectory(self, "Select backup directory.", self.dev_mount_path)
-        if new_path:
-            self.dir_line_edit.setText(new_path)
-            self.backup_dir = new_path
-            self.select_dir_page.emit(SIGNAL("completeChanged()"))
+        select_path_button_clicked(self)
 
     def validateCurrentPage(self):
         if self.currentPage() is self.select_vms_page:
@@ -228,18 +132,15 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.func_output.append(s)
 
     def update_progress_bar(self, value):
-        print "progress bar value: ", value
         self.emit(SIGNAL("backup_progress(int)"), value)
 
 
     def __do_backup__(self, thread_monitor):
-        print "doiing backup"
         msg = []
         try:
             qubesutils.backup_do(str(self.backup_dir), self.files_to_backup, self.update_progress_bar)
             #simulate_long_lasting_proces(10, self.update_progress_bar) 
         except Exception as ex:
-            print "got exception from backup"
             msg.append(str(ex))
 
         if len(msg) > 0 :
@@ -252,25 +153,17 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         if self.currentPage() is self.confirm_page:
             del self.func_output[:]
             self.files_to_backup = qubesutils.backup_prepare(str(self.backup_dir), exclude_list = self.excluded, print_callback = self.gather_output)
-            for i in self.excluded:
-                print i
+
             self.textEdit.setReadOnly(True)
             self.textEdit.setFontFamily("Monospace")
             self.textEdit.setText("\n".join(self.func_output))
-            for i in self.func_output:
-                print i
-
-            for s in self.files_to_backup:
-                print s
 
         elif self.currentPage() is self.commit_page:
             self.button(self.CancelButton).setDisabled(True)
             self.button(self.FinishButton).setDisabled(True)
-            print "butons disabled"
             self.thread_monitor = ThreadMonitor()
             thread = threading.Thread (target= self.__do_backup__ , args=(self.thread_monitor,))
             thread.daemon = True
-            print "will start thread"
             thread.start()
 
             while not self.thread_monitor.is_finished():
@@ -280,25 +173,16 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             if not self.thread_monitor.success:
                 QMessageBox.warning (None, "Backup error!", "ERROR: {1}".format(self.vm.name, self.thread_monitor.error_msg))
 
-            self.__umount_device__(self.dev_mount_path)
+            umount_device(self.dev_mount_path)
             self.button(self.FinishButton).setEnabled(True)
-
  
     def has_selected_vms(self):
-        print "isComplete called"
         return self.select_vms_widget.selected_list.count() > 0
 
     def has_selected_dir(self):
         return self.backup_dir != None
             
 
-def simulate_long_lasting_proces(period, progress_callback):
-    for i in range(period):
-        progress_callback((i*100)/period)
-        time.sleep(1)
-
-    progress_callback(100)
-    return 0
 
 
 # Bases on the original code by:
