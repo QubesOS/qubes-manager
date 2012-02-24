@@ -12,6 +12,7 @@ Vendor:		Invisible Things Lab
 License:	GPL
 URL:		http://fixme
 Requires:	python, PyQt4, qubes-core-dom0 >= 1.7.12, kdebase
+Requires:	pmount
 BuildRequires:	PyQt4-devel
 AutoReq:	0
 
