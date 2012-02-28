@@ -540,6 +540,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.context_menu.addAction(self.action_appmenus)
         self.context_menu.addAction(self.action_editfwrules)
         self.context_menu.addAction(self.action_updatevm)
+
+        self.table_selection_changed()
         
         self.blk_menu = QMenu("Block devices")
         self.context_menu.addMenu(self.blk_menu)
@@ -704,7 +706,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
                     vm_row.update(self.counter, blk_visible=blk_visible)
 
-            #self.table_selection_changed()
+            self.table_selection_changed()
 
         if not out_of_schedule:
             self.counter += 1
@@ -850,7 +852,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def get_selected_vm(self):
         #vm selection relies on the VmInfo widget's value used for sorting by VM name
         row_index = self.table.currentRow()
-        if row_index != None:
+        if row_index != -1:
             (vm_name, qid) = self.table.item(row_index, self.columns_indices["Name"]).value
             assert self.vms_in_table[qid] is not None
             vm = self.vms_in_table[qid].vm
