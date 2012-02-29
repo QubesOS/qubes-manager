@@ -144,7 +144,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             thread_monitor.set_error_msg('\n'.join(ret))
             thread_monitor.set_finished()
             return
-        #self.fw_model.apply_rules()
+        self.fw_model.apply_rules()
         self.AppListManager.save_appmenu_select_changes()
         thread_monitor.set_finished()
 

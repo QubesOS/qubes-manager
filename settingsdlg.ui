@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>5</number>
+        <number>2</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -470,22 +470,48 @@
         <attribute name="title">
          <string>Firewall rules</string>
         </attribute>
-        <layout class="QVBoxLayout" name="verticalLayout_7">
-         <item>
+        <layout class="QGridLayout" name="gridLayout_8">
+         <item row="0" column="0">
           <widget class="QRadioButton" name="policyAllowRadioButton">
            <property name="text">
             <string>Allow network access except...</string>
            </property>
           </widget>
          </item>
-         <item>
+         <item row="0" column="1">
+          <widget class="QCheckBox" name="icmpCheckBox">
+           <property name="minimumSize">
+            <size>
+             <width>323</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Allow ICMP traffic</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
           <widget class="QRadioButton" name="policyDenyRadioButton">
            <property name="text">
             <string>Deny network access except...</string>
            </property>
           </widget>
          </item>
-         <item>
+         <item row="1" column="1">
+          <widget class="QCheckBox" name="dnsCheckBox">
+           <property name="text">
+            <string>Allow DNS queries</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0" colspan="2">
           <layout class="QHBoxLayout" name="horizontalLayout_2">
            <property name="sizeConstraint">
             <enum>QLayout::SetMaximumSize</enum>
@@ -503,6 +529,9 @@
                <property name="itemsExpandable">
                 <bool>false</bool>
                </property>
+               <property name="sortingEnabled">
+                <bool>true</bool>
+               </property>
                <property name="allColumnsShowFocus">
                 <bool>true</bool>
                </property>
@@ -518,28 +547,7 @@
               </widget>
              </item>
              <item>
-              <layout class="QHBoxLayout" name="horizontalLayout_4">
-               <item>
-                <widget class="QCheckBox" name="icmpCheckBox">
-                 <property name="text">
-                  <string>Allow ICMP traffic</string>
-                 </property>
-                 <property name="checked">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QCheckBox" name="dnsCheckBox">
-                 <property name="text">
-                  <string>Allow DNS queries</string>
-                 </property>
-                 <property name="checked">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-              </layout>
+              <layout class="QHBoxLayout" name="horizontalLayout_4"/>
              </item>
             </layout>
            </item>

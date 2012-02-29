@@ -81,7 +81,7 @@ class NewFwRuleDlg (QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
         self.set_ok_enabled(False)
         self.addressComboBox.setValidator(QIPAddressValidator())
         self.addressComboBox.editTextChanged.connect(self.address_editing_finished)
-        self.serviceComboBox.setValidator(QRegExpValidator(QRegExp("[a-z][a-z0-9-]+|[0-9]+(-[0-9]+)?", Qt.CaseInsensitive), None))
+        self.serviceComboBox.setValidator(QRegExpValidator(QRegExp("\*|[a-z][a-z0-9-]+|[0-9]+(-[0-9]+)?", Qt.CaseInsensitive), None))
 
         self.serviceComboBox.setInsertPolicy(QComboBox.InsertAtBottom)
         self.populate_combos()
@@ -115,6 +115,21 @@ class NewFwRuleDlg (QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
         if ok_button is not None:
             ok_button.setEnabled(on)
 
+    def on_tcp_radio_toggled(self, checked):
+        self.tcp_port_lineedit.setEnabled(checked)
+        self.udp_port_lineedit.setEnabled(not checked)
+
+    def on_udp_radio_toggled(self, checked):
+        self.tcp_port_lineedit.setEnabled(not checked)
+        self.udp_port_lineedit.setEnabled(checked)
+
+    def on_any_radio_toggled(self, checked):
+        self.tcp_port_lineedit.setEnabled(not checked)
+        self.udp_port_lineedit.setEnabled(not checked)
+
+
+
+
 class QubesFirewallRuleItem(object):
     def __init__(self, address = str(), netmask = 32, portBegin = 0, portEnd = None):
         self.__address = address
@@ -140,6 +155,8 @@ class QubesFirewallRuleItem(object):
 
     def hasChildren(self):
         return False
+
+
 
 class QubesFirewallRulesModel(QAbstractItemModel):
     def __init__(self, parent=None):
@@ -167,6 +184,16 @@ class QubesFirewallRulesModel(QAbstractItemModel):
                 service = match.groupdict()
                 self.__services.append( (service["name"], int(service["port"]), service["protocol"]) )
         f.close()
+
+    def sort(self, idx, order):
+        from operator import attrgetter
+
+        rev = (order == Qt.AscendingOrder)
+        if idx==0:
+            self.children.sort(key=attrgetter('address'), reverse = rev)
+        if idx==1:
+            self.children.sort(key=lambda x: self.get_service_name(attrgetter('portBegin')) if attrgetter('portEnd') == None else attrgetter('portBegin'), reverse = rev)
+
 
     def get_service_name(self, port):
         for service in self.__services:
