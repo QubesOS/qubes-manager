@@ -916,10 +916,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.qvm_collection.load()
 
             #TODO: the following two conditions should really be checked by qvm_collection.pop() overload...
-            if vm.is_template() and qvm_collection.default_template_qid == vm.qid:
-                qvm_collection.default_template_qid = None
-            if vm.is_netvm() and qvm_collection.default_netvm_qid == vm.qid:
-                qvm_collection.default_netvm_qid = None
+            if vm.is_template() and self.qvm_collection.default_template_qid == vm.qid:
+                self.qvm_collection.default_template_qid = None
+            if vm.is_netvm() and self.qvm_collection.default_netvm_qid == vm.qid:
+                self.qvm_collection.default_netvm_qid = None
 
             vm.remove_from_disk()
             self.qvm_collection.pop(vm.qid)
