@@ -139,14 +139,15 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.done(0)
 
     def __save_changes__(self, thread_monitor):
+
+        self.fw_model.apply_rules()
+        self.AppListManager.save_appmenu_select_changes()
+
         ret = self.__apply_basic_tab__()
         if len(ret) > 0 :
-            thread_monitor.set_error_msg('\n'.join(ret))
-            thread_monitor.set_finished()
-            return
-        #self.fw_model.apply_rules()
-        self.AppListManager.save_appmenu_select_changes()
+            thread_monitor.set_error_msg('\n'.join(ret)) 
         thread_monitor.set_finished()
+
 
     def current_tab_changed(self, idx):
         if idx == self.tabs_indices["firewall"]:
@@ -211,15 +212,13 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
     def __apply_basic_tab__(self):
         msg = []
 
-        if self.vm.is_running():
-            msg.append("Can't change settings of a running VM.")
-            msg.append("telemele")
-            return msg
-
         # vmname changed
         vmname = str(self.vmname.text())
         if self.vm.name != vmname:
-            if self.qvm_collection.get_vm_by_name(vmname) is not None:
+            if self.vm.is_running():
+                msg.append("Can't change name of a running VM.")
+
+            elif self.qvm_collection.get_vm_by_name(vmname) is not None:
                 msg.append("A VM named <b>{0}</b> already exists in the system!".format(vmname))
             else:
                 oldname = self.vm.name
@@ -236,11 +235,15 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         #vm label changed
         if self.vmlabel.currentIndex() != self.label_idx:
-            label = self.label_list[self.vmlabel.currentIndex()]
-            self.qvm_collection.lock_db_for_writing()
-            self.vm.label = label
-            self.qvm_collection.save()
-            self.qvm_collection.unlock_db()
+            if self.vm.is_running():
+                msg.append("Can't change label of a running VM.")
+
+            else:
+                label = self.label_list[self.vmlabel.currentIndex()]
+                self.qvm_collection.lock_db_for_writing()
+                self.vm.label = label
+                self.qvm_collection.save()
+                self.qvm_collection.unlock_db()
 
         return msg
 

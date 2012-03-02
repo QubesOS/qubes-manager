@@ -165,7 +165,7 @@ class VmTemplateItem (QTableWidgetItem):
             else:
                 self.setText("---")
 
-        self.setTextAlignment(Qt.AlignHCenter)
+        self.setTextAlignment(Qt.AlignCenter)
 
 
 class VmIconWidget (QWidget):
@@ -196,7 +196,7 @@ class VmNetvmItem (QTableWidgetItem):
         else:
             self.setText("---")
 
-        self.setTextAlignment(Qt.AlignHCenter)
+        self.setTextAlignment(Qt.AlignCenter)
 
 
 class VmUsageBarWidget (QWidget):
@@ -347,7 +347,7 @@ class VmUpdateInfoWidget(QWidget):
             layout.addWidget(self.label, alignment=Qt.AlignCenter)
         else:
             self.icon =  QLabel("")
-            layout.addWidget(self.icon, alignment=Qt.AlignHCenter)
+            layout.addWidget(self.icon, alignment=Qt.AlignCenter)
         self.setLayout(layout)
 
         self.previous_outdated = False
@@ -540,6 +540,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.context_menu.addAction(self.action_appmenus)
         self.context_menu.addAction(self.action_editfwrules)
         self.context_menu.addAction(self.action_updatevm)
+
+        self.table_selection_changed()
         
         self.blk_menu = QMenu("Block devices")
         self.context_menu.addMenu(self.blk_menu)
@@ -704,7 +706,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
                     vm_row.update(self.counter, blk_visible=blk_visible)
 
-            #self.table_selection_changed()
+            self.table_selection_changed()
 
         if not out_of_schedule:
             self.counter += 1
@@ -850,7 +852,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def get_selected_vm(self):
         #vm selection relies on the VmInfo widget's value used for sorting by VM name
         row_index = self.table.currentRow()
-        if row_index != None:
+        if row_index != -1:
             (vm_name, qid) = self.table.item(row_index, self.columns_indices["Name"]).value
             assert self.vms_in_table[qid] is not None
             vm = self.vms_in_table[qid].vm
@@ -914,10 +916,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.qvm_collection.load()
 
             #TODO: the following two conditions should really be checked by qvm_collection.pop() overload...
-            if vm.is_template() and qvm_collection.default_template_qid == vm.qid:
-                qvm_collection.default_template_qid = None
-            if vm.is_netvm() and qvm_collection.default_netvm_qid == vm.qid:
-                qvm_collection.default_netvm_qid = None
+            if vm.is_template() and self.qvm_collection.default_template_qid == vm.qid:
+                self.qvm_collection.default_template_qid = None
+            if vm.is_netvm() and self.qvm_collection.default_netvm_qid == vm.qid:
+                self.qvm_collection.default_netvm_qid = None
 
             vm.remove_from_disk()
             self.qvm_collection.pop(vm.qid)

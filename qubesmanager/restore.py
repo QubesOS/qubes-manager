@@ -97,7 +97,6 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
     def dev_combobox_activated(self, idx):
         dev_combobox_activated(self, idx)
                    
-
     @pyqtSlot(name='on_select_path_button_clicked')
     def select_path_button_clicked(self):
         select_path_button_clicked(self)
@@ -209,8 +208,14 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
             #if not self.thread_monitor.success:
                 #QMessageBox.warning (None, "Backup error!", "ERROR: {1}".format(self.vm.name, self.thread_monitor.error_msg))
 
-            umount_device(self.dev_mount_path)
+            if self.dev_mount_path != None:
+                umount_device(self.dev_mount_path)
             self.button(self.FinishButton).setEnabled(True)
+
+    def reject(self):
+        if self.dev_mount_path != None:
+            umount_device(self.dev_mount_path)
+        self.done(0)
  
 
 
