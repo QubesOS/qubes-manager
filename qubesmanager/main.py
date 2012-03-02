@@ -165,7 +165,7 @@ class VmTemplateItem (QTableWidgetItem):
             else:
                 self.setText("---")
 
-        self.setTextAlignment(Qt.AlignHCenter)
+        self.setTextAlignment(Qt.AlignCenter)
 
 
 class VmIconWidget (QWidget):
@@ -196,7 +196,7 @@ class VmNetvmItem (QTableWidgetItem):
         else:
             self.setText("---")
 
-        self.setTextAlignment(Qt.AlignHCenter)
+        self.setTextAlignment(Qt.AlignCenter)
 
 
 class VmUsageBarWidget (QWidget):
@@ -347,7 +347,7 @@ class VmUpdateInfoWidget(QWidget):
             layout.addWidget(self.label, alignment=Qt.AlignCenter)
         else:
             self.icon =  QLabel("")
-            layout.addWidget(self.icon, alignment=Qt.AlignHCenter)
+            layout.addWidget(self.icon, alignment=Qt.AlignCenter)
         self.setLayout(layout)
 
         self.previous_outdated = False
