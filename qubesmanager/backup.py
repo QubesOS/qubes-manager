@@ -173,9 +173,17 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             if not self.thread_monitor.success:
                 QMessageBox.warning (None, "Backup error!", "ERROR: {1}".format(self.vm.name, self.thread_monitor.error_msg))
 
-            umount_device(self.dev_mount_path)
+            if self.dev_mount_path != None:
+                umount_device(self.dev_mount_path)
             self.button(self.FinishButton).setEnabled(True)
  
+
+    def reject(self):
+        if self.dev_mount_path != None:
+            umount_device(self.dev_mount_path)
+        self.done(0)
+ 
+
     def has_selected_vms(self):
         return self.select_vms_widget.selected_list.count() > 0
 

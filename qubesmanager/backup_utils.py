@@ -81,8 +81,7 @@ def fill_devs_list(dialog):
     dialog.dev_combobox.setCurrentIndex(0) #current selected is null ""
     dialog.prev_dev_idx = 0
     dialog.dir_line_edit.clear()
-    dialog.dir_line_edit.setEnabled(False)
-    dialog.select_path_button.setEnabled(False)
+    enable_dir_line_edit(dialog, True)
 
 
 def enable_dir_line_edit(dialog, boolean):
@@ -100,11 +99,9 @@ def dev_combobox_activated(dialog, idx):
 
     if dialog.dev_mount_path != None:
         dialog.dev_mount_path = umount_device(dialog.dev_mount_path)
-        if dialog_dev_mount_path != None:
+        if dialog.dev_mount_path != None:
             dialog.dev_combobox.setCurrentIndex(dialog.prev_dev_idx)
             return
-
-    enable_dir_line_edit(dialog, False)
 
     if dialog.dev_combobox.currentText() != "None":   #An existing device chosen 
         dev_name = str(dialog.dev_combobox.itemData(idx).toString())
@@ -123,16 +120,13 @@ def dev_combobox_activated(dialog, idx):
 
         #check if device mounted
         dialog.dev_mount_path = check_if_mounted(dev_path)
-        if dialog.dev_mount_path != None:
-            enable_dir_line_edit(dialog, True)
-        else:
+        if dialog.dev_mount_path == None:
             dialog.dev_mount_path = mount_device(dev_path)
-            if dialog.dev_mount_path != None:
-                enable_dir_line_edit(dialog, True)
-            else:
+            if dialog.dev_mount_path == None:
                 dialog.dev_combobox.setCurrentIndex(0) #if couldn't mount - set current device to "None"
+                dialog.prev_dev_idx = 0
+                return
                 
-
     dialog.prev_dev_idx = idx
     dialog.select_dir_page.emit(SIGNAL("completeChanged()"))
 
@@ -141,7 +135,12 @@ def select_path_button_clicked(dialog):
     dialog.backup_dir = dialog.dir_line_edit.text()
     file_dialog = QFileDialog()
     file_dialog.setReadOnly(True)
-    new_path = file_dialog.getExistingDirectory(dialog, "Select backup directory.", dialog.dev_mount_path)
+
+    if dialog.dev_mount_path != None:
+        new_path = file_dialog.getExistingDirectory(dialog, "Select backup directory.", dialog.dev_mount_path)
+    else:
+        new_path = file_dialog.getExistingDirectory(dialog, "Select backup directory.", "~")
+        
     if new_path:
         dialog.dir_line_edit.setText(new_path)
         dialog.backup_dir = new_path
