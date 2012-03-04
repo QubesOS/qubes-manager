@@ -288,8 +288,18 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             dialog.addressComboBox.setItemText(0, address)
             dialog.addressComboBox.setCurrentIndex(0)
             service = self.fw_model.get_column_string(1, row)
+            if service == "any":
+                service = ""
             dialog.serviceComboBox.setItemText(0, service)
             dialog.serviceComboBox.setCurrentIndex(0)
+            protocol = self.fw_model.get_column_string(2, row)
+            if protocol == "tcp":
+                dialog.tcp_radio.setChecked(True)
+            elif protocol == "udp":
+                dialog.udp_radio.setChecked(True)
+            else:
+                dialog.any_radio.setChecked(True)
+
             self.run_rule_dialog(dialog, row)
 
     def delete_rule_button_pressed(self):
@@ -314,23 +324,30 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                 address = "0.0.0.0"
                 netmask = 0
 
-            if service == "*":
-                service = "0"
-            try:
-                range = service.split("-", 1)
-                if len(range) == 2:
-                    port = int(range[0])
-                    port2 = int(range[1])
-                else:
-                    port = int(service)
-            except (TypeError, ValueError) as ex:
-                port = self.fw_model.get_service_port(service)
+            if dialog.any_radio.isChecked():
+                protocol = "any"
+                port = 0
+            else:
+                if dialog.tcp_radio.isChecked():
+                    protocol = "tcp"
+                elif dialog.udp_radio.isChecked():
+                    protocol = "udp"
+                          
+                try:
+                    range = service.split("-", 1)
+                    if len(range) == 2:
+                        port = int(range[0])
+                        port2 = int(range[1])
+                    else:
+                        port = int(service)
+                except (TypeError, ValueError) as ex:
+                    port = self.fw_model.get_service_port(service)
 
             if port is not None:
                 if port2 is not None and port2 <= port:
                     QMessageBox.warning(None, "Invalid service ports range", "Port {0} is lower than port {1}.".format(port2, port))
                 else:
-                    item = QubesFirewallRuleItem(address, netmask, port, port2)
+                    item = QubesFirewallRuleItem(address, netmask, port, port2, protocol)
                     if row is not None:
                         self.fw_model.setChild(row, item)
                     else:
