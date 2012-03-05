@@ -191,8 +191,8 @@ class VmNetvmItem (QTableWidgetItem):
 
         if vm.is_netvm() and not vm.is_proxyvm():
             self.setText("n/a")
-        elif vm.netvm_vm is not None:
-            self.setText(vm.netvm_vm.name)
+        elif vm.netvm is not None:
+            self.setText(vm.netvm.name)
         else:
             self.setText("---")
 
@@ -1056,7 +1056,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             if vm.qid == 0:
                 subprocess.check_call (["/usr/bin/qvm-dom0-update", "--gui"])
             else:
-                qubesutils.run_in_vm(vm, "user:gpk-update-viewer", verbose=False, autostart=True)
+                vm.run("user:gpk-update-viewer", verbose=False, autostart=True)
         except Exception as ex:
             thread_monitor.set_error_msg(str(ex))
             thread_monitor.set_finished()

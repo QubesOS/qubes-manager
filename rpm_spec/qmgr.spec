@@ -4,14 +4,15 @@
 
 Name:		qubes-manager
 Version:	%{version}
-Release:	1
+Release:	3
 Summary:	The Graphical Qubes VM Manager.
 
 Group:		Qubes
 Vendor:		Invisible Things Lab
 License:	GPL
 URL:		http://fixme
-Requires:	python, PyQt4, qubes-core-dom0 >= 1.3.1, kdebase
+Requires:	python, PyQt4, qubes-core-dom0 >= 1.7.12, kdebase
+Requires:	pmount
 BuildRequires:	PyQt4-devel
 AutoReq:	0
 
