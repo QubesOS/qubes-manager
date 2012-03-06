@@ -555,11 +555,22 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.centralwidget.layout().setContentsMargins(0,0,0,0)
         self.layout().setContentsMargins(0,0,0,0)
 
+        self.action_toolbar = QAction("tool bar", None)
+        self.action_toolbar.setCheckable(True)
+        self.action_toolbar.setChecked(True)
+        self.action_menubar = QAction("menu bar", None)
+        self.action_menubar.setCheckable(True)
+        self.action_menubar.setChecked(True)
+        
+        self.connect(self.action_menubar, SIGNAL("toggled(bool)"), self.showhide_menubar)
+        self.connect(self.action_toolbar, SIGNAL("toggled(bool)"), self.showhide_toolbar)
+
         self.counter = 0
         self.shutdown_monitor = {}
         self.last_measure_results = {}
         self.last_measure_time = time.time()
         QTimer.singleShot (self.update_interval, self.update_table)
+
 
     def show(self):
         super(VmManagerWindow, self).show()
@@ -586,10 +597,15 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.centralwidget.setMinimumHeight(minH)
         self.centralwidget.setMaximumHeight(maxH)
 
-        mainwindow_to_add = self.menubar.height() +\
-                            self.toolbar.height() + \
-                            self.menubar.contentsMargins().top() + self.menubar.contentsMargins().bottom() +\
-                            self.toolbar.contentsMargins().top() + self.toolbar.contentsMargins().bottom()
+        mainwindow_to_add = 0
+        if self.menubar.isVisible():
+            mainwindow_to_add += self.menubar.height() + self.menubar.contentsMargins().top() + self.menubar.contentsMargins().bottom()
+        if self.toolbar.isVisible():
+            mainwindow_to_add += self.toolbar.height() + self.toolbar.contentsMargins().top() + self.toolbar.contentsMargins().bottom()
+
+        # in case both toolbar and menubar are hidden there must be an option to get them back
+        if mainwindow_to_add == 0:
+            mainwindow_to_add = 10
 
         maxH += mainwindow_to_add
         minH += mainwindow_to_add
@@ -622,6 +638,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         label_list = QubesVmLabels.values()
         label_list.sort(key=lambda l: l.index)
+       
+ 
         for label in [label.name for label in label_list]:
             for appvm in [vm for vm in vms_list if ((vm.is_appvm() or vm.is_disposablevm()) and vm.label.name == label)]:
                 vms_to_display.append(appvm)
@@ -1095,6 +1113,14 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         backup_window.exec_()
 
 
+    def showhide_menubar(self, checked):
+        self.menuWidget().setVisible(checked)
+        self.set_table_geom_height()
+
+    def showhide_toolbar(self, checked):
+        self.toolbar.setVisible(checked)
+        self.set_table_geom_height()
+
 
     def showhide_collumn(self, col_num, show):
         self.table.setColumnHidden( col_num, not show)
@@ -1120,6 +1146,13 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     
     def on_actionMEM_Graph_toggled(self, checked):
         self.showhide_collumn( self.columns_indices['MEM Graph'], checked)
+
+
+    def createPopupMenu(self):
+        menu = QMenu()
+        menu.addAction(self.action_toolbar)
+        menu.addAction(self.action_menubar)
+        return menu
 
 
     @pyqtSlot('const QPoint&')
