@@ -210,7 +210,7 @@ class VmUsageBarWidget (QWidget):
             self.value = value            
         
         def __lt__(self, other):
-            return self.value < other.value
+            return int(self.value) < int(other.value)
 
     def __init__(self, min, max, format, update_func, vm, load, hue=210, parent = None):
         super (VmUsageBarWidget, self).__init__(parent)
@@ -532,6 +532,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.table.horizontalHeader().setResizeMode(QHeaderView.Fixed)
 
         self.table.sortItems(self.columns_indices["MEM"], Qt.DescendingOrder)
+        self.sort_by_mem = None
+        self.sort_by_cpu = None
 
         self.context_menu = QMenu(self)
         self.context_menu.addAction(self.action_settings)
@@ -548,6 +550,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.blk_menu = QMenu("Block devices")
         self.context_menu.addMenu(self.blk_menu)
 
+        self.connect(self.table.horizontalHeader(), SIGNAL("sortIndicatorChanged(int, Qt::SortOrder)"), self.sortIndicatorChanged)
         self.connect(self.table, SIGNAL("customContextMenuRequested(const QPoint&)"), self.open_context_menu)
         self.connect(self.blk_menu, SIGNAL("triggered(QAction *)"), self.attach_dettach_device_triggered)
 
@@ -716,6 +719,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                             blk_visible = False
                     
                     vm_row.update(self.counter, blk_visible=blk_visible, cpu_load = cur_cpu_load)
+                if self.sort_by_cpu != None:
+                    self.table.sortItems(self.columns_indices["CPU"], self.sort_by_cpu)
+
             else:
                 for vm_row in self.vms_in_table.values():
                     if rows_with_blk != None:
@@ -725,6 +731,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                             blk_visible = False
 
                     vm_row.update(self.counter, blk_visible=blk_visible)
+                if self.sort_by_cpu != None:
+                    self.table.sortItems(self.columns_indices["CPU"], self.sort_by_cpu)
+                elif self.sort_by_mem != None:
+                    self.table.sortItems(self.columns_indices["MEM"], self.sort_by_mem)
 
             self.table_selection_changed()
 
@@ -748,6 +758,17 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             str = "\n".join(msg)
             trayIcon.showMessage ("Qubes Manager", str, msecs=5000)
         return res
+
+    def sortIndicatorChanged(self, column, order):
+        if column == self.columns_indices["CPU"] or column == self.columns_indices["CPU Graph"]:
+            self.sort_by_mem = None
+            self.sort_by_cpu = order
+        elif column == self.columns_indices["MEM"] or column == self.columns_indices["MEM Graph"]:
+            self.sort_by_cpu = None
+            self.sort_by_mem = order
+        else:
+            self.sort_by_cpu = None
+            self.sort_by_mem = None
 
     def table_selection_changed (self):
 
