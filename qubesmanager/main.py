@@ -527,7 +527,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.actionCPU_Graph.setChecked(False)
         self.table.setColumnHidden( self.columns_indices["MEM Graph"], True)
         self.actionMEM_Graph.setChecked(False)
-        self.table.setColumnWidth(self.columns_indices["Upd"], 50)
+        self.table.setColumnWidth(self.columns_indices["Upd"], 40)
+
+        self.table.horizontalHeader().setResizeMode(QHeaderView.Fixed)
 
         self.table.sortItems(self.columns_indices["MEM"], Qt.DescendingOrder)
 
