@@ -191,8 +191,8 @@ class VmNetvmItem (QTableWidgetItem):
 
         if vm.is_netvm() and not vm.is_proxyvm():
             self.setText("n/a")
-        elif vm.netvm_vm is not None:
-            self.setText(vm.netvm_vm.name)
+        elif vm.netvm is not None:
+            self.setText(vm.netvm.name)
         else:
             self.setText("---")
 

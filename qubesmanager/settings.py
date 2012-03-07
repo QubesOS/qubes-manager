@@ -151,7 +151,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
     def current_tab_changed(self, idx):
         if idx == self.tabs_indices["firewall"]:
-            if self.vm.netvm_vm is not None and not self.vm.netvm_vm.is_proxyvm():
+            if self.vm.netvm is not None and not self.vm.netvm.is_proxyvm():
                 QMessageBox.warning (None, "VM configuration problem!", "The '{0}' AppVM is not network connected to a FirewallVM!<p>".format(self.vm.name) +\
                     "You may edit the '{0}' VM firewall rules, but these will not take any effect until you connect it to a working Firewall VM.".format(self.vm.name))
 
@@ -196,9 +196,9 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.netvm_idx = 0
             for (i, vm) in enumerate(netvm_list):
                 text = vm.name
-                if vm is self.qvm_collection.get_default_netvm_vm():
+                if vm is self.qvm_collection.get_default_netvm():
                     text += " (default)"
-                if vm.qid == self.vm.netvm_vm.qid:
+                if vm.qid == self.vm.netvm.qid:
                     self.netvm_idx = i
                     text += " (current)"
                 self.netVM.insertItem(i, text)
