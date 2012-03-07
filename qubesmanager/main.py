@@ -780,7 +780,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.action_removevm.setEnabled(not vm.installed_by_rpm and not vm.last_power_state)
             self.action_resumevm.setEnabled(not vm.last_power_state)
             self.action_pausevm.setEnabled(vm.last_power_state and vm.qid != 0)
-            self.action_shutdownvm.setEnabled(not vm.is_netvm() and vm.last_power_state and vm.qid != 0)
+            self.action_shutdownvm.setEnabled(vm.last_power_state and vm.qid != 0)
             self.action_appmenus.setEnabled(not vm.is_netvm())
             self.action_editfwrules.setEnabled(vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
             self.action_updatevm.setEnabled(vm.is_updateable() or vm.qid == 0)
