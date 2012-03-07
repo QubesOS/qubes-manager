@@ -259,9 +259,22 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.qvm_collection.save()
             self.qvm_collection.unlock_db()
 
-        return msg
 
-       # template_vm = template_vm_list[dialog.template_name.currentIndex()]
+        #vm netvm changed
+        if self.netVM.currentIndex() != self.netvm_idx:
+            new_netvm_name = self.netVM.currentText()
+            new_netvm_name = new_netvm_name.split(' ')[0]
+
+            cmd = ["qvm-prefs", "-s", self.vm.name, "netvm", new_netvm_name]
+            res = subprocess.check_call(cmd, stderr=subprocess.PIPE)
+
+            if res != 0:
+                msg.append("Error while setting netVM!")
+            
+
+        return msg
+            
+        # template_vm = template_vm_list[dialog.template_name.currentIndex()]
        # allow_networking = dialog.allow_networking.isChecked()
 
     ######### firewall tab related
