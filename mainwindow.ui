@@ -150,7 +150,7 @@
       </column>
       <column>
        <property name="text">
-        <string>Upd</string>
+        <string>Up</string>
        </property>
        <property name="toolTip">
         <string>Update info</string>

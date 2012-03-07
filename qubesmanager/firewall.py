@@ -81,11 +81,12 @@ class NewFwRuleDlg (QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
         self.set_ok_enabled(False)
         self.addressComboBox.setValidator(QIPAddressValidator())
         self.addressComboBox.editTextChanged.connect(self.address_editing_finished)
-        self.serviceComboBox.setValidator(QRegExpValidator(QRegExp("\*|[a-z][a-z0-9-]+|[0-9]+(-[0-9]+)?", Qt.CaseInsensitive), None))
-
+        self.serviceComboBox.setValidator(QRegExpValidator(QRegExp("[a-z][a-z0-9-]+|[0-9]+(-[0-9]+)?", Qt.CaseInsensitive), None))
+        self.serviceComboBox.setEnabled(False)
         self.serviceComboBox.setInsertPolicy(QComboBox.InsertAtBottom)
         self.populate_combos()
         self.serviceComboBox.setInsertPolicy(QComboBox.InsertAtTop)
+
 
     def populate_combos(self):
         example_addresses = [
@@ -100,7 +101,7 @@ class NewFwRuleDlg (QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
                 'ssh', 'telnet', 'telnets', 'ntp', 'snmp',
                 'ldap', 'ldaps', 'irc', 'ircs', 'xmpp-client',
                 'syslog', 'printer', 'nfs', 'x11',
-                '*', '1024-1234'
+                '1024-1234'
             ]
         for address in example_addresses:
             self.addressComboBox.addItem(address)
@@ -116,26 +117,25 @@ class NewFwRuleDlg (QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
             ok_button.setEnabled(on)
 
     def on_tcp_radio_toggled(self, checked):
-        self.tcp_port_lineedit.setEnabled(checked)
-        self.udp_port_lineedit.setEnabled(not checked)
+        if checked:
+            self.serviceComboBox.setEnabled(True)
 
     def on_udp_radio_toggled(self, checked):
-        self.tcp_port_lineedit.setEnabled(not checked)
-        self.udp_port_lineedit.setEnabled(checked)
+        if checked:
+            self.serviceComboBox.setEnabled(True)
 
     def on_any_radio_toggled(self, checked):
-        self.tcp_port_lineedit.setEnabled(not checked)
-        self.udp_port_lineedit.setEnabled(not checked)
-
-
+        if checked:
+            self.serviceComboBox.setEnabled(False)
 
 
 class QubesFirewallRuleItem(object):
-    def __init__(self, address = str(), netmask = 32, portBegin = 0, portEnd = None):
+    def __init__(self, address = str(), netmask = 32, portBegin = 0, portEnd = None, protocol = "any"):
         self.__address = address
         self.__netmask = netmask
         self.__portBegin = portBegin
         self.__portEnd = portEnd
+        self.__protocol = protocol
 
     @property
     def address(self):
@@ -153,6 +153,10 @@ class QubesFirewallRuleItem(object):
     def portEnd(self):
         return self.__portEnd
 
+    @property
+    def protocol(self):
+        return self.__protocol
+
     def hasChildren(self):
         return False
 
@@ -166,13 +170,15 @@ class QubesFirewallRulesModel(QAbstractItemModel):
                 0: lambda x: "*" if self.children[x].address == "0.0.0.0" and self.children[x].netmask == 0 \
                         else self.children[x].address + ("" if self.children[x].netmask == 32 \
                         else " /{0}".format(self.children[x].netmask)),
-                1: lambda x: "*" if self.children[x].portBegin == 0 \
+                1: lambda x: "any" if self.children[x].portBegin == 0 \
                         else "{0}-{1}".format(self.children[x].portBegin, self.children[x].portEnd) if self.children[x].portEnd is not None \
                         else self.get_service_name(self.children[x].portBegin),
+                2: lambda x: self.children[x].protocol,
         }
         self.__columnNames = {
                 0: "Address",
                 1: "Service",
+                2: "Protocol",
         }
 
         self.__services = list()
@@ -182,7 +188,7 @@ class QubesFirewallRulesModel(QAbstractItemModel):
             match = pattern.match(line)
             if match is not None:
                 service = match.groupdict()
-                self.__services.append( (service["name"], int(service["port"]), service["protocol"]) )
+                self.__services.append( (service["name"], int(service["port"]),) )
         f.close()
 
     def sort(self, idx, order):
@@ -193,6 +199,8 @@ class QubesFirewallRulesModel(QAbstractItemModel):
             self.children.sort(key=attrgetter('address'), reverse = rev)
         if idx==1:
             self.children.sort(key=lambda x: self.get_service_name(attrgetter('portBegin')) if attrgetter('portEnd') == None else attrgetter('portBegin'), reverse = rev)
+        if idx==2:
+            self.children.sort(key=attrgetter('protocol'), reverse = rev)
 
 
     def get_service_name(self, port):
@@ -223,7 +231,7 @@ class QubesFirewallRulesModel(QAbstractItemModel):
 
         for rule in conf["rules"]:
             self.appendChild(QubesFirewallRuleItem(
-                rule["address"], rule["netmask"], rule["portBegin"], rule["portEnd"]
+                rule["address"], rule["netmask"], rule["portBegin"], rule["portEnd"], rule["proto"]
                 ))
 
     def get_vm_name(self):
@@ -244,7 +252,8 @@ class QubesFirewallRulesModel(QAbstractItemModel):
                         "address": rule.address,
                         "netmask": rule.netmask,
                         "portBegin": rule.portBegin,
-                        "portEnd": rule.portEnd
+                        "portEnd": rule.portEnd,
+                        "proto": rule.protocol,
                     }
             )
 

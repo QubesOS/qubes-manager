@@ -210,7 +210,7 @@ class VmUsageBarWidget (QWidget):
             self.value = value            
         
         def __lt__(self, other):
-            return self.value < other.value
+            return int(self.value) < int(other.value)
 
     def __init__(self, min, max, format, update_func, vm, load, hue=210, parent = None):
         super (VmUsageBarWidget, self).__init__(parent)
@@ -527,9 +527,13 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.actionCPU_Graph.setChecked(False)
         self.table.setColumnHidden( self.columns_indices["MEM Graph"], True)
         self.actionMEM_Graph.setChecked(False)
-        self.table.setColumnWidth(self.columns_indices["Upd"], 50)
+        self.table.setColumnWidth(self.columns_indices["Upd"], 40)
+
+        self.table.horizontalHeader().setResizeMode(QHeaderView.Fixed)
 
         self.table.sortItems(self.columns_indices["MEM"], Qt.DescendingOrder)
+        self.sort_by_mem = None
+        self.sort_by_cpu = None
 
         self.context_menu = QMenu(self)
         self.context_menu.addAction(self.action_settings)
@@ -546,6 +550,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.blk_menu = QMenu("Block devices")
         self.context_menu.addMenu(self.blk_menu)
 
+        self.connect(self.table.horizontalHeader(), SIGNAL("sortIndicatorChanged(int, Qt::SortOrder)"), self.sortIndicatorChanged)
         self.connect(self.table, SIGNAL("customContextMenuRequested(const QPoint&)"), self.open_context_menu)
         self.connect(self.blk_menu, SIGNAL("triggered(QAction *)"), self.attach_dettach_device_triggered)
 
@@ -553,11 +558,22 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.centralwidget.layout().setContentsMargins(0,0,0,0)
         self.layout().setContentsMargins(0,0,0,0)
 
+        self.action_toolbar = QAction("tool bar", None)
+        self.action_toolbar.setCheckable(True)
+        self.action_toolbar.setChecked(True)
+        self.action_menubar = QAction("menu bar", None)
+        self.action_menubar.setCheckable(True)
+        self.action_menubar.setChecked(True)
+        
+        self.connect(self.action_menubar, SIGNAL("toggled(bool)"), self.showhide_menubar)
+        self.connect(self.action_toolbar, SIGNAL("toggled(bool)"), self.showhide_toolbar)
+
         self.counter = 0
         self.shutdown_monitor = {}
         self.last_measure_results = {}
         self.last_measure_time = time.time()
         QTimer.singleShot (self.update_interval, self.update_table)
+
 
     def show(self):
         super(VmManagerWindow, self).show()
@@ -584,10 +600,15 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.centralwidget.setMinimumHeight(minH)
         self.centralwidget.setMaximumHeight(maxH)
 
-        mainwindow_to_add = self.menubar.height() +\
-                            self.toolbar.height() + \
-                            self.menubar.contentsMargins().top() + self.menubar.contentsMargins().bottom() +\
-                            self.toolbar.contentsMargins().top() + self.toolbar.contentsMargins().bottom()
+        mainwindow_to_add = 0
+        if self.menubar.isVisible():
+            mainwindow_to_add += self.menubar.height() + self.menubar.contentsMargins().top() + self.menubar.contentsMargins().bottom()
+        if self.toolbar.isVisible():
+            mainwindow_to_add += self.toolbar.height() + self.toolbar.contentsMargins().top() + self.toolbar.contentsMargins().bottom()
+
+        # in case both toolbar and menubar are hidden there must be an option to get them back
+        if mainwindow_to_add == 0:
+            mainwindow_to_add = 10
 
         maxH += mainwindow_to_add
         minH += mainwindow_to_add
@@ -620,6 +641,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         label_list = QubesVmLabels.values()
         label_list.sort(key=lambda l: l.index)
+       
+ 
         for label in [label.name for label in label_list]:
             for appvm in [vm for vm in vms_list if ((vm.is_appvm() or vm.is_disposablevm()) and vm.label.name == label)]:
                 vms_to_display.append(appvm)
@@ -696,6 +719,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                             blk_visible = False
                     
                     vm_row.update(self.counter, blk_visible=blk_visible, cpu_load = cur_cpu_load)
+                if self.sort_by_cpu != None:
+                    self.table.sortItems(self.columns_indices["CPU"], self.sort_by_cpu)
+
             else:
                 for vm_row in self.vms_in_table.values():
                     if rows_with_blk != None:
@@ -705,6 +731,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                             blk_visible = False
 
                     vm_row.update(self.counter, blk_visible=blk_visible)
+                if self.sort_by_cpu != None:
+                    self.table.sortItems(self.columns_indices["CPU"], self.sort_by_cpu)
+                elif self.sort_by_mem != None:
+                    self.table.sortItems(self.columns_indices["MEM"], self.sort_by_mem)
 
             self.table_selection_changed()
 
@@ -728,6 +758,17 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             str = "\n".join(msg)
             trayIcon.showMessage ("Qubes Manager", str, msecs=5000)
         return res
+
+    def sortIndicatorChanged(self, column, order):
+        if column == self.columns_indices["CPU"] or column == self.columns_indices["CPU Graph"]:
+            self.sort_by_mem = None
+            self.sort_by_cpu = order
+        elif column == self.columns_indices["MEM"] or column == self.columns_indices["MEM Graph"]:
+            self.sort_by_cpu = None
+            self.sort_by_mem = order
+        else:
+            self.sort_by_cpu = None
+            self.sort_by_mem = None
 
     def table_selection_changed (self):
 
@@ -1093,6 +1134,14 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         backup_window.exec_()
 
 
+    def showhide_menubar(self, checked):
+        self.menuWidget().setVisible(checked)
+        self.set_table_geom_height()
+
+    def showhide_toolbar(self, checked):
+        self.toolbar.setVisible(checked)
+        self.set_table_geom_height()
+
 
     def showhide_collumn(self, col_num, show):
         self.table.setColumnHidden( col_num, not show)
@@ -1118,6 +1167,13 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     
     def on_actionMEM_Graph_toggled(self, checked):
         self.showhide_collumn( self.columns_indices['MEM Graph'], checked)
+
+
+    def createPopupMenu(self):
+        menu = QMenu()
+        menu.addAction(self.action_toolbar)
+        menu.addAction(self.action_menubar)
+        return menu
 
 
     @pyqtSlot('const QPoint&')
