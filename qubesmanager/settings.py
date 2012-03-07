@@ -215,6 +215,11 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         text = "Yes" if self.vm.installed_by_rpm == True else "No"
         self.rpm_label.setText(text)
 
+        #maxmem
+        self.priv_size.setValue(int(self.vm.maxmem)/1024)
+        self.priv_size.setMinimum(0)
+        self.priv_size.setMaximum(QubesHost().memory_total/1024/1024)
+
         #self.vmname.selectAll()
         #self.vmname.setFocus()
 
@@ -282,6 +287,12 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         #include in backups
         self.vm.include_in_backups = self.include_in_backups.isChecked()
+
+        #maxmem
+        maxmem = self.priv_size.value()*1024
+        if maxmem == 0:
+            maxmem = 256
+        self.vm.maxmem = maxmem
 
         return msg
             
