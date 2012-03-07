@@ -245,6 +245,20 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                 self.qvm_collection.save()
                 self.qvm_collection.unlock_db()
 
+        #vm template changed
+        if self.template_name.currentIndex() != self.template_idx:
+            new_template_name = self.template_name.currentText()
+            new_template_name = new_template_name.split(' ')[0]
+
+            template_vm = self.qvm_collection.get_vm_by_name(new_template_name)
+            assert (template_vm is not None and template_vm.qid in self.qvm_collection)
+            assert template_vm.is_template()
+
+            self.qvm_collection.lock_db_for_writing()
+            self.vm.template_vm = template_vm
+            self.qvm_collection.save()
+            self.qvm_collection.unlock_db()
+
         return msg
 
        # template_vm = template_vm_list[dialog.template_name.currentIndex()]
