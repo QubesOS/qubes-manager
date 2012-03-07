@@ -206,6 +206,15 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         else:
             self.netVM.setEnabled(False)
 
+        self.include_in_backups.setChecked(self.vm.include_in_backups)
+
+        #type
+        self.type_label.setText(self.vm.type)
+
+        #installed by rpm
+        text = "Yes" if self.vm.installed_by_rpm == True else "No"
+        self.rpm_label.setText(text)
+
         #self.vmname.selectAll()
         #self.vmname.setFocus()
 
@@ -270,7 +279,9 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
             if res != 0:
                 msg.append("Error while setting netVM!")
-            
+
+        #include in backups
+        self.vm.include_in_backups = self.include_in_backups.isChecked()
 
         return msg
             

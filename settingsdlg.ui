@@ -87,7 +87,7 @@
              <widget class="QComboBox" name="netVM"/>
             </item>
             <item row="3" column="0" colspan="2">
-             <widget class="QCheckBox" name="checkBox">
+             <widget class="QCheckBox" name="include_in_backups">
               <property name="enabled">
                <bool>true</bool>
               </property>

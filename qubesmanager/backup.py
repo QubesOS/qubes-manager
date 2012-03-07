@@ -55,7 +55,6 @@ class BackupVMsWindow(Ui_Backup, QWizard):
     __pyqtSignals__ = ("backup_progress(int)",)
 
     excluded = []
-    to_backup = []
 
     def __init__(self, app, qvm_collection, blk_manager, parent=None):
         super(BackupVMsWindow, self).__init__(parent)
@@ -109,8 +108,10 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                 self.excluded.append(vm.name)
                 continue
 
-            self.to_backup.append(vm.name)
-            self.select_vms_widget.available_list.addItem(vm.name)
+            if vm.include_in_backups == True:
+                self.select_vms_widget.selected_list.addItem(vm.name)
+            else:
+                self.select_vms_widget.available_list.addItem(vm.name)
 
  
     def dev_combobox_activated(self, idx):
