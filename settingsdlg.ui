@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>2</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -87,9 +87,9 @@
              <widget class="QComboBox" name="netVM"/>
             </item>
             <item row="3" column="0" colspan="2">
-             <widget class="QCheckBox" name="checkBox">
+             <widget class="QCheckBox" name="include_in_backups">
               <property name="enabled">
-               <bool>false</bool>
+               <bool>true</bool>
               </property>
               <property name="text">
                <string>Include in backups by default</string>
@@ -105,7 +105,7 @@
          <item>
           <widget class="QGroupBox" name="groupBox_4">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
            <property name="title">
             <string>Info</string>
@@ -160,7 +160,7 @@
          <item>
           <widget class="QGroupBox" name="groupBox">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
            <property name="title">
             <string>Disk storage</string>
@@ -169,7 +169,7 @@
             <item row="0" column="1">
              <widget class="QSpinBox" name="priv_size">
               <property name="enabled">
-               <bool>false</bool>
+               <bool>true</bool>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>

@@ -88,7 +88,7 @@ class VmStatusIcon(QLabel):
         elif vm.is_netvm():
             icon = QIcon (":/netvm.png")
         else:
-            icon = QIcon()
+            icon = QIcon(vm.label.icon_path)
 
         icon_sz = QSize (VmManagerWindow.row_height * 0.8, VmManagerWindow.row_height * 0.8)
         if vm.last_power_state:

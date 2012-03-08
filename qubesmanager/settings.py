@@ -80,34 +80,35 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         self.tabWidget.currentChanged.connect(self.current_tab_changed)
 
+        self.tabWidget.setTabEnabled(self.tabs_indices["applications"], not vm.is_netvm())
+        self.tabWidget.setTabEnabled(self.tabs_indices["firewall"], vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
+
         ###### basic tab
         self.__init_basic_tab__()
 
         ###### firewall tab
+        if self.tabWidget.isTabEnabled(self.tabs_indices["firewall"]):
 
-        model = QubesFirewallRulesModel()
-        model.set_vm(vm)
-        self.set_fw_model(model)
+            model = QubesFirewallRulesModel()
+            model.set_vm(vm)
+            self.set_fw_model(model)
 
-        
-        self.newRuleButton.clicked.connect(self.new_rule_button_pressed)
-        self.editRuleButton.clicked.connect(self.edit_rule_button_pressed)
-        self.deleteRuleButton.clicked.connect(self.delete_rule_button_pressed)
-        self.policyAllowRadioButton.toggled.connect(self.policy_radio_toggled)
-        self.dnsCheckBox.toggled.connect(self.dns_checkbox_toggled)
-        self.icmpCheckBox.toggled.connect(self.icmp_checkbox_toggled)
+            self.newRuleButton.clicked.connect(self.new_rule_button_pressed)
+            self.editRuleButton.clicked.connect(self.edit_rule_button_pressed)
+            self.deleteRuleButton.clicked.connect(self.delete_rule_button_pressed)
+            self.policyAllowRadioButton.toggled.connect(self.policy_radio_toggled)
+            self.dnsCheckBox.toggled.connect(self.dns_checkbox_toggled)
+            self.icmpCheckBox.toggled.connect(self.icmp_checkbox_toggled)
 
         ####### devices tab
         self.dev_list = MultiSelectWidget(self)
         self.devices_layout.addWidget(self.dev_list)
  
         ####### apps tab
-        if not vm.is_netvm():
+        if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
             self.app_list = MultiSelectWidget(self)
             self.apps_layout.addWidget(self.app_list)
             self.AppListManager = AppmenuSelectManager(self.vm, self.app_list)
-        else:
-            self.tabWidget.setTabEnabled(self.tabs_indices["applications"], False)
 
     def reject(self):
         self.done(0)
@@ -140,8 +141,10 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
     def __save_changes__(self, thread_monitor):
 
-        self.fw_model.apply_rules()
-        self.AppListManager.save_appmenu_select_changes()
+        if self.tabWidget.isTabEnabled(self.tabs_indices["firewall"]):
+            self.fw_model.apply_rules()
+        if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
+            self.AppListManager.save_appmenu_select_changes()
 
         ret = self.__apply_basic_tab__()
         if len(ret) > 0 :
@@ -191,20 +194,40 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         else:
             self.template_name.setEnabled(False)
 
-        if not self.vm.is_netvm():
+
+        if (not self.vm.is_netvm() or self.vm.is_proxyvm()):
             netvm_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_netvm()]
-            self.netvm_idx = 0
+            self.netvm_idx = -1
             for (i, vm) in enumerate(netvm_list):
                 text = vm.name
                 if vm is self.qvm_collection.get_default_netvm():
                     text += " (default)"
-                if vm.qid == self.vm.netvm.qid:
+                if self.vm.netvm is not None and vm.qid == self.vm.netvm.qid:
                     self.netvm_idx = i
                     text += " (current)"
                 self.netVM.insertItem(i, text)
+            none_text = "none"
+            if self.vm.netvm is None:
+                none_text += " (current)"
+                self.netvm_idx = len(netvm_list)
+            self.netVM.insertItem(len(netvm_list), none_text)
             self.netVM.setCurrentIndex(self.netvm_idx)
         else:
             self.netVM.setEnabled(False)
+
+        self.include_in_backups.setChecked(self.vm.include_in_backups)
+
+        #type
+        self.type_label.setText(self.vm.type)
+
+        #installed by rpm
+        text = "Yes" if self.vm.installed_by_rpm == True else "No"
+        self.rpm_label.setText(text)
+
+        #maxmem
+        self.priv_size.setValue(int(self.vm.maxmem)/1024)
+        self.priv_size.setMinimum(0)
+        self.priv_size.setMaximum(QubesHost().memory_total/1024/1024)
 
         #self.vmname.selectAll()
         #self.vmname.setFocus()
@@ -245,9 +268,44 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                 self.qvm_collection.save()
                 self.qvm_collection.unlock_db()
 
-        return msg
+        #vm template changed
+        if self.template_name.currentIndex() != self.template_idx:
+            new_template_name = self.template_name.currentText()
+            new_template_name = new_template_name.split(' ')[0]
 
-       # template_vm = template_vm_list[dialog.template_name.currentIndex()]
+            template_vm = self.qvm_collection.get_vm_by_name(new_template_name)
+            assert (template_vm is not None and template_vm.qid in self.qvm_collection)
+            assert template_vm.is_template()
+
+            self.qvm_collection.lock_db_for_writing()
+            self.vm.template_vm = template_vm
+            self.qvm_collection.save()
+            self.qvm_collection.unlock_db()
+
+
+        #vm netvm changed
+        if self.netVM.currentIndex() != self.netvm_idx:
+            new_netvm_name = self.netVM.currentText()
+            new_netvm_name = new_netvm_name.split(' ')[0]
+
+            cmd = ["qvm-prefs", "-s", self.vm.name, "netvm", new_netvm_name]
+            res = subprocess.check_call(cmd, stderr=subprocess.PIPE)
+
+            if res != 0:
+                msg.append("Error while setting netVM!")
+
+        #include in backups
+        self.vm.include_in_backups = self.include_in_backups.isChecked()
+
+        #maxmem
+        maxmem = self.priv_size.value()*1024
+        if maxmem == 0:
+            maxmem = 256
+        self.vm.maxmem = maxmem
+
+        return msg
+            
+        # template_vm = template_vm_list[dialog.template_name.currentIndex()]
        # allow_networking = dialog.allow_networking.isChecked()
 
     ######### firewall tab related
