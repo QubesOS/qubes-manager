@@ -54,8 +54,6 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 
     __pyqtSignals__ = ("backup_progress(int)",)
 
-    excluded = []
-
     def __init__(self, app, qvm_collection, blk_manager, parent=None):
         super(BackupVMsWindow, self).__init__(parent)
 
@@ -66,6 +64,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.dev_mount_path = None
         self.backup_dir = None
         self.func_output = []
+        self.excluded = []
 
         for vm in self.qvm_collection.values():
             if vm.qid == 0:
