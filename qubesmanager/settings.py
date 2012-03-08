@@ -80,34 +80,35 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         self.tabWidget.currentChanged.connect(self.current_tab_changed)
 
+        self.tabWidget.setTabEnabled(self.tabs_indices["applications"], not vm.is_netvm())
+        self.tabWidget.setTabEnabled(self.tabs_indices["firewall"], vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
+
         ###### basic tab
         self.__init_basic_tab__()
 
         ###### firewall tab
+        if self.tabWidget.isTabEnabled(self.tabs_indices["firewall"]):
 
-        model = QubesFirewallRulesModel()
-        model.set_vm(vm)
-        self.set_fw_model(model)
+            model = QubesFirewallRulesModel()
+            model.set_vm(vm)
+            self.set_fw_model(model)
 
-        
-        self.newRuleButton.clicked.connect(self.new_rule_button_pressed)
-        self.editRuleButton.clicked.connect(self.edit_rule_button_pressed)
-        self.deleteRuleButton.clicked.connect(self.delete_rule_button_pressed)
-        self.policyAllowRadioButton.toggled.connect(self.policy_radio_toggled)
-        self.dnsCheckBox.toggled.connect(self.dns_checkbox_toggled)
-        self.icmpCheckBox.toggled.connect(self.icmp_checkbox_toggled)
+            self.newRuleButton.clicked.connect(self.new_rule_button_pressed)
+            self.editRuleButton.clicked.connect(self.edit_rule_button_pressed)
+            self.deleteRuleButton.clicked.connect(self.delete_rule_button_pressed)
+            self.policyAllowRadioButton.toggled.connect(self.policy_radio_toggled)
+            self.dnsCheckBox.toggled.connect(self.dns_checkbox_toggled)
+            self.icmpCheckBox.toggled.connect(self.icmp_checkbox_toggled)
 
         ####### devices tab
         self.dev_list = MultiSelectWidget(self)
         self.devices_layout.addWidget(self.dev_list)
  
         ####### apps tab
-        if not vm.is_netvm():
+        if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
             self.app_list = MultiSelectWidget(self)
             self.apps_layout.addWidget(self.app_list)
             self.AppListManager = AppmenuSelectManager(self.vm, self.app_list)
-        else:
-            self.tabWidget.setTabEnabled(self.tabs_indices["applications"], False)
 
     def reject(self):
         self.done(0)
@@ -140,8 +141,10 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
     def __save_changes__(self, thread_monitor):
 
-        self.fw_model.apply_rules()
-        self.AppListManager.save_appmenu_select_changes()
+        if self.tabWidget.isTabEnabled(self.tabs_indices["firewall"]):
+            self.fw_model.apply_rules()
+        if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
+            self.AppListManager.save_appmenu_select_changes()
 
         ret = self.__apply_basic_tab__()
         if len(ret) > 0 :
@@ -191,17 +194,23 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         else:
             self.template_name.setEnabled(False)
 
-        if not self.vm.is_netvm():
+
+        if (not self.vm.is_netvm() or self.vm.is_proxyvm()):
             netvm_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_netvm()]
-            self.netvm_idx = 0
+            self.netvm_idx = -1
             for (i, vm) in enumerate(netvm_list):
                 text = vm.name
                 if vm is self.qvm_collection.get_default_netvm():
                     text += " (default)"
-                if vm.qid == self.vm.netvm.qid:
+                if self.vm.netvm is not None and vm.qid == self.vm.netvm.qid:
                     self.netvm_idx = i
                     text += " (current)"
                 self.netVM.insertItem(i, text)
+            none_text = "none"
+            if self.vm.netvm is None:
+                none_text += " (current)"
+                self.netvm_idx = len(netvm_list)
+            self.netVM.insertItem(len(netvm_list), none_text)
             self.netVM.setCurrentIndex(self.netvm_idx)
         else:
             self.netVM.setEnabled(False)
