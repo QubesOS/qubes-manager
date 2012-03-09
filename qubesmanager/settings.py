@@ -224,6 +224,16 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         text = "Yes" if self.vm.installed_by_rpm == True else "No"
         self.rpm_label.setText(text)
 
+        #networking info
+        if self.vm.is_networked():
+            self.networking_groupbox.setEnabled(True);
+            self.ip_label.setText(self.vm.ip if self.vm.ip is not None else "none")
+            self.netmask_label.setText(self.vm.netmask if self.vm.netmask is not None else "none")
+            self.gateway_label.setText(self.vm.gateway if self.vm.gateway is not None else "none")
+        else:
+            self.networking_groupbox.setEnabled(False);
+
+
         #maxmem
         self.priv_size.setValue(int(self.vm.maxmem)/1024)
         self.priv_size.setMinimum(0)
