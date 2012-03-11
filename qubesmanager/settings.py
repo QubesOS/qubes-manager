@@ -234,10 +234,9 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.networking_groupbox.setEnabled(False);
 
 
-        #maxmem
-        self.priv_size.setValue(int(self.vm.maxmem)/1024)
-        self.priv_size.setMinimum(0)
-        self.priv_size.setMaximum(QubesHost().memory_total/1024/1024)
+        #max priv size
+        self.priv_size.setValue(int(self.vm.memory))
+        self.priv_size.setMaximum(QubesHost().memory_total/1024)
 
         #self.vmname.selectAll()
         #self.vmname.setFocus()
@@ -307,11 +306,9 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         #include in backups
         self.vm.include_in_backups = self.include_in_backups.isChecked()
 
-        #maxmem
-        maxmem = self.priv_size.value()*1024
-        if maxmem == 0:
-            maxmem = 256
-        self.vm.maxmem = maxmem
+        #max priv size
+        priv_size = self.priv_size.value()
+        self.vm.memory = priv_size
 
         return msg
             
