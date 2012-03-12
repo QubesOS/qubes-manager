@@ -194,7 +194,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         if not self.vm.is_template() and self.vm.template is not None:
             template_vm_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_template()]
-            self.template_idx = 0
+            self.template_idx = -1
+
             for (i, vm) in enumerate(template_vm_list):
                 text = vm.name
                 if vm is self.qvm_collection.get_default_template():
@@ -212,19 +213,26 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         if (not self.vm.is_netvm() or self.vm.is_proxyvm()):
             netvm_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_netvm()]
             self.netvm_idx = -1
+
+            text = "default ("+self.qvm_collection.get_default_netvm().name+")"
+            if self.vm.uses_default_netvm:
+                text += " (current)"
+                self.netvm_idx = 0
+            self.netVM.insertItem(0, text)
+    
             for (i, vm) in enumerate(netvm_list):
                 text = vm.name
-                if vm is self.qvm_collection.get_default_netvm():
-                    text += " (default)"
-                if self.vm.netvm is not None and vm.qid == self.vm.netvm.qid:
-                    self.netvm_idx = i
+                if self.vm.netvm is not None and vm.qid == self.vm.netvm.qid and not self.vm.uses_default_netvm:
+                    self.netvm_idx = i+1
                     text += " (current)"
-                self.netVM.insertItem(i, text)
+                self.netVM.insertItem(i+1, text)
+
             none_text = "none"
             if self.vm.netvm is None:
                 none_text += " (current)"
-                self.netvm_idx = len(netvm_list)
-            self.netVM.insertItem(len(netvm_list), none_text)
+                self.netvm_idx = len(netvm_list)+1
+            self.netVM.insertItem(len(netvm_list)+1, none_text)
+
             self.netVM.setCurrentIndex(self.netvm_idx)
         else:
             self.netVM.setEnabled(False)
@@ -296,11 +304,21 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         if self.netVM.currentIndex() != self.netvm_idx:
             new_netvm_name = self.netVM.currentText()
             new_netvm_name = new_netvm_name.split(' ')[0]
-            netvm = self.qvm_collection.get_vm_by_name(new_netvm_name)
-            assert (netvm is not None and netvm.qid in self.qvm_collection)
-            assert netvm.is_netvm()
-            self.vm.uses_default_netvm = (self.vm is self.qvm_collection.get_default_netvm())
+    
+            uses_default_netvm = False
+
+            if new_netvm_name == "default":
+                new_netvm_name = self.qvm_collection.get_default_netvm().name
+                uses_default_netvm = True
+
+            if new_netvm_name == "none":
+                netvm = None
+            else:
+                netvm = self.qvm_collection.get_vm_by_name(new_netvm_name)
+            assert (netvm is None or (netvm is not None and netvm.qid in self.qvm_collection and netvm.is_netvm()))
+            
             self.vm.netvm = netvm
+            self.vm.uses_default_netvm = uses_default_netvm
             self.anything_changed = True
 
         #include in backups
