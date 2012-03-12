@@ -184,7 +184,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.template_idx = 0
             for (i, vm) in enumerate(template_vm_list):
                 text = vm.name
-                if vm is self.qvm_collection.get_default_template_vm():
+                if vm is self.qvm_collection.get_default_template():
                     text += " (default)"
                 if vm.qid == self.vm.template.qid:
                     self.template_idx = i

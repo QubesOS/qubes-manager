@@ -824,7 +824,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         default_index = 0
         for (i, vm) in enumerate(template_vm_list):
-            if vm is self.qvm_collection.get_default_template_vm():
+            if vm is self.qvm_collection.get_default_template():
                 default_index = i
                 dialog.template_name.insertItem(i, vm.name + " (default)")
             else:
