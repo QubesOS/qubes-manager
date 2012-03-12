@@ -277,9 +277,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             else:
                 oldname = self.vm.name
                 try:
-                    self.vm.pre_rename(vmname)
                     self.vm.set_name(vmname)
-                    self.vm.post_rename(oldname)
                     self.anything_changed = True
                 except Exception as ex:
                     msg.append(str(ex))
