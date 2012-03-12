@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -288,7 +288,7 @@
        </widget>
        <widget class="QWidget" name="advanced_tab">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <attribute name="title">
          <string>Advanced</string>
@@ -296,12 +296,18 @@
         <layout class="QGridLayout" name="gridLayout_9">
          <item row="0" column="0">
           <widget class="QGroupBox" name="groupBox_2">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="title">
             <string>Memory/CPU</string>
            </property>
            <layout class="QGridLayout" name="gridLayout_4">
             <item row="0" column="0">
              <widget class="QLabel" name="label_15">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="text">
                <string>Initial memory:</string>
               </property>
@@ -309,6 +315,9 @@
             </item>
             <item row="0" column="1">
              <widget class="QLabel" name="mem_size">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="font">
                <font>
                 <weight>75</weight>
@@ -325,6 +334,9 @@
             </item>
             <item row="0" column="2">
              <widget class="QLabel" name="label_16">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="text">
                <string>MB</string>
               </property>
@@ -388,6 +400,9 @@
             </item>
             <item row="3" column="0" colspan="2">
              <widget class="QCheckBox" name="include_in_balancing">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="text">
                <string>Include in memory balancing</string>
               </property>
@@ -398,6 +413,9 @@
          </item>
          <item row="0" column="1">
           <widget class="QGroupBox" name="groupBox_10">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
            <property name="title">
             <string>Kernel</string>
            </property>
@@ -437,6 +455,9 @@
          </item>
          <item row="1" column="0" colspan="2">
           <widget class="QGroupBox" name="groupBox_11">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
            <property name="title">
             <string>Paths</string>
            </property>

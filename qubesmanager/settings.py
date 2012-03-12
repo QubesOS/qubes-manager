@@ -34,6 +34,7 @@ from qubes.qubes import qubes_appmenu_remove_cmd
 from qubes.qubes import QubesDaemonPidfile
 from qubes.qubes import QubesHost
 from qubes.qubes import qrexec_client_path
+from qubes.qubes import qubes_kernels_base_dir
 
 import qubesmanager.resources_rc
 
@@ -85,6 +86,9 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         ###### basic tab
         self.__init_basic_tab__()
+
+        ###### advanced tab
+        self.__init_advanced_tab__()
 
         ###### firewall tab
         if self.tabWidget.isTabEnabled(self.tabs_indices["firewall"]):
@@ -142,6 +146,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.anything_changed = False
         
         ret = self.__apply_basic_tab__()
+        self.__apply_advanced_tab__()
 
         if len(ret) > 0 :
             thread_monitor.set_error_msg('\n'.join(ret)) 
@@ -201,6 +206,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.template_name.setCurrentIndex(self.template_idx)
         else:
             self.template_name.setEnabled(False)
+            self.template_idx = -1
 
 
         if (not self.vm.is_netvm() or self.vm.is_proxyvm()):
@@ -222,6 +228,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.netVM.setCurrentIndex(self.netvm_idx)
         else:
             self.netVM.setEnabled(False)
+            self.netvm_idx = -1
 
         self.include_in_backups.setChecked(self.vm.include_in_backups)
 
@@ -307,7 +314,71 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.anything_changed = True
 
         return msg
-            
+
+
+    ######### advanced tab
+
+    def __init_advanced_tab__(self):
+
+        #kernel
+        if self.vm.template is not None:
+            text = self.vm.kernel
+            self.kernel.insertItem(0, text)
+            self.kernel.setEnabled(False)
+            self.kernel_idx = 0
+        else:
+            text = "default (" + self.qvm_collection.get_default_kernel() +")"
+            kernel_list = [text]
+            for k in os.listdir(qubes_kernels_base_dir):
+                kernel_list.append(k)
+            kernel_list.append("none")
+
+            self.kernel_idx = 0
+
+            for (i, k) in enumerate(kernel_list):
+                text = k
+                if (text.startswith("default") and self.vm.uses_default_kernel) or ( self.vm.kernel == k and not self.vm.uses_default_kernel) or (k=="none" and self.vm.kernel==None):
+                    text += " (current)"
+                    self.kernel_idx = i
+                self.kernel.insertItem(i,text)
+            self.kernel.setCurrentIndex(self.kernel_idx)
+
+        #kernel opts
+        if self.vm.uses_default_kernelopts:
+            self.kernel_opts.setText(self.vm.kernelopts + " (default)")
+        else:
+            self.kernel_opts.setText(self.vm.kernelopts)
+
+
+                
+        #paths
+        self.dir_path.setText(self.vm.dir_path)
+        self.config_path.setText(self.vm.conf_file)
+        if self.vm.template is not None:
+            self.root_img_path.setText(self.vm.template.root_img)
+        else:
+            self.root_img_path.setText("n/a")
+        self.volatile_img_path.setText(self.vm.volatile_img)
+        self.private_img_path.setText(self.vm.private_img)
+
+    def __apply_advanced_tab__(self):
+
+        #kernel changed
+        if self.kernel.currentIndex() != self.kernel_idx:
+            new_kernel = self.kernel.currentText()
+            new_kernel = new_kernel.split(' ')[0]
+            if(new_kernel == "default"):
+                kernel = self.qvm_collection.get_default_kernel()
+                self.vm.uses_default_kernel = True
+            elif(new_kernel == "none"):
+                kernel = None
+                self.vm.uses_default_kernel = False;
+            else:
+                self.vm.uses_default_kernel = False;
+
+            self.vm.kernel = kernel
+            self.anything_changed = True
+
     ######### firewall tab related
 
     def set_fw_model(self, model):
