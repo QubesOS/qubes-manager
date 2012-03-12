@@ -146,15 +146,15 @@ class VmTemplateItem (QTableWidgetItem):
     def __init__(self, vm):
         super(VmTemplateItem, self).__init__()
         
-        if vm.template_vm is not None:
-            self.setText(vm.template_vm.name)
+        if vm.template is not None:
+            self.setText(vm.template.name)
         else:
             font = QFont()
             font.setStyle(QFont.StyleItalic)
             self.setFont(font)
             self.setTextColor(QColor("gray"))
 
-            if vm.is_appvm(): # and vm.template_vm is None
+            if vm.is_appvm(): # and vm.template is None
                 self.setText("StandaloneVM")
             elif vm.is_template():
                 self.setText("TemplateVM")
@@ -824,7 +824,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         default_index = 0
         for (i, vm) in enumerate(template_vm_list):
-            if vm is self.qvm_collection.get_default_template_vm():
+            if vm is self.qvm_collection.get_default_template():
                 default_index = i
                 dialog.template_name.insertItem(i, vm.name + " (default)")
             else:

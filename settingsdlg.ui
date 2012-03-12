@@ -171,18 +171,24 @@
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
               </property>
+              <property name="minimum">
+               <number>256</number>
+              </property>
               <property name="maximum">
                <number>10000</number>
               </property>
+              <property name="singleStep">
+               <number>256</number>
+              </property>
               <property name="value">
-               <number>2</number>
+               <number>256</number>
               </property>
              </widget>
             </item>
             <item row="0" column="2">
              <widget class="QLabel" name="label_5">
               <property name="text">
-               <string>GB</string>
+               <string>MB</string>
               </property>
              </widget>
             </item>
@@ -339,11 +345,14 @@
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
               </property>
+              <property name="minimum">
+               <number>256</number>
+              </property>
               <property name="maximum">
                <number>10000</number>
               </property>
               <property name="singleStep">
-               <number>100</number>
+               <number>256</number>
               </property>
               <property name="value">
                <number>400</number>
