@@ -64,8 +64,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.app = app
         self.qvm_collection = qvm_collection
         self.vm = vm
-        if self.vm.template_vm:
-            self.source_vm = self.vm.template_vm
+        if self.vm.template:
+            self.source_vm = self.vm.template
         else:
             self.source_vm = self.vm
  
@@ -179,14 +179,14 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.vmlabel.setItemIcon (i, QIcon(label.icon_path))
         self.vmlabel.setCurrentIndex(self.label_idx)
 
-        if not self.vm.is_template() and self.vm.template_vm is not None:
+        if not self.vm.is_template() and self.vm.template is not None:
             template_vm_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_template()]
             self.template_idx = 0
             for (i, vm) in enumerate(template_vm_list):
                 text = vm.name
                 if vm is self.qvm_collection.get_default_template_vm():
                     text += " (default)"
-                if vm.qid == self.vm.template_vm.qid:
+                if vm.qid == self.vm.template.qid:
                     self.template_idx = i
                     text += " (current)"
                 self.template_name.insertItem(i, text)
@@ -287,7 +287,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             assert template_vm.is_template()
 
             self.qvm_collection.lock_db_for_writing()
-            self.vm.template_vm = template_vm
+            self.vm.template = template_vm
             self.qvm_collection.save()
             self.qvm_collection.unlock_db()
 

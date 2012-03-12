@@ -60,8 +60,8 @@ class AppmenuSelectManager:
         self.app_list = apps_multiselect # this is a multiselect wiget
         
         self.vm = vm
-        if self.vm.template_vm:
-            self.source_vm = self.vm.template_vm
+        if self.vm.template:
+            self.source_vm = self.vm.template
         else:
             self.source_vm = self.vm
 
