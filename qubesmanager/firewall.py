@@ -191,6 +191,8 @@ class QubesFirewallRulesModel(QAbstractItemModel):
                 self.__services.append( (service["name"], int(service["port"]),) )
         f.close()
 
+        self.fw_changed = False
+
     def sort(self, idx, order):
         from operator import attrgetter
 
@@ -237,12 +239,15 @@ class QubesFirewallRulesModel(QAbstractItemModel):
     def get_vm_name(self):
         return self.__vm.name
 
-    def apply_rules(self):
+    def apply_rules(self, allow, dns, icmp):
         assert self.__vm is not None
 
-        conf = { "allow": self.allow,
-                "allowDns": self.allowDns,
-                "allowIcmp": self.allowIcmp,
+        if(self.allow != allow or self.allowDns != dns or self.allowIcmp != icmp):
+            self.fw_changed = True
+
+        conf = { "allow": allow,
+                "allowDns": dns,
+                "allowIcmp": icmp,
                 "rules": list()
             }
 
@@ -257,16 +262,18 @@ class QubesFirewallRulesModel(QAbstractItemModel):
                     }
             )
 
-        self.__vm.write_firewall_conf(conf)
+        if self.fw_changed:
+            self.__vm.write_firewall_conf(conf)
 
-        qvm_collection = QubesVmCollection()
-        qvm_collection.lock_db_for_reading()
-        qvm_collection.load()
-        qvm_collection.unlock_db()
+            qvm_collection = QubesVmCollection()
+            qvm_collection.lock_db_for_reading()
+            qvm_collection.load()
+            qvm_collection.unlock_db()
 
-        for vm in qvm_collection.values():
-            if vm.is_proxyvm():
-                vm.write_iptables_xenstore_entry()
+            for vm in qvm_collection.values():
+                if vm.is_proxyvm():
+                    vm.write_iptables_xenstore_entry()
+
 
     def index(self, row, column, parent=QModelIndex()):
         if not self.hasIndex(row, column, parent):

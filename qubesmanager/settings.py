@@ -96,9 +96,6 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.newRuleButton.clicked.connect(self.new_rule_button_pressed)
             self.editRuleButton.clicked.connect(self.edit_rule_button_pressed)
             self.deleteRuleButton.clicked.connect(self.delete_rule_button_pressed)
-            self.policyAllowRadioButton.toggled.connect(self.policy_radio_toggled)
-            self.dnsCheckBox.toggled.connect(self.dns_checkbox_toggled)
-            self.icmpCheckBox.toggled.connect(self.icmp_checkbox_toggled)
 
         ####### devices tab
         self.dev_list = MultiSelectWidget(self)
@@ -141,15 +138,26 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
     def __save_changes__(self, thread_monitor):
 
+        self.qvm_collection.lock_db_for_writing()
+        self.anything_changed = False
+        
+        ret = self.__apply_basic_tab__()
+
+        if len(ret) > 0 :
+            thread_monitor.set_error_msg('\n'.join(ret)) 
+
+        if self.anything_changed == True:
+            self.qvm_collection.save()
+        self.qvm_collection.unlock_db()
+
         if self.tabWidget.isTabEnabled(self.tabs_indices["firewall"]):
-            self.fw_model.apply_rules()
+            self.fw_model.apply_rules(self.policyAllowRadioButton.isChecked(), self.dnsCheckBox.isChecked(), self.icmpCheckBox.isChecked())
+
         if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
             self.AppListManager.save_appmenu_select_changes()
 
-        ret = self.__apply_basic_tab__()
-        if len(ret) > 0 :
-            thread_monitor.set_error_msg('\n'.join(ret)) 
         thread_monitor.set_finished()
+ 
 
 
     def current_tab_changed(self, idx):
@@ -249,72 +257,57 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         if self.vm.name != vmname:
             if self.vm.is_running():
                 msg.append("Can't change name of a running VM.")
-
             elif self.qvm_collection.get_vm_by_name(vmname) is not None:
-                msg.append("A VM named <b>{0}</b> already exists in the system!".format(vmname))
+                msg.append("Can't change VM name - a VM named <b>{0}</b> already exists in the system!".format(vmname))
             else:
                 oldname = self.vm.name
                 try:
-                    self.qvm_collection.lock_db_for_writing()
                     self.vm.pre_rename(vmname)
                     self.vm.set_name(vmname)
                     self.vm.post_rename(oldname)
-                    self.qvm_collection.save()
+                    self.anything_changed = True
                 except Exception as ex:
                     msg.append(str(ex))
-                finally:
-                    self.qvm_collection.unlock_db()
-
+                    
         #vm label changed
         if self.vmlabel.currentIndex() != self.label_idx:
-            if self.vm.is_running():
-                msg.append("Can't change label of a running VM.")
-
-            else:
-                label = self.label_list[self.vmlabel.currentIndex()]
-                self.qvm_collection.lock_db_for_writing()
-                self.vm.label = label
-                self.qvm_collection.save()
-                self.qvm_collection.unlock_db()
+            label = self.label_list[self.vmlabel.currentIndex()]
+            self.vm.label = label
+            self.anything_changed = True
 
         #vm template changed
         if self.template_name.currentIndex() != self.template_idx:
             new_template_name = self.template_name.currentText()
             new_template_name = new_template_name.split(' ')[0]
-
             template_vm = self.qvm_collection.get_vm_by_name(new_template_name)
             assert (template_vm is not None and template_vm.qid in self.qvm_collection)
             assert template_vm.is_template()
-
-            self.qvm_collection.lock_db_for_writing()
             self.vm.template = template_vm
-            self.qvm_collection.save()
-            self.qvm_collection.unlock_db()
-
+            self.anything_changed = True
 
         #vm netvm changed
         if self.netVM.currentIndex() != self.netvm_idx:
             new_netvm_name = self.netVM.currentText()
             new_netvm_name = new_netvm_name.split(' ')[0]
-
-            cmd = ["qvm-prefs", "-s", self.vm.name, "netvm", new_netvm_name]
-            res = subprocess.check_call(cmd, stderr=subprocess.PIPE)
-
-            if res != 0:
-                msg.append("Error while setting netVM!")
+            netvm = self.qvm_collection.get_vm_by_name(new_netvm_name)
+            assert (netvm is not None and netvm.qid in self.qvm_collection)
+            assert netvm.is_netvm()
+            self.vm.uses_default_netvm = (self.vm is self.qvm_collection.get_default_netvm())
+            self.vm.netvm = netvm
+            self.anything_changed = True
 
         #include in backups
-        self.vm.include_in_backups = self.include_in_backups.isChecked()
+        if self.vm.include_in_backups != self.include_in_backups.isChecked():
+            self.vm.include_in_backups = self.include_in_backups.isChecked()
 
         #max priv size
         priv_size = self.priv_size.value()
-        self.vm.memory = priv_size
+        if self.vm.memory != priv_size:
+            self.vm.memory = priv_size
+            self.anything_changed = True
 
         return msg
             
-        # template_vm = template_vm_list[dialog.template_name.currentIndex()]
-       # allow_networking = dialog.allow_networking.isChecked()
-
     ######### firewall tab related
 
     def set_fw_model(self, model):
@@ -329,16 +322,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
     def set_allow(self, allow):
         self.policyAllowRadioButton.setChecked(allow)
         self.policyDenyRadioButton.setChecked(not allow)
-
-    def policy_radio_toggled(self, on):
-        self.fw_model.allow = self.policyAllowRadioButton.isChecked()
-
-    def dns_checkbox_toggled(self, on):
-        self.fw_model.allowDns = on
-
-    def icmp_checkbox_toggled(self, on):
-        self.fw_model.allowIcmp = on
-
+ 
     def new_rule_button_pressed(self):
         dialog = NewFwRuleDlg()
         self.run_rule_dialog(dialog)
@@ -370,6 +354,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
     def delete_rule_button_pressed(self):
         for i in set([index.row() for index in self.rulesTreeView.selectedIndexes()]):
             self.fw_model.removeChild(i)
+            self.fw_model.fw_changed = True
 
     def run_rule_dialog(self, dialog, row = None):
         if dialog.exec_():
@@ -415,8 +400,10 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                     item = QubesFirewallRuleItem(address, netmask, port, port2, protocol)
                     if row is not None:
                         self.fw_model.setChild(row, item)
+                        self.fw_model.fw_changed = True
                     else:
                         self.fw_model.appendChild(item)
+                        self.fw_model.fw_changed = True
             else:
                 QMessageBox.warning(None, "Invalid service name", "Service '{0} is unknown.".format(service))
 

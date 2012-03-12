@@ -92,28 +92,45 @@ class AppmenuSelectManager:
                     break
             desktop_template.close()
 
-        whitelisted_appmenus = [a for a in available_appmenus if a[0] in whitelisted]
+        self.whitelisted_appmenus = [a for a in available_appmenus if a[0] in whitelisted]
         available_appmenus = [a for a in available_appmenus if a[0] not in whitelisted]
                 
         for a in available_appmenus:
             self.app_list.available_list.addItem( AppListWidgetItem(a[1], a[0]))
 
-        for a in whitelisted_appmenus:
+        for a in self.whitelisted_appmenus:
             self.app_list.selected_list.addItem( AppListWidgetItem(a[1], a[0]))
    
         self.app_list.available_list.sortItems()
         self.app_list.selected_list.sortItems()
 
     def save_list_of_selected(self):
-        whitelisted = open(self.vm.dir_path + '/' + whitelisted_filename, 'w')
+        sth_changed = False
+        added = []
+
         for i in range(self.app_list.selected_list.count()):
             item = self.app_list.selected_list.item(i)
-            whitelisted.write(item.filename + '\n')
-        whitelisted.close()        
+            if item.filename not in [ w[0] for w in self.whitelisted_appmenus]:
+                added.append(item)
+        
+        if self.app_list.selected_list.count() - len(added) < len(self.whitelisted_appmenus): #sth removed
+            sth_changed = True;
+        elif len(added) > 0:
+            sth_changed = True;
+        
+        if sth_changed == True:
+            whitelisted = open(self.vm.dir_path + '/' + whitelisted_filename, 'w')
+            for i in range(self.app_list.selected_list.count()):
+                item = self.app_list.selected_list.item(i)
+                whitelisted.write(item.filename + '\n')
+            whitelisted.close() 
+            return True
+        else:
+            return False
+               
  
-
     def save_appmenu_select_changes(self):
-        self.save_list_of_selected()
-        subprocess.check_call([qubes_appmenu_remove_cmd, self.vm.name])
-        subprocess.check_call([qubes_appmenu_create_cmd, self.source_vm.appmenus_templates_dir, self.vm.name])
+        if self.save_list_of_selected():
+            subprocess.check_call([qubes_appmenu_remove_cmd, self.vm.name])
+            subprocess.check_call([qubes_appmenu_create_cmd, self.source_vm.appmenus_templates_dir, self.vm.name])
 
