@@ -336,6 +336,18 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
     def __init_advanced_tab__(self):
 
+        #mem/cpu
+        self.mem_size.setText(str(self.vm.memory))
+
+        self.max_mem_size.setValue(int(self.vm.maxmem))
+        self.max_mem_size.setMaximum(QubesHost().memory_total/1024)
+
+        self.vcpus.setMinimum(1);
+        self.vcpus.setMaximum(QubesHost().no_cpus)
+        self.vcpus.setValue(int(self.vm.vcpus))
+
+        self.include_in_balancing.setChecked('meminfo-writer' in self.vm.services and self.vm.services['meminfo-writer']==True)
+
         #kernel
         if self.vm.template is not None:
             text = self.vm.kernel
@@ -378,6 +390,20 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.private_img_path.setText(self.vm.private_img)
 
     def __apply_advanced_tab__(self):
+
+        #mem/cpu
+        if self.max_mem_size.value() != int(self.vm.maxmem):
+            self.vm.maxmem = self.max_mem_size.value()
+            self.anything_changed = True
+
+        if self.vcpus.value() != int(self.vm.vcpus):
+            self.vm.vcpus = self.vcpus.value() 
+            self.anything_changed = True
+
+        balancing_was_checked = ('meminfo-writer' in self.vm.services and self.vm.services['meminfo-writer']==True)
+        if self.include_in_balancing.isChecked() != balancing_was_checked:
+            self.vm.services['meminfo-writer'] = self.include_in_balancing.isChecked()
+            self.anything_changed = True
 
         #kernel changed
         if self.kernel.currentIndex() != self.kernel_idx:
