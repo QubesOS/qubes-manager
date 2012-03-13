@@ -102,8 +102,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.deleteRuleButton.clicked.connect(self.delete_rule_button_pressed)
 
         ####### devices tab
-        self.dev_list = MultiSelectWidget(self)
-        self.devices_layout.addWidget(self.dev_list)
+        self.__init_devices_tab__()
  
         ####### apps tab
         if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
@@ -147,6 +146,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         
         ret = self.__apply_basic_tab__()
         self.__apply_advanced_tab__()
+        self.__apply_devices_tab__()
 
         if len(ret) > 0 :
             thread_monitor.set_error_msg('\n'.join(ret)) 
@@ -395,6 +395,51 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.vm.kernel = kernel
             self.anything_changed = True
 
+    ######## devices tab
+    def __init_devices_tab__(self):
+        self.dev_list = MultiSelectWidget(self)
+        self.devices_layout.addWidget(self.dev_list)
+        
+        devs = []
+        lspci = subprocess.Popen(["lspci",], stdout = subprocess.PIPE)
+        for dev in lspci.stdout:
+            devs.append( (dev.rstrip(), dev.split(' ')[0]) )
+
+        class DevListWidgetItem(QListWidgetItem):
+            def __init__(self, name, slot, parent = None):
+                super(DevListWidgetItem, self).__init__(name, parent)
+                self.slot = slot
+
+        for d in devs:
+            if d[1] in self.vm.pcidevs:
+                self.dev_list.selected_list.addItem( DevListWidgetItem(d[0], d[1]))
+            else:
+                self.dev_list.available_list.addItem( DevListWidgetItem(d[0], d[1]))
+
+
+    def __apply_devices_tab__(self):
+        sth_changed = False
+        added = []
+
+        for i in range(self.dev_list.selected_list.count()):
+            item = self.dev_list.selected_list.item(i)
+            if item.slot not in self.vm.pcidevs:
+                added.append(item)
+        
+        if self.dev_list.selected_list.count() - len(added) < len(self.vm.pcidevs): #sth removed
+            sth_changed = True;
+        elif len(added) > 0:
+            sth_changed = True;
+        
+        if sth_changed == True:
+            pcidevs = []
+            for i in range(self.dev_list.selected_list.count()):
+                slot = self.dev_list.selected_list.item(i).slot
+                pcidevs.append(slot)
+            self.vm.pcidevs = pcidevs
+            self.anything_changed = True
+
+        
     ######### firewall tab related
 
     def set_fw_model(self, model):
