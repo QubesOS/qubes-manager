@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>5</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -185,7 +185,7 @@
                <number>1048576</number>
               </property>
               <property name="singleStep">
-               <number>512</number>
+               <number>1024</number>
               </property>
               <property name="value">
                <number>0</number>
