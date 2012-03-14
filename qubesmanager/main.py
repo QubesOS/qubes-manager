@@ -1119,7 +1119,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
     @pyqtSlot(name='on_action_global_settings_triggered')
     def action_global_settings_triggered(self):
-        global_settings_window = GlobalSettingsWindow()
+        global_settings_window = GlobalSettingsWindow(app, self.qvm_collection)
         global_settings_window.exec_()
 
 
