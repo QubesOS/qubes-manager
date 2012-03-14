@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>5</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -163,8 +163,15 @@
             <string>Disk storage</string>
            </property>
            <layout class="QGridLayout" name="gridLayout_3">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_3">
+              <property name="text">
+               <string>Private storage max. size:</string>
+              </property>
+             </widget>
+            </item>
             <item row="0" column="1">
-             <widget class="QSpinBox" name="priv_size">
+             <widget class="QSpinBox" name="max_priv_storage">
               <property name="enabled">
                <bool>true</bool>
               </property>
@@ -172,16 +179,16 @@
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
               </property>
               <property name="minimum">
-               <number>256</number>
+               <number>0</number>
               </property>
               <property name="maximum">
-               <number>10000</number>
+               <number>1048576</number>
               </property>
               <property name="singleStep">
-               <number>256</number>
+               <number>512</number>
               </property>
               <property name="value">
-               <number>256</number>
+               <number>0</number>
               </property>
              </widget>
             </item>
@@ -189,13 +196,6 @@
              <widget class="QLabel" name="label_5">
               <property name="text">
                <string>MB</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="0">
-             <widget class="QLabel" name="label_3">
-              <property name="text">
-               <string>Private storage max. size:</string>
               </property>
              </widget>
             </item>
@@ -314,21 +314,24 @@
              </widget>
             </item>
             <item row="0" column="1">
-             <widget class="QLabel" name="mem_size">
+             <widget class="QSpinBox" name="init_mem">
               <property name="enabled">
                <bool>true</bool>
               </property>
-              <property name="font">
-               <font>
-                <weight>75</weight>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>xx</string>
-              </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+              <property name="minimum">
+               <number>256</number>
+              </property>
+              <property name="maximum">
+               <number>10000</number>
+              </property>
+              <property name="singleStep">
+               <number>256</number>
+              </property>
+              <property name="value">
+               <number>256</number>
               </property>
              </widget>
             </item>

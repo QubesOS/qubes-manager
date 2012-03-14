@@ -263,13 +263,11 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         else:
             self.networking_groupbox.setEnabled(False);
 
+        #max priv storage
+        self.priv_img_size = self.vm.get_private_img_sz()/1024/1024
+        self.max_priv_storage.setMinimum(self.priv_img_size)
+        self.max_priv_storage.setValue(self.priv_img_size)
 
-        #max priv size
-        self.priv_size.setValue(int(self.vm.memory))
-        self.priv_size.setMaximum(QubesHost().memory_total/1024)
-
-        #self.vmname.selectAll()
-        #self.vmname.setFocus()
 
     def __apply_basic_tab__(self):
         msg = []
@@ -330,11 +328,15 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         if self.vm.include_in_backups != self.include_in_backups.isChecked():
             self.vm.include_in_backups = self.include_in_backups.isChecked()
 
-        #max priv size
-        priv_size = self.priv_size.value()
-        if self.vm.memory != priv_size:
-            self.vm.memory = priv_size
-            self.anything_changed = True
+        #max priv storage
+        priv_size = self.max_priv_storage.value()
+        if self.priv_img_size != priv_size:
+            try:
+                self.vm.resize_private_img(priv_size*1024*1024)
+                self.anything_changed = True
+            except Exception as ex:
+                msg.append(str(ex))
+
 
         return msg
 
@@ -344,7 +346,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
     def __init_advanced_tab__(self):
 
         #mem/cpu
-        self.mem_size.setText(str(self.vm.memory))
+        self.init_mem.setValue(int(self.vm.memory))
+        self.init_mem.setMaximum(int(self.vm.maxmem))
 
         self.max_mem_size.setValue(int(self.vm.maxmem))
         self.max_mem_size.setMaximum(QubesHost().memory_total/1024)
@@ -399,6 +402,10 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
     def __apply_advanced_tab__(self):
 
         #mem/cpu
+        if self.init_mem.value() != int(self.vm.memory):
+            self.vm.memory = self.init_mem.value()
+            self.anything_changed = True
+
         if self.max_mem_size.value() != int(self.vm.maxmem):
             self.vm.maxmem = self.max_mem_size.value()
             self.anything_changed = True
