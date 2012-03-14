@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>5</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -748,17 +748,17 @@
        </widget>
        <widget class="QWidget" name="services_tab">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <attribute name="title">
          <string>Services</string>
         </attribute>
         <layout class="QGridLayout" name="gridLayout_5">
          <item row="0" column="0">
-          <widget class="QLineEdit" name="service_lineEdit"/>
+          <widget class="QLineEdit" name="service_line_edit"/>
          </item>
          <item row="0" column="1">
-          <widget class="QPushButton" name="add_button">
+          <widget class="QPushButton" name="add_srv_button">
            <property name="text">
             <string/>
            </property>
@@ -775,32 +775,7 @@
           </widget>
          </item>
          <item row="4" column="0" rowspan="2">
-          <widget class="QListWidget" name="services_list">
-           <item>
-            <property name="text">
-             <string>ntpd</string>
-            </property>
-            <property name="checkState">
-             <enum>Checked</enum>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>cupsd</string>
-            </property>
-            <property name="checkState">
-             <enum>Checked</enum>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>meminfo</string>
-            </property>
-            <property name="checkState">
-             <enum>Checked</enum>
-            </property>
-           </item>
-          </widget>
+          <widget class="QListWidget" name="services_list"/>
          </item>
          <item row="6" column="0" colspan="2">
           <widget class="QLabel" name="label_7">
@@ -824,7 +799,7 @@
           </widget>
          </item>
          <item row="4" column="1">
-          <widget class="QPushButton" name="remove_button">
+          <widget class="QPushButton" name="remove_srv_button">
            <property name="text">
             <string/>
            </property>

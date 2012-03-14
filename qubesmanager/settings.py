@@ -44,6 +44,7 @@ import subprocess
 import time
 import threading
 from operator import itemgetter
+from copy import copy
 
 from ui_settingsdlg import *
 from multiselectwidget import *
@@ -104,6 +105,11 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         ####### devices tab
         self.__init_devices_tab__()
  
+        ####### services tab
+        self.__init_services_tab__()
+        self.add_srv_button.clicked.connect(self.__add_service__)
+        self.remove_srv_button.clicked.connect(self.__remove_service__)
+
         ####### apps tab
         if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
             self.app_list = MultiSelectWidget(self)
@@ -147,6 +153,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         ret = self.__apply_basic_tab__()
         self.__apply_advanced_tab__()
         self.__apply_devices_tab__()
+        self.__apply_services_tab__()
 
         if len(ret) > 0 :
             thread_monitor.set_error_msg('\n'.join(ret)) 
@@ -402,7 +409,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         balancing_was_checked = ('meminfo-writer' in self.vm.services and self.vm.services['meminfo-writer']==True)
         if self.include_in_balancing.isChecked() != balancing_was_checked:
-            self.vm.services['meminfo-writer'] = self.include_in_balancing.isChecked()
+            self.new_srv_dict['meminfo-writer'] = self.include_in_balancing.isChecked()
             self.anything_changed = True
 
         #kernel changed
@@ -465,7 +472,45 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.vm.pcidevs = pcidevs
             self.anything_changed = True
 
+
+    ######## services tab
+
+    def __init_services_tab__(self):
+        for srv in self.vm.services:
+            item = QListWidgetItem(srv)
+            if self.vm.services[srv] == True:
+                item.setCheckState(QtCore.Qt.Checked)
+            else:
+                item.setCheckState(QtCore.Qt.Unchecked)
+            self.services_list.addItem(item)
+        self.new_srv_dict = copy(self.vm.services)
+
+    def __add_service__(self):
+        srv = str(self.service_line_edit.text()).strip()
+        if srv != "" and srv not in self.new_srv_dict:
+            item = QListWidgetItem(srv)
+            item.setCheckState(QtCore.Qt.Checked)
+            self.services_list.addItem(item)
+            self.new_srv_dict[srv] = True
+
+    def __remove_service__(self):
+        row = self.services_list.currentRow()
+        if row:
+            item = self.services_list.takeItem(row)
+            print item.text()
+            del self.new_srv_dict[str(item.text())]
+
+    def __apply_services_tab__(self):
+        new_dict = {}
+        for r in range (self.services_list.count()):
+            item = self.services_list.item(r)
+            self.new_srv_dict[str(item.text())] = (item.checkState() == QtCore.Qt.Checked)
         
+        if self.new_srv_dict != self.vm.services:
+            self.vm.services = self.new_srv_dict
+            self.anything_changed = True
+
+
     ######### firewall tab related
 
     def set_fw_model(self, model):
