@@ -430,6 +430,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                 kernel = None
                 self.vm.uses_default_kernel = False;
             else:
+                kernel = new_kernel
                 self.vm.uses_default_kernel = False;
 
             self.vm.kernel = kernel
