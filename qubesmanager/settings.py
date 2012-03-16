@@ -34,6 +34,7 @@ from qubes.qubes import qubes_appmenu_remove_cmd
 from qubes.qubes import QubesDaemonPidfile
 from qubes.qubes import QubesHost
 from qubes.qubes import qrexec_client_path
+from qubes.qubes import qubes_kernels_base_dir
 
 import qubesmanager.resources_rc
 
@@ -43,6 +44,7 @@ import subprocess
 import time
 import threading
 from operator import itemgetter
+from copy import copy
 
 from ui_settingsdlg import *
 from multiselectwidget import *
@@ -86,6 +88,9 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         ###### basic tab
         self.__init_basic_tab__()
 
+        ###### advanced tab
+        self.__init_advanced_tab__()
+
         ###### firewall tab
         if self.tabWidget.isTabEnabled(self.tabs_indices["firewall"]):
 
@@ -98,9 +103,13 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.deleteRuleButton.clicked.connect(self.delete_rule_button_pressed)
 
         ####### devices tab
-        self.dev_list = MultiSelectWidget(self)
-        self.devices_layout.addWidget(self.dev_list)
+        self.__init_devices_tab__()
  
+        ####### services tab
+        self.__init_services_tab__()
+        self.add_srv_button.clicked.connect(self.__add_service__)
+        self.remove_srv_button.clicked.connect(self.__remove_service__)
+
         ####### apps tab
         if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
             self.app_list = MultiSelectWidget(self)
@@ -142,6 +151,9 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.anything_changed = False
         
         ret = self.__apply_basic_tab__()
+        self.__apply_advanced_tab__()
+        self.__apply_devices_tab__()
+        self.__apply_services_tab__()
 
         if len(ret) > 0 :
             thread_monitor.set_error_msg('\n'.join(ret)) 
@@ -189,7 +201,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         if not self.vm.is_template() and self.vm.template is not None:
             template_vm_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_template()]
-            self.template_idx = 0
+            self.template_idx = -1
+
             for (i, vm) in enumerate(template_vm_list):
                 text = vm.name
                 if vm is self.qvm_collection.get_default_template():
@@ -201,27 +214,36 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.template_name.setCurrentIndex(self.template_idx)
         else:
             self.template_name.setEnabled(False)
+            self.template_idx = -1
 
 
         if (not self.vm.is_netvm() or self.vm.is_proxyvm()):
             netvm_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_netvm()]
             self.netvm_idx = -1
+
+            text = "default ("+self.qvm_collection.get_default_netvm().name+")"
+            if self.vm.uses_default_netvm:
+                text += " (current)"
+                self.netvm_idx = 0
+            self.netVM.insertItem(0, text)
+    
             for (i, vm) in enumerate(netvm_list):
                 text = vm.name
-                if vm is self.qvm_collection.get_default_netvm():
-                    text += " (default)"
-                if self.vm.netvm is not None and vm.qid == self.vm.netvm.qid:
-                    self.netvm_idx = i
+                if self.vm.netvm is not None and vm.qid == self.vm.netvm.qid and not self.vm.uses_default_netvm:
+                    self.netvm_idx = i+1
                     text += " (current)"
-                self.netVM.insertItem(i, text)
+                self.netVM.insertItem(i+1, text)
+
             none_text = "none"
             if self.vm.netvm is None:
                 none_text += " (current)"
-                self.netvm_idx = len(netvm_list)
-            self.netVM.insertItem(len(netvm_list), none_text)
+                self.netvm_idx = len(netvm_list)+1
+            self.netVM.insertItem(len(netvm_list)+1, none_text)
+
             self.netVM.setCurrentIndex(self.netvm_idx)
         else:
             self.netVM.setEnabled(False)
+            self.netvm_idx = -1
 
         self.include_in_backups.setChecked(self.vm.include_in_backups)
 
@@ -241,13 +263,11 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         else:
             self.networking_groupbox.setEnabled(False);
 
+        #max priv storage
+        self.priv_img_size = self.vm.get_private_img_sz()/1024/1024
+        self.max_priv_storage.setMinimum(self.priv_img_size)
+        self.max_priv_storage.setValue(self.priv_img_size)
 
-        #max priv size
-        self.priv_size.setValue(int(self.vm.memory))
-        self.priv_size.setMaximum(QubesHost().memory_total/1024)
-
-        #self.vmname.selectAll()
-        #self.vmname.setFocus()
 
     def __apply_basic_tab__(self):
         msg = []
@@ -262,9 +282,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             else:
                 oldname = self.vm.name
                 try:
-                    self.vm.pre_rename(vmname)
                     self.vm.set_name(vmname)
-                    self.vm.post_rename(oldname)
                     self.anything_changed = True
                 except Exception as ex:
                     msg.append(str(ex))
@@ -289,25 +307,218 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         if self.netVM.currentIndex() != self.netvm_idx:
             new_netvm_name = self.netVM.currentText()
             new_netvm_name = new_netvm_name.split(' ')[0]
-            netvm = self.qvm_collection.get_vm_by_name(new_netvm_name)
-            assert (netvm is not None and netvm.qid in self.qvm_collection)
-            assert netvm.is_netvm()
-            self.vm.uses_default_netvm = (self.vm is self.qvm_collection.get_default_netvm())
+    
+            uses_default_netvm = False
+
+            if new_netvm_name == "default":
+                new_netvm_name = self.qvm_collection.get_default_netvm().name
+                uses_default_netvm = True
+
+            if new_netvm_name == "none":
+                netvm = None
+            else:
+                netvm = self.qvm_collection.get_vm_by_name(new_netvm_name)
+            assert (netvm is None or (netvm is not None and netvm.qid in self.qvm_collection and netvm.is_netvm()))
+            
             self.vm.netvm = netvm
+            self.vm.uses_default_netvm = uses_default_netvm
             self.anything_changed = True
 
         #include in backups
         if self.vm.include_in_backups != self.include_in_backups.isChecked():
             self.vm.include_in_backups = self.include_in_backups.isChecked()
 
-        #max priv size
-        priv_size = self.priv_size.value()
-        if self.vm.memory != priv_size:
-            self.vm.memory = priv_size
-            self.anything_changed = True
+        #max priv storage
+        priv_size = self.max_priv_storage.value()
+        if self.priv_img_size != priv_size:
+            try:
+                self.vm.resize_private_img(priv_size*1024*1024)
+                self.anything_changed = True
+            except Exception as ex:
+                msg.append(str(ex))
+
 
         return msg
-            
+
+
+    ######### advanced tab
+
+    def __init_advanced_tab__(self):
+
+        #mem/cpu
+        self.init_mem.setValue(int(self.vm.memory))
+        self.init_mem.setMaximum(int(self.vm.maxmem))
+
+        self.max_mem_size.setValue(int(self.vm.maxmem))
+        self.max_mem_size.setMaximum(QubesHost().memory_total/1024)
+
+        self.vcpus.setMinimum(1);
+        self.vcpus.setMaximum(QubesHost().no_cpus)
+        self.vcpus.setValue(int(self.vm.vcpus))
+
+        self.include_in_balancing.setChecked('meminfo-writer' in self.vm.services and self.vm.services['meminfo-writer']==True)
+
+        #kernel
+        if self.vm.template is not None:
+            text = self.vm.kernel
+            self.kernel.insertItem(0, text)
+            self.kernel.setEnabled(False)
+            self.kernel_idx = 0
+        else:
+            text = "default (" + self.qvm_collection.get_default_kernel() +")"
+            kernel_list = [text]
+            for k in os.listdir(qubes_kernels_base_dir):
+                kernel_list.append(k)
+            kernel_list.append("none")
+
+            self.kernel_idx = 0
+
+            for (i, k) in enumerate(kernel_list):
+                text = k
+                if (text.startswith("default") and self.vm.uses_default_kernel) or ( self.vm.kernel == k and not self.vm.uses_default_kernel) or (k=="none" and self.vm.kernel==None):
+                    text += " (current)"
+                    self.kernel_idx = i
+                self.kernel.insertItem(i,text)
+            self.kernel.setCurrentIndex(self.kernel_idx)
+
+        #kernel opts
+        if self.vm.uses_default_kernelopts:
+            self.kernel_opts.setText(self.vm.kernelopts + " (default)")
+        else:
+            self.kernel_opts.setText(self.vm.kernelopts)
+
+
+                
+        #paths
+        self.dir_path.setText(self.vm.dir_path)
+        self.config_path.setText(self.vm.conf_file)
+        if self.vm.template is not None:
+            self.root_img_path.setText(self.vm.template.root_img)
+        else:
+            self.root_img_path.setText("n/a")
+        self.volatile_img_path.setText(self.vm.volatile_img)
+        self.private_img_path.setText(self.vm.private_img)
+
+    def __apply_advanced_tab__(self):
+
+        #mem/cpu
+        if self.init_mem.value() != int(self.vm.memory):
+            self.vm.memory = self.init_mem.value()
+            self.anything_changed = True
+
+        if self.max_mem_size.value() != int(self.vm.maxmem):
+            self.vm.maxmem = self.max_mem_size.value()
+            self.anything_changed = True
+
+        if self.vcpus.value() != int(self.vm.vcpus):
+            self.vm.vcpus = self.vcpus.value() 
+            self.anything_changed = True
+
+        balancing_was_checked = ('meminfo-writer' in self.vm.services and self.vm.services['meminfo-writer']==True)
+        if self.include_in_balancing.isChecked() != balancing_was_checked:
+            self.new_srv_dict['meminfo-writer'] = self.include_in_balancing.isChecked()
+            self.anything_changed = True
+
+        #kernel changed
+        if self.kernel.currentIndex() != self.kernel_idx:
+            new_kernel = self.kernel.currentText()
+            new_kernel = new_kernel.split(' ')[0]
+            if(new_kernel == "default"):
+                kernel = self.qvm_collection.get_default_kernel()
+                self.vm.uses_default_kernel = True
+            elif(new_kernel == "none"):
+                kernel = None
+                self.vm.uses_default_kernel = False;
+            else:
+                kernel = new_kernel
+                self.vm.uses_default_kernel = False;
+
+            self.vm.kernel = kernel
+            self.anything_changed = True
+
+    ######## devices tab
+    def __init_devices_tab__(self):
+        self.dev_list = MultiSelectWidget(self)
+        self.devices_layout.addWidget(self.dev_list)
+        
+        devs = []
+        lspci = subprocess.Popen(["lspci",], stdout = subprocess.PIPE)
+        for dev in lspci.stdout:
+            devs.append( (dev.rstrip(), dev.split(' ')[0]) )
+
+        class DevListWidgetItem(QListWidgetItem):
+            def __init__(self, name, slot, parent = None):
+                super(DevListWidgetItem, self).__init__(name, parent)
+                self.slot = slot
+
+        for d in devs:
+            if d[1] in self.vm.pcidevs:
+                self.dev_list.selected_list.addItem( DevListWidgetItem(d[0], d[1]))
+            else:
+                self.dev_list.available_list.addItem( DevListWidgetItem(d[0], d[1]))
+
+
+    def __apply_devices_tab__(self):
+        sth_changed = False
+        added = []
+
+        for i in range(self.dev_list.selected_list.count()):
+            item = self.dev_list.selected_list.item(i)
+            if item.slot not in self.vm.pcidevs:
+                added.append(item)
+        
+        if self.dev_list.selected_list.count() - len(added) < len(self.vm.pcidevs): #sth removed
+            sth_changed = True;
+        elif len(added) > 0:
+            sth_changed = True;
+        
+        if sth_changed == True:
+            pcidevs = []
+            for i in range(self.dev_list.selected_list.count()):
+                slot = self.dev_list.selected_list.item(i).slot
+                pcidevs.append(slot)
+            self.vm.pcidevs = pcidevs
+            self.anything_changed = True
+
+
+    ######## services tab
+
+    def __init_services_tab__(self):
+        for srv in self.vm.services:
+            item = QListWidgetItem(srv)
+            if self.vm.services[srv] == True:
+                item.setCheckState(QtCore.Qt.Checked)
+            else:
+                item.setCheckState(QtCore.Qt.Unchecked)
+            self.services_list.addItem(item)
+        self.new_srv_dict = copy(self.vm.services)
+
+    def __add_service__(self):
+        srv = str(self.service_line_edit.text()).strip()
+        if srv != "" and srv not in self.new_srv_dict:
+            item = QListWidgetItem(srv)
+            item.setCheckState(QtCore.Qt.Checked)
+            self.services_list.addItem(item)
+            self.new_srv_dict[srv] = True
+
+    def __remove_service__(self):
+        row = self.services_list.currentRow()
+        if row:
+            item = self.services_list.takeItem(row)
+            print item.text()
+            del self.new_srv_dict[str(item.text())]
+
+    def __apply_services_tab__(self):
+        new_dict = {}
+        for r in range (self.services_list.count()):
+            item = self.services_list.item(r)
+            self.new_srv_dict[str(item.text())] = (item.checkState() == QtCore.Qt.Checked)
+        
+        if self.new_srv_dict != self.vm.services:
+            self.vm.services = self.new_srv_dict
+            self.anything_changed = True
+
+
     ######### firewall tab related
 
     def set_fw_model(self, model):
@@ -420,12 +631,27 @@ def handle_exception( exc_type, exc_value, exc_traceback ):
     filename = os.path.basename( filename )
     error    = "%s: %s" % ( exc_type.__name__, exc_value )
 
-    QMessageBox.critical(None, "Houston, we have a problem...",
-                         "Whoops. A critical error has occured. This is most likely a bug "
-                         "in Qubes VM Settings application.<br><br>"
-                         "<b><i>%s</i></b>" % error +
-                         "at <b>line %d</b> of file <b>%s</b>.<br/><br/>"
-                         % ( line, filename ))
+    strace = ""
+    stacktrace = traceback.extract_tb( exc_traceback )
+    while len(stacktrace) > 0:
+        (filename, line, func, txt) = stacktrace.pop()
+        strace += "----\n"
+        strace += "line: %s\n" %txt
+        strace += "func: %s\n" %func
+        strace += "line no.: %d\n" %line
+        strace += "file: %s\n" %filename
+
+    msg_box = QMessageBox()
+    msg_box.setDetailedText(strace)
+    msg_box.setIcon(QMessageBox.Critical)
+    msg_box.setWindowTitle( "Houston, we have a problem...")
+    msg_box.setText("Whoops. A critical error has occured. This is most likely a bug "
+                    "in Qubes Manager.<br><br>"
+                    "<b><i>%s</i></b>" % error +
+                    "<br/>at line <b>%d</b><br/>of file %s.<br/><br/>"
+                    % ( line, filename ))
+    
+    msg_box.exec_()
 
 
 def main():

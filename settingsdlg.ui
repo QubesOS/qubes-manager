@@ -122,8 +122,8 @@
              <widget class="QLabel" name="type_label">
               <property name="font">
                <font>
-                <weight>75</weight>
-                <bold>true</bold>
+                <weight>50</weight>
+                <bold>false</bold>
                </font>
               </property>
               <property name="text">
@@ -142,8 +142,8 @@
              <widget class="QLabel" name="rpm_label">
               <property name="font">
                <font>
-                <weight>75</weight>
-                <bold>true</bold>
+                <weight>50</weight>
+                <bold>false</bold>
                </font>
               </property>
               <property name="text">
@@ -163,8 +163,15 @@
             <string>Disk storage</string>
            </property>
            <layout class="QGridLayout" name="gridLayout_3">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_3">
+              <property name="text">
+               <string>Private storage max. size:</string>
+              </property>
+             </widget>
+            </item>
             <item row="0" column="1">
-             <widget class="QSpinBox" name="priv_size">
+             <widget class="QSpinBox" name="max_priv_storage">
               <property name="enabled">
                <bool>true</bool>
               </property>
@@ -172,16 +179,16 @@
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
               </property>
               <property name="minimum">
-               <number>256</number>
+               <number>0</number>
               </property>
               <property name="maximum">
-               <number>10000</number>
+               <number>1048576</number>
               </property>
               <property name="singleStep">
-               <number>256</number>
+               <number>1024</number>
               </property>
               <property name="value">
-               <number>256</number>
+               <number>0</number>
               </property>
              </widget>
             </item>
@@ -189,13 +196,6 @@
              <widget class="QLabel" name="label_5">
               <property name="text">
                <string>MB</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="0">
-             <widget class="QLabel" name="label_3">
-              <property name="text">
-               <string>Private storage max. size:</string>
               </property>
              </widget>
             </item>
@@ -232,8 +232,8 @@
              <widget class="QLabel" name="ip_label">
               <property name="font">
                <font>
-                <weight>75</weight>
-                <bold>true</bold>
+                <weight>50</weight>
+                <bold>false</bold>
                </font>
               </property>
               <property name="text">
@@ -252,8 +252,8 @@
              <widget class="QLabel" name="netmask_label">
               <property name="font">
                <font>
-                <weight>75</weight>
-                <bold>true</bold>
+                <weight>50</weight>
+                <bold>false</bold>
                </font>
               </property>
               <property name="text">
@@ -272,8 +272,8 @@
              <widget class="QLabel" name="gateway_label">
               <property name="font">
                <font>
-                <weight>75</weight>
-                <bold>true</bold>
+                <weight>50</weight>
+                <bold>false</bold>
                </font>
               </property>
               <property name="text">
@@ -288,7 +288,7 @@
        </widget>
        <widget class="QWidget" name="advanced_tab">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <attribute name="title">
          <string>Advanced</string>
@@ -296,35 +296,50 @@
         <layout class="QGridLayout" name="gridLayout_9">
          <item row="0" column="0">
           <widget class="QGroupBox" name="groupBox_2">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
            <property name="title">
             <string>Memory/CPU</string>
            </property>
            <layout class="QGridLayout" name="gridLayout_4">
             <item row="0" column="0">
              <widget class="QLabel" name="label_15">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
               <property name="text">
                <string>Initial memory:</string>
               </property>
              </widget>
             </item>
             <item row="0" column="1">
-             <widget class="QLabel" name="mem_size">
-              <property name="font">
-               <font>
-                <weight>75</weight>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>xx</string>
+             <widget class="QSpinBox" name="init_mem">
+              <property name="enabled">
+               <bool>true</bool>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+              <property name="minimum">
+               <number>256</number>
+              </property>
+              <property name="maximum">
+               <number>10000</number>
+              </property>
+              <property name="singleStep">
+               <number>256</number>
+              </property>
+              <property name="value">
+               <number>256</number>
               </property>
              </widget>
             </item>
             <item row="0" column="2">
              <widget class="QLabel" name="label_16">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
               <property name="text">
                <string>MB</string>
               </property>
@@ -340,7 +355,7 @@
             <item row="1" column="1">
              <widget class="QSpinBox" name="max_mem_size">
               <property name="enabled">
-               <bool>false</bool>
+               <bool>true</bool>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -376,7 +391,7 @@
             <item row="2" column="1">
              <widget class="QSpinBox" name="vcpus">
               <property name="enabled">
-               <bool>false</bool>
+               <bool>true</bool>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -388,6 +403,9 @@
             </item>
             <item row="3" column="0" colspan="2">
              <widget class="QCheckBox" name="include_in_balancing">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
               <property name="text">
                <string>Include in memory balancing</string>
               </property>
@@ -398,6 +416,9 @@
          </item>
          <item row="0" column="1">
           <widget class="QGroupBox" name="groupBox_10">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
            <property name="title">
             <string>Kernel</string>
            </property>
@@ -423,8 +444,8 @@
              <widget class="QLabel" name="kernel_opts">
               <property name="font">
                <font>
-                <weight>75</weight>
-                <bold>true</bold>
+                <weight>50</weight>
+                <bold>false</bold>
                </font>
               </property>
               <property name="text">
@@ -437,6 +458,9 @@
          </item>
          <item row="1" column="0" colspan="2">
           <widget class="QGroupBox" name="groupBox_11">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
            <property name="title">
             <string>Paths</string>
            </property>
@@ -700,7 +724,7 @@
        </widget>
        <widget class="QWidget" name="devices_tab">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <attribute name="title">
          <string>Devices</string>
@@ -727,17 +751,17 @@
        </widget>
        <widget class="QWidget" name="services_tab">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <attribute name="title">
          <string>Services</string>
         </attribute>
         <layout class="QGridLayout" name="gridLayout_5">
          <item row="0" column="0">
-          <widget class="QLineEdit" name="service_lineEdit"/>
+          <widget class="QLineEdit" name="service_line_edit"/>
          </item>
          <item row="0" column="1">
-          <widget class="QPushButton" name="add_button">
+          <widget class="QPushButton" name="add_srv_button">
            <property name="text">
             <string/>
            </property>
@@ -754,32 +778,7 @@
           </widget>
          </item>
          <item row="4" column="0" rowspan="2">
-          <widget class="QListWidget" name="services_list">
-           <item>
-            <property name="text">
-             <string>ntpd</string>
-            </property>
-            <property name="checkState">
-             <enum>Checked</enum>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>cupsd</string>
-            </property>
-            <property name="checkState">
-             <enum>Checked</enum>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>meminfo</string>
-            </property>
-            <property name="checkState">
-             <enum>Checked</enum>
-            </property>
-           </item>
-          </widget>
+          <widget class="QListWidget" name="services_list"/>
          </item>
          <item row="6" column="0" colspan="2">
           <widget class="QLabel" name="label_7">
@@ -803,7 +802,7 @@
           </widget>
          </item>
          <item row="4" column="1">
-          <widget class="QPushButton" name="remove_button">
+          <widget class="QPushButton" name="remove_srv_button">
            <property name="text">
             <string/>
            </property>

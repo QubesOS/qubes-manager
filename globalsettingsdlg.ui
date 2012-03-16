@@ -17,7 +17,7 @@
    <item row="0" column="0">
     <widget class="QGroupBox" name="groupBox">
      <property name="enabled">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <property name="title">
       <string>System defaults</string>
@@ -37,7 +37,7 @@
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QComboBox" name="updateVMcombo"/>
+       <widget class="QComboBox" name="update_vm_combo"/>
       </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label_2">
@@ -47,7 +47,7 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QComboBox" name="clockVMcombo"/>
+       <widget class="QComboBox" name="clock_vm_combo"/>
       </item>
       <item row="2" column="0">
        <widget class="QLabel" name="label_3">
@@ -57,7 +57,7 @@
        </widget>
       </item>
       <item row="2" column="1">
-       <widget class="QComboBox" name="defaultNetVMcombo"/>
+       <widget class="QComboBox" name="default_netvm_combo"/>
       </item>
       <item row="3" column="0">
        <widget class="QLabel" name="label_4">
@@ -73,7 +73,7 @@
        </widget>
       </item>
       <item row="3" column="1">
-       <widget class="QComboBox" name="defaultTemplateVMCombo"/>
+       <widget class="QComboBox" name="default_template_combo"/>
       </item>
      </layout>
     </widget>
@@ -81,81 +81,78 @@
    <item row="0" column="1">
     <widget class="QGroupBox" name="groupBox_3">
      <property name="enabled">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <property name="title">
       <string>Default memory settings</string>
      </property>
-     <widget class="QLabel" name="label_6">
-      <property name="geometry">
-       <rect>
-        <x>11</x>
-        <y>26</y>
-        <width>134</width>
-        <height>16</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Minimal VM's memory:</string>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_7">
-      <property name="geometry">
-       <rect>
-        <x>11</x>
-        <y>57</y>
-        <width>139</width>
-        <height>16</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>dom0 memory margin:</string>
-      </property>
-     </widget>
-     <widget class="QSpinBox" name="minVMmem">
-      <property name="geometry">
-       <rect>
-        <x>156</x>
-        <y>26</y>
-        <width>121</width>
-        <height>25</height>
-       </rect>
-      </property>
-      <property name="suffix">
-       <string> MB</string>
-      </property>
-      <property name="maximum">
-       <number>999999999</number>
-      </property>
-      <property name="singleStep">
-       <number>10</number>
-      </property>
-     </widget>
-     <widget class="QSpinBox" name="dom0memMargin">
-      <property name="geometry">
-       <rect>
-        <x>156</x>
-        <y>57</y>
-        <width>121</width>
-        <height>25</height>
-       </rect>
-      </property>
-      <property name="suffix">
-       <string> MB</string>
-      </property>
-      <property name="maximum">
-       <number>999999999</number>
-      </property>
-      <property name="singleStep">
-       <number>50</number>
-      </property>
-     </widget>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_6">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Minimal VM's memory:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QSpinBox" name="min_vm_mem">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="suffix">
+         <string> MB</string>
+        </property>
+        <property name="maximum">
+         <number>999999999</number>
+        </property>
+        <property name="singleStep">
+         <number>10</number>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_7">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>dom0 memory margin:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QSpinBox" name="dom0_mem_margin">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="suffix">
+         <string> MB</string>
+        </property>
+        <property name="maximum">
+         <number>999999999</number>
+        </property>
+        <property name="singleStep">
+         <number>50</number>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="2">
+       <widget class="QCheckBox" name="dispvm_in_memory">
+        <property name="text">
+         <string>Keep dispVM in memory</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
    <item row="1" column="0" colspan="2">
     <widget class="QGroupBox" name="groupBox_2">
      <property name="enabled">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <property name="title">
       <string>Kernel</string>
@@ -169,7 +166,7 @@
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QComboBox" name="comboBox_5"/>
+       <widget class="QComboBox" name="default_kernel_combo"/>
       </item>
      </layout>
     </widget>
