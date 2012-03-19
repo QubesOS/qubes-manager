@@ -358,11 +358,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.vcpus.setMaximum(QubesHost().no_cpus)
         self.vcpus.setValue(int(self.vm.vcpus))
 
-        if len(self.vm.pcidevs) > 0:
-            self.include_in_balancing.setEnabled(False)
-        else:
-            self.include_in_balancing.setChecked('meminfo-writer' in self.vm.services and self.vm.services['meminfo-writer']==True)
-            self.tabWidget.setTabEnabled(self.tabs_indices["devices"], not self.include_in_balancing.isChecked())
+        self.include_in_balancing.setChecked('meminfo-writer' in self.vm.services and self.vm.services['meminfo-writer']==True)
 
         #kernel
         if self.vm.template is not None:
@@ -392,7 +388,6 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.kernel_opts.setText(self.vm.kernelopts + " (default)")
         else:
             self.kernel_opts.setText(self.vm.kernelopts)
-
 
                 
         #paths
@@ -463,6 +458,13 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             else:
                 self.dev_list.available_list.addItem( DevListWidgetItem(d[0], d[1]))
 
+        if self.dev_list.selected_list.count() > 0 and self.include_in_balancing.isChecked():
+            self.dmm_warning_adv.show()
+            self.dmm_warning_dev.show()
+        else:
+            self.dmm_warning_adv.hide()
+            self.dmm_warning_dev.hide()
+
 
     def __apply_devices_tab__(self):
         sth_changed = False
@@ -487,10 +489,21 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.anything_changed = True
 
     def include_in_balancing_state_changed(self, state):
-        self.tabWidget.setTabEnabled(self.tabs_indices["devices"], not state == QtCore.Qt.Checked)
-
+        if self.dev_list.selected_list.count() > 0:
+            if state == QtCore.Qt.Checked:
+                self.dmm_warning_adv.show()
+                self.dmm_warning_dev.show()
+            else:
+                self.dmm_warning_adv.hide()
+                self.dmm_warning_dev.hide()
     def devices_selection_changed(self):
-        self.include_in_balancing.setEnabled(self.dev_list.selected_list.count() == 0)
+        if self.include_in_balancing.isChecked():
+            if self.dev_list.selected_list.count() > 0 :
+                self.dmm_warning_adv.show()
+                self.dmm_warning_dev.show()
+            else:
+                self.dmm_warning_adv.hide()
+                self.dmm_warning_dev.hide()
 
     ######## services tab
 
@@ -516,7 +529,6 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         row = self.services_list.currentRow()
         if row:
             item = self.services_list.takeItem(row)
-            print item.text()
             del self.new_srv_dict[str(item.text())]
 
     def __apply_services_tab__(self):
