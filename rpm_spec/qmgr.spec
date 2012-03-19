@@ -12,7 +12,7 @@ Vendor:		Invisible Things Lab
 License:	GPL
 URL:		http://fixme
 Requires:	python, PyQt4, qubes-core-dom0 >= 1.7.15, kdebase
-Requires:	pmount
+Requires:	pmount, cryptsetup
 BuildRequires:	PyQt4-devel
 AutoReq:	0
 
@@ -30,6 +30,9 @@ python -O -m compileall qubesmanager
 mkdir -p $RPM_BUILD_ROOT/usr/bin/
 cp qubes-manager $RPM_BUILD_ROOT/usr/bin
 cp qubes-appmenu-select $RPM_BUILD_ROOT/usr/bin
+
+mkdir -p $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
+cp qubesmanager/mount_for_backup.sh $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 
 mkdir -p $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager/
 cp qubesmanager/main.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
@@ -72,6 +75,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 /usr/bin/qubes-manager
 /usr/bin/qubes-appmenu-select
+/usr/libexec/qubes-manager/mount_for_backup.sh
 %{python_sitearch}/qubesmanager/__init__.py
 %{python_sitearch}/qubesmanager/__init__.pyo
 %{python_sitearch}/qubesmanager/__init__.pyc

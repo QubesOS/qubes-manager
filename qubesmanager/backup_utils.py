@@ -35,6 +35,7 @@ from thread_monitor import *
 from datetime import datetime
 from string import replace
 
+mount_for_backup_path = '/usr/libexec/qubes-manager/mount_for_backup.sh'
 
 def check_if_mounted(dev_path):
     mounts_file = open("/proc/mounts")
@@ -47,7 +48,7 @@ def check_if_mounted(dev_path):
 def mount_device(dev_path):
     try:
         mount_dir_name = "backup" + replace(str(datetime.now()),' ', '-').split(".")[0]
-        pmount_cmd = ["pmount", dev_path, mount_dir_name]
+        pmount_cmd = [mount_for_backup_path, dev_path, mount_dir_name]
         res = subprocess.check_call(pmount_cmd)
     except Exception as ex:
         QMessageBox.warning (None, "Error mounting selected device!", "ERROR: {0}".format(ex))
