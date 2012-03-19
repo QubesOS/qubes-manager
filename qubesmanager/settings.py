@@ -90,6 +90,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         ###### advanced tab
         self.__init_advanced_tab__()
+        self.include_in_balancing.stateChanged.connect(self.include_in_balancing_state_changed)
 
         ###### firewall tab
         if self.tabWidget.isTabEnabled(self.tabs_indices["firewall"]):
@@ -104,6 +105,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         ####### devices tab
         self.__init_devices_tab__()
+        self.connect(self.dev_list, SIGNAL("selected_changed()"), self.devices_selection_changed)
  
         ####### services tab
         self.__init_services_tab__()
@@ -356,7 +358,11 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.vcpus.setMaximum(QubesHost().no_cpus)
         self.vcpus.setValue(int(self.vm.vcpus))
 
-        self.include_in_balancing.setChecked('meminfo-writer' in self.vm.services and self.vm.services['meminfo-writer']==True)
+        if len(self.vm.pcidevs) > 0:
+            self.include_in_balancing.setEnabled(False)
+        else:
+            self.include_in_balancing.setChecked('meminfo-writer' in self.vm.services and self.vm.services['meminfo-writer']==True)
+            self.tabWidget.setTabEnabled(self.tabs_indices["devices"], not self.include_in_balancing.isChecked())
 
         #kernel
         if self.vm.template is not None:
@@ -480,6 +486,11 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.vm.pcidevs = pcidevs
             self.anything_changed = True
 
+    def include_in_balancing_state_changed(self, state):
+        self.tabWidget.setTabEnabled(self.tabs_indices["devices"], not state == QtCore.Qt.Checked)
+
+    def devices_selection_changed(self):
+        self.include_in_balancing.setEnabled(self.dev_list.selected_list.count() == 0)
 
     ######## services tab
 
