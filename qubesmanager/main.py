@@ -549,6 +549,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         
         self.blk_menu = QMenu("Block devices")
         self.context_menu.addMenu(self.blk_menu)
+        self.context_menu.addSeparator()
 
         self.connect(self.table.horizontalHeader(), SIGNAL("sortIndicatorChanged(int, Qt::SortOrder)"), self.sortIndicatorChanged)
         self.connect(self.table, SIGNAL("customContextMenuRequested(const QPoint&)"), self.open_context_menu)
@@ -558,10 +559,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.centralwidget.layout().setContentsMargins(0,0,0,0)
         self.layout().setContentsMargins(0,0,0,0)
 
-        self.action_toolbar = QAction("tool bar", None)
+        self.action_toolbar = QAction("Show tool bar", None)
         self.action_toolbar.setCheckable(True)
         self.action_toolbar.setChecked(True)
-        self.action_menubar = QAction("menu bar", None)
+        self.action_menubar = QAction("Show menu bar", None)
         self.action_menubar.setCheckable(True)
         self.action_menubar.setChecked(True)
         
@@ -605,11 +606,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             mainwindow_to_add += self.menubar.height() + self.menubar.contentsMargins().top() + self.menubar.contentsMargins().bottom()
         if self.toolbar.isVisible():
             mainwindow_to_add += self.toolbar.height() + self.toolbar.contentsMargins().top() + self.toolbar.contentsMargins().bottom()
-
-        # in case both toolbar and menubar are hidden there must be an option to get them back
-        if mainwindow_to_add == 0:
-            mainwindow_to_add = 10
-
+ 
         maxH += mainwindow_to_add
         minH += mainwindow_to_add
 
@@ -1137,10 +1134,19 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def showhide_menubar(self, checked):
         self.menuWidget().setVisible(checked)
         self.set_table_geom_height()
+        if not checked:
+            self.context_menu.addAction(self.action_menubar)
+        else:
+            self.context_menu.removeAction(self.action_menubar)
+            
 
     def showhide_toolbar(self, checked):
         self.toolbar.setVisible(checked)
         self.set_table_geom_height()
+        if not checked:
+            self.context_menu.addAction(self.action_toolbar)
+        else:
+            self.context_menu.removeAction(self.action_toolbar)
 
 
     def showhide_collumn(self, col_num, show):
