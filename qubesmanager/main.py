@@ -150,9 +150,24 @@ class VmStatusIcon(QLabel):
 
 class VmInfoWidget (QWidget):
 
+    class VmInfoItem (QTableWidgetItem):
+        def __init__(self, upd_info_item, vm):
+            super(VmInfoWidget.VmInfoItem, self).__init__()
+            self.upd_info_item = upd_info_item
+            self.vm = vm
+        
+        def __lt__(self, other):
+            self_val = 1 if self.vm.is_running() else 0
+            other_val = 1 if other.vm.is_running() else 0
+    
+            self_val += self.upd_info_item.value
+            other_val += other.upd_info_item.value
+
+            return (self_val) < (other_val)
+
     def __init__(self, vm, parent = None):
         super (VmInfoWidget, self).__init__(parent)
-
+        self.vm = vm
         layout = QHBoxLayout ()
 
         self.on_icon = VmStatusIcon(vm)
@@ -169,7 +184,7 @@ class VmInfoWidget (QWidget):
 
         self.blk_icon.setVisible(False)
 
-        self.tableItem = self.upd_info.tableItem
+        self.tableItem = self.VmInfoItem(self.upd_info.tableItem, vm)
 
     def update_vm_state(self, vm, blk_visible):
         self.on_icon.update()
@@ -342,20 +357,21 @@ class VmUpdateInfoWidget(QWidget):
     class VmUpdateInfoItem (QTableWidgetItem):
         def __init__(self, value):
             super(VmUpdateInfoWidget.VmUpdateInfoItem, self).__init__()
-            self.value = value
+            self.value = 0
+            self.set_value(value)
 
         def set_value(self, value):
-            self.value = value            
-        
-        def __lt__(self, other):
-            if self.value == "outdated":
-                return other.value == "outdated"
-            elif self.value == "update":
-                return other.value == "outdated" or other.value == "update"
-            elif self.value == "ok":
-                return other.value == "outdated" or other.value == "update" or other.value == "ok"
+            if value == "outdated":
+                self.value = 30
+            elif value == "update":
+                self.value = 20 
+            elif value == "ok":
+                self.value = 10
             else:
-                return True
+                self.value = 0
+ 
+        def __lt__(self, other):
+            return self.value < other.value
 
     def __init__(self, vm, show_text=True, parent = None):
         super (VmUpdateInfoWidget, self).__init__(parent)
