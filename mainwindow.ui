@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>821</width>
+    <width>713</width>
     <height>600</height>
    </rect>
   </property>
@@ -142,6 +142,11 @@
       <row/>
       <column>
        <property name="text">
+        <string/>
+       </property>
+      </column>
+      <column>
+       <property name="text">
         <string>Name</string>
        </property>
        <property name="toolTip">
@@ -207,7 +212,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>821</width>
+     <width>713</width>
      <height>23</height>
     </rect>
    </property>

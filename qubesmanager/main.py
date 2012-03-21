@@ -62,42 +62,67 @@ class QubesConfigFileWatcher(ProcessEvent):
     def process_IN_MODIFY (self, event):
         self.update_func()
 
-class VmLabelWidget(QLabel):
+
+class VmIconWidget (QWidget):
+    def __init__(self, icon_path, enabled=True, size_multiplier=0.7, parent=None):
+        super(VmIconWidget, self).__init__(parent)
+
+        label_icon = QLabel()
+        icon = QIcon (icon_path)
+        icon_sz = QSize (VmManagerWindow.row_height * size_multiplier, VmManagerWindow.row_height * size_multiplier)
+        icon_pixmap = icon.pixmap(icon_sz, QIcon.Disabled if not enabled else QIcon.Normal)
+        label_icon.setPixmap (icon_pixmap)
+        label_icon.setFixedSize (icon_sz)
+        
+        layout = QHBoxLayout()
+        layout.addWidget(label_icon)
+        layout.setContentsMargins(0,0,0,0)
+        self.setLayout(layout)
+
+
+class VmLabelWidget(VmIconWidget):
+    
+    class VmLabelItem(QTableWidgetItem):
+        def __init__(self, value):
+            super(VmLabelWidget.VmLabelItem, self).__init__()
+            self.value = value
+
+        def set_value(self, value):
+            self.value = value            
+        
+        def __lt__(self, other):
+            return self.value < other.value
+
+
     def __init__(self, vm, parent=None):
-        super (VmLabelWidget, self).__init__(parent)
+        icon_path = self.get_vm_icon_path(vm)
+        super (VmLabelWidget, self).__init__(icon_path, True, 0.8, parent)
         self.vm = vm
-        (icon_pixmap, icon_sz) = self.set_vm_icon(self.vm)
-        self.setPixmap (icon_pixmap)
-        self.setFixedSize (icon_sz)
-        self.previous_power_state = vm.last_power_state
+        self.tableItem = self.VmLabelItem(self.value)
 
-    def update(self):
-        if self.previous_power_state != self.vm.last_power_state:
-            (icon_pixmap, icon_sz) = self.set_vm_icon(self.vm)
-            self.setPixmap (icon_pixmap)
-            self.setFixedSize (icon_sz)
-            self.previous_power_state = self.vm.last_power_state
-
-    def set_vm_icon(self, vm):
+    def get_vm_icon_path(self, vm):
         if vm.qid == 0:
-            icon = QIcon (":/dom0.png")
-        elif vm.is_appvm():
-            icon = QIcon (vm.label.icon_path)
-        elif vm.is_template():
-            icon = QIcon (":/templatevm.png")
+            self.value = 0
+            return ":/dom0.png"
         elif vm.is_netvm():
-            icon = QIcon (":/netvm.png")
-        else:
-            icon = QIcon(vm.label.icon_path)
+            self.value = 1
+            return ":/netvm.png"
+        elif vm.is_template():
+            self.value = 2
+            return ":/templatevm.png"
+        elif vm.is_appvm() or vm.is_disposablevm():
+            self.value = 2 + vm.label.index
+            return vm.label.icon_path
+        
 
-        icon_sz = QSize (VmManagerWindow.row_height * 0.8, VmManagerWindow.row_height * 0.8)
-        if vm.last_power_state:
-            icon_pixmap = icon.pixmap(icon_sz)
-        else:
-            icon_pixmap = icon.pixmap(icon_sz, QIcon.Disabled)
+class VmNameItem (QTableWidgetItem):
+    def __init__(self, vm):
+        super(VmNameItem, self).__init__()
 
-        return (icon_pixmap, icon_sz)
-
+        self.setText(vm.name)
+        self.setTextAlignment(Qt.AlignVCenter)
+        self.qid = vm.qid
+        
 
 class VmStatusIcon(QLabel):
     def __init__(self, vm, parent=None):
@@ -121,40 +146,6 @@ class VmStatusIcon(QLabel):
 
         self.setPixmap (icon_pixmap)
         self.setFixedSize (icon_sz)
-
-
-class VmNameWidget (QWidget):
-
-    class VmNameItem (QTableWidgetItem):
-        def __init__(self, name, qid):
-            super(VmNameWidget.VmNameItem, self).__init__()
-            self.value = (name, qid)
-
-        def set_value(self, value):
-            self.value = value            
-        
-        def __lt__(self, other):
-            return self.value[0] < other.value[0] #compare vm.name
-
-
-    def __init__(self, vm, parent = None):
-        super (VmNameWidget, self).__init__(parent)
-
-        layout = QHBoxLayout ()
-
-        self.label_name = QLabel (vm.name)
-        self.vm_icon = VmLabelWidget(vm)
-
-        layout.addWidget(self.vm_icon)
-        layout.addSpacing (10)
-        layout.addWidget(self.label_name, alignment=Qt.AlignLeft)
-
-        self.setLayout(layout)
-
-        self.tableItem = self.VmNameItem(vm.name, vm.qid)
-        
-    def update_vm_state (self, vm):
-        self.vm_icon.update()
 
 
 class VmInfoWidget (QWidget):
@@ -211,23 +202,6 @@ class VmTemplateItem (QTableWidgetItem):
                 self.setText("---")
 
         self.setTextAlignment(Qt.AlignCenter)
-
-
-class VmIconWidget (QWidget):
-    def __init__(self, icon_path, enabled=True, size_multiplier=0.7, parent=None):
-        super(VmIconWidget, self).__init__(parent)
-
-        label_icon = QLabel()
-        icon = QIcon (icon_path)
-        icon_sz = QSize (VmManagerWindow.row_height * size_multiplier, VmManagerWindow.row_height * size_multiplier)
-        icon_pixmap = icon.pixmap(icon_sz, QIcon.Disabled if not enabled else QIcon.Normal)
-        label_icon.setPixmap (icon_pixmap)
-        label_icon.setFixedSize (icon_sz)
-        
-        layout = QVBoxLayout()
-        layout.addWidget(label_icon)
-        layout.setContentsMargins(0,0,0,0)
-        self.setLayout(layout)
 
 
 class VmNetvmItem (QTableWidgetItem):
@@ -459,46 +433,44 @@ class VmRowInTable(object):
 
         table.setRowHeight (row_no, VmManagerWindow.row_height)
 
-        self.name_widget = VmNameWidget(vm)
-        table.setCellWidget(row_no, 0, self.name_widget)
-        table.setItem(row_no, 0, self.name_widget.tableItem)
+        self.label_widget = VmLabelWidget(vm)
+        table.setCellWidget(row_no, VmManagerWindow.columns_indices['Label'], self.label_widget)
+        table.setItem(row_no, VmManagerWindow.columns_indices['Label'], self.label_widget.tableItem)
+
+        self.name_widget = VmNameItem(vm)
+        #table.setCellWidget(row_no, VmManagerWindow.columns_indices['Name'], self.name_widget)
+        table.setItem(row_no, VmManagerWindow.columns_indices['Name'], self.name_widget)
 
         self.info_widget = VmInfoWidget(vm)
-        table.setCellWidget(row_no, 1, self.info_widget) 
-        table.setItem(row_no, 1, self.info_widget.tableItem)
-
-        #self.upd_widget = VmUpdateInfoWidget(vm, False)
-        #table.setCellWidget(row_no, 1, self.upd_widget)
-        #table.setItem(row_no, 1, self.upd_widget.tableItem)
+        table.setCellWidget(row_no, VmManagerWindow.columns_indices['State'], self.info_widget) 
+        table.setItem(row_no, VmManagerWindow.columns_indices['State'], self.info_widget.tableItem)
 
         self.template_widget = VmTemplateItem(vm)
-        table.setItem(row_no, 2, self.template_widget)
+        table.setItem(row_no,  VmManagerWindow.columns_indices['Template'], self.template_widget)
                 
         self.netvm_widget = VmNetvmItem(vm)
-        table.setItem(row_no, 3, self.netvm_widget)
+        table.setItem(row_no,  VmManagerWindow.columns_indices['NetVM'], self.netvm_widget)
 
         self.cpu_usage_widget = VmUsageBarWidget(0, 100, "%v %", 
                             lambda vm, val: val if vm.last_power_state else 0, vm, 0, self.cpu_graph_hue)
-        table.setCellWidget(row_no, 4, self.cpu_usage_widget)
-        table.setItem(row_no, 4, self.cpu_usage_widget.tableItem)
+        table.setCellWidget(row_no,  VmManagerWindow.columns_indices['CPU'], self.cpu_usage_widget)
+        table.setItem(row_no,  VmManagerWindow.columns_indices['CPU'], self.cpu_usage_widget.tableItem)
 
         self.load_widget = ChartWidget(vm, lambda vm, val: val if vm.last_power_state else 0, self.cpu_graph_hue, 0 )
-        table.setCellWidget(row_no, 5, self.load_widget)
-        table.setItem(row_no, 5, self.load_widget.tableItem)
+        table.setCellWidget(row_no,  VmManagerWindow.columns_indices['CPU Graph'], self.load_widget)
+        table.setItem(row_no,  VmManagerWindow.columns_indices['CPU Graph'], self.load_widget.tableItem)
 
         self.mem_usage_widget = VmUsageBarWidget(0, qubes_host.memory_total/1024, "%v MB", 
                             lambda vm, val: vm.get_mem()/1024 if vm.last_power_state else 0, vm, 0, self.mem_graph_hue)
-        table.setCellWidget(row_no, 6, self.mem_usage_widget)
-        table.setItem(row_no, 6, self.mem_usage_widget.tableItem)
-
+        table.setCellWidget(row_no,  VmManagerWindow.columns_indices['MEM'], self.mem_usage_widget)
+        table.setItem(row_no,  VmManagerWindow.columns_indices['MEM'], self.mem_usage_widget.tableItem)
 
         self.mem_widget = ChartWidget(vm, lambda vm, val: vm.get_mem()*100/qubes_host.memory_total if vm.last_power_state else 0, self.mem_graph_hue, 0)
-        table.setCellWidget(row_no, 7, self.mem_widget)
-        table.setItem(row_no, 7, self.mem_widget.tableItem)
+        table.setCellWidget(row_no,  VmManagerWindow.columns_indices['MEM Graph'], self.mem_widget)
+        table.setItem(row_no,  VmManagerWindow.columns_indices['MEM Graph'], self.mem_widget.tableItem)
  
 
     def update(self, counter, blk_visible = None, cpu_load = None):
-        self.name_widget.update_vm_state(self.vm)
         self.info_widget.update_vm_state(self.vm, blk_visible)
         if cpu_load is not None:
             self.cpu_usage_widget.update_load(self.vm, cpu_load)
@@ -542,14 +514,15 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     max_visible_rows = 7
     update_interval = 1000 # in msec
     show_inactive_vms = True
-    columns_indices = { "Name": 0,
-                        "State": 1,
-                        "Template": 2,
-                        "NetVM": 3,
-                        "CPU": 4,
-                        "CPU Graph": 5,
-                        "MEM": 6,
-                        "MEM Graph": 7,}
+    columns_indices = { "Label": 0,
+                        "Name": 1,
+                        "State": 2,
+                        "Template": 3,
+                        "NetVM": 4,
+                        "CPU": 5,
+                        "CPU Graph": 6,
+                        "MEM": 7,
+                        "MEM Graph": 8,}
 
 
 
@@ -578,11 +551,12 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.table.setColumnHidden( self.columns_indices["MEM Graph"], True)
         self.actionMEM_Graph.setChecked(False)
         self.table.setColumnWidth(self.columns_indices["State"], 80)
-        self.table.setColumnWidth(self.columns_indices["Name"], 170)
+        self.table.setColumnWidth(self.columns_indices["Name"], 150)
+        self.table.setColumnWidth(self.columns_indices["Label"], 50)
 
         self.table.horizontalHeader().setResizeMode(QHeaderView.Fixed)
 
-        self.table.sortItems(self.columns_indices["MEM"], Qt.DescendingOrder)
+        self.table.sortItems(self.columns_indices["Label"], Qt.AscendingOrder)
         self.sort_by_mem = None
         self.sort_by_cpu = None
 
@@ -942,7 +916,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         #vm selection relies on the VmInfo widget's value used for sorting by VM name
         row_index = self.table.currentRow()
         if row_index != -1:
-            (vm_name, qid) = self.table.item(row_index, self.columns_indices["Name"]).value
+            qid = self.table.item(row_index, self.columns_indices["Name"]).qid
             assert self.vms_in_table[qid] is not None
             vm = self.vms_in_table[qid].vm
             return vm
