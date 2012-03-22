@@ -124,28 +124,17 @@ class VmNameItem (QTableWidgetItem):
         self.qid = vm.qid
         
 
-class VmStatusIcon(QLabel):
+class VmStatusIcon(VmIconWidget):
     def __init__(self, vm, parent=None):
-        super (VmStatusIcon, self).__init__(parent)
+        super (VmStatusIcon, self).__init__(":/on.png", True, 0.5, parent)
+        self.setVisible(vm.last_power_state)
         self.vm = vm
-        self.set_on_icon()
         self.previous_power_state = vm.last_power_state
 
     def update(self):
         if self.previous_power_state != self.vm.last_power_state:
-            self.set_on_icon()
+            self.setVisible(self.vm.last_power_state)
             self.previous_power_state = self.vm.last_power_state
-
-    def set_on_icon(self):
-        icon = QIcon(":/on.png")
-        icon_sz = QSize (VmManagerWindow.row_height * 0.5, VmManagerWindow.row_height * 0.5)
-        if self.vm.last_power_state:
-            icon_pixmap = icon.pixmap(icon_sz)
-        else:
-            icon_pixmap = icon.pixmap(icon_sz, QIcon.Disabled)
-
-        self.setPixmap (icon_pixmap)
-        self.setFixedSize (icon_sz)
 
 
 class VmInfoWidget (QWidget):
@@ -175,6 +164,7 @@ class VmInfoWidget (QWidget):
         self.blk_icon = VmIconWidget(":/mount.png")
 
         layout.addWidget(self.on_icon)
+        layout.addItem(QSpacerItem(0, 10, QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding))
         layout.addWidget(self.upd_info)
         layout.addItem(QSpacerItem(0, 10, QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding))
         layout.addWidget(self.blk_icon)
