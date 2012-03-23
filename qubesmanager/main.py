@@ -146,13 +146,16 @@ class VmInfoWidget (QWidget):
             self.vm = vm
         
         def __lt__(self, other):
-            self_val = 1 if self.vm.is_running() else 0
-            other_val = 1 if other.vm.is_running() else 0
-    
-            self_val += self.upd_info_item.value
-            other_val += other.upd_info_item.value
-
-            return (self_val) < (other_val)
+            self_val = self.upd_info_item.value
+            other_val = other.upd_info_item.value
+            if self.tableWidget().sort_state_by_upd:
+                self_val += 1 if self.vm.is_running() else 0
+                other_val += 1 if other.vm.is_running() else 0
+                return (self_val) > (other_val) #sort with Ascending Order
+            else:
+                self_val = self_val/10 + 10*(1 if self.vm.is_running() else 0)
+                other_val = other_val/10 + 10*(1 if other.vm.is_running() else 0)
+                return (self_val) < (other_val) #sort with Descending order
 
     def __init__(self, vm, parent = None):
         super (VmInfoWidget, self).__init__(parent)
@@ -164,7 +167,6 @@ class VmInfoWidget (QWidget):
         self.blk_icon = VmIconWidget(":/mount.png")
 
         layout.addWidget(self.on_icon)
-        layout.addItem(QSpacerItem(0, 10, QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding))
         layout.addWidget(self.upd_info)
         layout.addItem(QSpacerItem(0, 10, QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding))
         layout.addWidget(self.blk_icon)
@@ -444,7 +446,6 @@ class VmRowInTable(object):
         table.setItem(row_no, VmManagerWindow.columns_indices['Label'], self.label_widget.tableItem)
 
         self.name_widget = VmNameItem(vm)
-        #table.setCellWidget(row_no, VmManagerWindow.columns_indices['Name'], self.name_widget)
         table.setItem(row_no, VmManagerWindow.columns_indices['Name'], self.name_widget)
 
         self.info_widget = VmInfoWidget(vm)
@@ -483,7 +484,6 @@ class VmRowInTable(object):
             self.mem_usage_widget.update_load(self.vm, None)
             self.load_widget.update_load(self.vm, cpu_load)
             self.mem_widget.update_load(self.vm, None)
-            #self.upd_widget.update_outdated(self.vm)
 
 class NewAppVmDlg (QDialog, ui_newappvmdlg.Ui_NewAppVMDlg):
     def __init__(self, parent = None):
@@ -561,10 +561,13 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.table.setColumnWidth(self.columns_indices["Label"], 50)
 
         self.table.horizontalHeader().setResizeMode(QHeaderView.Fixed)
+    
 
         self.table.sortItems(self.columns_indices["Label"], Qt.AscendingOrder)
         self.sort_by_mem = None
         self.sort_by_cpu = None
+        self.sort_by_state = None
+        self.table.sort_state_by_upd = True
 
         self.context_menu = QMenu(self)
         self.context_menu.addAction(self.action_settings)
@@ -721,6 +724,11 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 self.fill_table()
                 update_devs=True
 
+            if self.sort_by_state != None and self.table.sort_state_by_upd  and some_vms_have_changed_power_state:
+                self.table.sort_state_by_upd = not self.table.sort_state_by_upd # sorter indicator changed will switch it...and we want it to remain unswtched.
+                self.table.sortItems(self.columns_indices["State"], self.sort_by_state)
+                
+
             blk_visible = None
             rows_with_blk = None
             if update_devs == True:
@@ -747,8 +755,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                             blk_visible = False
                     
                     vm_row.update(self.counter, blk_visible=blk_visible, cpu_load = cur_cpu_load)
-                if self.sort_by_cpu != None:
-                    self.table.sortItems(self.columns_indices["CPU"], self.sort_by_cpu)
 
             else:
                 for vm_row in self.vms_in_table.values():
@@ -759,10 +765,12 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                             blk_visible = False
 
                     vm_row.update(self.counter, blk_visible=blk_visible)
-                if self.sort_by_cpu != None:
-                    self.table.sortItems(self.columns_indices["CPU"], self.sort_by_cpu)
-                elif self.sort_by_mem != None:
-                    self.table.sortItems(self.columns_indices["MEM"], self.sort_by_mem)
+
+            if self.sort_by_cpu != None:
+                self.table.sortItems(self.columns_indices["CPU"], self.sort_by_cpu)
+            elif self.sort_by_mem != None:
+                self.table.sortItems(self.columns_indices["MEM"], self.sort_by_mem)
+            
 
             self.table_selection_changed()
 
@@ -790,14 +798,29 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def sortIndicatorChanged(self, column, order):
         if column == self.columns_indices["CPU"] or column == self.columns_indices["CPU Graph"]:
             self.sort_by_mem = None
+            self.sort_by_state = None
             self.sort_by_cpu = order
+            return
         elif column == self.columns_indices["MEM"] or column == self.columns_indices["MEM Graph"]:
             self.sort_by_cpu = None
+            self.sort_by_state = None
             self.sort_by_mem = order
+            return
+        elif column == self.columns_indices["State"]:
+            self.table.sort_state_by_upd = not self.table.sort_state_by_upd
+            self.sort_by_cpu = None
+            self.sort_by_mem = None
+            if self.table.sort_state_by_upd:
+                self.sort_by_state = Qt.DescendingOrder
+            else:
+                self.sort_by_state = Qt.AscendingOrder
+            return
         else:
             self.sort_by_cpu = None
             self.sort_by_mem = None
+            self.sort_by_state = None
 
+       
     def table_selection_changed (self):
 
         vm = self.get_selected_vm()
@@ -1049,6 +1072,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         assert vm.is_running()
         try:
             subprocess.check_call (["/usr/sbin/xl", "pause", vm.name])
+
         except Exception as ex:
             QMessageBox.warning (None, "Error pausing VM!", "ERROR: {0}".format(ex))
             return
@@ -1073,6 +1097,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 return
 
             trayIcon.showMessage ("Qubes Manager", "VM '{0}' is shutting down...".format(vm.name), msecs=3000)
+
             self.shutdown_monitor[vm.qid] = VmShutdownMonitor (vm)
             QTimer.singleShot (vm_shutdown_timeout, self.shutdown_monitor[vm.qid].check_if_vm_has_shutdown)
 
