@@ -1,5 +1,6 @@
 <RCC>
   <qresource>
+    <file alias="off.png">icons/on-icon/off.png</file>
     <file alias="on.png">icons/on-icon/on.png</file>
     <file alias="mount.png">icons/mount.png</file>
     <file alias="pencil.png">icons/pencil.png</file>

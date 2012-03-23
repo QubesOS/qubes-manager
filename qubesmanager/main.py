@@ -124,17 +124,28 @@ class VmNameItem (QTableWidgetItem):
         self.qid = vm.qid
         
 
-class VmStatusIcon(VmIconWidget):
+class VmStatusIcon(QLabel):
     def __init__(self, vm, parent=None):
-        super (VmStatusIcon, self).__init__(":/on.png", True, 0.5, parent)
-        self.setVisible(vm.last_power_state)
+        super (VmStatusIcon, self).__init__(parent)
         self.vm = vm
+        self.set_on_icon()
         self.previous_power_state = vm.last_power_state
 
     def update(self):
         if self.previous_power_state != self.vm.last_power_state:
-            self.setVisible(self.vm.last_power_state)
+            self.set_on_icon()
             self.previous_power_state = self.vm.last_power_state
+
+    def set_on_icon(self):
+        if self.vm.last_power_state:
+            icon = QIcon (":/on.png")
+        else:
+            icon = QIcon (":/off.png")
+        icon_sz = QSize (VmManagerWindow.row_height * 0.5, VmManagerWindow.row_height *0.5)
+        icon_pixmap = icon.pixmap(icon_sz)
+        self.setPixmap (icon_pixmap)
+        self.setFixedSize (icon_sz)
+
 
 
 class VmInfoWidget (QWidget):
