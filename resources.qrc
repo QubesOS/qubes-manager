@@ -1,5 +1,7 @@
 <RCC>
   <qresource>
+    <file alias="off.png">icons/on-icon/off.png</file>
+    <file alias="on.png">icons/on-icon/on.png</file>
     <file alias="mount.png">icons/mount.png</file>
     <file alias="pencil.png">icons/pencil.png</file>
     <file alias="redfirewall.png">icons/redfirewall.png</file>
@@ -10,7 +12,6 @@
     <file alias="flag-red.png">icons/flag-red.png</file>
     <file alias="flag-yellow.png">icons/flag-yellow.png</file>
     <file alias="remove.png">icons/remove.png</file>
-    <file alias="on.png">icons/on.png</file>
     <file alias="appsprefs.png">icons/appsprefs.png</file>
     <file alias="newfirewall.png">icons/newfirewall.png</file>
     <file alias="qubes.png">icons/qubes.png</file>
