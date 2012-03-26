@@ -528,7 +528,7 @@ class VmShutdownMonitor(QObject):
 class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     row_height = 30
     column_width = 200
-    max_visible_rows = 7
+    min_visible_rows = 10
     update_interval = 1000 # in msec
     show_inactive_vms = True
     columns_indices = { "Label": 0,
@@ -573,7 +573,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         self.table.horizontalHeader().setResizeMode(QHeaderView.Fixed)
     
-
         self.table.sortItems(self.columns_indices["Label"], Qt.AscendingOrder)
         self.sort_by_mem = None
         self.sort_by_cpu = None
@@ -624,7 +623,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def show(self):
         super(VmManagerWindow, self).show()
         self.set_table_geom_height()
-        self.update_table_columns()
+        self.set_table_geom_width()
 
     def set_table_geom_height(self):
         minH =  self.table.horizontalHeader().height() +\
@@ -634,10 +633,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         #or if you know what you're doing :)
                
         n = self.table.rowCount();
-
         maxH = minH
-        if n >= self.max_visible_rows:
-            minH += self.max_visible_rows*self.row_height
+        if n >= self.min_visible_rows:
+            minH += self.min_visible_rows*self.row_height
             maxH += n*self.row_height
         else:
             minH += n*self.row_height
@@ -655,10 +653,12 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         maxH += mainwindow_to_add
         minH += mainwindow_to_add
 
-        self.setMaximumHeight(maxH)
+        desktop_height = app.desktop().availableGeometry().height() - 2*self.row_height
+
+        self.setMaximumHeight(min(desktop_height, maxH))
         self.setMinimumHeight(minH)
 
-        
+
     def get_vms_list(self):
         self.qvm_collection.lock_db_for_reading()
         self.qvm_collection.load()
@@ -733,7 +733,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
             if self.reload_table or ((not self.show_inactive_vms) and some_vms_have_changed_power_state): 
                 self.fill_table()
+                self.set_table_geom_height()
+                self.set_table_geom_width()
                 update_devs=True
+
 
             if self.sort_by_state != None and self.table.sort_state_by_upd  and some_vms_have_changed_power_state:
                 self.table.sort_state_by_upd = not self.table.sort_state_by_upd # sorter indicator changed will switch it...and we want it to remain unswtched.
@@ -789,7 +792,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.counter += 1
             QTimer.singleShot (self.update_interval, self.update_table)
 
-    def update_table_columns(self):
+    def set_table_geom_width(self):
 
         table_width =   self.table.horizontalHeader().length() +\
                         self.table.verticalScrollBar().width() + \
@@ -797,7 +800,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         self.table.setFixedWidth( table_width )
         self.centralwidget.setFixedWidth(table_width)
-        self.setFixedWidth(table_width)
+        # don't change the following two lines to setFixedWidth!
+        self.setMaximumWidth(table_width)
+        self.setMinimumWidth(table_width)
 
     def update_block_devices(self):
         res, msg = self.blk_manager.update()
@@ -1216,30 +1221,30 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.context_menu.removeAction(self.action_toolbar)
 
 
-    def showhide_collumn(self, col_num, show):
+    def showhide_column(self, col_num, show):
         self.table.setColumnHidden( col_num, not show)
-        self.update_table_columns()
+        self.set_table_geom_width()
 
     def on_actionState_toggled(self, checked):
-        self.showhide_collumn( self.columns_indices['State'], checked)
+        self.showhide_column( self.columns_indices['State'], checked)
  
     def on_actionTemplate_toggled(self, checked):
-        self.showhide_collumn( self.columns_indices['Template'], checked)
+        self.showhide_column( self.columns_indices['Template'], checked)
 
     def on_actionNetVM_toggled(self, checked):
-        self.showhide_collumn( self.columns_indices['NetVM'], checked)
+        self.showhide_column( self.columns_indices['NetVM'], checked)
     
     def on_actionCPU_toggled(self, checked):
-        self.showhide_collumn( self.columns_indices['CPU'], checked)
+        self.showhide_column( self.columns_indices['CPU'], checked)
     
     def on_actionCPU_Graph_toggled(self, checked):
-        self.showhide_collumn( self.columns_indices['CPU Graph'], checked)    
+        self.showhide_column( self.columns_indices['CPU Graph'], checked)    
 
     def on_actionMEM_toggled(self, checked):
-        self.showhide_collumn( self.columns_indices['MEM'], checked)   
+        self.showhide_column( self.columns_indices['MEM'], checked)   
     
     def on_actionMEM_Graph_toggled(self, checked):
-        self.showhide_collumn( self.columns_indices['MEM Graph'], checked)
+        self.showhide_column( self.columns_indices['MEM Graph'], checked)
 
 
     def createPopupMenu(self):
