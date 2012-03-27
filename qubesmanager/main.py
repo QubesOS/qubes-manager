@@ -55,6 +55,10 @@ qubes_guid_path = '/usr/bin/qubes_guid'
 
 update_suggestion_interval = 14 # 14 days
 
+power_order = Qt.DescendingOrder
+update_order = Qt.AscendingOrder
+
+
 class QubesConfigFileWatcher(ProcessEvent):
     def __init__ (self, update_func):
         self.update_func = update_func
@@ -159,14 +163,19 @@ class VmInfoWidget (QWidget):
         def __lt__(self, other):
             self_val = self.upd_info_item.value
             other_val = other.upd_info_item.value
-            if self.tableWidget().sort_state_by_upd:
+            if self.tableWidget().horizontalHeader().sortIndicatorOrder() == update_order:
+                # the result will be sorted by upd, sorting order: Ascending
                 self_val += 1 if self.vm.is_running() else 0
                 other_val += 1 if other.vm.is_running() else 0
-                return (self_val) > (other_val) #sort with Ascending Order
+                return (self_val) > (other_val)
+            elif self.tableWidget().horizontalHeader().sortIndicatorOrder() == power_order:
+                #the result will be sorted by power state, sorting order: Descending
+                self_val = -(self_val/10 + 10*(1 if self.vm.is_running() else 0))
+                other_val = -(other_val/10 + 10*(1 if other.vm.is_running() else 0))
+                return (self_val) > (other_val)
             else:
-                self_val = self_val/10 + 10*(1 if self.vm.is_running() else 0)
-                other_val = other_val/10 + 10*(1 if other.vm.is_running() else 0)
-                return (self_val) < (other_val) #sort with Descending order
+                #it would be strange if this happened
+                return 
 
     def __init__(self, vm, parent = None):
         super (VmInfoWidget, self).__init__(parent)
@@ -558,6 +567,11 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.setSizeIncrement(QtCore.QSize(200, 30))
         self.centralwidget.setSizeIncrement(QtCore.QSize(200, 30))
         self.table.setSizeIncrement(QtCore.QSize(200, 30))
+
+        self.sort_by_mem = None
+        self.sort_by_cpu = None
+        self.sort_by_state = None
+
         self.fill_table()
         self.move(cur_pos)
             
@@ -574,10 +588,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.table.horizontalHeader().setResizeMode(QHeaderView.Fixed)
     
         self.table.sortItems(self.columns_indices["Label"], Qt.AscendingOrder)
-        self.sort_by_mem = None
-        self.sort_by_cpu = None
-        self.sort_by_state = None
-        self.table.sort_state_by_upd = True
 
         self.context_menu = QMenu(self)
         self.context_menu.addAction(self.action_settings)
@@ -715,8 +725,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.vms_in_table = vms_in_table
         self.reload_table = False
         self.table.setSortingEnabled(True)
-
-
+        
     def mark_table_for_update(self):
         self.reload_table = True
 
@@ -731,17 +740,15 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                     vm.last_power_state = state
                     some_vms_have_changed_power_state = True
 
+            reload_table = self.reload_table
             if self.reload_table or ((not self.show_inactive_vms) and some_vms_have_changed_power_state): 
                 self.fill_table()
                 self.set_table_geom_height()
                 self.set_table_geom_width()
                 update_devs=True
 
-
-            if self.sort_by_state != None and self.table.sort_state_by_upd  and some_vms_have_changed_power_state:
-                self.table.sort_state_by_upd = not self.table.sort_state_by_upd # sorter indicator changed will switch it...and we want it to remain unswtched.
+            elif self.sort_by_state != None and some_vms_have_changed_power_state:
                 self.table.sortItems(self.columns_indices["State"], self.sort_by_state)
-                
 
             blk_visible = None
             rows_with_blk = None
@@ -784,8 +791,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 self.table.sortItems(self.columns_indices["CPU"], self.sort_by_cpu)
             elif self.sort_by_mem != None:
                 self.table.sortItems(self.columns_indices["MEM"], self.sort_by_mem)
+            elif self.sort_by_state != None and reload_table:
+                #needed to sort after reload (fill_table sorts items with setSortingEnabled, but by that time the widgets values are not correct yet).
+                self.table.sortItems(self.columns_indices["State"], self.sort_by_state)
             
-
             self.table_selection_changed()
 
         if not out_of_schedule:
@@ -811,6 +820,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             trayIcon.showMessage ("Qubes Manager", str, msecs=5000)
         return res
 
+
     def sortIndicatorChanged(self, column, order):
         if column == self.columns_indices["CPU"] or column == self.columns_indices["CPU Graph"]:
             self.sort_by_mem = None
@@ -823,13 +833,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.sort_by_mem = order
             return
         elif column == self.columns_indices["State"]:
-            self.table.sort_state_by_upd = not self.table.sort_state_by_upd
+            
             self.sort_by_cpu = None
             self.sort_by_mem = None
-            if self.table.sort_state_by_upd:
-                self.sort_by_state = Qt.DescendingOrder
-            else:
-                self.sort_by_state = Qt.AscendingOrder
+            self.sort_by_state = order
             return
         else:
             self.sort_by_cpu = None
