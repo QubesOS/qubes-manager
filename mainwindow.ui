@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>713</width>
-    <height>600</height>
+    <width>769</width>
+    <height>385</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -60,12 +60,6 @@
     </property>
     <item row="0" column="0">
      <widget class="QTableWidget" name="table">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
       <property name="minimumSize">
        <size>
         <width>0</width>
@@ -118,7 +112,7 @@
        <bool>false</bool>
       </property>
       <property name="rowCount">
-       <number>4</number>
+       <number>10</number>
       </property>
       <attribute name="horizontalHeaderCascadingSectionResizes">
        <bool>false</bool>
@@ -140,6 +134,12 @@
         <string>Nowy wiersz</string>
        </property>
       </row>
+      <row/>
+      <row/>
+      <row/>
+      <row/>
+      <row/>
+      <row/>
       <row/>
       <row/>
       <row/>
@@ -215,7 +215,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>713</width>
+     <width>769</width>
      <height>23</height>
     </rect>
    </property>
