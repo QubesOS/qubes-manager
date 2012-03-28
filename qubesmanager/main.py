@@ -1468,6 +1468,29 @@ class QubesTrayIcon(QSystemTrayIcon):
             action.setCheckable(True)
         return action
 
+def get_frame_size():
+    w = 0
+    h = 0
+    cmd = ['xprop', '-name', 'Qubes VM Manager', '|', 'grep', '_NET_FRAME_EXTENTS'] 
+    xprop = subprocess.Popen(cmd, stdout = subprocess.PIPE)
+    for l in xprop.stdout:
+        line = l.split('=')
+        if len(line) == 2:
+            line = line[1].strip().split(',')
+            if len(line) == 4:
+                w = int(line[0].strip())+ int(line[1].strip())
+                h = int(line[2].strip())+ int(line[3].strip())
+                break;
+    #in case of some weird window managers we have to assume sth...
+    if w<= 0:
+        w = 10
+    if h <= 0:
+        h = 30
+    
+    manager_window.frame_width = w
+    manager_window.frame_height = h
+    return
+
 
 def show_manager():
     manager_window.show()
@@ -1477,18 +1500,13 @@ def toggle_manager():
         manager_window.hide()
     else:
         manager_window.show()
-        while manager_window.frameSize().width() - manager_window.width() == 0:
-            app.processEvents()
-            time.sleep(0.05)
-        manager_window.frame_width =  manager_window.frameSize().width() - manager_window.width()
-        manager_window.frame_height =  manager_window.frameSize().height() - manager_window.height()
+        manager_window.set_table_geom_size()
+        manager_window.update_table(True)
 
+        get_frame_size() 
         print manager_window.frame_width, " x ", manager_window.frame_height
-        manager_window.frame_width += 50 # UGLY! a silly tweak that worksforme...
-
         manager_window.set_table_geom_size()
 
-        manager_window.update_table(True)
 
 def exit_app():
     notifier.stop()
