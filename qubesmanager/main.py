@@ -562,7 +562,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         
         self.connect(self.table, SIGNAL("itemSelectionChanged()"), self.table_selection_changed)
         
-        cur_pos = self.pos()
         self.table.setColumnWidth(0, self.column_width)
         self.setSizeIncrement(QtCore.QSize(200, 30))
         self.centralwidget.setSizeIncrement(QtCore.QSize(200, 30))
@@ -572,9 +571,15 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.sort_by_cpu = None
         self.sort_by_state = None
 
+        self.screen_number = -1
+        self.screen_changed = False
+
+        self.frame_width = 0
+        self.frame_height = 0
+
         self.fill_table()
-        self.move(cur_pos)
-            
+        self.move(self.x(), 0)
+ 
         self.table.setColumnHidden( self.columns_indices["NetVM"], True)
         self.actionNetVM.setChecked(False)
         self.table.setColumnHidden( self.columns_indices["CPU Graph"], True)
@@ -632,41 +637,69 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
     def show(self):
         super(VmManagerWindow, self).show()
-        self.set_table_geom_height()
-        self.set_table_geom_width()
+        self.screen_number = app.desktop().screenNumber(self)
 
-    def set_table_geom_height(self):
-        minH =  self.table.horizontalHeader().height() +\
-                2*self.table.frameWidth()
+    def set_table_geom_size(self):
 
-        #All this sizing is kind of magic, so change it only if you have to
-        #or if you know what you're doing :)
-               
-        n = self.table.rowCount();
-        maxH = minH
-        if n >= self.min_visible_rows:
-            minH += self.min_visible_rows*self.row_height
-            maxH += n*self.row_height
-        else:
-            minH += n*self.row_height
-            maxH = minH
-        
-        self.centralwidget.setMinimumHeight(minH)
-        self.centralwidget.setMaximumHeight(maxH)
+        desktop_width = app.desktop().availableGeometry(self).width() - self.frame_width # might be wrong...
+        desktop_height = app.desktop().availableGeometry(self).height() - self.frame_height # might be wrong...
+        desktop_height -= self.row_height #UGLY! to somehow ommit taskbar... 
+ 
+        W = self.table.horizontalHeader().length() +\
+            self.table.verticalScrollBar().width() +\
+            2*self.table.frameWidth() +1
+
+        H = self.table.horizontalHeader().height() +\
+            2*self.table.frameWidth()
 
         mainwindow_to_add = 0
+
+        available_space = desktop_height
         if self.menubar.isVisible():
-            mainwindow_to_add += self.menubar.height() + self.menubar.contentsMargins().top() + self.menubar.contentsMargins().bottom()
+            menubar_height = self.menubar.height() + self.menubar.contentsMargins().top() + self.menubar.contentsMargins().bottom()
+            available_space -= menubar_height
+            mainwindow_to_add += menubar_height
         if self.toolbar.isVisible():
-            mainwindow_to_add += self.toolbar.height() + self.toolbar.contentsMargins().top() + self.toolbar.contentsMargins().bottom()
- 
-        maxH += mainwindow_to_add
-        minH += mainwindow_to_add
+            toolbar_height = self.toolbar.height() + self.toolbar.contentsMargins().top() + self.toolbar.contentsMargins().bottom()
+            available_space -= toolbar_height
+            mainwindow_to_add += toolbar_height
+        if W >= desktop_width:
+            available_space -= self.table.horizontalScrollBar().height()
+            H += self.table.horizontalScrollBar().height()
+        default_rows = int(available_space/self.row_height)
 
-        desktop_height = app.desktop().availableGeometry().height() - 2*self.row_height
+        n = self.table.rowCount();
+        
+        if n > default_rows:
+            H += default_rows*self.row_height
+            self.table.verticalScrollBar().show()
+        else:
+            H += n*self.row_height
+            self.table.verticalScrollBar().hide()
+            W -= self.table.verticalScrollBar().width()
 
-        self.setMaximumHeight(min(desktop_height, maxH))
-        self.setMinimumHeight(minH)
+        W = min(desktop_width, W)
+        
+        self.centralwidget.setFixedHeight(H)
+
+        H += mainwindow_to_add
+
+        self.setMaximumHeight(H)
+        self.setMinimumHeight(H)
+
+        self.table.setFixedWidth(W)
+        self.centralwidget.setFixedWidth(W)
+        # don't change the following two lines to setFixedWidth!
+        self.setMaximumWidth(W)
+        self.setMinimumWidth(W)
+
+
+    def moveEvent(self, event):
+        super(VmManagerWindow, self).moveEvent(event)
+        screen_number = app.desktop().screenNumber(self)
+        if self.screen_number != screen_number:
+                self.screen_changed = True
+                self.screen_number = screen_number
 
 
     def get_vms_list(self):
@@ -731,6 +764,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
     # When calling update_table() directly, always use out_of_schedule=True!
     def update_table(self, out_of_schedule=False):
+
         update_devs = self.update_block_devices() or out_of_schedule
         if manager_window.isVisible():
             some_vms_have_changed_power_state = False
@@ -741,13 +775,19 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                     some_vms_have_changed_power_state = True
 
             reload_table = self.reload_table
-            if self.reload_table or ((not self.show_inactive_vms) and some_vms_have_changed_power_state): 
+
+            if self.screen_changed == True:
+                reload_table = True
+                self.screen_changed = False
+
+            
+            if reload_table or ((not self.show_inactive_vms) and some_vms_have_changed_power_state): 
                 self.fill_table()
-                self.set_table_geom_height()
-                self.set_table_geom_width()
+                self.set_table_geom_size()
                 update_devs=True
 
-            elif self.sort_by_state != None and some_vms_have_changed_power_state:
+
+            if self.sort_by_state != None and some_vms_have_changed_power_state:
                 self.table.sortItems(self.columns_indices["State"], self.sort_by_state)
 
             blk_visible = None
@@ -801,18 +841,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.counter += 1
             QTimer.singleShot (self.update_interval, self.update_table)
 
-    def set_table_geom_width(self):
-
-        table_width =   self.table.horizontalHeader().length() +\
-                        self.table.verticalScrollBar().width() + \
-                        2*self.table.frameWidth() + 1
-
-        self.table.setFixedWidth( table_width )
-        self.centralwidget.setFixedWidth(table_width)
-        # don't change the following two lines to setFixedWidth!
-        self.setMaximumWidth(table_width)
-        self.setMinimumWidth(table_width)
-
+ 
     def update_block_devices(self):
         res, msg = self.blk_manager.update()
         if msg != None and len(msg) > 0:
@@ -1185,7 +1214,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.show_inactive_vms = self.action_showallvms.isChecked()
         self.mark_table_for_update()
         self.update_table(out_of_schedule = True)
-        self.set_table_geom_height()
+        self.set_table_geom_size()
 
     @pyqtSlot(name='on_action_editfwrules_triggered')
     def action_editfwrules_triggered(self):
@@ -1212,7 +1241,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
     def showhide_menubar(self, checked):
         self.menuWidget().setVisible(checked)
-        self.set_table_geom_height()
+        self.set_table_geom_size()
         if not checked:
             self.context_menu.addAction(self.action_menubar)
         else:
@@ -1221,7 +1250,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
     def showhide_toolbar(self, checked):
         self.toolbar.setVisible(checked)
-        self.set_table_geom_height()
+        self.set_table_geom_size()
         if not checked:
             self.context_menu.addAction(self.action_toolbar)
         else:
@@ -1230,7 +1259,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
     def showhide_column(self, col_num, show):
         self.table.setColumnHidden( col_num, not show)
-        self.set_table_geom_width()
+        self.set_table_geom_size()
 
     def on_actionState_toggled(self, checked):
         self.showhide_column( self.columns_indices['State'], checked)
@@ -1448,6 +1477,17 @@ def toggle_manager():
         manager_window.hide()
     else:
         manager_window.show()
+        while manager_window.frameSize().width() - manager_window.width() == 0:
+            app.processEvents()
+            time.sleep(0.05)
+        manager_window.frame_width =  manager_window.frameSize().width() - manager_window.width()
+        manager_window.frame_height =  manager_window.frameSize().height() - manager_window.height()
+
+        print manager_window.frame_width, " x ", manager_window.frame_height
+        manager_window.frame_width += 50 # UGLY! a silly tweak that worksforme...
+
+        manager_window.set_table_geom_size()
+
         manager_window.update_table(True)
 
 def exit_app():
