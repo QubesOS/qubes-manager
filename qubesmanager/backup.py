@@ -166,21 +166,21 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             for vm in vms:
                 self.shutdown_vm_func(vm)
 
-        progress = QProgressDialog ("Shutting down VMs <b>{0}</b>...".format(', '.join(names)), "", 0, 0)
-        progress.setModal(True)
-        progress.show()
+            progress = QProgressDialog ("Shutting down VMs <b>{0}</b>...".format(', '.join(names)), "", 0, 0)
+            progress.setModal(True)
+            progress.show()
 
-        wait_time = 15.0
-        wait_for = wait_time
-        while self.check_running() and wait_for > 0:
-            self.app.processEvents()
-            time.sleep (0.1)
-            wait_for -= 0.1
+            wait_time = 15.0
+            wait_for = wait_time
+            while self.check_running() and wait_for > 0:
+                self.app.processEvents()
+                time.sleep (0.1)
+                wait_for -= 0.1
 
-        progress.hide()
+            progress.hide()
 
-        if self.check_running():
-            QMessageBox.information(None, "Strange", "Could not power down the VMs in {0} seconds...".format(wait_time))
+            if self.check_running():
+                QMessageBox.information(None, "Strange", "Could not power down the VMs in {0} seconds...".format(wait_time))
 
 
 
