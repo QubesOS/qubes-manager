@@ -1142,16 +1142,22 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         app.processEvents()
 
         if reply == QMessageBox.Yes:
-            try:
-                subprocess.check_call (["/usr/sbin/xl", "shutdown", vm.name])
-            except Exception as ex:
-                QMessageBox.warning (None, "Error shutting down VM!", "ERROR: {0}".format(ex))
-                return
+            self.shutdown_vm(vm)
 
-            trayIcon.showMessage ("Qubes Manager", "VM '{0}' is shutting down...".format(vm.name), msecs=3000)
 
-            self.shutdown_monitor[vm.qid] = VmShutdownMonitor (vm)
-            QTimer.singleShot (vm_shutdown_timeout, self.shutdown_monitor[vm.qid].check_if_vm_has_shutdown)
+    def shutdown_vm(self, vm):
+        try:
+            subprocess.check_call (["/usr/sbin/xl", "shutdown", vm.name])
+        except Exception as ex:
+            QMessageBox.warning (None, "Error shutting down VM!", "ERROR: {0}".format(ex))
+            return
+
+        trayIcon.showMessage ("Qubes Manager", "VM '{0}' is shutting down...".format(vm.name), msecs=3000)
+
+        self.shutdown_monitor[vm.qid] = VmShutdownMonitor (vm)
+        QTimer.singleShot (vm_shutdown_timeout, self.shutdown_monitor[vm.qid].check_if_vm_has_shutdown)
+
+
 
     @pyqtSlot(name='on_action_settings_triggered')
     def action_settings_triggered(self):
@@ -1235,7 +1241,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
     @pyqtSlot(name='on_action_backup_triggered')
     def action_backup_triggered(self):
-        backup_window = BackupVMsWindow(app, self.qvm_collection, self.blk_manager)
+        backup_window = BackupVMsWindow(app, self.qvm_collection, self.blk_manager, self.shutdown_vm)
         backup_window.exec_()
 
 
