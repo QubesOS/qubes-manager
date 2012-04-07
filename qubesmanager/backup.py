@@ -243,8 +243,14 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.func_output.append(s)
 
     def update_progress_bar(self, value):
-        self.emit(SIGNAL("backup_progress(int)"), value)
+        if value == 100:
+            self.emit(SIGNAL("backup_progress(int)"), value)
 
+    def check_backup_progress(self, initial_usage, total_backup_size):
+        du = qubesutils.get_disk_usage(self.backup_dir)
+        done = du - initial_usage
+        percent = int((float(done)/total_backup_size)*100)
+        return percent
 
     def __do_backup__(self, thread_monitor):
         msg = []
@@ -276,13 +282,20 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             self.button(self.CancelButton).setDisabled(True)
             self.button(self.FinishButton).setDisabled(True)
             self.thread_monitor = ThreadMonitor()
+            initial_usage = qubesutils.get_disk_usage(self.backup_dir)
             thread = threading.Thread (target= self.__do_backup__ , args=(self.thread_monitor,))
             thread.daemon = True
             thread.start()
 
+            counter = 0
             while not self.thread_monitor.is_finished():
                 self.app.processEvents()
                 time.sleep (0.1)
+                counter += 1
+                if counter == 20:
+                    progress = self.check_backup_progress(initial_usage, self.total_size)
+                    self.progress_bar.setValue(progress)
+                    counter = 0
 
             if not self.thread_monitor.success:
                 QMessageBox.warning (None, "Backup error!", "ERROR: {1}".format(self.vm.name, self.thread_monitor.error_msg))
