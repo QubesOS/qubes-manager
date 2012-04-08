@@ -274,6 +274,10 @@
    <addaction name="action_updatevm"/>
    <addaction name="separator"/>
    <addaction name="action_showallvms"/>
+   <addaction name="separator"/>
+   <addaction name="action_global_settings"/>
+   <addaction name="action_backup"/>
+   <addaction name="action_restore"/>
   </widget>
   <action name="action_createvm">
    <property name="icon">
@@ -512,16 +516,28 @@
    </property>
   </action>
   <action name="action_restore">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/restore.png</normaloff>:/restore.png</iconset>
+   </property>
    <property name="text">
     <string>Restore VMs from backup</string>
    </property>
   </action>
   <action name="action_backup">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/backup.png</normaloff>:/backup.png</iconset>
+   </property>
    <property name="text">
     <string>Backup VMs</string>
    </property>
   </action>
   <action name="action_global_settings">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/global-settings.png</normaloff>:/global-settings.png</iconset>
+   </property>
    <property name="text">
     <string>Global settings</string>
    </property>

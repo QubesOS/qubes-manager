@@ -1,5 +1,8 @@
 <RCC>
   <qresource>
+    <file alias="restore.png">icons/restore.png</file>
+    <file alias="backup.png">icons/backup.png</file>
+    <file alias="global-settings.png">icons/global-settings.png</file>
     <file alias="off.png">icons/on-icon/off.png</file>
     <file alias="on.png">icons/on-icon/on.png</file>
     <file alias="mount.png">icons/mount.png</file>
@@ -33,4 +36,5 @@
     <file alias="showcpuload.png">icons/showcpuload.png</file>
     <file alias="firewall.png">icons/firewall.png</file>
   </qresource>
+  <qresource/>
 </RCC>
