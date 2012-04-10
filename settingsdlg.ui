@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>4</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -586,6 +586,10 @@
         </layout>
        </widget>
        <widget class="QWidget" name="firewall_tab">
+        <attribute name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/firewall.png</normaloff>:/firewall.png</iconset>
+        </attribute>
         <attribute name="title">
          <string>Firewall rules</string>
         </attribute>
@@ -746,6 +750,10 @@
         <property name="enabled">
          <bool>true</bool>
         </property>
+        <attribute name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/storagevm.png</normaloff>:/storagevm.png</iconset>
+        </attribute>
         <attribute name="title">
          <string>Devices</string>
         </attribute>
@@ -776,7 +784,7 @@
        <widget class="QWidget" name="apps_tab">
         <attribute name="icon">
          <iconset resource="resources.qrc">
-          <normaloff>:/appsprefs.png</normaloff>:/appsprefs.png</iconset>
+          <normaloff>:/apps.png</normaloff>:/apps.png</iconset>
         </attribute>
         <attribute name="title">
          <string>Applications</string>

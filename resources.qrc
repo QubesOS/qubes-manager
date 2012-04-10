@@ -1,5 +1,8 @@
 <RCC>
   <qresource>
+    <file alias="apps.png">icons/apps.png</file>
+    <file alias="settings.png">icons/settings.png</file>
+    <file alias="firewall.png">icons/wall.png</file>
     <file alias="restore.png">icons/restore.png</file>
     <file alias="backup.png">icons/backup.png</file>
     <file alias="global-settings.png">icons/global-settings.png</file>
@@ -16,7 +19,6 @@
     <file alias="flag-yellow.png">icons/flag-yellow.png</file>
     <file alias="remove.png">icons/remove.png</file>
     <file alias="appsprefs.png">icons/appsprefs.png</file>
-    <file alias="newfirewall.png">icons/newfirewall.png</file>
     <file alias="qubes.png">icons/qubes.png</file>
     <file alias="appvm.png">icons/appvm.png</file>
     <file alias="netvm.png">icons/netvm.png</file>
@@ -34,7 +36,6 @@
     <file alias="pausevm.png">icons/pausevm.png</file>
     <file alias="showallvms.png">icons/showallvms.png</file>
     <file alias="showcpuload.png">icons/showcpuload.png</file>
-    <file alias="firewall.png">icons/firewall.png</file>
   </qresource>
   <qresource/>
 </RCC>
