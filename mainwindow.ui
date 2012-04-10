@@ -273,11 +273,11 @@
    <addaction name="action_appmenus"/>
    <addaction name="action_updatevm"/>
    <addaction name="separator"/>
-   <addaction name="action_showallvms"/>
-   <addaction name="separator"/>
    <addaction name="action_global_settings"/>
    <addaction name="action_backup"/>
    <addaction name="action_restore"/>
+   <addaction name="separator"/>
+   <addaction name="action_showallvms"/>
   </widget>
   <action name="action_createvm">
    <property name="icon">
@@ -390,8 +390,8 @@
    </property>
    <property name="icon">
     <iconset resource="resources.qrc">
-     <normaloff>:/showallvms.png</normaloff>
-     <selectedoff>:/showallvms.png</selectedoff>:/showallvms.png</iconset>
+     <normaloff>:/show-all-running.png</normaloff>
+     <selectedoff>:/showallvms.png</selectedoff>:/show-all-running.png</iconset>
    </property>
    <property name="text">
     <string>Show/Hide inactive VMs</string>

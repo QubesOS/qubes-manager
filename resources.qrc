@@ -7,13 +7,15 @@
     <file alias="backup.png">icons/backup.png</file>
     <file alias="global-settings.png">icons/global-settings.png</file>
     <file alias="off.png">icons/on-icon/off.png</file>
-    <file alias="on.png">icons/on-icon/on.png</file>
+    <file alias="on-old.png">icons/on-icon/on.png</file>
+    <file alias="show-all-running.png">icons/on-icon/show-all-running.png</file>
     <file alias="mount.png">icons/mount.png</file>
     <file alias="pencil.png">icons/pencil.png</file>
     <file alias="redfirewall.png">icons/redfirewall.png</file>
     <file alias="edit.png">icons/edit.png</file>
     <file alias="add.png">icons/add.png</file>
     <file alias="flag-blue.png">icons/flag-blue.png</file>
+    <file alias="on.png">icons/running.png</file>
     <file alias="flag-green.png">icons/flag-green.png</file>
     <file alias="flag-red.png">icons/flag-red.png</file>
     <file alias="flag-yellow.png">icons/flag-yellow.png</file>
