@@ -324,7 +324,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                         pid = l.split(" ")[1]
                         break
                 if pid != None:
-                    os.kill(int(pid), signal.SIGKILL)
+                    os.kill(int(pid), signal.SIGTERM)
                     break
 
         if self.dev_mount_path != None:
