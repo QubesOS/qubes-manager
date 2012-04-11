@@ -23,6 +23,7 @@
 
 import sys
 import os
+import signal
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
@@ -279,13 +280,14 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             self.textEdit.setText("\n".join(self.func_output))
 
         elif self.currentPage() is self.commit_page:
-            self.button(self.CancelButton).setDisabled(True)
             self.button(self.FinishButton).setDisabled(True)
+            self.button(self.CancelButton).setDisabled(True)
             self.thread_monitor = ThreadMonitor()
             initial_usage = qubesutils.get_disk_usage(self.backup_dir)
             thread = threading.Thread (target= self.__do_backup__ , args=(self.thread_monitor,))
             thread.daemon = True
             thread.start()
+            self.button(self.CancelButton).setDisabled(False)
 
             counter = 0
             while not self.thread_monitor.is_finished():
@@ -306,6 +308,25 @@ class BackupVMsWindow(Ui_Backup, QWizard):
  
 
     def reject(self):
+        #cancell clicked while the backup is in progress.
+        #calling kill on cp.
+        if self.currentPage() is self.commit_page:
+            manager_pid = os.getpid()
+            cp_pid_cmd = ["ps" ,"--ppid", str(manager_pid)]
+            pid = None
+
+            while not self.thread_monitor.is_finished():
+                cp_pid = subprocess.Popen(cp_pid_cmd, stdout = subprocess.PIPE)
+                output = cp_pid.stdout.read().split("\n")
+                
+                for l in output:
+                    if l.endswith("cp"):
+                        pid = l.split(" ")[1]
+                        break
+                if pid != None:
+                    os.kill(int(pid), signal.SIGKILL)
+                    break
+
         if self.dev_mount_path != None:
             umount_device(self.dev_mount_path)
         self.done(0)
