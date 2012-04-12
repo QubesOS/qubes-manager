@@ -557,9 +557,14 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.setupUi(self)
         self.toolbar = self.toolBar
         
+        self.qubes_watch = qubesutils.QubesWatch()
         self.qvm_collection = QubesVmCollection()
         self.blk_manager = QubesBlockDevicesManager(self.qvm_collection)
-        
+        self.qubes_watch.setup_block_watch(self.blk_manager.block_devs_event)
+        self.blk_watch_thread = threading.Thread(target=self.qubes_watch.watch_loop)
+        self.blk_watch_thread.daemon = True
+        self.blk_watch_thread.start()
+
         self.connect(self.table, SIGNAL("itemSelectionChanged()"), self.table_selection_changed)
         
         self.table.setColumnWidth(0, self.column_width)
@@ -794,8 +799,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             rows_with_blk = None
             if update_devs == True:
                 rows_with_blk = []
+                self.blk_manager.blk_lock.acquire()
                 for d in self.blk_manager.attached_devs:
                     rows_with_blk.append( self.blk_manager.attached_devs[d]['attached_to']['vm'])
+                self.blk_manager.blk_lock.release()
 
             if self.counter % 3 == 0 or out_of_schedule:
                 (self.last_measure_time, self.last_measure_results) = \
@@ -843,7 +850,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
  
     def update_block_devices(self):
-        res, msg = self.blk_manager.update()
+        res, msg = self.blk_manager.check_for_updates()
         if msg != None and len(msg) > 0:
             str = "\n".join(msg)
             trayIcon.showMessage ("Qubes Manager", str, msecs=5000)
@@ -1304,6 +1311,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         else:
             self.blk_menu.clear()
             self.blk_menu.setEnabled(True)
+
+            self.blk_manager.blk_lock.acquire()
             if len(self.blk_manager.attached_devs) > 0 :
                 for d in self.blk_manager.attached_devs:
                     if self.blk_manager.attached_devs[d]['attached_to']['vm'] == vm.name:
@@ -1319,6 +1328,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                     action = self.blk_menu.addAction(QIcon(":/add.png"), str)
                     action.setData(QVariant(d))
 
+            self.blk_manager.blk_lock.release()
+
             if self.blk_menu.isEmpty():
                 self.blk_menu.setEnabled(False)
  
@@ -1328,10 +1339,13 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def attach_dettach_device_triggered(self, action):
         dev = str(action.data().toString())
         vm = self.get_selected_vm()
+
+        self.blk_manager.blk_lock.acquire()
         if dev in self.blk_manager.attached_devs:
             self.blk_manager.detach_device(vm, dev)
         else:
             self.blk_manager.attach_device(vm, dev)
+        self.blk_manager.blk_lock.release()
 
 
 class QubesBlockDevicesManager():
@@ -1344,43 +1358,75 @@ class QubesBlockDevicesManager():
         self.current_attached = {}
         self.devs_changed = False
 
+        self.last_update_time = time.time()
+        self.blk_state_changed = True
+        self.msg = []
+        self.check_counter = 0
+        self.blk_lock = threading.Lock()
+
+        self.update()
+
+    def block_devs_event(self, xid):
+        now = time.time()
+        #don't update more often than 1/10 s
+        if now - self.last_update_time >= 0.1:
+            self.last_update_time = now
+
+            self.blk_lock.acquire()
+
+            self.blk_state_changed = True
+
+            self.blk_lock.release()
+
+    def check_for_updates(self):
+        self.blk_lock.acquire()
+
+        ret = (self.blk_state_changed, self.msg)
+        
+        if self.blk_state_changed == True:
+            self.check_counter += 1
+            
+            self.update()
+            ret = (self.blk_state_changed, self.msg)
+            
+            #let the update last for 3 manager-update cycles
+            if self.check_counter == 3:
+                self.check_counter = 0
+                self.blk_state_changed = False
+        self.msg = []            
+
+        self.blk_lock.release()
+
+        return ret
+            
+            
     def update(self):
         blk = qubesutils.block_list()
-        msg = []
         for b in blk:
             att = qubesutils.block_check_attached(None, blk[b]['device'], backend_xid = blk[b]['xid'])
             if b in self.current_blk:
                 if blk[b] == self.current_blk[b]:
                     if self.current_attached[b] != att: #devices the same, sth with attaching changed
                         self.current_attached[b] = att
-                        self.devs_changed = True
                 else:   #device changed ?!
                     self.current_blk[b] = blk[b]
                     self.current_attached[b] = att
-                    self.devs_changed = True
             else: #new device
                 self.current_blk[b] = blk[b]
                 self.current_attached[b] = att
-                self.devs_changed = True
-                msg.append("Attached new device: {0}".format(blk[b]['device']))
+                self.msg.append("Attached new device: {0}".format(blk[b]['device']))
 
         to_delete = []
         for b in self.current_blk: #remove devices that are not there anymore
             if b not in blk:
                 to_delete.append(b)
-                self.devs_changed = True
-                msg.append("Detached device: {0}".format(self.current_blk[b]['device']))
+                self.msg.append("Detached device: {0}".format(self.current_blk[b]['device']))
 
         for d in to_delete:
             del self.current_blk[d]
             del self.current_attached[d]
 
-        if self.devs_changed == True:
-            self.devs_changed = False
-            self.__update_blk_entries__()
-            return True, msg
-        else:
-            return False, None
+        self.__update_blk_entries__()
 
 
     def __update_blk_entries__(self):
@@ -1408,16 +1454,12 @@ class QubesBlockDevicesManager():
         backend_vm = self.qvm_collection.get_vm_by_name(backend_vm_name)
         trayIcon.showMessage ("Qubes Manager", "{0} - attaching {1}".format(vm.name, dev), msecs=3000)
         qubesutils.block_attach(vm, backend_vm, dev_id)
-        self.devs_changed = True
       
     def detach_device(self, vm, dev_name):
         dev_id = self.attached_devs[dev_name]['attached_to']['devid']
         vm_xid = self.attached_devs[dev_name]['attached_to']['xid']
         trayIcon.showMessage ("Qubes Manager", "{0} - detaching {1}".format(vm.name, dev_name), msecs=3000)
         qubesutils.block_detach(None, dev_id, vm_xid)
-        self.devs_changed = True
-
-
 
 
 class QubesTrayIcon(QSystemTrayIcon):

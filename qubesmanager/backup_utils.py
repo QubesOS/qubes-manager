@@ -72,6 +72,8 @@ def umount_device(dev_mount_path):
 def fill_devs_list(dialog):
     dialog.dev_combobox.clear()
     dialog.dev_combobox.addItem("None")
+    
+    dialog.blk_manager.blk_lock.acquire()
     for a in dialog.blk_manager.attached_devs:
         if dialog.blk_manager.attached_devs[a]['attached_to']['vm'] == dialog.vm.name :
             att = a + " " + unicode(dialog.blk_manager.attached_devs[a]['size']) + " " + dialog.blk_manager.attached_devs[a]['desc']
@@ -79,6 +81,8 @@ def fill_devs_list(dialog):
     for a in dialog.blk_manager.free_devs:
         att = a + " " + unicode(dialog.blk_manager.free_devs[a]['size']) + " " + dialog.blk_manager.free_devs[a]['desc']
         dialog.dev_combobox.addItem(att, QVariant(a))
+    dialog.blk_manager.blk_lock.release()
+
     dialog.dev_combobox.setCurrentIndex(0) #current selected is null ""
     dialog.prev_dev_idx = 0
     dialog.dir_line_edit.clear()
@@ -107,6 +111,7 @@ def dev_combobox_activated(dialog, idx):
     if dialog.dev_combobox.currentText() != "None":   #An existing device chosen 
         dev_name = str(dialog.dev_combobox.itemData(idx).toString())
 
+        dialog.blk_manager.blk_lock.acquire()
         if dev_name in dialog.blk_manager.free_devs:
             if dev_name.startswith(dialog.vm.name):       # originally attached to dom0
                 dev_path = "/dev/"+dev_name.split(":")[1]
@@ -118,6 +123,7 @@ def dev_combobox_activated(dialog, idx):
         if dev_name in dialog.blk_manager.attached_devs:       #is attached to dom0
             assert dialog.blk_manager.attached_devs[dev_name]['attached_to']['vm'] == dialog.vm.name
             dev_path = "/dev/" + dialog.blk_manager.attached_devs[dev_name]['attached_to']['frontend']
+        dialog.blk_manager.blk_lock.release()
 
         #check if device mounted
         dialog.dev_mount_path = check_if_mounted(dev_path)
