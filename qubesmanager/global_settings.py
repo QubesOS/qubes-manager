@@ -43,7 +43,12 @@ from operator import itemgetter
 
 from ui_globalsettingsdlg import *
 
+from ConfigParser import SafeConfigParser
+from qubes.qubesutils import parse_size
+from qubes import qmemman_algo
+
 dont_keep_dvm_in_memory_path = '/var/lib/qubes/dvmdata/dont_use_shm'
+qmemman_config_path = '/etc/qubes/qmemman.conf'
 
 
 class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
@@ -187,13 +192,80 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
 
         
     def __init_mem_defaults__(self):
+
+        #qmemman settings
+        self.qmemman_config = SafeConfigParser()
+        self.vm_min_mem_val =  str(qmemman_algo.MIN_PREFMEM)
+        self.dom0_mem_boost_val = str(qmemman_algo.DOM0_MEM_BOOST)
         
+        self.qmemman_config.read(qmemman_config_path)
+        if self.qmemman_config.has_section('global'):
+            self.vm_min_mem_val = self.qmemman_config.get('global', 'vm-min-mem')
+            self.dom0_mem_boost_val = self.qmemman_config.get('global', 'dom0-mem-boost')
+
+        self.vm_min_mem_val = parse_size(self.vm_min_mem_val)
+        self.dom0_mem_boost_val = parse_size(self.dom0_mem_boost_val)
+
+        self.min_vm_mem.setValue(self.vm_min_mem_val/1024/1024)
+        self.dom0_mem_boost.setValue(self.dom0_mem_boost_val/1024/1024)
+
         #keep dispvm in memory
         exists = os.path.exists(dont_keep_dvm_in_memory_path)
         self.dispvm_in_memory.setChecked( not exists)
 
     
     def __apply_mem_defaults__(self):
+
+        #qmemman settings
+        current_min_vm_mem = self.min_vm_mem.value()
+        current_dom0_mem_boost = self.dom0_mem_boost.value()
+
+        if current_min_vm_mem*1024*1024 != self.vm_min_mem_val or current_dom0_mem_boost*1024*1024 != self.dom0_mem_boost_val:
+
+            current_min_vm_mem = str(current_min_vm_mem)+'M'
+            current_dom0_mem_boost = str(current_dom0_mem_boost)+'M'
+
+            if not self.qmemman_config.has_section('global'):
+                #add the whole section
+                self.qmemman_config.add_section('global')
+                self.qmemman_config.set('global', 'vm-min-mem', current_min_vm_mem)
+                self.qmemman_config.set('global', 'dom0-mem-boost', current_dom0_mem_boost)
+                self.qmemman_config.set('global', 'cache-margin-factor', str(qmemman_algo.CACHE_FACTOR))
+
+                qmemman_config_file = open(qmemman_config_path, 'a')
+                self.qmemman_config.write(qmemman_config_file)
+                qmemman_config_file.close()
+
+            else:
+                #If there already is a 'global' section, we don't use SafeConfigParser.write() - it would get rid of all the comments...
+                
+                lines_to_add = {}
+                lines_to_add['vm-min-mem'] = "vm-min-mem = " + current_min_vm_mem + "\n"
+                lines_to_add['dom0-mem-boost'] = "dom0-mem-boost = " + current_dom0_mem_boost +"\n"
+
+                config_lines = []
+
+                qmemman_config_file = open(qmemman_config_path, 'r')
+                for l in qmemman_config_file:
+                    if l.strip().startswith('vm-min-mem'):
+                        config_lines.append(lines_to_add['vm-min-mem'])
+                        del lines_to_add['vm-min-mem']
+                    elif l.strip().startswith('dom0-mem-boost'):
+                        config_lines.append(lines_to_add['dom0-mem-boost'])
+                        del lines_to_add['dom0-mem-boost']
+                    else:
+                        config_lines.append(l)
+                
+                qmemman_config_file.close()
+
+                for l in lines_to_add:
+                    config_lines.append(l)
+
+                qmemman_config_file = open(qmemman_config_path, 'w')
+                qmemman_config_file.writelines(config_lines)
+                qmemman_config_file.close()
+
+            self.anything_changed = True
         
         #keep dispvm in memory
         was_checked = not os.path.exists(dont_keep_dvm_in_memory_path)
@@ -205,6 +277,7 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
                 #rm file
                 os.remove(dont_keep_dvm_in_memory_path)
             self.anything_changed = True
+
 
     def reject(self):
         self.done(0)

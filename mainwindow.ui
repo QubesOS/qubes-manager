@@ -273,6 +273,10 @@
    <addaction name="action_appmenus"/>
    <addaction name="action_updatevm"/>
    <addaction name="separator"/>
+   <addaction name="action_global_settings"/>
+   <addaction name="action_backup"/>
+   <addaction name="action_restore"/>
+   <addaction name="separator"/>
    <addaction name="action_showallvms"/>
   </widget>
   <action name="action_createvm">
@@ -353,7 +357,7 @@
    </property>
    <property name="icon">
     <iconset resource="resources.qrc">
-     <normaloff>:/appsprefs.png</normaloff>:/appsprefs.png</iconset>
+     <normaloff>:/apps.png</normaloff>:/apps.png</iconset>
    </property>
    <property name="text">
     <string>Select VM applications</string>
@@ -386,8 +390,8 @@
    </property>
    <property name="icon">
     <iconset resource="resources.qrc">
-     <normaloff>:/showallvms.png</normaloff>
-     <selectedoff>:/showallvms.png</selectedoff>:/showallvms.png</iconset>
+     <normaloff>:/show-all-running.png</normaloff>
+     <selectedoff>:/showallvms.png</selectedoff>:/show-all-running.png</iconset>
    </property>
    <property name="text">
     <string>Show/Hide inactive VMs</string>
@@ -399,7 +403,7 @@
   <action name="action_editfwrules">
    <property name="icon">
     <iconset resource="resources.qrc">
-     <normaloff>:/redfirewall.png</normaloff>:/redfirewall.png</iconset>
+     <normaloff>:/firewall.png</normaloff>:/firewall.png</iconset>
    </property>
    <property name="text">
     <string>Edit VM Firewall rules</string>
@@ -502,7 +506,7 @@
   <action name="action_settings">
    <property name="icon">
     <iconset resource="resources.qrc">
-     <normaloff>:/root.png</normaloff>:/root.png</iconset>
+     <normaloff>:/settings.png</normaloff>:/settings.png</iconset>
    </property>
    <property name="text">
     <string>Settings</string>
@@ -512,16 +516,28 @@
    </property>
   </action>
   <action name="action_restore">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/restore.png</normaloff>:/restore.png</iconset>
+   </property>
    <property name="text">
     <string>Restore VMs from backup</string>
    </property>
   </action>
   <action name="action_backup">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/backup.png</normaloff>:/backup.png</iconset>
+   </property>
    <property name="text">
     <string>Backup VMs</string>
    </property>
   </action>
   <action name="action_global_settings">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/global-settings.png</normaloff>:/global-settings.png</iconset>
+   </property>
    <property name="text">
     <string>Global settings</string>
    </property>
