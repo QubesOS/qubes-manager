@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>4</number>
+        <number>3</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -757,8 +757,8 @@
         <attribute name="title">
          <string>Devices</string>
         </attribute>
-        <layout class="QGridLayout" name="gridLayout_6">
-         <item row="0" column="0">
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <item>
           <layout class="QVBoxLayout" name="devices_layout">
            <item>
             <widget class="QLabel" name="dmm_warning_dev">
@@ -774,6 +774,20 @@
              </property>
              <property name="text">
               <string>You've enabled dynamic memory balancing, some devices might not work!</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="turn_off_vm_to_modify_devs">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <italic>true</italic>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>To modify PCI devices you have to turn off the VM.</string>
              </property>
             </widget>
            </item>

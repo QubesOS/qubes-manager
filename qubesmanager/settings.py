@@ -463,6 +463,13 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.dmm_warning_adv.hide()
             self.dmm_warning_dev.hide()
 
+        if self.vm.is_running():
+            self.dev_list.setEnabled(False)
+            self.turn_off_vm_to_modify_devs.setVisible(True)
+        else:
+            self.dev_list.setEnabled(True)
+            self.turn_off_vm_to_modify_devs.setVisible(False)
+
 
     def __apply_devices_tab__(self):
         sth_changed = False
