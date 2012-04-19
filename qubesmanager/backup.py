@@ -23,6 +23,7 @@
 
 import sys
 import os
+import signal
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
@@ -48,6 +49,7 @@ from ui_backupdlg import *
 from multiselectwidget import *
 
 from backup_utils import *
+import grp,pwd
 
 
 class BackupVMsWindow(Ui_Backup, QWizard):
@@ -84,6 +86,8 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 
         self.connect(self, SIGNAL("currentIdChanged(int)"), self.current_page_changed)
         self.connect(self.select_vms_widget, SIGNAL("selected_changed()"), self.check_running)
+        self.connect(self.select_vms_widget, SIGNAL("items_removed(list)"), self.vms_removed)
+        self.connect(self.select_vms_widget, SIGNAL("items_added(list)"), self.vms_added)
         self.refresh_button.clicked.connect(self.check_running)
         self.shutdown_running_vms_button.clicked.connect(self.shutdown_all_running_selected)
         self.connect(self.dev_combobox, SIGNAL("activated(int)"), self.dev_combobox_activated)
@@ -94,7 +98,8 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         #FIXME
         #this causes to run isComplete() twice, I don't know why
         self.select_vms_page.connect(self.select_vms_widget, SIGNAL("selected_changed()"), SIGNAL("completeChanged()")) 
-
+        
+        self.total_size = 0
         self.__fill_vms_list__()
         fill_devs_list(self)
 
@@ -105,8 +110,25 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 
     class VmListItem(QListWidgetItem):
         def __init__(self, vm):
-            super(BackupVMsWindow.VmListItem, self).__init__(vm.name)
             self.vm = vm
+            if vm.qid == 0:
+                local_user = grp.getgrnam('qubes').gr_mem[0]
+                home_dir = pwd.getpwnam(local_user).pw_dir
+                self.size = qubesutils.get_disk_usage(home_dir)
+            else:
+                self.size = self.get_vm_size(vm) 
+            super(BackupVMsWindow.VmListItem, self).__init__(vm.name+ " (" + qubesutils.size_to_human(self.size) + ")")
+        
+        def get_vm_size(self, vm):
+            size = 0
+            if vm.private_img is not None:
+                size += vm.get_disk_usage (vm.private_img)
+
+            if vm.updateable:
+                size += vm.get_disk_usage(vm.root_img)
+
+            return size
+
 
     def __fill_vms_list__(self):
         for vm in self.qvm_collection.values():
@@ -118,9 +140,21 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             item = BackupVMsWindow.VmListItem(vm)
             if vm.include_in_backups == True:
                 self.select_vms_widget.selected_list.addItem(item)
+                self.total_size += item.size
             else:
                 self.select_vms_widget.available_list.addItem(item)
         self.check_running()
+        self.total_size_label.setText(qubesutils.size_to_human(self.total_size))
+
+    def vms_added(self, items):
+        for i in items:
+            self.total_size += i.size
+        self.total_size_label.setText(qubesutils.size_to_human(self.total_size))
+
+    def vms_removed(self, items):
+        for i in items:
+            self.total_size -= i.size
+        self.total_size_label.setText(qubesutils.size_to_human(self.total_size))
 
     def check_running(self):
         some_selected_vms_running = False
@@ -201,7 +235,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 
             del self.excluded[:]
             for i in range(self.select_vms_widget.available_list.count()):
-                vmname =  str(self.select_vms_widget.available_list.item(i).text())
+                vmname =  self.select_vms_widget.available_list.item(i).vm.name
                 self.excluded.append(vmname)
                 
         return True
@@ -210,8 +244,14 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.func_output.append(s)
 
     def update_progress_bar(self, value):
-        self.emit(SIGNAL("backup_progress(int)"), value)
+        if value == 100:
+            self.emit(SIGNAL("backup_progress(int)"), value)
 
+    def check_backup_progress(self, initial_usage, total_backup_size):
+        du = qubesutils.get_disk_usage(self.backup_dir)
+        done = du - initial_usage
+        percent = int((float(done)/total_backup_size)*100)
+        return percent
 
     def __do_backup__(self, thread_monitor):
         msg = []
@@ -240,16 +280,24 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             self.textEdit.setText("\n".join(self.func_output))
 
         elif self.currentPage() is self.commit_page:
-            self.button(self.CancelButton).setDisabled(True)
             self.button(self.FinishButton).setDisabled(True)
+            self.button(self.CancelButton).setDisabled(True)
             self.thread_monitor = ThreadMonitor()
+            initial_usage = qubesutils.get_disk_usage(self.backup_dir)
             thread = threading.Thread (target= self.__do_backup__ , args=(self.thread_monitor,))
             thread.daemon = True
             thread.start()
+            self.button(self.CancelButton).setDisabled(False)
 
+            counter = 0
             while not self.thread_monitor.is_finished():
                 self.app.processEvents()
                 time.sleep (0.1)
+                counter += 1
+                if counter == 20:
+                    progress = self.check_backup_progress(initial_usage, self.total_size)
+                    self.progress_bar.setValue(progress)
+                    counter = 0
 
             if not self.thread_monitor.success:
                 QMessageBox.warning (None, "Backup error!", "ERROR: {1}".format(self.vm.name, self.thread_monitor.error_msg))
@@ -260,6 +308,25 @@ class BackupVMsWindow(Ui_Backup, QWizard):
  
 
     def reject(self):
+        #cancell clicked while the backup is in progress.
+        #calling kill on cp.
+        if self.currentPage() is self.commit_page:
+            manager_pid = os.getpid()
+            cp_pid_cmd = ["ps" ,"--ppid", str(manager_pid)]
+            pid = None
+
+            while not self.thread_monitor.is_finished():
+                cp_pid = subprocess.Popen(cp_pid_cmd, stdout = subprocess.PIPE)
+                output = cp_pid.stdout.read().split("\n")
+                
+                for l in output:
+                    if l.endswith("cp"):
+                        pid = l.split(" ")[1]
+                        break
+                if pid != None:
+                    os.kill(int(pid), signal.SIGTERM)
+                    break
+
         if self.dev_mount_path != None:
             umount_device(self.dev_mount_path)
         self.done(0)

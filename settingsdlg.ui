@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>3</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -586,6 +586,10 @@
         </layout>
        </widget>
        <widget class="QWidget" name="firewall_tab">
+        <attribute name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/firewall.png</normaloff>:/firewall.png</iconset>
+        </attribute>
         <attribute name="title">
          <string>Firewall rules</string>
         </attribute>
@@ -746,11 +750,15 @@
         <property name="enabled">
          <bool>true</bool>
         </property>
+        <attribute name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/storagevm.png</normaloff>:/storagevm.png</iconset>
+        </attribute>
         <attribute name="title">
          <string>Devices</string>
         </attribute>
-        <layout class="QGridLayout" name="gridLayout_6">
-         <item row="0" column="0">
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <item>
           <layout class="QVBoxLayout" name="devices_layout">
            <item>
             <widget class="QLabel" name="dmm_warning_dev">
@@ -769,6 +777,20 @@
              </property>
             </widget>
            </item>
+           <item>
+            <widget class="QLabel" name="turn_off_vm_to_modify_devs">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <italic>true</italic>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>To modify PCI devices you have to turn off the VM.</string>
+             </property>
+            </widget>
+           </item>
           </layout>
          </item>
         </layout>
@@ -776,7 +798,7 @@
        <widget class="QWidget" name="apps_tab">
         <attribute name="icon">
          <iconset resource="resources.qrc">
-          <normaloff>:/appsprefs.png</normaloff>:/appsprefs.png</iconset>
+          <normaloff>:/apps.png</normaloff>:/apps.png</iconset>
         </attribute>
         <attribute name="title">
          <string>Applications</string>
