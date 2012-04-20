@@ -141,10 +141,13 @@ class VmStatusIcon(QLabel):
             self.previous_power_state = self.vm.last_power_state
 
     def set_on_icon(self):
-        if self.vm.last_power_state:
+        if self.vm.last_power_state == "Running":
             icon = QIcon (":/on.png")
+        elif self.vm.last_power_state in ["Starting", "Halting", "Dying"]:
+            icon = QIcon (":/transient.png")
         else:
             icon = QIcon (":/off.png")
+
         icon_sz = QSize (VmManagerWindow.row_height * 0.5, VmManagerWindow.row_height *0.5)
         icon_pixmap = icon.pixmap(icon_sz)
         self.setPixmap (icon_pixmap)
@@ -479,20 +482,20 @@ class VmRowInTable(object):
         table.setItem(row_no,  VmManagerWindow.columns_indices['NetVM'], self.netvm_widget)
 
         self.cpu_usage_widget = VmUsageBarWidget(0, 100, "%v %", 
-                            lambda vm, val: val if vm.last_power_state else 0, vm, 0, self.cpu_graph_hue)
+                            lambda vm, val: val if vm.last_running else 0, vm, 0, self.cpu_graph_hue)
         table.setCellWidget(row_no,  VmManagerWindow.columns_indices['CPU'], self.cpu_usage_widget)
         table.setItem(row_no,  VmManagerWindow.columns_indices['CPU'], self.cpu_usage_widget.tableItem)
 
-        self.load_widget = ChartWidget(vm, lambda vm, val: val if vm.last_power_state else 0, self.cpu_graph_hue, 0 )
+        self.load_widget = ChartWidget(vm, lambda vm, val: val if vm.last_running else 0, self.cpu_graph_hue, 0 )
         table.setCellWidget(row_no,  VmManagerWindow.columns_indices['CPU Graph'], self.load_widget)
         table.setItem(row_no,  VmManagerWindow.columns_indices['CPU Graph'], self.load_widget.tableItem)
 
         self.mem_usage_widget = VmUsageBarWidget(0, qubes_host.memory_total/1024, "%v MB", 
-                            lambda vm, val: vm.get_mem()/1024 if vm.last_power_state else 0, vm, 0, self.mem_graph_hue)
+                            lambda vm, val: vm.get_mem()/1024 if vm.last_running else 0, vm, 0, self.mem_graph_hue)
         table.setCellWidget(row_no,  VmManagerWindow.columns_indices['MEM'], self.mem_usage_widget)
         table.setItem(row_no,  VmManagerWindow.columns_indices['MEM'], self.mem_usage_widget.tableItem)
 
-        self.mem_widget = ChartWidget(vm, lambda vm, val: vm.get_mem()*100/qubes_host.memory_total if vm.last_power_state else 0, self.mem_graph_hue, 0)
+        self.mem_widget = ChartWidget(vm, lambda vm, val: vm.get_mem()*100/qubes_host.memory_total if vm.last_running else 0, self.mem_graph_hue, 0)
         table.setCellWidget(row_no,  VmManagerWindow.columns_indices['MEM Graph'], self.mem_widget)
         table.setItem(row_no,  VmManagerWindow.columns_indices['MEM Graph'], self.mem_widget.tableItem)
  
@@ -714,7 +717,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         vms_list = [vm for vm in self.qvm_collection.values()]
         for vm in vms_list:
-            vm.last_power_state = vm.is_running()
+            vm.last_power_state = vm.get_power_state()
+            vm.last_running = vm.last_power_state in ["Running", "Starting"]
 
         no_vms = len (vms_list)
         vms_to_display = []
@@ -750,7 +754,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         row_no = 0
         for vm in vms_list:
-            if (not self.show_inactive_vms) and (not vm.last_power_state):
+            if (not self.show_inactive_vms) and (not vm.last_running):
                 continue
             if vm.internal:
                 continue
@@ -774,9 +778,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         if manager_window.isVisible():
             some_vms_have_changed_power_state = False
             for vm in self.vms_list:
-                state = vm.is_running();
+                state = vm.get_power_state()
                 if vm.last_power_state != state:
                     vm.last_power_state = state
+                    vm.last_running = (state in ["Running", "Starting"])
                     some_vms_have_changed_power_state = True
 
             reload_table = self.reload_table
@@ -887,10 +892,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         if vm != None:
             # Update available actions:
             self.action_settings.setEnabled(True)
-            self.action_removevm.setEnabled(not vm.installed_by_rpm and not vm.last_power_state)
-            self.action_resumevm.setEnabled(not vm.last_power_state)
-            self.action_pausevm.setEnabled(vm.last_power_state and vm.qid != 0)
-            self.action_shutdownvm.setEnabled(vm.last_power_state and vm.qid != 0)
+            self.action_removevm.setEnabled(not vm.installed_by_rpm and not (vm.last_running))
+            self.action_resumevm.setEnabled(not vm.last_running)
+            self.action_pausevm.setEnabled(vm.last_running and vm.qid != 0)
+            self.action_shutdownvm.setEnabled(vm.last_running and vm.qid != 0)
             self.action_appmenus.setEnabled(not vm.is_netvm())
             self.action_editfwrules.setEnabled(vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
             self.action_updatevm.setEnabled(vm.is_updateable() or vm.qid == 0)
