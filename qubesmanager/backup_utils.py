@@ -51,7 +51,7 @@ def mount_device(dev_path):
         pmount_cmd = [mount_for_backup_path, dev_path, mount_dir_name]
         res = subprocess.check_call(pmount_cmd)
     except Exception as ex:
-        QMessageBox.warning (None, "Error mounting selected device!", "ERROR: {0}".format(ex))
+        QMessageBox.warning (None, "Error mounting selected device!", "<b>Could not mount {0}.</b><br><br>ERROR: {1}".format(dev_path, ex))
         return None
     if res == 0:
         dev_mount_path = "/media/"+mount_dir_name
@@ -60,12 +60,14 @@ def mount_device(dev_path):
 
 def umount_device(dev_mount_path):
     try:
-        pumount_cmd = ["pumount", dev_mount_path]
+        pumount_cmd = ["pumount", "--luks-force", dev_mount_path]
         res = subprocess.check_call(pumount_cmd)
         if res == 0:
             dev_mount_path = None
     except Exception as ex:
-        QMessageBox.warning (None, "Could not unmount backup device!", "ERROR: {0}".format(ex))
+        QMessageBox.warning (None, "Error unmounting backup device!", "<b>Could not unmount {0}.</b><br>\
+                                                                       <b>Please unmount it manually using</b><br> pumount {0}.<br><br>\
+                                                                        ERROR: {1}".format(dev_mount_path, ex))
     return dev_mount_path
 
 
