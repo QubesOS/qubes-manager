@@ -608,6 +608,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.context_menu.addAction(self.action_resumevm)
         self.context_menu.addAction(self.action_pausevm)
         self.context_menu.addAction(self.action_shutdownvm)
+        self.context_menu.addAction(self.action_killvm)
         self.context_menu.addAction(self.action_appmenus)
         self.context_menu.addAction(self.action_editfwrules)
         self.context_menu.addAction(self.action_updatevm)
@@ -896,6 +897,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.action_resumevm.setEnabled(not vm.last_running)
             self.action_pausevm.setEnabled(vm.last_running and vm.qid != 0)
             self.action_shutdownvm.setEnabled(vm.last_running and vm.qid != 0)
+            self.action_killvm.setEnabled(vm.last_running and vm.qid != 0)
             self.action_appmenus.setEnabled(not vm.is_netvm())
             self.action_editfwrules.setEnabled(vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
             self.action_updatevm.setEnabled(vm.is_updateable() or vm.qid == 0)
@@ -905,6 +907,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.action_resumevm.setEnabled(False)
             self.action_pausevm.setEnabled(False)
             self.action_shutdownvm.setEnabled(False)
+            self.action_killvm.setEnabled(False)
             self.action_appmenus.setEnabled(False)
             self.action_editfwrules.setEnabled(False)
             self.action_updatevm.setEnabled(False)
@@ -1168,6 +1171,28 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         self.shutdown_monitor[vm.qid] = VmShutdownMonitor (vm)
         QTimer.singleShot (vm_shutdown_timeout, self.shutdown_monitor[vm.qid].check_if_vm_has_shutdown)
+
+
+    @pyqtSlot(name='on_action_killvm_triggered')
+    def action_killvm_triggered(self):
+        vm = self.get_selected_vm()
+        assert vm.is_running()
+
+        reply = QMessageBox.question(None, "VM Kill Confirmation",
+                                     "Are you sure you want to kill the VM <b>'{0}'</b>?<br>"
+                                     "<small>This will end <b>(not shutdown!)</b> all the running applications within this VM.</small>".format(vm.name),
+                                     QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
+
+        app.processEvents()
+
+        if reply == QMessageBox.Yes:
+            try:
+                vm.force_shutdown()
+            except Exception as ex:
+                QMessageBox.critical (None, "Error while killing VM!", "<b>An exception ocurred while killing {0}.</b><br>ERROR: {1}".format(vm.name, ex))
+                return
+
+            trayIcon.showMessage ("Qubes Manager", "VM '{0}' killed!".format(vm.name), msecs=3000)
 
 
 

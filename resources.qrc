@@ -35,9 +35,9 @@
     <file alias="createvm.png">icons/createvm.png</file>
     <file alias="removevm.png">icons/removevm.png</file>
     <file alias="shutdownvm.png">icons/shutdownvm.png</file>
+    <file alias="killvm.png">icons/kill.png</file>
     <file alias="resumevm.png">icons/resumevm.png</file>
     <file alias="pausevm.png">icons/pausevm.png</file>
-    <file alias="showallvms.png">icons/showallvms.png</file>
     <file alias="showcpuload.png">icons/showcpuload.png</file>
   </qresource>
   <qresource/>

@@ -267,6 +267,7 @@
    <addaction name="action_resumevm"/>
    <addaction name="action_pausevm"/>
    <addaction name="action_shutdownvm"/>
+   <addaction name="action_killvm"/>
    <addaction name="separator"/>
    <addaction name="action_settings"/>
    <addaction name="action_editfwrules"/>
@@ -318,7 +319,7 @@
     <string>Start/Resume VM</string>
    </property>
    <property name="toolTip">
-    <string>Start/Resume a VM</string>
+    <string>Start/Resume selected VM</string>
    </property>
   </action>
   <action name="action_pausevm">
@@ -333,7 +334,7 @@
     <string>Pause VM</string>
    </property>
    <property name="toolTip">
-    <string>Pause a running VM</string>
+    <string>Pause selected VM</string>
    </property>
   </action>
   <action name="action_shutdownvm">
@@ -348,7 +349,7 @@
     <string>Shutdown VM</string>
    </property>
    <property name="toolTip">
-    <string>Shutdown a running VM</string>
+    <string>Shutdown selected VM</string>
    </property>
   </action>
   <action name="action_appmenus">
@@ -386,7 +387,7 @@
     <bool>true</bool>
    </property>
    <property name="checked">
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
    <property name="icon">
     <iconset resource="resources.qrc">
@@ -551,6 +552,18 @@
    </property>
    <property name="text">
     <string>State</string>
+   </property>
+  </action>
+  <action name="action_killvm">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/killvm.png</normaloff>:/killvm.png</iconset>
+   </property>
+   <property name="text">
+    <string>Kill VM</string>
+   </property>
+   <property name="toolTip">
+    <string>Kill selected VM</string>
    </property>
   </action>
  </widget>
