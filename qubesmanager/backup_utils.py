@@ -59,16 +59,21 @@ def mount_device(dev_path):
     return None
 
 def umount_device(dev_mount_path):
-    try:
-        pumount_cmd = ["pumount", "--luks-force", dev_mount_path]
-        res = subprocess.check_call(pumount_cmd)
-        if res == 0:
-            dev_mount_path = None
-    except Exception as ex:
-        QMessageBox.warning (None, "Error unmounting backup device!", "<b>Could not unmount {0}.</b><br>\
-                                                                       <b>Please unmount it manually using</b><br> pumount {0}.<br><br>\
-                                                                        ERROR: {1}".format(dev_mount_path, ex))
-    return dev_mount_path
+    while True:
+        try:
+            pumount_cmd = ["pumount", "--luks-force", dev_mount_path]
+            res = subprocess.check_call(pumount_cmd)
+            if res == 0:
+                dev_mount_path = None
+                return dev_mount_path
+        except Exception as ex:
+            title = "Error unmounting backup device!"
+            text =  "<b>Could not unmount {0}.</b><br>\
+                    <b>Please retry or unmount it manually using</b><br> pumount {0}.<br><br>\
+                    ERROR: {1}".format(dev_mount_path, ex)
+            button = QMessageBox.warning (None, title, text, QMessageBox.Ok | QMessageBox.Retry, QMessageBox.Retry)
+            if button == QMessageBox.Ok:
+                return dev_mount_path
 
 
 def fill_devs_list(dialog):
