@@ -10,6 +10,7 @@
     <file alias="on-old.png">icons/on-icon/on.png</file>
     <file alias="show-all-running.png">icons/on-icon/show-all-running.png</file>
     <file alias="mount.png">icons/mount.png</file>
+    <file alias="log.png">icons/log.png</file>
     <file alias="pencil.png">icons/pencil.png</file>
     <file alias="redfirewall.png">icons/redfirewall.png</file>
     <file alias="edit.png">icons/edit.png</file>

@@ -662,6 +662,13 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         self.table_selection_changed()
         
+        self.logs_menu = QMenu("Logs")
+        log_icon = QtGui.QIcon()
+        log_icon.addPixmap(QPixmap(":/log.png"))
+        self.logs_menu.setIcon(log_icon)
+        self.context_menu.addMenu(self.logs_menu)
+
+
         self.blk_menu = QMenu("Block devices")
         self.context_menu.addMenu(self.blk_menu)
         self.context_menu.addSeparator()
@@ -669,6 +676,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.connect(self.table.horizontalHeader(), SIGNAL("sortIndicatorChanged(int, Qt::SortOrder)"), self.sortIndicatorChanged)
         self.connect(self.table, SIGNAL("customContextMenuRequested(const QPoint&)"), self.open_context_menu)
         self.connect(self.blk_menu, SIGNAL("triggered(QAction *)"), self.attach_dettach_device_triggered)
+        self.connect(self.logs_menu, SIGNAL("triggered(QAction *)"), self.show_log)
 
         self.table.setContentsMargins(0,0,0,0)
         self.centralwidget.layout().setContentsMargins(0,0,0,0)
@@ -1383,7 +1391,44 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot('const QPoint&')
     def open_context_menu(self, point):
         vm = self.get_selected_vm()
-        if not vm.is_running():
+
+        running = vm.is_running()
+
+        #logs menu
+        if not running:
+            self.logs_menu.setEnabled(False)
+        else:
+            self.logs_menu.clear()
+            self.logs_menu.setEnabled(True)
+            
+            xid = vm.xid
+        
+            #xl console
+            if xid != None:
+                if xid != 0:
+                    text = "/var/log/xen/console/guest-"+vm.name+".log"
+                    action = self.logs_menu.addAction(QIcon(":/log.png"), text)
+                    action.setData(QVariant(text))
+
+                    text = "/var/log/xen/console/guest-"+vm.name+"-dm.log"
+                    if os.path.exists(text):
+                        action = self.logs_menu.addAction(QIcon(":/log.png"), text)
+                        action.setData(QVariant(text))
+
+                    text = "/var/log/qubes/guid."+str(xid)+".log"
+                    action = self.logs_menu.addAction(QIcon(":/log.png"), text)
+                    action.setData(QVariant(text))
+
+                    text = "/var/log/qubes/qrexec."+str(xid)+".log"
+                    action = self.logs_menu.addAction(QIcon(":/log.png"), text)
+                    action.setData(QVariant(text))
+                else:    
+                    text = "/var/log/xen/console/hypervisor.log"
+                    action = self.logs_menu.addAction(QIcon(":/log.png"), text)
+                    action.setData(QVariant(text))
+
+        # blk menu
+        if not running:
             self.blk_menu.setEnabled(False)
         else:
             self.blk_menu.clear()
@@ -1393,16 +1438,16 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             if len(self.blk_manager.attached_devs) > 0 :
                 for d in self.blk_manager.attached_devs:
                     if self.blk_manager.attached_devs[d]['attached_to']['vm'] == vm.name:
-                        str = "Detach " + d + " " + unicode(self.blk_manager.attached_devs[d]['size']) + " " + self.blk_manager.attached_devs[d]['desc']
-                        action = self.blk_menu.addAction(QIcon(":/remove.png"), str)
+                        text = "Detach " + d + " " + unicode(self.blk_manager.attached_devs[d]['size']) + " " + self.blk_manager.attached_devs[d]['desc']
+                        action = self.blk_menu.addAction(QIcon(":/remove.png"), text)
                         action.setData(QVariant(d))
 
             if len(self.blk_manager.free_devs) > 0:
                 for d in self.blk_manager.free_devs:
                     if d.startswith(vm.name):
                         continue
-                    str = "Attach  " + d + " " + unicode(self.blk_manager.free_devs[d]['size']) + " " + self.blk_manager.free_devs[d]['desc']
-                    action = self.blk_menu.addAction(QIcon(":/add.png"), str)
+                    text = "Attach  " + d + " " + unicode(self.blk_manager.free_devs[d]['size']) + " " + self.blk_manager.free_devs[d]['desc']
+                    action = self.blk_menu.addAction(QIcon(":/add.png"), text)
                     action.setData(QVariant(d))
 
             self.blk_manager.blk_lock.release()
@@ -1411,6 +1456,14 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 self.blk_menu.setEnabled(False)
  
         self.context_menu.exec_(self.table.mapToGlobal(point))
+
+    @pyqtSlot('QAction *')
+    def show_log(self, action):
+        log = str(action.data().toString())
+        
+        cmd = ['sudo', 'kdialog', '--textbox', log, '700', '450', '--title', log]
+        subprocess.Popen(cmd)
+
 
     @pyqtSlot('QAction *')
     def attach_dettach_device_triggered(self, action):
