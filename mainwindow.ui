@@ -153,6 +153,11 @@
       </column>
       <column>
        <property name="text">
+        <string/>
+       </property>
+      </column>
+      <column>
+       <property name="text">
         <string>Name</string>
        </property>
        <property name="toolTip">

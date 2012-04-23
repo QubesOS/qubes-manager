@@ -68,7 +68,7 @@ class QubesConfigFileWatcher(ProcessEvent):
 
 
 class VmIconWidget (QWidget):
-    def __init__(self, icon_path, enabled=True, size_multiplier=0.7, parent=None):
+    def __init__(self, icon_path, enabled=True, size_multiplier=0.7, tooltip = None, parent=None):
         super(VmIconWidget, self).__init__(parent)
 
         label_icon = QLabel()
@@ -77,11 +77,57 @@ class VmIconWidget (QWidget):
         icon_pixmap = icon.pixmap(icon_sz, QIcon.Disabled if not enabled else QIcon.Normal)
         label_icon.setPixmap (icon_pixmap)
         label_icon.setFixedSize (icon_sz)
+        if tooltip != None:
+            label_icon.setToolTip(tooltip)
         
         layout = QHBoxLayout()
         layout.addWidget(label_icon)
         layout.setContentsMargins(0,0,0,0)
         self.setLayout(layout)
+
+
+class VmTypeWidget(VmIconWidget):
+    
+    class VmTypeItem(QTableWidgetItem):
+        def __init__(self, value):
+            super(VmTypeWidget.VmTypeItem, self).__init__()
+            self.value = value
+
+        def set_value(self, value):
+            self.value = value            
+        
+        def __lt__(self, other):
+            return self.value < other.value
+
+
+    def __init__(self, vm, parent=None):
+        (icon_path, tooltip) = self.get_vm_icon(vm)
+        super (VmTypeWidget, self).__init__(icon_path, True, 0.9, tooltip, parent)
+        self.vm = vm
+        self.tableItem = self.VmTypeItem(self.value)
+
+    def get_vm_icon(self, vm):
+        if vm.qid == 0:
+            self.value = 0
+            return (":/dom0.png", "Dom0")
+        elif vm.is_netvm() and not vm.is_proxyvm():
+            self.value = 1
+            return (":/netvm.png", "NetVM")
+        elif vm.is_proxyvm():
+            self.value = 2
+            return (":/proxyvm.png", "ProxyVM")
+        elif vm.is_template():
+            self.value = 3
+            return (":/templatevm.png", "TemplateVM")
+        elif vm.is_appvm() and vm.template is None:
+            self.value = 4
+            return (":/standalonevm.png", "StandaloneVM")
+        elif vm.type == "HVM":
+            self.value = 5
+            return (":/hvm.png", "HVM")
+        elif vm.is_appvm() or vm.is_disposablevm():
+            self.value = 5 + vm.label.index
+            return (":/off.png", "AppVM")
 
 
 class VmLabelWidget(VmIconWidget):
@@ -100,23 +146,14 @@ class VmLabelWidget(VmIconWidget):
 
     def __init__(self, vm, parent=None):
         icon_path = self.get_vm_icon_path(vm)
-        super (VmLabelWidget, self).__init__(icon_path, True, 0.8, parent)
+        super (VmLabelWidget, self).__init__(icon_path, True, 0.8, None, parent)
         self.vm = vm
         self.tableItem = self.VmLabelItem(self.value)
 
     def get_vm_icon_path(self, vm):
-        if vm.qid == 0:
-            self.value = 0
-            return ":/dom0.png"
-        elif vm.is_netvm():
-            self.value = 1
-            return ":/netvm.png"
-        elif vm.is_template():
-            self.value = 2
-            return ":/templatevm.png"
-        elif vm.is_appvm() or vm.is_disposablevm():
-            self.value = 2 + vm.label.index
-            return vm.label.icon_path
+        self.value = vm.label.index
+        return vm.label.icon_path
+
         
 
 class VmNameItem (QTableWidgetItem):
@@ -411,6 +448,7 @@ class VmUpdateInfoWidget(QWidget):
             self.update_status_widget("outdated")
                  
         self.previous_outdated = outdated
+
         if vm.is_updateable():
             update_recommended = self.previous_update_recommended
             stat_file = vm.dir_path + '/' + updates_stat_file
@@ -463,6 +501,10 @@ class VmRowInTable(object):
         self.row_no = row_no
 
         table.setRowHeight (row_no, VmManagerWindow.row_height)
+
+        self.type_widget = VmTypeWidget(vm)
+        table.setCellWidget(row_no, VmManagerWindow.columns_indices['Type'], self.type_widget)
+        table.setItem(row_no, VmManagerWindow.columns_indices['Type'], self.type_widget.tableItem)
 
         self.label_widget = VmLabelWidget(vm)
         table.setCellWidget(row_no, VmManagerWindow.columns_indices['Label'], self.label_widget)
@@ -543,15 +585,16 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     min_visible_rows = 10
     update_interval = 1000 # in msec
     show_inactive_vms = True
-    columns_indices = { "Label": 0,
-                        "Name": 1,
-                        "State": 2,
-                        "Template": 3,
-                        "NetVM": 4,
-                        "CPU": 5,
-                        "CPU Graph": 6,
-                        "MEM": 7,
-                        "MEM Graph": 8,}
+    columns_indices = { "Type": 0,
+                        "Label": 1,
+                        "Name": 2,
+                        "State": 3,
+                        "Template": 4,
+                        "NetVM": 5,
+                        "CPU": 6,
+                        "CPU Graph": 7,
+                        "MEM": 8,
+                        "MEM Graph": 9,}
 
 
 
@@ -596,11 +639,12 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.actionMEM_Graph.setChecked(False)
         self.table.setColumnWidth(self.columns_indices["State"], 80)
         self.table.setColumnWidth(self.columns_indices["Name"], 150)
-        self.table.setColumnWidth(self.columns_indices["Label"], 50)
+        self.table.setColumnWidth(self.columns_indices["Label"], 40)
+        self.table.setColumnWidth(self.columns_indices["Type"], 40)
 
         self.table.horizontalHeader().setResizeMode(QHeaderView.Fixed)
     
-        self.table.sortItems(self.columns_indices["Label"], Qt.AscendingOrder)
+        self.table.sortItems(self.columns_indices["Type"], Qt.AscendingOrder)
 
         self.context_menu = QMenu(self)
         self.context_menu.addAction(self.action_settings)
