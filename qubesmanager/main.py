@@ -670,6 +670,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
 
         self.blk_menu = QMenu("Block devices")
+        blk_icon = QtGui.QIcon()
+        blk_icon.addPixmap(QPixmap(":/mount.png"))
+        self.blk_menu.setIcon(blk_icon)
         self.context_menu.addMenu(self.blk_menu)
         self.context_menu.addSeparator()
 
