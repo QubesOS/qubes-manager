@@ -443,6 +443,9 @@ class VmUpdateInfoWidget(QWidget):
         self.tableItem = VmUpdateInfoWidget.VmUpdateInfoItem(self.value)
 
     def update_outdated(self, vm):
+        if vm.type == "HVM":
+            return
+
         outdated = vm.is_outdated()
         if outdated and not self.previous_outdated:
             self.update_status_widget("outdated")
