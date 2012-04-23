@@ -180,7 +180,7 @@ class VmStatusIcon(QLabel):
     def set_on_icon(self):
         if self.vm.last_power_state == "Running":
             icon = QIcon (":/on.png")
-        elif self.vm.last_power_state in ["Starting", "Halting", "Dying"]:
+        elif self.vm.last_power_state in ["Transient", "Halting", "Dying"]:
             icon = QIcon (":/transient.png")
         else:
             icon = QIcon (":/off.png")
@@ -777,7 +777,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         vms_list = [vm for vm in self.qvm_collection.values()]
         for vm in vms_list:
             vm.last_power_state = vm.get_power_state()
-            vm.last_running = vm.last_power_state in ["Running", "Starting"]
+            vm.last_running = vm.last_power_state in ["Running", "Transient"]
 
         no_vms = len (vms_list)
         vms_to_display = []
@@ -840,7 +840,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 state = vm.get_power_state()
                 if vm.last_power_state != state:
                     vm.last_power_state = state
-                    vm.last_running = (state in ["Running", "Starting"])
+                    vm.last_running = (state in ["Running", "Transient"])
                     some_vms_have_changed_power_state = True
 
             reload_table = self.reload_table
