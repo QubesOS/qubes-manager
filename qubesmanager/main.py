@@ -1464,7 +1464,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def show_log(self, action):
         log = str(action.data().toString())
         
-        cmd = ['sudo', 'kdialog', '--textbox', log, '700', '450', '--title', log]
+        cmd = ['kdialog', '--textbox', log, '700', '450', '--title', log]
         subprocess.Popen(cmd)
 
 
