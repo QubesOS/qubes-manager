@@ -360,7 +360,25 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         self.include_in_balancing.setChecked(self.vm.services['meminfo-writer']==True)
 
+
+        #paths
+        self.dir_path.setText(self.vm.dir_path)
+        self.config_path.setText(self.vm.conf_file)
+        if self.vm.template is not None:
+            self.root_img_path.setText(self.vm.template.root_img)
+        else:
+            self.root_img_path.setText("n/a")
+        self.volatile_img_path.setText(self.vm.volatile_img)
+        self.private_img_path.setText(self.vm.private_img)
+
+
         #kernel
+
+        #in case VM is not Linux
+        if not hasattr(self.vm, "kernel"):
+            self.kernel_groupbox.setVisible(False)
+            return;
+
         if self.vm.template is not None:
             text = self.vm.kernel
             self.kernel.insertItem(0, text)
@@ -390,16 +408,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.kernel_opts.setText(self.vm.kernelopts)
 
                 
-        #paths
-        self.dir_path.setText(self.vm.dir_path)
-        self.config_path.setText(self.vm.conf_file)
-        if self.vm.template is not None:
-            self.root_img_path.setText(self.vm.template.root_img)
-        else:
-            self.root_img_path.setText("n/a")
-        self.volatile_img_path.setText(self.vm.volatile_img)
-        self.private_img_path.setText(self.vm.private_img)
-
+       
     def __apply_advanced_tab__(self):
 
         #mem/cpu
@@ -417,6 +426,10 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         #include_in_memory_balancing applied in services tab
 
+        
+        #in case VM is not Linux
+        if not hasattr(self.vm, "kernel"):
+            return;
 
         #kernel changed
         if self.kernel.currentIndex() != self.kernel_idx:

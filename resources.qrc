@@ -16,6 +16,7 @@
     <file alias="add.png">icons/add.png</file>
     <file alias="flag-blue.png">icons/flag-blue.png</file>
     <file alias="on.png">icons/running.png</file>
+    <file alias="transient.png">icons/transient.png</file>
     <file alias="flag-green.png">icons/flag-green.png</file>
     <file alias="flag-red.png">icons/flag-red.png</file>
     <file alias="flag-yellow.png">icons/flag-yellow.png</file>
