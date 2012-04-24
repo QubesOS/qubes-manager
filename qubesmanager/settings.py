@@ -432,6 +432,9 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             return;
 
         #kernel changed
+        if not self.kernel_groupbox.isVisible():
+            return
+
         if self.kernel.currentIndex() != self.kernel_idx:
             new_kernel = self.kernel.currentText()
             new_kernel = new_kernel.split(' ')[0]
@@ -447,6 +450,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
             self.vm.kernel = kernel
             self.anything_changed = True
+
 
     ######## devices tab
     def __init_devices_tab__(self):
