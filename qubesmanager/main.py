@@ -659,6 +659,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.context_menu.addAction(self.action_appmenus)
         self.context_menu.addAction(self.action_editfwrules)
         self.context_menu.addAction(self.action_updatevm)
+        self.context_menu.addAction(self.action_set_keyboard_layout)
 
         self.table_selection_changed()
         
@@ -959,6 +960,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.action_appmenus.setEnabled(not vm.is_netvm())
             self.action_editfwrules.setEnabled(vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
             self.action_updatevm.setEnabled(vm.is_updateable() or vm.qid == 0)
+            self.action_set_keyboard_layout.setEnabled(vm.qid != 0 and vm.last_running)
         else:
             self.action_settings.setEnabled(False)
             self.action_removevm.setEnabled(False)
@@ -969,6 +971,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.action_appmenus.setEnabled(False)
             self.action_editfwrules.setEnabled(False)
             self.action_updatevm.setEnabled(False)
+            self.action_set_keyboard_layout.setEnabled(False)
 
 
 
@@ -1309,6 +1312,14 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             thread_monitor.set_finished()
             return
         thread_monitor.set_finished()
+
+ 
+    @pyqtSlot(name='on_action_set_keyboard_layout_triggered')
+    def action_set_keyboard_layout_triggered(self):
+        print "change layout!"
+        vm = self.get_selected_vm()
+        subprocess.Popen( ['qvm-run', vm.name, 'qubes-change-keyboard-layout'])
+
 
     @pyqtSlot(name='on_action_showallvms_triggered')
     def action_showallvms_triggered(self):
