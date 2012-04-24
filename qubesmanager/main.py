@@ -68,7 +68,7 @@ class QubesConfigFileWatcher(ProcessEvent):
 
 
 class VmIconWidget (QWidget):
-    def __init__(self, icon_path, enabled=True, size_multiplier=0.7, parent=None):
+    def __init__(self, icon_path, enabled=True, size_multiplier=0.7, tooltip = None, parent=None):
         super(VmIconWidget, self).__init__(parent)
 
         label_icon = QLabel()
@@ -77,11 +77,57 @@ class VmIconWidget (QWidget):
         icon_pixmap = icon.pixmap(icon_sz, QIcon.Disabled if not enabled else QIcon.Normal)
         label_icon.setPixmap (icon_pixmap)
         label_icon.setFixedSize (icon_sz)
+        if tooltip != None:
+            label_icon.setToolTip(tooltip)
         
         layout = QHBoxLayout()
         layout.addWidget(label_icon)
         layout.setContentsMargins(0,0,0,0)
         self.setLayout(layout)
+
+
+class VmTypeWidget(VmIconWidget):
+    
+    class VmTypeItem(QTableWidgetItem):
+        def __init__(self, value):
+            super(VmTypeWidget.VmTypeItem, self).__init__()
+            self.value = value
+
+        def set_value(self, value):
+            self.value = value            
+        
+        def __lt__(self, other):
+            return self.value < other.value
+
+
+    def __init__(self, vm, parent=None):
+        (icon_path, tooltip) = self.get_vm_icon(vm)
+        super (VmTypeWidget, self).__init__(icon_path, True, 0.9, tooltip, parent)
+        self.vm = vm
+        self.tableItem = self.VmTypeItem(self.value)
+
+    def get_vm_icon(self, vm):
+        if vm.qid == 0:
+            self.value = 0
+            return (":/dom0.png", "Dom0")
+        elif vm.is_netvm() and not vm.is_proxyvm():
+            self.value = 1
+            return (":/netvm.png", "NetVM")
+        elif vm.is_proxyvm():
+            self.value = 2
+            return (":/proxyvm.png", "ProxyVM")
+        elif vm.is_template():
+            self.value = 3
+            return (":/templatevm.png", "TemplateVM")
+        elif vm.is_appvm() and vm.template is None:
+            self.value = 4
+            return (":/standalonevm.png", "StandaloneVM")
+        elif vm.type == "HVM":
+            self.value = 5
+            return (":/hvm.png", "HVM")
+        elif vm.is_appvm() or vm.is_disposablevm():
+            self.value = 5 + vm.label.index
+            return (":/off.png", "AppVM")
 
 
 class VmLabelWidget(VmIconWidget):
@@ -100,23 +146,14 @@ class VmLabelWidget(VmIconWidget):
 
     def __init__(self, vm, parent=None):
         icon_path = self.get_vm_icon_path(vm)
-        super (VmLabelWidget, self).__init__(icon_path, True, 0.8, parent)
+        super (VmLabelWidget, self).__init__(icon_path, True, 0.8, None, parent)
         self.vm = vm
         self.tableItem = self.VmLabelItem(self.value)
 
     def get_vm_icon_path(self, vm):
-        if vm.qid == 0:
-            self.value = 0
-            return ":/dom0.png"
-        elif vm.is_netvm():
-            self.value = 1
-            return ":/netvm.png"
-        elif vm.is_template():
-            self.value = 2
-            return ":/templatevm.png"
-        elif vm.is_appvm() or vm.is_disposablevm():
-            self.value = 2 + vm.label.index
-            return vm.label.icon_path
+        self.value = vm.label.index
+        return vm.label.icon_path
+
         
 
 class VmNameItem (QTableWidgetItem):
@@ -143,7 +180,7 @@ class VmStatusIcon(QLabel):
     def set_on_icon(self):
         if self.vm.last_power_state == "Running":
             icon = QIcon (":/on.png")
-        elif self.vm.last_power_state in ["Starting", "Halting", "Dying"]:
+        elif self.vm.last_power_state in ["Transient", "Halting", "Dying"]:
             icon = QIcon (":/transient.png")
         else:
             icon = QIcon (":/off.png")
@@ -406,11 +443,15 @@ class VmUpdateInfoWidget(QWidget):
         self.tableItem = VmUpdateInfoWidget.VmUpdateInfoItem(self.value)
 
     def update_outdated(self, vm):
+        if vm.type == "HVM":
+            return
+
         outdated = vm.is_outdated()
         if outdated and not self.previous_outdated:
             self.update_status_widget("outdated")
                  
         self.previous_outdated = outdated
+
         if vm.is_updateable():
             update_recommended = self.previous_update_recommended
             stat_file = vm.dir_path + '/' + updates_stat_file
@@ -463,6 +504,10 @@ class VmRowInTable(object):
         self.row_no = row_no
 
         table.setRowHeight (row_no, VmManagerWindow.row_height)
+
+        self.type_widget = VmTypeWidget(vm)
+        table.setCellWidget(row_no, VmManagerWindow.columns_indices['Type'], self.type_widget)
+        table.setItem(row_no, VmManagerWindow.columns_indices['Type'], self.type_widget.tableItem)
 
         self.label_widget = VmLabelWidget(vm)
         table.setCellWidget(row_no, VmManagerWindow.columns_indices['Label'], self.label_widget)
@@ -543,15 +588,16 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     min_visible_rows = 10
     update_interval = 1000 # in msec
     show_inactive_vms = True
-    columns_indices = { "Label": 0,
-                        "Name": 1,
-                        "State": 2,
-                        "Template": 3,
-                        "NetVM": 4,
-                        "CPU": 5,
-                        "CPU Graph": 6,
-                        "MEM": 7,
-                        "MEM Graph": 8,}
+    columns_indices = { "Type": 0,
+                        "Label": 1,
+                        "Name": 2,
+                        "State": 3,
+                        "Template": 4,
+                        "NetVM": 5,
+                        "CPU": 6,
+                        "CPU Graph": 7,
+                        "MEM": 8,
+                        "MEM Graph": 9,}
 
 
 
@@ -596,11 +642,12 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.actionMEM_Graph.setChecked(False)
         self.table.setColumnWidth(self.columns_indices["State"], 80)
         self.table.setColumnWidth(self.columns_indices["Name"], 150)
-        self.table.setColumnWidth(self.columns_indices["Label"], 50)
+        self.table.setColumnWidth(self.columns_indices["Label"], 40)
+        self.table.setColumnWidth(self.columns_indices["Type"], 40)
 
         self.table.horizontalHeader().setResizeMode(QHeaderView.Fixed)
     
-        self.table.sortItems(self.columns_indices["Label"], Qt.AscendingOrder)
+        self.table.sortItems(self.columns_indices["Type"], Qt.AscendingOrder)
 
         self.context_menu = QMenu(self)
         self.context_menu.addAction(self.action_settings)
@@ -608,19 +655,31 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.context_menu.addAction(self.action_resumevm)
         self.context_menu.addAction(self.action_pausevm)
         self.context_menu.addAction(self.action_shutdownvm)
+        self.context_menu.addAction(self.action_killvm)
         self.context_menu.addAction(self.action_appmenus)
         self.context_menu.addAction(self.action_editfwrules)
         self.context_menu.addAction(self.action_updatevm)
 
         self.table_selection_changed()
         
+        self.logs_menu = QMenu("Logs")
+        log_icon = QtGui.QIcon()
+        log_icon.addPixmap(QPixmap(":/log.png"))
+        self.logs_menu.setIcon(log_icon)
+        self.context_menu.addMenu(self.logs_menu)
+
+
         self.blk_menu = QMenu("Block devices")
+        blk_icon = QtGui.QIcon()
+        blk_icon.addPixmap(QPixmap(":/mount.png"))
+        self.blk_menu.setIcon(blk_icon)
         self.context_menu.addMenu(self.blk_menu)
         self.context_menu.addSeparator()
 
         self.connect(self.table.horizontalHeader(), SIGNAL("sortIndicatorChanged(int, Qt::SortOrder)"), self.sortIndicatorChanged)
         self.connect(self.table, SIGNAL("customContextMenuRequested(const QPoint&)"), self.open_context_menu)
         self.connect(self.blk_menu, SIGNAL("triggered(QAction *)"), self.attach_dettach_device_triggered)
+        self.connect(self.logs_menu, SIGNAL("triggered(QAction *)"), self.show_log)
 
         self.table.setContentsMargins(0,0,0,0)
         self.centralwidget.layout().setContentsMargins(0,0,0,0)
@@ -718,7 +777,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         vms_list = [vm for vm in self.qvm_collection.values()]
         for vm in vms_list:
             vm.last_power_state = vm.get_power_state()
-            vm.last_running = vm.last_power_state in ["Running", "Starting"]
+            vm.last_running = vm.last_power_state in ["Running", "Transient"]
 
         no_vms = len (vms_list)
         vms_to_display = []
@@ -781,7 +840,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 state = vm.get_power_state()
                 if vm.last_power_state != state:
                     vm.last_power_state = state
-                    vm.last_running = (state in ["Running", "Starting"])
+                    vm.last_running = (state in ["Running", "Transient"])
                     some_vms_have_changed_power_state = True
 
             reload_table = self.reload_table
@@ -896,6 +955,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.action_resumevm.setEnabled(not vm.last_running)
             self.action_pausevm.setEnabled(vm.last_running and vm.qid != 0)
             self.action_shutdownvm.setEnabled(vm.last_running and vm.qid != 0)
+            self.action_killvm.setEnabled(vm.last_running and vm.qid != 0)
             self.action_appmenus.setEnabled(not vm.is_netvm())
             self.action_editfwrules.setEnabled(vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
             self.action_updatevm.setEnabled(vm.is_updateable() or vm.qid == 0)
@@ -905,6 +965,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.action_resumevm.setEnabled(False)
             self.action_pausevm.setEnabled(False)
             self.action_shutdownvm.setEnabled(False)
+            self.action_killvm.setEnabled(False)
             self.action_appmenus.setEnabled(False)
             self.action_editfwrules.setEnabled(False)
             self.action_updatevm.setEnabled(False)
@@ -1170,6 +1231,28 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         QTimer.singleShot (vm_shutdown_timeout, self.shutdown_monitor[vm.qid].check_if_vm_has_shutdown)
 
 
+    @pyqtSlot(name='on_action_killvm_triggered')
+    def action_killvm_triggered(self):
+        vm = self.get_selected_vm()
+        assert vm.is_running()
+
+        reply = QMessageBox.question(None, "VM Kill Confirmation",
+                                     "Are you sure you want to kill the VM <b>'{0}'</b>?<br>"
+                                     "<small>This will end <b>(not shutdown!)</b> all the running applications within this VM.</small>".format(vm.name),
+                                     QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
+
+        app.processEvents()
+
+        if reply == QMessageBox.Yes:
+            try:
+                vm.force_shutdown()
+            except Exception as ex:
+                QMessageBox.critical (None, "Error while killing VM!", "<b>An exception ocurred while killing {0}.</b><br>ERROR: {1}".format(vm.name, ex))
+                return
+
+            trayIcon.showMessage ("Qubes Manager", "VM '{0}' killed!".format(vm.name), msecs=3000)
+
+
 
     @pyqtSlot(name='on_action_settings_triggered')
     def action_settings_triggered(self):
@@ -1311,7 +1394,46 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot('const QPoint&')
     def open_context_menu(self, point):
         vm = self.get_selected_vm()
-        if not vm.is_running():
+
+        running = vm.is_running()
+
+        #logs menu
+        self.logs_menu.clear()
+        if vm.qid == 0:
+            text = "/var/log/xen/console/hypervisor.log"
+            action = self.logs_menu.addAction(QIcon(":/log.png"), text)
+            action.setData(QVariant(text))
+            self.logs_menu.setEnabled(True)
+        else:
+            menu_empty = True
+            text = "/var/log/xen/console/guest-"+vm.name+".log"
+            if os.path.exists(text):
+                action = self.logs_menu.addAction(QIcon(":/log.png"), text)
+                action.setData(QVariant(text))
+                menu_empty = False
+
+            text = "/var/log/xen/console/guest-"+vm.name+"-dm.log"
+            if os.path.exists(text):
+                action = self.logs_menu.addAction(QIcon(":/log.png"), text)
+                action.setData(QVariant(text))
+                menu_empty = False
+
+            if running:
+                xid = vm.xid
+                if xid != None:
+                    text = "/var/log/qubes/guid."+str(xid)+".log"
+                    action = self.logs_menu.addAction(QIcon(":/log.png"), text)
+                    action.setData(QVariant(text))
+
+                    text = "/var/log/qubes/qrexec."+str(xid)+".log"
+                    action = self.logs_menu.addAction(QIcon(":/log.png"), text)
+                    action.setData(QVariant(text))
+
+                    menu_empty = False
+            self.logs_menu.setEnabled(not menu_empty)
+                    
+        # blk menu
+        if not running:
             self.blk_menu.setEnabled(False)
         else:
             self.blk_menu.clear()
@@ -1321,16 +1443,16 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             if len(self.blk_manager.attached_devs) > 0 :
                 for d in self.blk_manager.attached_devs:
                     if self.blk_manager.attached_devs[d]['attached_to']['vm'] == vm.name:
-                        str = "Detach " + d + " " + unicode(self.blk_manager.attached_devs[d]['size']) + " " + self.blk_manager.attached_devs[d]['desc']
-                        action = self.blk_menu.addAction(QIcon(":/remove.png"), str)
+                        text = "Detach " + d + " " + unicode(self.blk_manager.attached_devs[d]['size']) + " " + self.blk_manager.attached_devs[d]['desc']
+                        action = self.blk_menu.addAction(QIcon(":/remove.png"), text)
                         action.setData(QVariant(d))
 
             if len(self.blk_manager.free_devs) > 0:
                 for d in self.blk_manager.free_devs:
                     if d.startswith(vm.name):
                         continue
-                    str = "Attach  " + d + " " + unicode(self.blk_manager.free_devs[d]['size']) + " " + self.blk_manager.free_devs[d]['desc']
-                    action = self.blk_menu.addAction(QIcon(":/add.png"), str)
+                    text = "Attach  " + d + " " + unicode(self.blk_manager.free_devs[d]['size']) + " " + self.blk_manager.free_devs[d]['desc']
+                    action = self.blk_menu.addAction(QIcon(":/add.png"), text)
                     action.setData(QVariant(d))
 
             self.blk_manager.blk_lock.release()
@@ -1339,6 +1461,14 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 self.blk_menu.setEnabled(False)
  
         self.context_menu.exec_(self.table.mapToGlobal(point))
+
+    @pyqtSlot('QAction *')
+    def show_log(self, action):
+        log = str(action.data().toString())
+        
+        cmd = ['kdialog', '--textbox', log, '700', '450', '--title', log]
+        subprocess.Popen(cmd)
+
 
     @pyqtSlot('QAction *')
     def attach_dettach_device_triggered(self, action):

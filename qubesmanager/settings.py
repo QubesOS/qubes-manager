@@ -249,6 +249,12 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         self.include_in_backups.setChecked(self.vm.include_in_backups)
 
+        if hasattr(self.vm, 'debug'):
+            self.run_in_debug_mode.setVisible(True)
+            self.run_in_debug_mode.setChecked(self.vm.debug)
+        else:
+            self.run_in_debug_mode.setVisible(False)
+
         #type
         self.type_label.setText(self.vm.type)
 
@@ -329,6 +335,13 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         #include in backups
         if self.vm.include_in_backups != self.include_in_backups.isChecked():
             self.vm.include_in_backups = self.include_in_backups.isChecked()
+            self.anything_changed = True
+
+        #run_in_debug_mode
+        if self.run_in_debug_mode.isVisible():
+            if self.vm.debug != self.run_in_debug_mode.isChecked():
+                self.vm.debug = self.run_in_debug_mode.isChecked()
+                self.anything_changed = True
 
         #max priv storage
         priv_size = self.max_priv_storage.value()
@@ -374,32 +387,29 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         #kernel
 
-        #in case VM is not Linux
+        #in case VM is HVM
         if not hasattr(self.vm, "kernel"):
             self.kernel_groupbox.setVisible(False)
             return;
 
-        if self.vm.template is not None:
-            text = self.vm.kernel
-            self.kernel.insertItem(0, text)
-            self.kernel.setEnabled(False)
-            self.kernel_idx = 0
-        else:
-            text = "default (" + self.qvm_collection.get_default_kernel() +")"
-            kernel_list = [text]
-            for k in os.listdir(qubes_kernels_base_dir):
-                kernel_list.append(k)
-            kernel_list.append("none")
-
-            self.kernel_idx = 0
-
-            for (i, k) in enumerate(kernel_list):
-                text = k
-                if (text.startswith("default") and self.vm.uses_default_kernel) or ( self.vm.kernel == k and not self.vm.uses_default_kernel) or (k=="none" and self.vm.kernel==None):
-                    text += " (current)"
-                    self.kernel_idx = i
-                self.kernel.insertItem(i,text)
-            self.kernel.setCurrentIndex(self.kernel_idx)
+        # construct available kernels list
+        text = "default (" + self.qvm_collection.get_default_kernel() +")"
+        kernel_list = [text]
+        for k in os.listdir(qubes_kernels_base_dir):
+            kernel_list.append(k)
+        kernel_list.append("none")
+    
+        self.kernel_idx = 0
+    
+        # put available kernels to a combobox
+        for (i, k) in enumerate(kernel_list):
+            text = k
+            # and mark the current choice
+            if (text.startswith("default") and self.vm.uses_default_kernel) or ( self.vm.kernel == k and not self.vm.uses_default_kernel) or (k=="none" and self.vm.kernel==None):
+                text += " (current)"
+                self.kernel_idx = i
+            self.kernel.insertItem(i,text)
+        self.kernel.setCurrentIndex(self.kernel_idx)
 
         #kernel opts
         if self.vm.uses_default_kernelopts:
@@ -432,6 +442,9 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             return;
 
         #kernel changed
+        if not self.kernel_groupbox.isVisible():
+            return
+
         if self.kernel.currentIndex() != self.kernel_idx:
             new_kernel = self.kernel.currentText()
             new_kernel = new_kernel.split(' ')[0]
@@ -447,6 +460,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
             self.vm.kernel = kernel
             self.anything_changed = True
+
 
     ######## devices tab
     def __init_devices_tab__(self):

@@ -10,6 +10,7 @@
     <file alias="on-old.png">icons/on-icon/on.png</file>
     <file alias="show-all-running.png">icons/on-icon/show-all-running.png</file>
     <file alias="mount.png">icons/mount.png</file>
+    <file alias="log.png">icons/log.png</file>
     <file alias="pencil.png">icons/pencil.png</file>
     <file alias="redfirewall.png">icons/redfirewall.png</file>
     <file alias="edit.png">icons/edit.png</file>
@@ -25,6 +26,9 @@
     <file alias="qubes.png">icons/qubes.png</file>
     <file alias="appvm.png">icons/appvm.png</file>
     <file alias="netvm.png">icons/netvm.png</file>
+    <file alias="hvm.png">icons/hvm.png</file>
+    <file alias="proxyvm.png">icons/proxyvm.png</file>
+    <file alias="standalonevm.png">icons/standalonevm.png</file>
     <file alias="networking.png">icons/networking.png</file>
     <file alias="dom0.png">icons/dom0.png</file>
     <file alias="storagevm.png">icons/storagevm.png</file>
@@ -35,9 +39,9 @@
     <file alias="createvm.png">icons/createvm.png</file>
     <file alias="removevm.png">icons/removevm.png</file>
     <file alias="shutdownvm.png">icons/shutdownvm.png</file>
+    <file alias="killvm.png">icons/kill.png</file>
     <file alias="resumevm.png">icons/resumevm.png</file>
     <file alias="pausevm.png">icons/pausevm.png</file>
-    <file alias="showallvms.png">icons/showallvms.png</file>
     <file alias="showcpuload.png">icons/showcpuload.png</file>
   </qresource>
   <qresource/>
