@@ -477,11 +477,11 @@ class VmUpdateInfoWidget(QWidget):
             tooltip_text = "VM up to date"
         elif state == "update":
             label_text = "<font color=\"#CCCC00\">Check updates</font>"
-            icon_path = ":/flag-yellow.png"
+            icon_path = ":/update-recommended.png"
             tooltip_text = "Update recommended"
         elif state == "outdated":
             label_text = "<font color=\"red\">VM outdated</font>"
-            icon_path = ":/flag-red.png"
+            icon_path = ":/outdated.png"
             tooltip_text = "VM outdated"
 
         if self.show_text:
