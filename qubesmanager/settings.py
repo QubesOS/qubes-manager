@@ -368,7 +368,10 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.root_img_path.setText(self.vm.template.root_img)
         else:
             self.root_img_path.setText("n/a")
-        self.volatile_img_path.setText(self.vm.volatile_img)
+        if self.vm.volatile_img is not None:
+            self.volatile_img_path.setText(self.vm.volatile_img)
+        else:
+            self.volatile_img_path.setText('n/a')
         self.private_img_path.setText(self.vm.private_img)
 
 
