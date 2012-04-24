@@ -249,6 +249,12 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         self.include_in_backups.setChecked(self.vm.include_in_backups)
 
+        if hasattr(self.vm, 'debug'):
+            self.run_in_debug_mode.setVisible(True)
+            self.run_in_debug_mode.setChecked(self.vm.debug)
+        else:
+            self.run_in_debug_mode.setVisible(False)
+
         #type
         self.type_label.setText(self.vm.type)
 
@@ -329,6 +335,13 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         #include in backups
         if self.vm.include_in_backups != self.include_in_backups.isChecked():
             self.vm.include_in_backups = self.include_in_backups.isChecked()
+            self.anything_changed = True
+
+        #run_in_debug_mode
+        if self.run_in_debug_mode.isVisible():
+            if self.vm.debug != self.run_in_debug_mode.isChecked():
+                self.vm.debug = self.run_in_debug_mode.isChecked()
+                self.anything_changed = True
 
         #max priv storage
         priv_size = self.max_priv_storage.value()
