@@ -278,6 +278,7 @@
    <addaction name="action_editfwrules"/>
    <addaction name="action_appmenus"/>
    <addaction name="action_updatevm"/>
+   <addaction name="action_set_keyboard_layout"/>
    <addaction name="separator"/>
    <addaction name="action_global_settings"/>
    <addaction name="action_backup"/>
@@ -569,6 +570,18 @@
    </property>
    <property name="toolTip">
     <string>Kill selected VM</string>
+   </property>
+  </action>
+  <action name="action_set_keyboard_layout">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/kbd-layout.png</normaloff>:/kbd-layout.png</iconset>
+   </property>
+   <property name="text">
+    <string>Set keyboard layout</string>
+   </property>
+   <property name="toolTip">
+    <string>Set keyboard layout per VM</string>
    </property>
   </action>
  </widget>
