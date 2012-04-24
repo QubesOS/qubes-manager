@@ -387,32 +387,29 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         #kernel
 
-        #in case VM is not Linux
+        #in case VM is HVM
         if not hasattr(self.vm, "kernel"):
             self.kernel_groupbox.setVisible(False)
             return;
 
-        if self.vm.template is not None:
-            text = self.vm.kernel
-            self.kernel.insertItem(0, text)
-            self.kernel.setEnabled(False)
-            self.kernel_idx = 0
-        else:
-            text = "default (" + self.qvm_collection.get_default_kernel() +")"
-            kernel_list = [text]
-            for k in os.listdir(qubes_kernels_base_dir):
-                kernel_list.append(k)
-            kernel_list.append("none")
-
-            self.kernel_idx = 0
-
-            for (i, k) in enumerate(kernel_list):
-                text = k
-                if (text.startswith("default") and self.vm.uses_default_kernel) or ( self.vm.kernel == k and not self.vm.uses_default_kernel) or (k=="none" and self.vm.kernel==None):
-                    text += " (current)"
-                    self.kernel_idx = i
-                self.kernel.insertItem(i,text)
-            self.kernel.setCurrentIndex(self.kernel_idx)
+        # construct available kernels list
+        text = "default (" + self.qvm_collection.get_default_kernel() +")"
+        kernel_list = [text]
+        for k in os.listdir(qubes_kernels_base_dir):
+            kernel_list.append(k)
+        kernel_list.append("none")
+    
+        self.kernel_idx = 0
+    
+        # put available kernels to a combobox
+        for (i, k) in enumerate(kernel_list):
+            text = k
+            # and mark the current choice
+            if (text.startswith("default") and self.vm.uses_default_kernel) or ( self.vm.kernel == k and not self.vm.uses_default_kernel) or (k=="none" and self.vm.kernel==None):
+                text += " (current)"
+                self.kernel_idx = i
+            self.kernel.insertItem(i,text)
+        self.kernel.setCurrentIndex(self.kernel_idx)
 
         #kernel opts
         if self.vm.uses_default_kernelopts:
