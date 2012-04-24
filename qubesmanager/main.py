@@ -102,7 +102,7 @@ class VmTypeWidget(VmIconWidget):
 
     def __init__(self, vm, parent=None):
         (icon_path, tooltip) = self.get_vm_icon(vm)
-        super (VmTypeWidget, self).__init__(icon_path, True, 0.9, tooltip, parent)
+        super (VmTypeWidget, self).__init__(icon_path, True, 0.8, tooltip, parent)
         self.vm = vm
         self.tableItem = self.VmTypeItem(self.value)
 
@@ -127,7 +127,7 @@ class VmTypeWidget(VmIconWidget):
             return (":/hvm.png", "HVM")
         elif vm.is_appvm() or vm.is_disposablevm():
             self.value = 5 + vm.label.index
-            return (":/off.png", "AppVM")
+            return (":/appvm.png", "AppVM")
 
 
 class VmLabelWidget(VmIconWidget):

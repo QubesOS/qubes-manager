@@ -8,7 +8,7 @@
     <file alias="global-settings.png">icons/global-settings.png</file>
     <file alias="off.png">icons/on-icon/off.png</file>
     <file alias="on-old.png">icons/on-icon/on.png</file>
-    <file alias="show-all-running.png">icons/on-icon/show-all-running.png</file>
+    <file alias="show-all-running.png">icons/show-all-running.png</file>
     <file alias="mount.png">icons/mount.png</file>
     <file alias="log.png">icons/log.png</file>
     <file alias="kbd-layout.png">icons/kbd-layout.png</file>
