@@ -1398,26 +1398,29 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         running = vm.is_running()
 
         #logs menu
-        if not running:
-            self.logs_menu.setEnabled(False)
-        else:
-            self.logs_menu.clear()
+        self.logs_menu.clear()
+        if vm.qid == 0:
+            text = "/var/log/xen/console/hypervisor.log"
+            action = self.logs_menu.addAction(QIcon(":/log.png"), text)
+            action.setData(QVariant(text))
             self.logs_menu.setEnabled(True)
-            
-            xid = vm.xid
-        
-            #xl console
-            if xid != None:
-                if xid != 0:
-                    text = "/var/log/xen/console/guest-"+vm.name+".log"
-                    action = self.logs_menu.addAction(QIcon(":/log.png"), text)
-                    action.setData(QVariant(text))
+        else:
+            menu_empty = True
+            text = "/var/log/xen/console/guest-"+vm.name+".log"
+            if os.path.exists(text):
+                action = self.logs_menu.addAction(QIcon(":/log.png"), text)
+                action.setData(QVariant(text))
+                menu_empty = False
 
-                    text = "/var/log/xen/console/guest-"+vm.name+"-dm.log"
-                    if os.path.exists(text):
-                        action = self.logs_menu.addAction(QIcon(":/log.png"), text)
-                        action.setData(QVariant(text))
+            text = "/var/log/xen/console/guest-"+vm.name+"-dm.log"
+            if os.path.exists(text):
+                action = self.logs_menu.addAction(QIcon(":/log.png"), text)
+                action.setData(QVariant(text))
+                menu_empty = False
 
+            if running:
+                xid = vm.xid
+                if xid != None:
                     text = "/var/log/qubes/guid."+str(xid)+".log"
                     action = self.logs_menu.addAction(QIcon(":/log.png"), text)
                     action.setData(QVariant(text))
@@ -1425,11 +1428,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                     text = "/var/log/qubes/qrexec."+str(xid)+".log"
                     action = self.logs_menu.addAction(QIcon(":/log.png"), text)
                     action.setData(QVariant(text))
-                else:    
-                    text = "/var/log/xen/console/hypervisor.log"
-                    action = self.logs_menu.addAction(QIcon(":/log.png"), text)
-                    action.setData(QVariant(text))
 
+                    menu_empty = False
+            self.logs_menu.setEnabled(not menu_empty)
+                    
         # blk menu
         if not running:
             self.blk_menu.setEnabled(False)
