@@ -766,6 +766,7 @@ def main():
     qvm_collection.unlock_db()
 
     vm = None
+    tab = "basic"
 
     if len(sys.argv) > 1:
         vm = qvm_collection.get_vm_by_name(sys.argv[1])
@@ -773,6 +774,13 @@ def main():
             QMessageBox.critical(None, "Qubes VM Settings Error",
                     "A VM with the name '{0}' does not exist in the system.".format(sys.argv[1]))
             sys.exit(1)
+        if len(sys.argv) > 2:
+            tab_arg = sys.argv[2]
+            if tab_arg in VMSettingsWindow.tabs_indices:
+                tab = tab_arg
+            else: QMessageBox.warning(None, "Qubes VM Settings Error",
+                    "There is no such tab as '{0}'. Opening default tab instead.".format(tab_arg))
+
     else:
         vms_list = [vm.name for vm in qvm_collection.values() if (vm.is_appvm() or vm.is_template())]
         vmname = QInputDialog.getItem(None, "Select VM", "Select VM:", vms_list, editable = False)
