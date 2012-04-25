@@ -1289,7 +1289,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         if not vm.is_running():
             reply = QMessageBox.question(None, "VM Update Confirmation",
-                    "VM need to be running for update. Do you want to start this VM?<br>",
+                    "<b>{0}</b><br>The VM has to be running to be updated.<br>Do you want to start it?<br>".format(vm.name),
                     QMessageBox.Yes | QMessageBox.Cancel)
             if reply != QMessageBox.Yes:
                 return
@@ -1302,9 +1302,16 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         thread.daemon = True
         thread.start()
 
+        progress = QProgressDialog ("<b>{0}</b><br>Please wait for the updater to launch...".format(vm.name), "", 0, 0)
+        progress.setCancelButton(None)
+        progress.setModal(True)
+        progress.show()
+
         while not thread_monitor.is_finished():
             app.processEvents()
             time.sleep (0.2)
+            
+        progress.hide()
 
         if vm.qid != 0:    
             if thread_monitor.success:
