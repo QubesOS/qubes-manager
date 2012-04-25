@@ -776,6 +776,7 @@ def main():
             sys.exit(1)
         if len(sys.argv) > 2:
             tab_arg = sys.argv[2]
+            print tab_arg
             if tab_arg in VMSettingsWindow.tabs_indices:
                 tab = tab_arg
             else: QMessageBox.warning(None, "Qubes VM Settings Error",
@@ -790,7 +791,7 @@ def main():
 
 
     global settings_window
-    settings_window = VMSettingsWindow(vm, app, qvm_collection, "basic")
+    settings_window = VMSettingsWindow(vm, app, qvm_collection, tab)
 
     settings_window.show()
 
