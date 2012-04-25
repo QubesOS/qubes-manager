@@ -449,6 +449,8 @@ class VmUpdateInfoWidget(QWidget):
         outdated = vm.is_outdated()
         if outdated and not self.previous_outdated:
             self.update_status_widget("outdated")
+        elif not outdated and self.previous_outdated:
+            self.update_status_widget(None)
                  
         self.previous_outdated = outdated
 
@@ -466,7 +468,9 @@ class VmUpdateInfoWidget(QWidget):
         
             if update_recommended and not self.previous_update_recommended:
                 self.update_status_widget("update")
+
             self.previous_update_recommended = update_recommended
+
 
     def update_status_widget(self, state):
         self.value = state
@@ -474,23 +478,30 @@ class VmUpdateInfoWidget(QWidget):
         if state == "ok":
             label_text = ""
             icon_path = ":/flag-green.png"
-            tooltip_text = "VM up to date"
+            tooltip_text = "VM up to date."
         elif state == "update":
             label_text = "<font color=\"#CCCC00\">Check updates</font>"
             icon_path = ":/update-recommended.png"
-            tooltip_text = "Update recommended"
+            tooltip_text = "Update recommended."
         elif state == "outdated":
             label_text = "<font color=\"red\">VM outdated</font>"
             icon_path = ":/outdated.png"
-            tooltip_text = "VM outdated"
+            tooltip_text = "The VM must be restarted for its filesystem to reflect the template's recent changes."
+        elif state == None:
+            label_text = ""
+            icon_path = None
+            tooltip_text = None
 
         if self.show_text:
             self.label.setText(label_text)
         else:    
             self.layout().removeWidget(self.icon)
             self.icon.deleteLater()
-            self.icon = VmIconWidget(icon_path, True, 0.7)
-            self.icon.setToolTip(tooltip_text)
+            if icon_path != None:
+                self.icon = VmIconWidget(icon_path, True, 0.7)
+                self.icon.setToolTip(tooltip_text)
+            else:
+                self.icon = QLabel(label_text)
             self.layout().addWidget(self.icon, alignment=Qt.AlignCenter)
 
 
