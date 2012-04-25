@@ -644,6 +644,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.table.setColumnWidth(self.columns_indices["Name"], 150)
         self.table.setColumnWidth(self.columns_indices["Label"], 40)
         self.table.setColumnWidth(self.columns_indices["Type"], 40)
+        self.action_showallvms.setChecked(True)
 
         self.table.horizontalHeader().setResizeMode(QHeaderView.Fixed)
     
