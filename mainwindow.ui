@@ -239,13 +239,16 @@
     <property name="title">
      <string>View</string>
     </property>
-    <addaction name="actionState"/>
-    <addaction name="actionTemplate"/>
-    <addaction name="actionNetVM"/>
-    <addaction name="actionCPU"/>
-    <addaction name="actionCPU_Graph"/>
-    <addaction name="actionMEM"/>
-    <addaction name="actionMEM_Graph"/>
+    <addaction name="action_vm_type"/>
+    <addaction name="action_label"/>
+    <addaction name="action_name"/>
+    <addaction name="action_state"/>
+    <addaction name="action_template"/>
+    <addaction name="action_netvm"/>
+    <addaction name="action_cpu"/>
+    <addaction name="action_cpu_graph"/>
+    <addaction name="action_mem"/>
+    <addaction name="action_mem_graph"/>
    </widget>
    <addaction name="menuOptions"/>
    <addaction name="menuView"/>
@@ -433,17 +436,17 @@
     <string>Show Graphs</string>
    </property>
   </action>
-  <action name="actionOptions">
+  <action name="action_options">
    <property name="text">
     <string>Options</string>
    </property>
   </action>
-  <action name="actionView">
+  <action name="action_view">
    <property name="text">
     <string>View</string>
    </property>
   </action>
-  <action name="actionCPU">
+  <action name="action_cpu">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -454,7 +457,7 @@
     <string>CPU</string>
    </property>
   </action>
-  <action name="actionCPU_Graph">
+  <action name="action_cpu_graph">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -465,7 +468,7 @@
     <string>CPU Graph</string>
    </property>
   </action>
-  <action name="actionMEM">
+  <action name="action_mem">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -476,7 +479,7 @@
     <string>MEM</string>
    </property>
   </action>
-  <action name="actionMEM_Graph">
+  <action name="action_mem_graph">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -487,7 +490,7 @@
     <string>MEM Graph</string>
    </property>
   </action>
-  <action name="actionTemplate">
+  <action name="action_template">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -498,7 +501,7 @@
     <string>Template</string>
    </property>
   </action>
-  <action name="actionNetVM">
+  <action name="action_netvm">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -548,7 +551,7 @@
     <string>Global settings</string>
    </property>
   </action>
-  <action name="actionState">
+  <action name="action_state">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -581,6 +584,42 @@
    </property>
    <property name="toolTip">
     <string>Set keyboard layout per VM</string>
+   </property>
+  </action>
+  <action name="action_vm_type">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Type</string>
+   </property>
+   <property name="toolTip">
+    <string>VM Type</string>
+   </property>
+  </action>
+  <action name="action_label">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Label</string>
+   </property>
+  </action>
+  <action name="action_name">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Name</string>
    </property>
   </action>
  </widget>

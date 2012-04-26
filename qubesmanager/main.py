@@ -644,13 +644,29 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         self.fill_table()
         self.move(self.x(), 0)
+
+        self.columns_actions = {}
+        self.columns_actions[ self.columns_indices["Type"] ] = self.action_vm_type
+        self.columns_actions[ self.columns_indices["Label"] ] = self.action_label
+        self.columns_actions[ self.columns_indices["Name"] ] = self.action_name
+        self.columns_actions[ self.columns_indices["State"] ] = self.action_state
+        self.columns_actions[ self.columns_indices["Template"] ] = self.action_template
+        self.columns_actions[ self.columns_indices["NetVM"] ] = self.action_netvm
+        self.columns_actions[ self.columns_indices["CPU"] ] = self.action_cpu
+        self.columns_actions[ self.columns_indices["CPU Graph"] ] = self.action_cpu_graph
+        self.columns_actions[ self.columns_indices["MEM"] ] = self.action_mem
+        self.columns_actions[ self.columns_indices["MEM Graph"] ] = self.action_mem_graph
+
  
+        self.visible_columns_count = len(self.columns_indices);
         self.table.setColumnHidden( self.columns_indices["NetVM"], True)
-        self.actionNetVM.setChecked(False)
+        self.action_netvm.setChecked(False)
         self.table.setColumnHidden( self.columns_indices["CPU Graph"], True)
-        self.actionCPU_Graph.setChecked(False)
+        self.action_cpu_graph.setChecked(False)
         self.table.setColumnHidden( self.columns_indices["MEM Graph"], True)
-        self.actionMEM_Graph.setChecked(False)
+        self.action_mem_graph.setChecked(False)
+
+
         self.table.setColumnWidth(self.columns_indices["State"], 80)
         self.table.setColumnWidth(self.columns_indices["Name"], 150)
         self.table.setColumnWidth(self.columns_indices["Label"], 40)
@@ -736,11 +752,11 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         available_space = desktop_height
         if self.menubar.isVisible():
-            menubar_height = self.menubar.height() + self.menubar.contentsMargins().top() + self.menubar.contentsMargins().bottom()
+            menubar_height = self.menubar.sizeHint().height() + self.menubar.contentsMargins().top() + self.menubar.contentsMargins().bottom()
             available_space -= menubar_height
             mainwindow_to_add += menubar_height
         if self.toolbar.isVisible():
-            toolbar_height = self.toolbar.height() + self.toolbar.contentsMargins().top() + self.toolbar.contentsMargins().bottom()
+            toolbar_height = self.toolbar.sizeHint().height() + self.toolbar.contentsMargins().top() + self.toolbar.contentsMargins().bottom()
             available_space -= toolbar_height
             mainwindow_to_add += toolbar_height
         if W >= desktop_width:
@@ -749,7 +765,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         default_rows = int(available_space/self.row_height)
 
         n = self.table.rowCount();
-        
+ 
         if n > default_rows:
             H += default_rows*self.row_height
             self.table.verticalScrollBar().show()
@@ -1335,7 +1351,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
  
     @pyqtSlot(name='on_action_set_keyboard_layout_triggered')
     def action_set_keyboard_layout_triggered(self):
-        print "change layout!"
         vm = self.get_selected_vm()
         subprocess.Popen( ['qvm-run', vm.name, 'qubes-change-keyboard-layout'])
 
@@ -1391,26 +1406,50 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def showhide_column(self, col_num, show):
         self.table.setColumnHidden( col_num, not show)
         self.set_table_geom_size()
+        val = 1 if show else -1
+        self.visible_columns_count += val
 
-    def on_actionState_toggled(self, checked):
+        if self.visible_columns_count == 1:
+            #disable hiding the last one
+            for c in self.columns_actions:
+                if self.columns_actions[c].isChecked():
+                    self.columns_actions[c].setEnabled(False)
+                    break
+        elif self.visible_columns_count == 2 and val == 1:
+            #enable hiding previously disabled column
+            for c in self.columns_actions:
+                if not self.columns_actions[c].isEnabled():
+                    self.columns_actions[c].setEnabled(True)
+                    break;
+
+    def on_action_vm_type_toggled(self, checked):
+        self.showhide_column( self.columns_indices['Type'], checked)
+
+    def on_action_label_toggled(self, checked):
+        self.showhide_column( self.columns_indices['Label'], checked)
+
+    def on_action_name_toggled(self, checked):
+        self.showhide_column( self.columns_indices['Name'], checked)
+
+    def on_action_state_toggled(self, checked):
         self.showhide_column( self.columns_indices['State'], checked)
  
-    def on_actionTemplate_toggled(self, checked):
+    def on_action_template_toggled(self, checked):
         self.showhide_column( self.columns_indices['Template'], checked)
 
-    def on_actionNetVM_toggled(self, checked):
+    def on_action_netvm_toggled(self, checked):
         self.showhide_column( self.columns_indices['NetVM'], checked)
     
-    def on_actionCPU_toggled(self, checked):
+    def on_action_cpu_toggled(self, checked):
         self.showhide_column( self.columns_indices['CPU'], checked)
     
-    def on_actionCPU_Graph_toggled(self, checked):
+    def on_action_cpu_graph_toggled(self, checked):
         self.showhide_column( self.columns_indices['CPU Graph'], checked)    
 
-    def on_actionMEM_toggled(self, checked):
+    def on_action_mem_toggled(self, checked):
         self.showhide_column( self.columns_indices['MEM'], checked)   
     
-    def on_actionMEM_Graph_toggled(self, checked):
+    def on_action_mem_graph_toggled(self, checked):
         self.showhide_column( self.columns_indices['MEM Graph'], checked)
 
 
