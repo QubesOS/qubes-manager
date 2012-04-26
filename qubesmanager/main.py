@@ -678,32 +678,21 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.table.sortItems(self.columns_indices["Type"], Qt.AscendingOrder)
 
         self.context_menu = QMenu(self)
-        self.context_menu.addAction(self.action_settings)
         self.context_menu.addAction(self.action_removevm)
         self.context_menu.addAction(self.action_resumevm)
         self.context_menu.addAction(self.action_pausevm)
         self.context_menu.addAction(self.action_shutdownvm)
         self.context_menu.addAction(self.action_killvm)
+        self.context_menu.addAction(self.action_settings)
         self.context_menu.addAction(self.action_appmenus)
         self.context_menu.addAction(self.action_editfwrules)
         self.context_menu.addAction(self.action_updatevm)
         self.context_menu.addAction(self.action_set_keyboard_layout)
-
-        self.table_selection_changed()
-        
-        self.logs_menu = QMenu("Logs")
-        log_icon = QtGui.QIcon()
-        log_icon.addPixmap(QPixmap(":/log.png"))
-        self.logs_menu.setIcon(log_icon)
         self.context_menu.addMenu(self.logs_menu)
-
-
-        self.blk_menu = QMenu("Block devices")
-        blk_icon = QtGui.QIcon()
-        blk_icon.addPixmap(QPixmap(":/mount.png"))
-        self.blk_menu.setIcon(blk_icon)
         self.context_menu.addMenu(self.blk_menu)
         self.context_menu.addSeparator()
+
+        self.table_selection_changed()
 
         self.connect(self.table.horizontalHeader(), SIGNAL("sortIndicatorChanged(int, Qt::SortOrder)"), self.sortIndicatorChanged)
         self.connect(self.table, SIGNAL("customContextMenuRequested(const QPoint&)"), self.open_context_menu)
@@ -714,12 +703,12 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.centralwidget.layout().setContentsMargins(0,0,0,0)
         self.layout().setContentsMargins(0,0,0,0)
 
-        self.action_toolbar = QAction("Show tool bar", None)
-        self.action_toolbar.setCheckable(True)
-        self.action_toolbar.setChecked(True)
-        self.action_menubar = QAction("Show menu bar", None)
-        self.action_menubar.setCheckable(True)
-        self.action_menubar.setChecked(True)
+        #self.action_toolbar = QAction("Show tool bar", None)
+        #self.action_toolbar.setCheckable(True)
+        #self.action_toolbar.setChecked(True)
+        #self.action_menubar = QAction("Show menu bar", None)
+        #self.action_menubar.setCheckable(True)
+        #self.action_menubar.setChecked(True)
         
         self.connect(self.action_menubar, SIGNAL("toggled(bool)"), self.showhide_menubar)
         self.connect(self.action_toolbar, SIGNAL("toggled(bool)"), self.showhide_toolbar)
@@ -1451,6 +1440,11 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     
     def on_action_mem_graph_toggled(self, checked):
         self.showhide_column( self.columns_indices['MEM Graph'], checked)
+
+
+    @pyqtSlot(name='on_action_about_qubes_triggered')
+    def action_about_qubes_triggered(self):
+        QMessageBox.about(self, "About...", "<b>Qubes OS</b><br><br>Release 1.0")
 
 
     def createPopupMenu(self):
