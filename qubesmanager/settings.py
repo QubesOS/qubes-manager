@@ -190,16 +190,20 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         #self.qvm_collection.lock_db_for_reading()
         #self.qvm_collection.load()
         #self.qvm_collection.unlock_db()
-        
-        self.label_list = QubesVmLabels.values()
-        self.label_list.sort(key=lambda l: l.index)
-        self.label_idx = 0
-        for (i, label) in enumerate(self.label_list):
-            if label == self.vm.label:
-                self.label_idx = i
-            self.vmlabel.insertItem(i, label.name)
-            self.vmlabel.setItemIcon (i, QIcon(label.icon_path))
-        self.vmlabel.setCurrentIndex(self.label_idx)
+       
+        if self.vm.qid == 0:
+            self.vmlabel.setVisible(False)
+        else: 
+            self.vmlabel.setVisible(True)
+            self.label_list = QubesVmLabels.values()
+            self.label_list.sort(key=lambda l: l.index)
+            self.label_idx = 0
+            for (i, label) in enumerate(self.label_list):
+                if label == self.vm.label:
+                    self.label_idx = i
+                self.vmlabel.insertItem(i, label.name)
+                self.vmlabel.setItemIcon (i, QIcon(label.icon_path))
+            self.vmlabel.setCurrentIndex(self.label_idx)
 
         if not self.vm.is_template() and self.vm.template is not None:
             template_vm_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_template()]
@@ -296,10 +300,11 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                     msg.append(str(ex))
                     
         #vm label changed
-        if self.vmlabel.currentIndex() != self.label_idx:
-            label = self.label_list[self.vmlabel.currentIndex()]
-            self.vm.label = label
-            self.anything_changed = True
+        if self.vmlabel.isVisible():
+            if self.vmlabel.currentIndex() != self.label_idx:
+                label = self.label_list[self.vmlabel.currentIndex()]
+                self.vm.label = label
+                self.anything_changed = True
 
         #vm template changed
         if self.template_name.currentIndex() != self.template_idx:
