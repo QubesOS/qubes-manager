@@ -151,8 +151,12 @@ class VmLabelWidget(VmIconWidget):
         self.tableItem = self.VmLabelItem(self.value)
 
     def get_vm_icon_path(self, vm):
-        self.value = vm.label.index
-        return vm.label.icon_path
+        if vm.qid == 0:
+            self.value = 100
+            return ":/off.png"
+        else:
+            self.value = vm.label.index
+            return vm.label.icon_path
 
         
 
