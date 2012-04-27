@@ -510,6 +510,25 @@ class VmUpdateInfoWidget(QWidget):
             self.layout().addWidget(self.icon, alignment=Qt.AlignCenter)
 
 
+class VmSizeOnDiskItem (QTableWidgetItem):
+    def __init__(self, vm):
+        super(VmSizeOnDiskItem, self).__init__()
+        
+        self.vm = vm
+        self.value = 0
+        self.update()
+        self.setTextAlignment(Qt.AlignCenter)
+
+    def update(self):
+        if self.vm.qid == 0:
+            self.setText("n/a")
+        else:
+            self.value = self.vm.get_disk_utilization()/(1024*1024)
+            self.setText( str(self.value) + " MiB")
+
+    def __lt__(self, other):
+            return self.value < other.value
+
 
 class VmRowInTable(object):
     cpu_graph_hue = 210
@@ -559,15 +578,20 @@ class VmRowInTable(object):
         self.mem_widget = ChartWidget(vm, lambda vm, val: vm.get_mem()*100/qubes_host.memory_total if vm.last_running else 0, self.mem_graph_hue, 0)
         table.setCellWidget(row_no,  VmManagerWindow.columns_indices['MEM Graph'], self.mem_widget)
         table.setItem(row_no,  VmManagerWindow.columns_indices['MEM Graph'], self.mem_widget.tableItem)
- 
 
-    def update(self, counter, blk_visible = None, cpu_load = None):
+        self.size_widget = VmSizeOnDiskItem(vm)
+        table.setItem(row_no,  VmManagerWindow.columns_indices['Size'], self.size_widget)
+
+
+    def update(self, counter, blk_visible = None, cpu_load = None, update_size_on_disk = False):
         self.info_widget.update_vm_state(self.vm, blk_visible)
         if cpu_load is not None:
             self.cpu_usage_widget.update_load(self.vm, cpu_load)
             self.mem_usage_widget.update_load(self.vm, None)
             self.load_widget.update_load(self.vm, cpu_load)
             self.mem_widget.update_load(self.vm, None)
+        if update_size_on_disk == True:
+            self.size_widget.update()
 
 class NewAppVmDlg (QDialog, ui_newappvmdlg.Ui_NewAppVMDlg):
     def __init__(self, parent = None):
@@ -613,7 +637,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         "CPU": 6,
                         "CPU Graph": 7,
                         "MEM": 8,
-                        "MEM Graph": 9,}
+                        "MEM Graph": 9,
+                        "Size": 10,}
 
 
 
@@ -640,6 +665,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.sort_by_mem = None
         self.sort_by_cpu = None
         self.sort_by_state = None
+        self.sort_by_size_on_disk = None
 
         self.screen_number = -1
         self.screen_changed = False
@@ -661,6 +687,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.columns_actions[ self.columns_indices["CPU Graph"] ] = self.action_cpu_graph
         self.columns_actions[ self.columns_indices["MEM"] ] = self.action_mem
         self.columns_actions[ self.columns_indices["MEM Graph"] ] = self.action_mem_graph
+        self.columns_actions[ self.columns_indices["Size"] ] = self.action_size_on_disk
 
  
         self.visible_columns_count = len(self.columns_indices);
@@ -670,12 +697,15 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.action_cpu_graph.setChecked(False)
         self.table.setColumnHidden( self.columns_indices["MEM Graph"], True)
         self.action_mem_graph.setChecked(False)
+        self.table.setColumnHidden( self.columns_indices["Size"], True)
+        self.action_size_on_disk.setChecked(False)
 
 
         self.table.setColumnWidth(self.columns_indices["State"], 80)
         self.table.setColumnWidth(self.columns_indices["Name"], 150)
         self.table.setColumnWidth(self.columns_indices["Label"], 40)
         self.table.setColumnWidth(self.columns_indices["Type"], 40)
+        self.table.setColumnWidth(self.columns_indices["Size"], 100)
         self.action_showallvms.setChecked(True)
 
         self.table.horizontalHeader().setResizeMode(QHeaderView.Fixed)
@@ -719,6 +749,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.connect(self.action_toolbar, SIGNAL("toggled(bool)"), self.showhide_toolbar)
 
         self.counter = 0
+        self.update_size_on_disk = False
         self.shutdown_monitor = {}
         self.last_measure_results = {}
         self.last_measure_time = time.time()
@@ -891,6 +922,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                     rows_with_blk.append( self.blk_manager.attached_devs[d]['attached_to']['vm'])
                 self.blk_manager.blk_lock.release()
 
+            if self.counter % 60 == 0 or out_of_schedule:
+                self.update_size_on_disk = True
+
             if self.counter % 3 == 0 or out_of_schedule:
                 (self.last_measure_time, self.last_measure_results) = \
                     qubes_host.measure_cpu_usage(self.last_measure_results,
@@ -909,7 +943,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         else:
                             blk_visible = False
                     
-                    vm_row.update(self.counter, blk_visible=blk_visible, cpu_load = cur_cpu_load)
+                    vm_row.update(self.counter, blk_visible=blk_visible, cpu_load = cur_cpu_load, update_size_on_disk = self.update_size_on_disk)
 
             else:
                 for vm_row in self.vms_in_table.values():
@@ -919,7 +953,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         else:
                             blk_visible = False
 
-                    vm_row.update(self.counter, blk_visible=blk_visible)
+                    vm_row.update(self.counter, blk_visible=blk_visible, update_size_on_disk = self.update_size_on_disk)
 
             if self.sort_by_cpu != None:
                 self.table.sortItems(self.columns_indices["CPU"], self.sort_by_cpu)
@@ -928,9 +962,12 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             elif self.sort_by_state != None and reload_table:
                 #needed to sort after reload (fill_table sorts items with setSortingEnabled, but by that time the widgets values are not correct yet).
                 self.table.sortItems(self.columns_indices["State"], self.sort_by_state)
+            elif self.sort_by_size_on_disk != None and self.update_size_on_disk == True:
+                self.table.sortItems(self.columns_indices["Size"], self.sort_by_size_on_disk)
             
             self.table_selection_changed()
 
+        self.update_size_on_disk = False
         if not out_of_schedule:
             self.counter += 1
             QTimer.singleShot (self.update_interval, self.update_table)
@@ -948,18 +985,26 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         if column == self.columns_indices["CPU"] or column == self.columns_indices["CPU Graph"]:
             self.sort_by_mem = None
             self.sort_by_state = None
+            self.sort_by_size_on_disk = None
             self.sort_by_cpu = order
             return
         elif column == self.columns_indices["MEM"] or column == self.columns_indices["MEM Graph"]:
             self.sort_by_cpu = None
             self.sort_by_state = None
+            self.sort_by_size_on_disk = None
             self.sort_by_mem = order
             return
-        elif column == self.columns_indices["State"]:
-            
+        elif column == self.columns_indices["State"]: 
             self.sort_by_cpu = None
             self.sort_by_mem = None
+            self.sort_by_size_on_disk = None
             self.sort_by_state = order
+            return
+        elif column == self.columns_indices["Size"]: 
+            self.sort_by_cpu = None
+            self.sort_by_mem = None
+            self.sort_by_state = None
+            self.sort_by_size_on_disk = order
             return
         else:
             self.sort_by_cpu = None
@@ -1445,6 +1490,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     
     def on_action_mem_graph_toggled(self, checked):
         self.showhide_column( self.columns_indices['MEM Graph'], checked)
+
+    def on_action_size_on_disk_toggled(self, checked):
+        self.showhide_column( self.columns_indices['Size'], checked)
 
 
     @pyqtSlot(name='on_action_about_qubes_triggered')
