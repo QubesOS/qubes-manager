@@ -273,7 +273,7 @@ class VmTemplateItem (QTableWidgetItem):
             else:
                 self.setText("---")
 
-        self.setTextAlignment(Qt.AlignCenter)
+        self.setTextAlignment(Qt.AlignVCenter)
 
 
 class VmNetvmItem (QTableWidgetItem):
@@ -287,7 +287,7 @@ class VmNetvmItem (QTableWidgetItem):
         else:
             self.setText("---")
 
-        self.setTextAlignment(Qt.AlignCenter)
+        self.setTextAlignment(Qt.AlignVCenter)
 
 
 class VmUsageBarWidget (QWidget):
@@ -517,7 +517,7 @@ class VmSizeOnDiskItem (QTableWidgetItem):
         self.vm = vm
         self.value = 0
         self.update()
-        self.setTextAlignment(Qt.AlignCenter)
+        self.setTextAlignment(Qt.AlignVCenter)
 
     def update(self):
         if self.vm.qid == 0:
