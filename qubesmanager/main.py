@@ -422,8 +422,6 @@ class VmUpdateInfoWidget(QWidget):
                 self.value = 30
             elif value == "update":
                 self.value = 20 
-            elif value == "ok":
-                self.value = 10
             else:
                 self.value = 0
  
@@ -469,7 +467,7 @@ class VmUpdateInfoWidget(QWidget):
             else:
                 update_recommended = False
                 if not self.show_text and self.previous_update_recommended != False:
-                    self.update_status_widget("ok")
+                    self.update_status_widget(None)
         
             if update_recommended and not self.previous_update_recommended:
                 self.update_status_widget("update")
@@ -480,11 +478,7 @@ class VmUpdateInfoWidget(QWidget):
     def update_status_widget(self, state):
         self.value = state
         self.tableItem.set_value(state)
-        if state == "ok":
-            label_text = ""
-            icon_path = ":/flag-green.png"
-            tooltip_text = "VM up to date."
-        elif state == "update":
+        if state == "update":
             label_text = "<font color=\"#CCCC00\">Check updates</font>"
             icon_path = ":/update-recommended.png"
             tooltip_text = "Update recommended."
