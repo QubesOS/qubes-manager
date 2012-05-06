@@ -1510,11 +1510,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         qubes_clipboard.write(clipboard)
         qubes_clipboard.close()
             
-        qubes_clip_source = open("/var/run/qubes/qubes_clipboard.source", 'w')
+        qubes_clip_source = open("/var/run/qubes/qubes_clipboard.bin.source", 'w')
         qubes_clip_source.write("dom0")
         qubes_clip_source.close()
 
-        trayIcon.showMessage ("Qubes VM Manager", "Qubes clipboard fetched from <b>dom0</b>.", msecs=3000)
         try:
             fcntl.flock(fd, fcntl.LOCK_UN)
             os.close(fd)
