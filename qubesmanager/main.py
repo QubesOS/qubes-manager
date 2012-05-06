@@ -22,6 +22,7 @@
 
 import sys
 import os
+import fcntl
 import dbus
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -1493,7 +1494,35 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def action_about_qubes_triggered(self):
         QMessageBox.about(self, "About...", "<b>Qubes OS</b><br><br>Release 1.0")
 
+    @pyqtSlot(name='on_action_copy_clipboard_triggered')
+    def action_copy_clipboard_triggered(self):
+        clipboard = app.clipboard().text()
 
+        #inter-appviewer lock
+        try:
+            fd = os.open("/var/run/qubes/appviewer.lock", os.O_RDWR|os.O_CREAT, 0600);
+            fcntl.flock(fd, fcntl.LOCK_EX);
+        except IOError:
+            QMessageBox.warning (None, "Warning!", "Error while accessing Qubes clipboard!")
+            return
+
+        qubes_clipboard = open("/var/run/qubes/qubes_clipboard.bin", 'w')
+        qubes_clipboard.write(clipboard)
+        qubes_clipboard.close()
+            
+        qubes_clip_source = open("/var/run/qubes/qubes_clipboard.source", 'w')
+        qubes_clip_source.write("dom0")
+        qubes_clip_source.close()
+
+        trayIcon.showMessage ("Qubes VM Manager", "Qubes clipboard fetched from <b>dom0</b>.", msecs=3000)
+        try:
+            fcntl.flock(fd, fcntl.LOCK_UN)
+            os.close(fd)
+        except IOError:
+            QMessageBox.warning (None, "Warning!", "Error while writing to Qubes clipboard!")
+            return
+    
+            
     def createPopupMenu(self):
         menu = QMenu()
         menu.addAction(self.action_toolbar)
