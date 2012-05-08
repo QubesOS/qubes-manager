@@ -51,8 +51,8 @@ from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, Pro
 import subprocess
 import time
 from datetime import datetime,timedelta
+from qubes.qubes import updates_stat_file
 
-updates_stat_file = 'last_update.stat'
 qubes_guid_path = '/usr/bin/qubes_guid'
 
 update_suggestion_interval = 14 # 14 days
@@ -458,21 +458,38 @@ class VmUpdateInfoWidget(QWidget):
                  
         self.previous_outdated = outdated
 
-        if vm.is_updateable():
+        if vm.qid == 0:
             update_recommended = self.previous_update_recommended
-            stat_file = vm.dir_path + '/' + updates_stat_file
-            if not os.path.exists(stat_file) or \
-                time.time() - os.path.getmtime(stat_file) > \
-                update_suggestion_interval * 24 * 3600:
-                    update_recommended = True
-            else:
+            #slot for dom0 special treatment 
+            #
+            #
+        elif vm.is_updateable():
+            update_recommended = self.previous_update_recommended
+            stat_file_path = vm.dir_path + '/' + updates_stat_file
+            if not os.path.exists(stat_file_path):
                 update_recommended = False
-                if not self.show_text and self.previous_update_recommended != False:
-                    self.update_status_widget(None)
+            else:
+                if (not hasattr(vm, "updates_stat_file_read_time")) or vm.updates_stat_file_read_time <= os.path.getmtime(stat_file_path):
         
+                        stat_file = open(stat_file_path, "r")
+                        updates = stat_file.read().strip()
+                        stat_file.close()
+                        if updates.isdigit():
+                            updates = int(updates)
+                        else:
+                            updates = 0
+ 
+                        if updates == 0:
+                            update_recommended = False
+                        else:
+                            update_recommended = True
+                        vm.updates_stat_file_read_time = time.time()
+
             if update_recommended and not self.previous_update_recommended:
                 self.update_status_widget("update")
-
+            elif self.previous_update_recommended and not update_recommended:
+                self.update_status_widget(None)
+        
             self.previous_update_recommended = update_recommended
 
 
@@ -482,7 +499,7 @@ class VmUpdateInfoWidget(QWidget):
         if state == "update":
             label_text = "<font color=\"#CCCC00\">Check updates</font>"
             icon_path = ":/update-recommended.png"
-            tooltip_text = "Update recommended."
+            tooltip_text = "Updates pending!"
         elif state == "outdated":
             label_text = "<font color=\"red\">VM outdated</font>"
             icon_path = ":/outdated.png"
