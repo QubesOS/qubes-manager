@@ -13,6 +13,7 @@
     <file alias="mount.png">icons/mount.png</file>
     <file alias="log.png">icons/log.png</file>
     <file alias="kbd-layout.png">icons/kbd-layout.png</file>
+    <file alias="copy.png">icons/copy.png</file>
     <file alias="pencil.png">icons/pencil.png</file>
     <file alias="edit.png">icons/edit.png</file>
     <file alias="add.png">icons/add.png</file>

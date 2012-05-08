@@ -22,6 +22,7 @@
 
 import sys
 import os
+import fcntl
 import dbus
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -273,7 +274,7 @@ class VmTemplateItem (QTableWidgetItem):
             else:
                 self.setText("---")
 
-        self.setTextAlignment(Qt.AlignCenter)
+        self.setTextAlignment(Qt.AlignVCenter)
 
 
 class VmNetvmItem (QTableWidgetItem):
@@ -287,7 +288,7 @@ class VmNetvmItem (QTableWidgetItem):
         else:
             self.setText("---")
 
-        self.setTextAlignment(Qt.AlignCenter)
+        self.setTextAlignment(Qt.AlignVCenter)
 
 
 class VmUsageBarWidget (QWidget):
@@ -422,8 +423,6 @@ class VmUpdateInfoWidget(QWidget):
                 self.value = 30
             elif value == "update":
                 self.value = 20 
-            elif value == "ok":
-                self.value = 10
             else:
                 self.value = 0
  
@@ -469,7 +468,7 @@ class VmUpdateInfoWidget(QWidget):
             else:
                 update_recommended = False
                 if not self.show_text and self.previous_update_recommended != False:
-                    self.update_status_widget("ok")
+                    self.update_status_widget(None)
         
             if update_recommended and not self.previous_update_recommended:
                 self.update_status_widget("update")
@@ -480,11 +479,7 @@ class VmUpdateInfoWidget(QWidget):
     def update_status_widget(self, state):
         self.value = state
         self.tableItem.set_value(state)
-        if state == "ok":
-            label_text = ""
-            icon_path = ":/flag-green.png"
-            tooltip_text = "VM up to date."
-        elif state == "update":
+        if state == "update":
             label_text = "<font color=\"#CCCC00\">Check updates</font>"
             icon_path = ":/update-recommended.png"
             tooltip_text = "Update recommended."
@@ -517,7 +512,7 @@ class VmSizeOnDiskItem (QTableWidgetItem):
         self.vm = vm
         self.value = 0
         self.update()
-        self.setTextAlignment(Qt.AlignCenter)
+        self.setTextAlignment(Qt.AlignVCenter)
 
     def update(self):
         if self.vm.qid == 0:
@@ -1499,7 +1494,34 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def action_about_qubes_triggered(self):
         QMessageBox.about(self, "About...", "<b>Qubes OS</b><br><br>Release 1.0")
 
+    @pyqtSlot(name='on_action_copy_clipboard_triggered')
+    def action_copy_clipboard_triggered(self):
+        clipboard = app.clipboard().text()
 
+        #inter-appviewer lock
+        try:
+            fd = os.open("/var/run/qubes/appviewer.lock", os.O_RDWR|os.O_CREAT, 0600);
+            fcntl.flock(fd, fcntl.LOCK_EX);
+        except IOError:
+            QMessageBox.warning (None, "Warning!", "Error while accessing Qubes clipboard!")
+            return
+
+        qubes_clipboard = open("/var/run/qubes/qubes_clipboard.bin", 'w')
+        qubes_clipboard.write(clipboard)
+        qubes_clipboard.close()
+            
+        qubes_clip_source = open("/var/run/qubes/qubes_clipboard.bin.source", 'w')
+        qubes_clip_source.write("dom0")
+        qubes_clip_source.close()
+
+        try:
+            fcntl.flock(fd, fcntl.LOCK_UN)
+            os.close(fd)
+        except IOError:
+            QMessageBox.warning (None, "Warning!", "Error while writing to Qubes clipboard!")
+            return
+    
+            
     def createPopupMenu(self):
         menu = QMenu()
         menu.addAction(self.action_toolbar)
