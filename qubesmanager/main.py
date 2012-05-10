@@ -44,6 +44,7 @@ from settings import VMSettingsWindow
 from restore import RestoreVMsWindow
 from backup import BackupVMsWindow
 from global_settings import GlobalSettingsWindow
+from log_dialog import LogDialog, copy_text_to_qubes_clipboard
 from thread_monitor import *
 
 from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
@@ -1514,29 +1515,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot(name='on_action_copy_clipboard_triggered')
     def action_copy_clipboard_triggered(self):
         clipboard = app.clipboard().text()
-
-        #inter-appviewer lock
-        try:
-            fd = os.open("/var/run/qubes/appviewer.lock", os.O_RDWR|os.O_CREAT, 0600);
-            fcntl.flock(fd, fcntl.LOCK_EX);
-        except IOError:
-            QMessageBox.warning (None, "Warning!", "Error while accessing Qubes clipboard!")
-            return
-
-        qubes_clipboard = open("/var/run/qubes/qubes_clipboard.bin", 'w')
-        qubes_clipboard.write(clipboard)
-        qubes_clipboard.close()
-            
-        qubes_clip_source = open("/var/run/qubes/qubes_clipboard.bin.source", 'w')
-        qubes_clip_source.write("dom0")
-        qubes_clip_source.close()
-
-        try:
-            fcntl.flock(fd, fcntl.LOCK_UN)
-            os.close(fd)
-        except IOError:
-            QMessageBox.warning (None, "Warning!", "Error while writing to Qubes clipboard!")
-            return
+        copy_text_to_qubes_clipboard(clipboard)
     
             
     def createPopupMenu(self):
@@ -1620,9 +1599,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot('QAction *')
     def show_log(self, action):
         log = str(action.data().toString())
-        
-        cmd = ['kdialog', '--textbox', log, '700', '450', '--title', log]
-        subprocess.Popen(cmd)
+        log_dialog = LogDialog(app, log)
+        log_dialog.exec_()
 
 
     @pyqtSlot('QAction *')

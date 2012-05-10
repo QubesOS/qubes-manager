@@ -44,6 +44,7 @@ cp qubesmanager/global_settings.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubes
 cp qubesmanager/multiselectwidget.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/restore.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/settings.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/log_dialog.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/thread_monitor.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/resources_rc.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/__init__.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
@@ -56,6 +57,7 @@ cp qubesmanager/ui_newappvmdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesm
 cp qubesmanager/ui_newfwruledlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/ui_restoredlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/ui_settingsdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/ui_logdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 
 mkdir -p $RPM_BUILD_ROOT/usr/share/applications
 cp qubes-manager.desktop $RPM_BUILD_ROOT/usr/share/applications
@@ -139,6 +141,9 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitearch}/qubesmanager/ui_settingsdlg.py
 %{python_sitearch}/qubesmanager/ui_settingsdlg.pyc
 %{python_sitearch}/qubesmanager/ui_settingsdlg.pyo
+%{python_sitearch}/qubesmanager/ui_logdlg.py
+%{python_sitearch}/qubesmanager/ui_logdlg.pyc
+%{python_sitearch}/qubesmanager/ui_logdlg.pyo
 
 
 /usr/share/applications/qubes-manager.desktop
