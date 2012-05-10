@@ -44,7 +44,7 @@ from settings import VMSettingsWindow
 from restore import RestoreVMsWindow
 from backup import BackupVMsWindow
 from global_settings import GlobalSettingsWindow
-from log_dialog import LogDialog, copy_text_to_qubes_clipboard
+from log_dialog import LogDialog
 from thread_monitor import *
 
 from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
@@ -1512,11 +1512,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def action_about_qubes_triggered(self):
         QMessageBox.about(self, "About...", "<b>Qubes OS</b><br><br>Release 1.0")
 
-    @pyqtSlot(name='on_action_copy_clipboard_triggered')
-    def action_copy_clipboard_triggered(self):
-        clipboard = app.clipboard().text()
-        copy_text_to_qubes_clipboard(clipboard)
-    
             
     def createPopupMenu(self):
         menu = QMenu()

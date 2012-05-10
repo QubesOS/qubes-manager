@@ -239,7 +239,6 @@
     <addaction name="action_global_settings"/>
     <addaction name="action_backup"/>
     <addaction name="action_restore"/>
-    <addaction name="action_copy_clipboard"/>
    </widget>
    <widget class="QMenu" name="menu_view">
     <property name="title">
@@ -346,7 +345,6 @@
    <addaction name="action_restore"/>
    <addaction name="separator"/>
    <addaction name="action_showallvms"/>
-   <addaction name="action_copy_clipboard"/>
   </widget>
   <action name="action_createvm">
    <property name="icon">
@@ -725,18 +723,6 @@
    </property>
    <property name="toolTip">
     <string>Size on Disk</string>
-   </property>
-  </action>
-  <action name="action_copy_clipboard">
-   <property name="icon">
-    <iconset resource="resources.qrc">
-     <normaloff>:/copy.png</normaloff>:/copy.png</iconset>
-   </property>
-   <property name="text">
-    <string>Copy clipboard to Qubes clipboard</string>
-   </property>
-   <property name="toolTip">
-    <string>Copy Dom0 clipboard to Qubes clipboard</string>
    </property>
   </action>
  </widget>
