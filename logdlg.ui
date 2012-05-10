@@ -48,7 +48,7 @@
         <enum>Qt::TabFocus</enum>
        </property>
        <property name="text">
-        <string>Copy clipboard to Qubes clipboard</string>
+        <string>Copy to Qubes clipboard</string>
        </property>
        <property name="icon">
         <iconset resource="resources.qrc">

@@ -51,14 +51,13 @@ class LogDialog(Ui_LogDialog, QDialog):
 
     def __init_log_text__(self):
         log = open(self.log_path)
-        text = log.read()
+        self.displayed_text = log.read()
         log.close()
-        self.log_text.setText(text)
+        self.log_text.setText(self.displayed_text)
 
 
     def copy_to_qubes_clipboard_triggered(self):
-        clipboard = self.app.clipboard().text()
-        copy_text_to_qubes_clipboard(clipboard)
+        copy_text_to_qubes_clipboard(self.displayed_text)
         
 ########################COPY TEXT TO QUBES CLIPBOARD
 
