@@ -41,6 +41,7 @@ from qubes import qubesutils
 import qubesmanager.resources_rc
 import ui_newappvmdlg
 from ui_mainwindow import *
+from create_new_vm import NewVmDlg
 from settings import VMSettingsWindow
 from restore import RestoreVMsWindow
 from backup import BackupVMsWindow
@@ -607,10 +608,8 @@ class VmRowInTable(object):
         if update_size_on_disk == True:
             self.size_widget.update()
 
-class NewAppVmDlg (QDialog, ui_newappvmdlg.Ui_NewAppVMDlg):
-    def __init__(self, parent = None):
-        super (NewAppVmDlg, self).__init__(parent)
-        self.setupUi(self)
+
+
 
 vm_shutdown_timeout = 15000 # in msec
 
@@ -1067,92 +1066,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     
     @pyqtSlot(name='on_action_createvm_triggered')
     def action_createvm_triggered(self):
-        dialog = NewAppVmDlg()
+        dialog = NewVmDlg(app, self.qvm_collection, trayIcon)
+        dialog.exec_()
 
-        # Theoretically we should be locking for writing here and unlock
-        # only after the VM creation finished. But the code would be more messy...
-        # Instead we lock for writing in the actual worker thread
-
-        self.qvm_collection.lock_db_for_reading()
-        self.qvm_collection.load()
-        self.qvm_collection.unlock_db()
-
-        label_list = QubesVmLabels.values()
-        label_list.sort(key=lambda l: l.index)
-        for (i, label) in enumerate(label_list):
-            dialog.vmlabel.insertItem(i, label.name)
-            dialog.vmlabel.setItemIcon (i, QIcon(label.icon_path))
-
-        template_vm_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_template()]
-
-        default_index = 0
-        for (i, vm) in enumerate(template_vm_list):
-            if vm is self.qvm_collection.get_default_template():
-                default_index = i
-                dialog.template_name.insertItem(i, vm.name + " (default)")
-            else:
-                dialog.template_name.insertItem(i, vm.name)
-        dialog.template_name.setCurrentIndex(default_index)
-
-        dialog.vmname.selectAll()
-        dialog.vmname.setFocus()
-
-        if dialog.exec_():
-            vmname = str(dialog.vmname.text())
-            if self.qvm_collection.get_vm_by_name(vmname) is not None:
-                QMessageBox.warning (None, "Incorrect AppVM Name!", "A VM with the name <b>{0}</b> already exists in the system!".format(vmname))
-                return
-
-            label = label_list[dialog.vmlabel.currentIndex()]
-            template_vm = template_vm_list[dialog.template_name.currentIndex()]
-
-            allow_networking = dialog.allow_networking.isChecked()
-
-            thread_monitor = ThreadMonitor()
-            thread = threading.Thread (target=self.do_create_appvm, args=(vmname, label, template_vm, allow_networking, thread_monitor))
-            thread.daemon = True
-            thread.start()
-
-            progress = QProgressDialog ("Creating new AppVM <b>{0}</b>...".format(vmname), "", 0, 0)
-            progress.setCancelButton(None)
-            progress.setModal(True)
-            progress.show()
-
-            while not thread_monitor.is_finished():
-                app.processEvents()
-                time.sleep (0.1)
-
-            progress.hide()
-
-            if thread_monitor.success:
-                trayIcon.showMessage ("Qubes VM Manager", "VM '{0}' has been created.".format(vmname), msecs=3000)
-            else:
-                QMessageBox.warning (None, "Error creating AppVM!", "ERROR: {0}".format(thread_monitor.error_msg))
-
-
-    def do_create_appvm (self, vmname, label, template_vm, allow_networking, thread_monitor):
-        vm = None
-        try:
-            self.qvm_collection.lock_db_for_writing()
-            self.qvm_collection.load()
-
-            vm = self.qvm_collection.add_new_appvm(vmname, template_vm, label = label)
-            vm.create_on_disk(verbose=False)
-            firewall = vm.get_firewall_conf()
-            firewall["allow"] = allow_networking
-            firewall["allowDns"] = allow_networking
-            vm.write_firewall_conf(firewall)
-            self.qvm_collection.save()
-        except Exception as ex:
-            thread_monitor.set_error_msg (str(ex))
-            if vm:
-                vm.remove_from_disk()
-        finally:
-            self.qvm_collection.unlock_db()
-
-        thread_monitor.set_finished()
-
-
+           
     def get_selected_vm(self):
         #vm selection relies on the VmInfo widget's value used for sorting by VM name
         row_index = self.table.currentRow()
