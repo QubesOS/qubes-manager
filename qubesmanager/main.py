@@ -23,6 +23,7 @@
 import sys
 import os
 import fcntl
+import errno
 import dbus
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -735,6 +736,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.context_menu.addAction(self.action_appmenus)
         self.context_menu.addAction(self.action_editfwrules)
         self.context_menu.addAction(self.action_updatevm)
+        self.context_menu.addAction(self.action_run_command_in_vm)
         self.context_menu.addAction(self.action_set_keyboard_layout)
         self.context_menu.addMenu(self.logs_menu)
         self.context_menu.addMenu(self.blk_menu)
@@ -1040,6 +1042,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.action_appmenus.setEnabled(not vm.is_netvm())
             self.action_editfwrules.setEnabled(vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
             self.action_updatevm.setEnabled(vm.is_updateable() or vm.qid == 0)
+            self.action_run_command_in_vm.setEnabled(vm.qid != 0)
             self.action_set_keyboard_layout.setEnabled(vm.qid != 0 and vm.last_running)
         else:
             self.action_settings.setEnabled(False)
@@ -1051,6 +1054,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.action_appmenus.setEnabled(False)
             self.action_editfwrules.setEnabled(False)
             self.action_updatevm.setEnabled(False)
+            self.action_run_command_in_vm.setEnabled(False)
             self.action_set_keyboard_layout.setEnabled(False)
 
 
@@ -1399,6 +1403,47 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             thread_monitor.set_finished()
             return
         thread_monitor.set_finished()
+
+ 
+    @pyqtSlot(name='on_action_run_command_in_vm_triggered')
+    def action_run_command_in_vm_triggered(self):
+        vm = self.get_selected_vm()
+
+        thread_monitor = ThreadMonitor()
+        thread = threading.Thread (target=self.do_run_command_in_vm, args=(vm, thread_monitor))
+        thread.daemon = True
+        thread.start()
+
+        while not thread_monitor.is_finished():
+            app.processEvents()
+            time.sleep (0.2)
+
+        if not thread_monitor.success:
+            QMessageBox.warning (None, "Error while running command", "Exception while running command:<br>{0}".format(thread_monitor.error_msg))
+
+
+    def do_run_command_in_vm(self, vm, thread_monitor):
+        cmd = ['kdialog', '--title', 'Qubes command entry', '--inputbox', 'Run command in <b>'+vm.name+'</b>:']
+        kdialog = subprocess.Popen(cmd, stdout = subprocess.PIPE)
+        command_to_run = kdialog.stdout.read()
+        command_to_run = "'"+command_to_run.strip()+"'"
+        if command_to_run != "":
+            command_to_run = "qvm-run -a "+ vm.name + " " + command_to_run
+            try:
+                subprocess.check_call(command_to_run, shell=True)
+            except OSError as ex:
+                if ex.errno == errno.EINTR:
+                    pass
+                else:
+                    thread_monitor.set_error_msg(str(ex))
+                    thread_monitor.set_finished()
+            except Exception as ex:
+                thread_monitor.set_error_msg(str(ex))
+                thread_monitor.set_finished()
+        thread_monitor.set_finished()
+               
+
+        
 
  
     @pyqtSlot(name='on_action_set_keyboard_layout_triggered')
