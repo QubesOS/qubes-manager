@@ -108,6 +108,9 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitearch}/qubesmanager/settings.py
 %{python_sitearch}/qubesmanager/settings.pyc
 %{python_sitearch}/qubesmanager/settings.pyo
+%{python_sitearch}/qubesmanager/log_dialog.py
+%{python_sitearch}/qubesmanager/log_dialog.pyc
+%{python_sitearch}/qubesmanager/log_dialog.pyo
 %{python_sitearch}/qubesmanager/thread_monitor.py
 %{python_sitearch}/qubesmanager/thread_monitor.pyc
 %{python_sitearch}/qubesmanager/thread_monitor.pyo
