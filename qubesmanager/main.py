@@ -23,6 +23,7 @@
 import sys
 import os
 import fcntl
+import errno
 import dbus
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -40,10 +41,12 @@ from qubes import qubesutils
 import qubesmanager.resources_rc
 import ui_newappvmdlg
 from ui_mainwindow import *
+from create_new_vm import NewVmDlg
 from settings import VMSettingsWindow
 from restore import RestoreVMsWindow
 from backup import BackupVMsWindow
 from global_settings import GlobalSettingsWindow
+from log_dialog import LogDialog
 from thread_monitor import *
 
 from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
@@ -51,8 +54,8 @@ from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, Pro
 import subprocess
 import time
 from datetime import datetime,timedelta
+from qubes.qubes import updates_stat_file
 
-updates_stat_file = 'last_update.stat'
 qubes_guid_path = '/usr/bin/qubes_guid'
 
 update_suggestion_interval = 14 # 14 days
@@ -458,21 +461,38 @@ class VmUpdateInfoWidget(QWidget):
                  
         self.previous_outdated = outdated
 
-        if vm.is_updateable():
+        if vm.qid == 0:
             update_recommended = self.previous_update_recommended
-            stat_file = vm.dir_path + '/' + updates_stat_file
-            if not os.path.exists(stat_file) or \
-                time.time() - os.path.getmtime(stat_file) > \
-                update_suggestion_interval * 24 * 3600:
-                    update_recommended = True
-            else:
+            #slot for dom0 special treatment 
+            #
+            #
+        elif vm.is_updateable():
+            update_recommended = self.previous_update_recommended
+            stat_file_path = vm.dir_path + '/' + updates_stat_file
+            if not os.path.exists(stat_file_path):
                 update_recommended = False
-                if not self.show_text and self.previous_update_recommended != False:
-                    self.update_status_widget(None)
+            else:
+                if (not hasattr(vm, "updates_stat_file_read_time")) or vm.updates_stat_file_read_time <= os.path.getmtime(stat_file_path):
         
+                        stat_file = open(stat_file_path, "r")
+                        updates = stat_file.read().strip()
+                        stat_file.close()
+                        if updates.isdigit():
+                            updates = int(updates)
+                        else:
+                            updates = 0
+ 
+                        if updates == 0:
+                            update_recommended = False
+                        else:
+                            update_recommended = True
+                        vm.updates_stat_file_read_time = time.time()
+
             if update_recommended and not self.previous_update_recommended:
                 self.update_status_widget("update")
-
+            elif self.previous_update_recommended and not update_recommended:
+                self.update_status_widget(None)
+        
             self.previous_update_recommended = update_recommended
 
 
@@ -482,7 +502,7 @@ class VmUpdateInfoWidget(QWidget):
         if state == "update":
             label_text = "<font color=\"#CCCC00\">Check updates</font>"
             icon_path = ":/update-recommended.png"
-            tooltip_text = "Update recommended."
+            tooltip_text = "Updates pending!"
         elif state == "outdated":
             label_text = "<font color=\"red\">VM outdated</font>"
             icon_path = ":/outdated.png"
@@ -588,10 +608,8 @@ class VmRowInTable(object):
         if update_size_on_disk == True:
             self.size_widget.update()
 
-class NewAppVmDlg (QDialog, ui_newappvmdlg.Ui_NewAppVMDlg):
-    def __init__(self, parent = None):
-        super (NewAppVmDlg, self).__init__(parent)
-        self.setupUi(self)
+
+
 
 vm_shutdown_timeout = 15000 # in msec
 
@@ -717,6 +735,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.context_menu.addAction(self.action_appmenus)
         self.context_menu.addAction(self.action_editfwrules)
         self.context_menu.addAction(self.action_updatevm)
+        self.context_menu.addAction(self.action_run_command_in_vm)
         self.context_menu.addAction(self.action_set_keyboard_layout)
         self.context_menu.addMenu(self.logs_menu)
         self.context_menu.addMenu(self.blk_menu)
@@ -1022,6 +1041,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.action_appmenus.setEnabled(not vm.is_netvm())
             self.action_editfwrules.setEnabled(vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
             self.action_updatevm.setEnabled(vm.is_updateable() or vm.qid == 0)
+            self.action_run_command_in_vm.setEnabled(vm.qid != 0)
             self.action_set_keyboard_layout.setEnabled(vm.qid != 0 and vm.last_running)
         else:
             self.action_settings.setEnabled(False)
@@ -1033,6 +1053,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.action_appmenus.setEnabled(False)
             self.action_editfwrules.setEnabled(False)
             self.action_updatevm.setEnabled(False)
+            self.action_run_command_in_vm.setEnabled(False)
             self.action_set_keyboard_layout.setEnabled(False)
 
 
@@ -1045,92 +1066,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     
     @pyqtSlot(name='on_action_createvm_triggered')
     def action_createvm_triggered(self):
-        dialog = NewAppVmDlg()
+        dialog = NewVmDlg(app, self.qvm_collection, trayIcon)
+        dialog.exec_()
 
-        # Theoretically we should be locking for writing here and unlock
-        # only after the VM creation finished. But the code would be more messy...
-        # Instead we lock for writing in the actual worker thread
-
-        self.qvm_collection.lock_db_for_reading()
-        self.qvm_collection.load()
-        self.qvm_collection.unlock_db()
-
-        label_list = QubesVmLabels.values()
-        label_list.sort(key=lambda l: l.index)
-        for (i, label) in enumerate(label_list):
-            dialog.vmlabel.insertItem(i, label.name)
-            dialog.vmlabel.setItemIcon (i, QIcon(label.icon_path))
-
-        template_vm_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_template()]
-
-        default_index = 0
-        for (i, vm) in enumerate(template_vm_list):
-            if vm is self.qvm_collection.get_default_template():
-                default_index = i
-                dialog.template_name.insertItem(i, vm.name + " (default)")
-            else:
-                dialog.template_name.insertItem(i, vm.name)
-        dialog.template_name.setCurrentIndex(default_index)
-
-        dialog.vmname.selectAll()
-        dialog.vmname.setFocus()
-
-        if dialog.exec_():
-            vmname = str(dialog.vmname.text())
-            if self.qvm_collection.get_vm_by_name(vmname) is not None:
-                QMessageBox.warning (None, "Incorrect AppVM Name!", "A VM with the name <b>{0}</b> already exists in the system!".format(vmname))
-                return
-
-            label = label_list[dialog.vmlabel.currentIndex()]
-            template_vm = template_vm_list[dialog.template_name.currentIndex()]
-
-            allow_networking = dialog.allow_networking.isChecked()
-
-            thread_monitor = ThreadMonitor()
-            thread = threading.Thread (target=self.do_create_appvm, args=(vmname, label, template_vm, allow_networking, thread_monitor))
-            thread.daemon = True
-            thread.start()
-
-            progress = QProgressDialog ("Creating new AppVM <b>{0}</b>...".format(vmname), "", 0, 0)
-            progress.setCancelButton(None)
-            progress.setModal(True)
-            progress.show()
-
-            while not thread_monitor.is_finished():
-                app.processEvents()
-                time.sleep (0.1)
-
-            progress.hide()
-
-            if thread_monitor.success:
-                trayIcon.showMessage ("Qubes VM Manager", "VM '{0}' has been created.".format(vmname), msecs=3000)
-            else:
-                QMessageBox.warning (None, "Error creating AppVM!", "ERROR: {0}".format(thread_monitor.error_msg))
-
-
-    def do_create_appvm (self, vmname, label, template_vm, allow_networking, thread_monitor):
-        vm = None
-        try:
-            self.qvm_collection.lock_db_for_writing()
-            self.qvm_collection.load()
-
-            vm = self.qvm_collection.add_new_appvm(vmname, template_vm, label = label)
-            vm.create_on_disk(verbose=False)
-            firewall = vm.get_firewall_conf()
-            firewall["allow"] = allow_networking
-            firewall["allowDns"] = allow_networking
-            vm.write_firewall_conf(firewall)
-            self.qvm_collection.save()
-        except Exception as ex:
-            thread_monitor.set_error_msg (str(ex))
-            if vm:
-                vm.remove_from_disk()
-        finally:
-            self.qvm_collection.unlock_db()
-
-        thread_monitor.set_finished()
-
-
+           
     def get_selected_vm(self):
         #vm selection relies on the VmInfo widget's value used for sorting by VM name
         row_index = self.table.currentRow()
@@ -1383,6 +1322,47 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         thread_monitor.set_finished()
 
  
+    @pyqtSlot(name='on_action_run_command_in_vm_triggered')
+    def action_run_command_in_vm_triggered(self):
+        vm = self.get_selected_vm()
+
+        thread_monitor = ThreadMonitor()
+        thread = threading.Thread (target=self.do_run_command_in_vm, args=(vm, thread_monitor))
+        thread.daemon = True
+        thread.start()
+
+        while not thread_monitor.is_finished():
+            app.processEvents()
+            time.sleep (0.2)
+
+        if not thread_monitor.success:
+            QMessageBox.warning (None, "Error while running command", "Exception while running command:<br>{0}".format(thread_monitor.error_msg))
+
+
+    def do_run_command_in_vm(self, vm, thread_monitor):
+        cmd = ['kdialog', '--title', 'Qubes command entry', '--inputbox', 'Run command in <b>'+vm.name+'</b>:']
+        kdialog = subprocess.Popen(cmd, stdout = subprocess.PIPE)
+        command_to_run = kdialog.stdout.read()
+        command_to_run = "'"+command_to_run.strip()+"'"
+        if command_to_run != "":
+            command_to_run = "qvm-run -a "+ vm.name + " " + command_to_run
+            try:
+                subprocess.check_call(command_to_run, shell=True)
+            except OSError as ex:
+                if ex.errno == errno.EINTR:
+                    pass
+                else:
+                    thread_monitor.set_error_msg(str(ex))
+                    thread_monitor.set_finished()
+            except Exception as ex:
+                thread_monitor.set_error_msg(str(ex))
+                thread_monitor.set_finished()
+        thread_monitor.set_finished()
+               
+
+        
+
+ 
     @pyqtSlot(name='on_action_set_keyboard_layout_triggered')
     def action_set_keyboard_layout_triggered(self):
         vm = self.get_selected_vm()
@@ -1494,33 +1474,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def action_about_qubes_triggered(self):
         QMessageBox.about(self, "About...", "<b>Qubes OS</b><br><br>Release 1.0")
 
-    @pyqtSlot(name='on_action_copy_clipboard_triggered')
-    def action_copy_clipboard_triggered(self):
-        clipboard = app.clipboard().text()
-
-        #inter-appviewer lock
-        try:
-            fd = os.open("/var/run/qubes/appviewer.lock", os.O_RDWR|os.O_CREAT, 0600);
-            fcntl.flock(fd, fcntl.LOCK_EX);
-        except IOError:
-            QMessageBox.warning (None, "Warning!", "Error while accessing Qubes clipboard!")
-            return
-
-        qubes_clipboard = open("/var/run/qubes/qubes_clipboard.bin", 'w')
-        qubes_clipboard.write(clipboard)
-        qubes_clipboard.close()
-            
-        qubes_clip_source = open("/var/run/qubes/qubes_clipboard.bin.source", 'w')
-        qubes_clip_source.write("dom0")
-        qubes_clip_source.close()
-
-        try:
-            fcntl.flock(fd, fcntl.LOCK_UN)
-            os.close(fd)
-        except IOError:
-            QMessageBox.warning (None, "Warning!", "Error while writing to Qubes clipboard!")
-            return
-    
             
     def createPopupMenu(self):
         menu = QMenu()
@@ -1603,9 +1556,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot('QAction *')
     def show_log(self, action):
         log = str(action.data().toString())
-        
-        cmd = ['kdialog', '--textbox', log, '700', '450', '--title', log]
-        subprocess.Popen(cmd)
+        log_dialog = LogDialog(app, log)
+        log_dialog.exec_()
 
 
     @pyqtSlot('QAction *')

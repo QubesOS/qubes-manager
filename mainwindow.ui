@@ -239,7 +239,6 @@
     <addaction name="action_global_settings"/>
     <addaction name="action_backup"/>
     <addaction name="action_restore"/>
-    <addaction name="action_copy_clipboard"/>
    </widget>
    <widget class="QMenu" name="menu_view">
     <property name="title">
@@ -296,6 +295,7 @@
     <addaction name="action_editfwrules"/>
     <addaction name="action_appmenus"/>
     <addaction name="action_updatevm"/>
+    <addaction name="action_run_command_in_vm"/>
     <addaction name="action_set_keyboard_layout"/>
     <addaction name="separator"/>
     <addaction name="logs_menu"/>
@@ -346,7 +346,6 @@
    <addaction name="action_restore"/>
    <addaction name="separator"/>
    <addaction name="action_showallvms"/>
-   <addaction name="action_copy_clipboard"/>
   </widget>
   <action name="action_createvm">
    <property name="icon">
@@ -727,16 +726,16 @@
     <string>Size on Disk</string>
    </property>
   </action>
-  <action name="action_copy_clipboard">
+  <action name="action_run_command_in_vm">
    <property name="icon">
     <iconset resource="resources.qrc">
-     <normaloff>:/copy.png</normaloff>:/copy.png</iconset>
+     <normaloff>:/run-command.png</normaloff>:/run-command.png</iconset>
    </property>
    <property name="text">
-    <string>Copy clipboard to Qubes clipboard</string>
+    <string>Run command in VM</string>
    </property>
    <property name="toolTip">
-    <string>Copy Dom0 clipboard to Qubes clipboard</string>
+    <string>Run command in the specified VM</string>
    </property>
   </action>
  </widget>
