@@ -45,6 +45,7 @@ cp qubesmanager/multiselectwidget.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qub
 cp qubesmanager/restore.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/settings.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/log_dialog.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/create_new_vm.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/thread_monitor.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/resources_rc.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/__init__.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
@@ -111,6 +112,9 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitearch}/qubesmanager/log_dialog.py
 %{python_sitearch}/qubesmanager/log_dialog.pyc
 %{python_sitearch}/qubesmanager/log_dialog.pyo
+%{python_sitearch}/qubesmanager/create_new_vm.py
+%{python_sitearch}/qubesmanager/create_new_vm.pyc
+%{python_sitearch}/qubesmanager/create_new_vm.pyo
 %{python_sitearch}/qubesmanager/thread_monitor.py
 %{python_sitearch}/qubesmanager/thread_monitor.pyc
 %{python_sitearch}/qubesmanager/thread_monitor.pyo
