@@ -178,14 +178,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         return some_selected_vms_running
 
     def shutdown_all_running_selected(self):
-        names = []
-        vms = []
-        for i in range(self.select_vms_widget.selected_list.count()):
-            item = self.select_vms_widget.selected_list.item(i)
-            if item.vm.is_running() and item.vm.qid != 0:
-                names.append(item.vm.name)
-                vms.append(item.vm)
-
+        (names, vms) = self.get_running_vms()
         if len(vms) == 0:
             return;
 
@@ -197,24 +190,34 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.app.processEvents()
 
         if reply == QMessageBox.Yes:
+            
+            wait_time = 60.0
             for vm in vms:
-                self.shutdown_vm_func(vm)
+                self.shutdown_vm_func(vm, wait_time*1000)
 
             progress = QProgressDialog ("Shutting down VMs <b>{0}</b>...".format(', '.join(names)), "", 0, 0)
             progress.setModal(True)
             progress.show()
 
-            wait_time = 15.0
             wait_for = wait_time
             while self.check_running() and wait_for > 0:
                 self.app.processEvents()
-                time.sleep (0.1)
-                wait_for -= 0.1
+                time.sleep (0.5)
+                wait_for -= 0.5
 
             progress.hide()
 
-            if self.check_running():
-                QMessageBox.information(None, "Strange", "Could not power down the VMs in {0} seconds...".format(wait_time))
+
+    def get_running_vms(self):
+        names = []
+        vms = []
+        for i in range(self.select_vms_widget.selected_list.count()):
+            item = self.select_vms_widget.selected_list.item(i)
+            if item.vm.is_running() and item.vm.qid != 0:
+                names.append(item.vm.name)
+                vms.append(item.vm)
+        return (names, vms)
+
 
 
 

@@ -611,28 +611,28 @@ class VmRowInTable(object):
 
 
 
-vm_shutdown_timeout = 15000 # in msec
+vm_shutdown_timeout = 20000 # in msec
 
 class VmShutdownMonitor(QObject):
-    def __init__(self, vm):
+    def __init__(self, vm, shutdown_time = vm_shutdown_timeout):
         self.vm = vm
+        self.shutdown_time = shutdown_time
 
     def check_if_vm_has_shutdown(self):
         vm = self.vm
         vm_start_time = vm.get_start_time()
-        if not vm.is_running() or (vm_start_time and vm_start_time >= datetime.utcnow() - timedelta(0,vm_shutdown_timeout/1000)):
+        if not vm.is_running() or (vm_start_time and vm_start_time >= datetime.utcnow() - timedelta(0,self.shutdown_time/1000)):
             if vm.is_template():
                 trayIcon.showMessage ("Qubes VM Manager", "You have just modified template '{0}'. You should now restart all the VMs based on it, so they could see the changes.".format(vm.name), msecs=8000)
             return
 
         reply = QMessageBox.question(None, "VM Shutdown",
-                                     "The VM <b>'{0}'</b> hasn't shutdown within the last {1} seconds, do you want to kill it?<br>".format(vm.name, vm_shutdown_timeout/1000),
-                                     "Kill it!", "Wait another {0} seconds...".format(vm_shutdown_timeout/1000))
-
+                                     "The VM <b>'{0}'</b> hasn't shutdown within the last {1} seconds, do you want to kill it?<br>".format(vm.name, self.shutdown_time/1000),
+                                     "Kill it!", "Wait another {0} seconds...".format(self.shutdown_time/1000))
         if reply == 0:
             vm.force_shutdown()
         else:
-            QTimer.singleShot (vm_shutdown_timeout, self.check_if_vm_has_shutdown)
+            QTimer.singleShot (self.shutdown_time, self.check_if_vm_has_shutdown)
 
 
 class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
@@ -1222,7 +1222,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.shutdown_vm(vm)
 
 
-    def shutdown_vm(self, vm):
+    def shutdown_vm(self, vm, shutdown_time = vm_shutdown_timeout):
         try:
             subprocess.check_call (["/usr/sbin/xl", "shutdown", vm.name])
         except Exception as ex:
@@ -1231,8 +1231,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         trayIcon.showMessage ("Qubes VM Manager", "VM '{0}' is shutting down...".format(vm.name), msecs=3000)
 
-        self.shutdown_monitor[vm.qid] = VmShutdownMonitor (vm)
-        QTimer.singleShot (vm_shutdown_timeout, self.shutdown_monitor[vm.qid].check_if_vm_has_shutdown)
+        self.shutdown_monitor[vm.qid] = VmShutdownMonitor (vm, shutdown_time)
+        QTimer.singleShot (shutdown_time, self.shutdown_monitor[vm.qid].check_if_vm_has_shutdown)
 
 
     @pyqtSlot(name='on_action_killvm_triggered')
