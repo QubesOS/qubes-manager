@@ -67,6 +67,7 @@ cp qubes-manager.desktop $RPM_BUILD_ROOT/etc/xdg/autostart/
 
 %post
 update-desktop-database &> /dev/null || :
+killall -1 qubes-manager
 
 %postun
 update-desktop-database &> /dev/null || :

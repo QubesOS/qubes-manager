@@ -22,6 +22,7 @@
 
 import sys
 import os
+import signal
 import fcntl
 import errno
 import dbus
@@ -1825,6 +1826,8 @@ def handle_exception( exc_type, exc_value, exc_traceback ):
     
     msg_box.exec_()
 
+def sighup_handler(signum, frame):
+    os.execl("/usr/bin/qubes-manager")
 
 def main():
 
@@ -1832,13 +1835,17 @@ def main():
     # Avoid starting more than one instance of the app
     lock = QubesDaemonPidfile ("qubes-manager")
     if lock.pidfile_exists():
-        if lock.pidfile_is_stale():
+        if lock.read_pid() == os.getpid():
+            pass
+        elif lock.pidfile_is_stale():
             lock.remove_pidfile()
             print "Removed stale pidfile (has the previous daemon instance crashed?)."
         else:
             exit (0)
 
     lock.create_pidfile()
+
+    signal.signal(signal.SIGHUP, sighup_handler)
 
     global qubes_host
     qubes_host = QubesHost()
