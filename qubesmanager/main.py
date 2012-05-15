@@ -56,6 +56,7 @@ import subprocess
 import time
 from datetime import datetime,timedelta
 from qubes.qubes import updates_stat_file
+qubes_dom0_updates_stat_file = '/var/lib/qubes/updates/dom0-updates-available'
 
 qubes_guid_path = '/usr/bin/qubes_guid'
 
@@ -462,12 +463,17 @@ class VmUpdateInfoWidget(QWidget):
                  
         self.previous_outdated = outdated
 
+        if not vm.is_updateable():
+            return
+
         if vm.qid == 0:
             update_recommended = self.previous_update_recommended
-            #slot for dom0 special treatment 
-            #
-            #
-        elif vm.is_updateable():
+            if os.path.exists(qubes_dom0_updates_stat_file):
+                update_recommended = True
+            else:
+                update_recommended = False
+
+        else:
             update_recommended = self.previous_update_recommended
             stat_file_path = vm.dir_path + '/' + updates_stat_file
             if not os.path.exists(stat_file_path):
@@ -489,12 +495,12 @@ class VmUpdateInfoWidget(QWidget):
                             update_recommended = True
                         vm.updates_stat_file_read_time = time.time()
 
-            if update_recommended and not self.previous_update_recommended:
-                self.update_status_widget("update")
-            elif self.previous_update_recommended and not update_recommended:
-                self.update_status_widget(None)
+        if update_recommended and not self.previous_update_recommended:
+            self.update_status_widget("update")
+        elif self.previous_update_recommended and not update_recommended:
+            self.update_status_widget(None)
         
-            self.previous_update_recommended = update_recommended
+        self.previous_update_recommended = update_recommended
 
 
     def update_status_widget(self, state):
@@ -1304,10 +1310,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         progress.hide()
 
         if vm.qid != 0:    
-            if thread_monitor.success:
-                # gpk-update-viewer was started, don't know if user installs updates, but touch stat file anyway
-                open(vm.dir_path + '/' + updates_stat_file, 'w').close()
-            else:
+            if not thread_monitor.success:
                 QMessageBox.warning (None, "Error VM update!", "ERROR: {0}".format(thread_monitor.error_msg))
 
     def do_update_vm(self, vm, thread_monitor):
