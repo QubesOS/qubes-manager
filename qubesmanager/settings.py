@@ -91,6 +91,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         ###### advanced tab
         self.__init_advanced_tab__()
         self.include_in_balancing.stateChanged.connect(self.include_in_balancing_state_changed)
+	self.connect(self.init_mem, SIGNAL("valueChanged(int)"), self.init_mem_changed)
+	self.connect(self.max_mem_size, SIGNAL("editingFinished()"), self.max_mem_size_changed)
 
         ###### firewall tab
         if self.tabWidget.isTabEnabled(self.tabs_indices["firewall"]):
@@ -361,16 +363,29 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         return msg
 
 
+    def init_mem_changed(self, value):
+	if value > self.max_mem_size.value() and value <= self.max_mem_size.maximum():
+	    self.max_mem_size.setValue(value)
+    
+
+    def max_mem_size_changed(self):
+	if self.max_mem_size.value() < self.init_mem.value():
+            QMessageBox.warning(None, "Warning!", "Max memory can't be lower than initial memory.<br>Setting max memory equaling initial memory.")
+	    self.max_mem_size.setValue(self.init_mem.value())
+	
+
     ######### advanced tab
 
     def __init_advanced_tab__(self):
 
         #mem/cpu
+	qubes_memory = QubesHost().memory_total/1024
+
         self.init_mem.setValue(int(self.vm.memory))
-        self.init_mem.setMaximum(int(self.vm.maxmem))
+        self.init_mem.setMaximum(qubes_memory)
 
         self.max_mem_size.setValue(int(self.vm.maxmem))
-        self.max_mem_size.setMaximum(QubesHost().memory_total/1024)
+        self.max_mem_size.setMaximum(qubes_memory)
 
         self.vcpus.setMinimum(1);
         self.vcpus.setMaximum(QubesHost().no_cpus)
@@ -806,3 +821,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# vim:sw=4:et:

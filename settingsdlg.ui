@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -336,13 +336,13 @@
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
               </property>
               <property name="minimum">
-               <number>256</number>
+               <number>0</number>
               </property>
               <property name="maximum">
-               <number>10000</number>
+               <number>1000000</number>
               </property>
               <property name="singleStep">
-               <number>256</number>
+               <number>50</number>
               </property>
               <property name="value">
                <number>256</number>
@@ -375,13 +375,13 @@
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
               </property>
               <property name="minimum">
-               <number>256</number>
+               <number>0</number>
               </property>
               <property name="maximum">
-               <number>10000</number>
+               <number>10000000</number>
               </property>
               <property name="singleStep">
-               <number>256</number>
+               <number>50</number>
               </property>
               <property name="value">
                <number>400</number>
