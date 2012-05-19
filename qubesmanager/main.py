@@ -1722,7 +1722,7 @@ class QubesTrayIcon(QSystemTrayIcon):
             # Handle the right click normally, i.e. display the context menu
             return
         else:
-            toggle_manager()
+            bring_manager_to_front()
 
     def addActions(self, target, actions):
         for action in actions:
@@ -1773,27 +1773,27 @@ def get_frame_size():
     manager_window.frame_height = h
     return
 
-
 def show_manager():
     manager_window.show()
+    manager_window.set_table_geom_size()
+    manager_window.update_table(True)
 
-def toggle_manager():
+    get_frame_size() 
+    #print manager_window.frame_width, " x ", manager_window.frame_height
+    manager_window.set_table_geom_size()
+
+def bring_manager_to_front():
+    
     if manager_window.isVisible():
-        manager_window.hide()
-    else:
-        manager_window.show()
-        manager_window.set_table_geom_size()
-        manager_window.update_table(True)
+        subprocess.check_call(['wmctrl', '-R', str(manager_window.windowTitle())])
 
-        get_frame_size() 
-        print manager_window.frame_width, " x ", manager_window.frame_height
-        manager_window.set_table_geom_size()
+    else:
+        show_manager()
 
 
 def exit_app():
     notifier.stop()
     app.exit()
-
 
 # Bases on the original code by:
 # Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
