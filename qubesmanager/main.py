@@ -1218,6 +1218,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         vm = self.get_selected_vm()
         assert vm.is_running()
 
+        self.blk_manager.check_if_serves_as_backend(vm)
+
         reply = QMessageBox.question(None, "VM Shutdown Confirmation",
                                      "Are you sure you want to power down the VM <b>'{0}'</b>?<br>"
                                      "<small>This will shutdown all the running applications within this VM.</small>".format(vm.name),
@@ -1554,7 +1556,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
             if self.blk_menu.isEmpty():
                 self.blk_menu.setEnabled(False)
- 
+
         self.context_menu.exec_(self.table.mapToGlobal(point))
 
     @pyqtSlot('QAction *')
@@ -1576,7 +1578,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.blk_manager.attach_device(vm, dev)
         self.blk_manager.blk_lock.release()
 
-
+  
 class QubesBlockDevicesManager():
     def __init__(self, qvm_collection):
         self.qvm_collection = qvm_collection
@@ -1689,6 +1691,19 @@ class QubesBlockDevicesManager():
         vm_xid = self.attached_devs[dev_name]['attached_to']['xid']
         trayIcon.showMessage ("Qubes VM Manager", "{0} - detaching {1}".format(vm.name, dev_name), msecs=3000)
         qubesutils.block_detach(None, dev_id, vm_xid)
+                
+    def check_if_serves_as_backend(self, vm):
+        serves_for = []
+        for d in self.attached_devs:
+            if self.attached_devs[d]['backend_name'] == vm.name:
+                serves_for.append((self.attached_devs[d]['dev'], self.attached_devs[d]['attached_to']['vm']))
+
+        if len(serves_for) > 0:
+            msg = "VM <b>" + vm.name + "</b> attaches block devices to other VMs: "
+            msg += ', '.join(["<b>"+v+"</b>("+d+")" for (d,v) in serves_for ])
+            msg += ".<br><br> Shutting the VM down will dettach the devices from them."
+
+            QMessageBox.warning (None, "Warning!", msg)
 
 
 class QubesTrayIcon(QSystemTrayIcon):

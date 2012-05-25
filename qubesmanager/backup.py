@@ -182,6 +182,9 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         if len(vms) == 0:
             return;
 
+        for vm in vms:
+            self.blk_manager.check_if_serves_as_backend(vm)
+
         reply = QMessageBox.question(None, "VM Shutdown Confirmation",
                                      "Are you sure you want to power down the following VMs: <b>{0}</b>?<br>"
                                      "<small>This will shutdown all the running applications within them.</small>".format(', '.join(names)),
