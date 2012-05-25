@@ -1185,7 +1185,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         if thread_monitor.success:
             trayIcon.showMessage ("Qubes VM Manager", "VM '{0}' has been started.".format(vm.name), msecs=3000)
         else:
-            QMessageBox.warning (None, "Error starting VM!", "ERROR: {0}".format(thread_monitor.error_msg))
+            trayIcon.showMessage ("Qubes VM Manager", "Error starting VM <b>'{0}'</b>: {1}".format(vm.name, thread_monitor.error_msg ), msecs=3000)
 
     def do_start_vm(self, vm, thread_monitor):
         try:
