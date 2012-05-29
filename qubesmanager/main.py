@@ -690,6 +690,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.screen_number = -1
         self.screen_changed = False
 
+        self.running_vms_count = 0
+
         self.frame_width = 0
         self.frame_height = 0
 
@@ -719,7 +721,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.action_mem_graph.setChecked(False)
         self.table.setColumnHidden( self.columns_indices["Size"], True)
         self.action_size_on_disk.setChecked(False)
-
 
         self.table.setColumnWidth(self.columns_indices["State"], 80)
         self.table.setColumnWidth(self.columns_indices["Name"], 150)
@@ -758,14 +759,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.table.setContentsMargins(0,0,0,0)
         self.centralwidget.layout().setContentsMargins(0,0,0,0)
         self.layout().setContentsMargins(0,0,0,0)
-
-        #self.action_toolbar = QAction("Show tool bar", None)
-        #self.action_toolbar.setCheckable(True)
-        #self.action_toolbar.setChecked(True)
-        #self.action_menubar = QAction("Show menu bar", None)
-        #self.action_menubar.setCheckable(True)
-        #self.action_menubar.setChecked(True)
-        
+    
         self.connect(self.action_menubar, SIGNAL("toggled(bool)"), self.showhide_menubar)
         self.connect(self.action_toolbar, SIGNAL("toggled(bool)"), self.showhide_toolbar)
 
@@ -810,7 +804,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             H += self.table.horizontalScrollBar().height()
         default_rows = int(available_space/self.row_height)
 
-        n = self.table.rowCount();
+        if self.show_inactive_vms:
+            n = self.table.rowCount()
+        else:
+            n = self.running_vms_count
  
         if n > default_rows:
             H += default_rows*self.row_height
@@ -849,51 +846,34 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.qvm_collection.load()
         self.qvm_collection.unlock_db()
 
+        running_count = 0
+
         vms_list = [vm for vm in self.qvm_collection.values()]
         for vm in vms_list:
             vm.last_power_state = vm.get_power_state()
             vm.last_running = vm.last_power_state in ["Running", "Transient"]
+            if vm.last_running:
+                running_count += 1
 
-        no_vms = len (vms_list)
-        vms_to_display = []
+        self.running_vms_count = running_count
 
-        # First, the NetVMs...
-        for netvm in vms_list:
-            if netvm.is_netvm():
-                vms_to_display.append (netvm)
-
-        # Now, the templates...
-        for tvm in vms_list:
-            if tvm.is_template():
-                vms_to_display.append (tvm)
-
-        label_list = QubesVmLabels.values()
-        label_list.sort(key=lambda l: l.index)
-       
- 
-        for label in [label.name for label in label_list]:
-            for appvm in [vm for vm in vms_list if ((vm.is_appvm() or vm.is_disposablevm()) and vm.label.name == label)]:
-                vms_to_display.append(appvm)
-
-        assert len(vms_to_display) == no_vms
-        return vms_to_display
+        return vms_list
 
     def fill_table(self):
         self.table.setSortingEnabled(False)
         self.table.clearContents()
         vms_list = self.get_vms_list()
         self.table.setRowCount(len(vms_list))
-
+    
         vms_in_table = {}
 
         row_no = 0
         for vm in vms_list:
-            if (not self.show_inactive_vms) and (not vm.last_running):
-                continue
             if vm.internal:
                 continue
             vm_row = VmRowInTable (vm, row_no, self.table, self.blk_manager)
             vms_in_table[vm.qid] = vm_row
+    
             row_no += 1
 
         self.table.setRowCount(row_no)
@@ -901,6 +881,28 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.vms_in_table = vms_in_table
         self.reload_table = False
         self.table.setSortingEnabled(True)
+
+        if not self.show_inactive_vms:
+            self.showhide_inactive_vms(True)
+            self.set_table_geom_size()
+            self.showhide_inactive_vms(self.show_inactive_vms)
+            self.set_table_geom_size()
+
+    def showhide_inactive_vms(self, show_inactive):
+        if show_inactive:
+            row_no = 0
+            while row_no < self.table.rowCount():
+                self.table.setRowHidden(row_no, False)
+                row_no += 1
+        else:
+            row_no = 0
+            while row_no < self.table.rowCount():
+                widget = self.table.cellWidget(row_no, self.columns_indices["State"])
+                running = widget.vm.last_running
+                if not running:
+                    self.table.setRowHidden(row_no, True)
+                row_no += 1
+
         
     def mark_table_for_update(self):
         self.reload_table = True
@@ -908,15 +910,21 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     # When calling update_table() directly, always use out_of_schedule=True!
     def update_table(self, out_of_schedule=False):
 
-        update_devs = self.update_block_devices() or out_of_schedule
+        update_devs = self.update_block_devices() or out_of_schedule:
         if manager_window.isVisible():
             some_vms_have_changed_power_state = False
             for vm in self.vms_list:
                 state = vm.get_power_state()
                 if vm.last_power_state != state:
+                    prev_running = vm.last_running
                     vm.last_power_state = state
                     vm.last_running = (state in ["Running", "Transient"])
-                    some_vms_have_changed_power_state = True
+                    if not prev_running and vm.last_running:
+                        self.running_vms_count += 1
+                        some_vms_have_changed_power_state = True
+                    elif prev_running and not vm.last_running:
+                        self.running_vms_count -= 1
+                        some_vms_have_changed_power_state = True
 
             reload_table = self.reload_table
 
@@ -924,12 +932,14 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 reload_table = True
                 self.screen_changed = False
 
-            
-            if reload_table or ((not self.show_inactive_vms) and some_vms_have_changed_power_state): 
+            if reload_table:
                 self.fill_table()
-                self.set_table_geom_size()
                 update_devs=True
 
+            if (not self.show_inactive_vms) and some_vms_have_changed_power_state:
+                self.showhide_inactive_vms(True)
+                self.showhide_inactive_vms(False)
+                self.set_table_geom_size()
 
             if self.sort_by_state != None and some_vms_have_changed_power_state:
                 self.table.sortItems(self.columns_indices["State"], self.sort_by_state)
@@ -1378,8 +1388,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot(name='on_action_showallvms_triggered')
     def action_showallvms_triggered(self):
         self.show_inactive_vms = self.action_showallvms.isChecked()
-        self.mark_table_for_update()
-        self.update_table(out_of_schedule = True)
+
+        self.showhide_inactive_vms(self.show_inactive_vms)
         self.set_table_geom_size()
 
     @pyqtSlot(name='on_action_editfwrules_triggered')
@@ -1791,7 +1801,6 @@ def get_frame_size():
 def show_manager():
     manager_window.show()
     manager_window.set_table_geom_size()
-    manager_window.update_table(True)
 
     get_frame_size() 
     #print manager_window.frame_width, " x ", manager_window.frame_height
