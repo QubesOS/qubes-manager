@@ -910,7 +910,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     # When calling update_table() directly, always use out_of_schedule=True!
     def update_table(self, out_of_schedule=False):
 
-        update_devs = self.update_block_devices() or out_of_schedule:
+        update_devs = self.update_block_devices() or out_of_schedule
         if manager_window.isVisible():
             some_vms_have_changed_power_state = False
             for vm in self.vms_list:
