@@ -170,7 +170,7 @@ class VmLabelWidget(VmIconWidget):
 class VmNameItem (QTableWidgetItem):
     def __init__(self, vm):
         super(VmNameItem, self).__init__()
-
+        self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
         self.setText(vm.name)
         self.setTextAlignment(Qt.AlignVCenter)
         self.qid = vm.qid
@@ -259,7 +259,8 @@ class VmInfoWidget (QWidget):
 class VmTemplateItem (QTableWidgetItem):
     def __init__(self, vm):
         super(VmTemplateItem, self).__init__()
-        
+        self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+
         if vm.template is not None:
             self.setText(vm.template.name)
         else:
@@ -285,6 +286,7 @@ class VmTemplateItem (QTableWidgetItem):
 class VmNetvmItem (QTableWidgetItem):
     def __init__(self, vm):
         super(VmNetvmItem, self).__init__()
+        self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
 
         if vm.is_netvm() and not vm.is_proxyvm():
             self.setText("n/a")
@@ -535,6 +537,7 @@ class VmUpdateInfoWidget(QWidget):
 class VmSizeOnDiskItem (QTableWidgetItem):
     def __init__(self, vm):
         super(VmSizeOnDiskItem, self).__init__()
+        self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
         
         self.vm = vm
         self.value = 0
