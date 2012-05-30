@@ -605,7 +605,7 @@ class VmRowInTable(object):
         table.setItem(row_no,  VmManagerWindow.columns_indices['Size'], self.size_widget)
 
 
-    def update(self, counter, blk_visible = None, cpu_load = None, update_size_on_disk = False):
+    def update(self, blk_visible = None, cpu_load = None, update_size_on_disk = False):
         self.info_widget.update_vm_state(self.vm, blk_visible)
         if cpu_load is not None:
             self.cpu_usage_widget.update_load(self.vm, cpu_load)
@@ -911,6 +911,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def update_table(self, out_of_schedule=False):
 
         update_devs = self.update_block_devices() or out_of_schedule
+        reload_table = self.reload_table
+
         if manager_window.isVisible():
             some_vms_have_changed_power_state = False
             for vm in self.vms_list:
@@ -926,7 +928,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         self.running_vms_count -= 1
                         some_vms_have_changed_power_state = True
 
-            reload_table = self.reload_table
 
             if self.screen_changed == True:
                 reload_table = True
@@ -953,7 +954,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                     rows_with_blk.append( self.blk_manager.attached_devs[d]['attached_to']['vm'])
                 self.blk_manager.blk_lock.release()
 
-            if self.counter % 60 == 0 or out_of_schedule:
+            if (not self.table.isColumnHidden(self.columns_indices['Size']) ) and self.counter % 60 == 0 or out_of_schedule:
                 self.update_size_on_disk = True
 
             if self.counter % 3 == 0 or out_of_schedule:
@@ -974,7 +975,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         else:
                             blk_visible = False
                     
-                    vm_row.update(self.counter, blk_visible=blk_visible, cpu_load = cur_cpu_load, update_size_on_disk = self.update_size_on_disk)
+                    vm_row.update(blk_visible=blk_visible, cpu_load = cur_cpu_load, update_size_on_disk = self.update_size_on_disk)
 
             else:
                 for vm_row in self.vms_in_table.values():
@@ -984,7 +985,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         else:
                             blk_visible = False
 
-                    vm_row.update(self.counter, blk_visible=blk_visible, update_size_on_disk = self.update_size_on_disk)
+                    vm_row.update(blk_visible=blk_visible, update_size_on_disk = self.update_size_on_disk)
 
             if self.sort_by_cpu != None:
                 self.table.sortItems(self.columns_indices["CPU"], self.sort_by_cpu)
