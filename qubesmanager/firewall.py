@@ -267,14 +267,11 @@ class QubesFirewallRulesModel(QAbstractItemModel):
         if self.fw_changed:
             self.__vm.write_firewall_conf(conf)
 
-            qvm_collection = QubesVmCollection()
-            qvm_collection.lock_db_for_reading()
-            qvm_collection.load()
-            qvm_collection.unlock_db()
-
-            for vm in qvm_collection.values():
-                if vm.is_proxyvm():
-                    vm.write_iptables_xenstore_entry()
+            if self.__vm.is_running():
+                vm = self.__vm.netvm
+                while vm is not None:
+                    if vm.is_proxyvm() and vm.is_running():
+                        vm.write_iptables_xenstore_entry()
 
 
     def index(self, row, column, parent=QModelIndex()):
