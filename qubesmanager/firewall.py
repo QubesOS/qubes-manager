@@ -230,6 +230,7 @@ class QubesFirewallRulesModel(QAbstractItemModel):
         self.allow = conf["allow"]
         self.allowDns = conf["allowDns"]
         self.allowIcmp = conf["allowIcmp"]
+        self.allowYumProxy = conf["allowYumProxy"]
 
         for rule in conf["rules"]:
             self.appendChild(QubesFirewallRuleItem(
@@ -239,15 +240,16 @@ class QubesFirewallRulesModel(QAbstractItemModel):
     def get_vm_name(self):
         return self.__vm.name
 
-    def apply_rules(self, allow, dns, icmp):
+    def apply_rules(self, allow, dns, icmp, yumproxy):
         assert self.__vm is not None
 
-        if(self.allow != allow or self.allowDns != dns or self.allowIcmp != icmp):
+        if(self.allow != allow or self.allowDns != dns or self.allowIcmp != icmp or self.allowYumProxy != yumproxy):
             self.fw_changed = True
 
         conf = { "allow": allow,
                 "allowDns": dns,
                 "allowIcmp": icmp,
+                "allowYumProxy": yumproxy,
                 "rules": list()
             }
 

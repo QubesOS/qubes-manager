@@ -167,7 +167,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.qvm_collection.unlock_db()
 
         if self.tabWidget.isTabEnabled(self.tabs_indices["firewall"]):
-            self.fw_model.apply_rules(self.policyAllowRadioButton.isChecked(), self.dnsCheckBox.isChecked(), self.icmpCheckBox.isChecked())
+            self.fw_model.apply_rules(self.policyAllowRadioButton.isChecked(), self.dnsCheckBox.isChecked(), self.icmpCheckBox.isChecked(), self.yumproxyCheckBox.isChecked())
 
         if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
             self.AppListManager.save_appmenu_select_changes()
@@ -642,6 +642,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.set_allow(model.allow)
         self.dnsCheckBox.setChecked(model.allowDns)
         self.icmpCheckBox.setChecked(model.allowIcmp)
+        self.yumproxyCheckBox.setChecked(model.allowYumProxy)
 
     def set_allow(self, allow):
         self.policyAllowRadioButton.setChecked(allow)
