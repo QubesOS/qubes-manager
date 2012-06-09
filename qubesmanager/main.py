@@ -1805,6 +1805,8 @@ def get_frame_size():
 def show_manager():
     manager_window.show()
     manager_window.set_table_geom_size()
+    manager_window.repaint()
+    app.processEvents()
 
     get_frame_size() 
     #print manager_window.frame_width, " x ", manager_window.frame_height
