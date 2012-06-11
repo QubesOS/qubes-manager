@@ -126,6 +126,7 @@ def dev_combobox_activated(dialog, idx):
             else:       # originally attached to another domain, eg. usbvm
                 #attach it to dom0, then treat it as an attached device
                 dialog.blk_manager.attach_device(dialog.vm, dev_name)
+                dialog.blk_manager.update()
 
         if dev_name in dialog.blk_manager.attached_devs:       #is attached to dom0
             assert dialog.blk_manager.attached_devs[dev_name]['attached_to']['vm'] == dialog.vm.name
