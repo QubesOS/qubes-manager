@@ -143,6 +143,8 @@ def dev_combobox_activated(dialog, idx):
                 return
                 
     dialog.prev_dev_idx = idx
+    # Initialize path with root of mounted device
+    dialog.dir_line_edit.setText(dialog.dev_mount_path)
     dialog.select_dir_page.emit(SIGNAL("completeChanged()"))
 
                    
