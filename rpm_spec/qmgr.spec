@@ -50,7 +50,6 @@ cp qubesmanager/thread_monitor.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesm
 cp qubesmanager/resources_rc.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/__init__.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/ui_backupdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/ui_editfwrulesdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/ui_globalsettingsdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/ui_mainwindow.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/ui_multiselectwidget.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
@@ -125,9 +124,6 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitearch}/qubesmanager/ui_backupdlg.py
 %{python_sitearch}/qubesmanager/ui_backupdlg.pyc
 %{python_sitearch}/qubesmanager/ui_backupdlg.pyo
-%{python_sitearch}/qubesmanager/ui_editfwrulesdlg.py
-%{python_sitearch}/qubesmanager/ui_editfwrulesdlg.pyc
-%{python_sitearch}/qubesmanager/ui_editfwrulesdlg.pyo
 %{python_sitearch}/qubesmanager/ui_globalsettingsdlg.py
 %{python_sitearch}/qubesmanager/ui_globalsettingsdlg.pyc
 %{python_sitearch}/qubesmanager/ui_globalsettingsdlg.pyo
