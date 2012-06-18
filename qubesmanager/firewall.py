@@ -272,7 +272,7 @@ class QubesFirewallRulesModel(QAbstractItemModel):
                 while vm is not None:
                     if vm.is_proxyvm() and vm.is_running():
                         vm.write_iptables_xenstore_entry()
-
+                    vm = vm.netvm
 
     def index(self, row, column, parent=QModelIndex()):
         if not self.hasIndex(row, column, parent):
