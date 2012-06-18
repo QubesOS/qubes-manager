@@ -91,8 +91,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         ###### advanced tab
         self.__init_advanced_tab__()
         self.include_in_balancing.stateChanged.connect(self.include_in_balancing_state_changed)
-	self.connect(self.init_mem, SIGNAL("valueChanged(int)"), self.init_mem_changed)
-	self.connect(self.max_mem_size, SIGNAL("editingFinished()"), self.max_mem_size_changed)
+        self.connect(self.init_mem, SIGNAL("valueChanged(int)"), self.init_mem_changed)
+        self.connect(self.max_mem_size, SIGNAL("editingFinished()"), self.max_mem_size_changed)
 
         ###### firewall tab
         if self.tabWidget.isTabEnabled(self.tabs_indices["firewall"]):
