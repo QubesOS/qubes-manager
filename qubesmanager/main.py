@@ -1053,7 +1053,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         if vm != None:
             # Update available actions:
-            self.action_settings.setEnabled(True)
+            self.action_settings.setEnabled(vm.qid != 0)
             self.action_removevm.setEnabled(not vm.installed_by_rpm and not (vm.last_running))
             self.action_resumevm.setEnabled(not vm.last_running)
             self.action_pausevm.setEnabled(vm.last_running and vm.qid != 0)
