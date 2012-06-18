@@ -64,6 +64,8 @@ def umount_device(dev_mount_path):
             pumount_cmd = ["pumount", "--luks-force", dev_mount_path]
             res = subprocess.check_call(pumount_cmd)
             if res == 0:
+                if dev_mount_path.startswith('/media/backup'):
+                    os.rmdir(dev_mount_path)
                 dev_mount_path = None
                 return dev_mount_path
         except Exception as ex:
