@@ -885,9 +885,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.reload_table = False
         self.table.setSortingEnabled(True)
 
+        self.showhide_inactive_vms(True)
+        self.set_table_geom_size()
         if not self.show_inactive_vms:
-            self.showhide_inactive_vms(True)
-            self.set_table_geom_size()
             self.showhide_inactive_vms(self.show_inactive_vms)
             self.set_table_geom_size()
 
