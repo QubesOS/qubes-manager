@@ -1332,7 +1332,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def do_update_vm(self, vm, thread_monitor):
         try:
             if vm.qid == 0:
-                subprocess.check_call (["/usr/bin/qubes-dom0-update", "--gui"])
+                subprocess.check_call (["/usr/bin/qubes-dom0-update", "--clean", "--gui"])
             else:
                 vm.run("user:gpk-update-viewer", verbose=False, autostart=True)
         except Exception as ex:
