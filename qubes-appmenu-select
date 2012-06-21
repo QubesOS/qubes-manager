@@ -1,5 +1,0 @@
-#!/usr/bin/python2.6
-import qubesmanager.appmenu_select
-
-qubesmanager.appmenu_select.main()
-
