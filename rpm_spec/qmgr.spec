@@ -29,7 +29,7 @@ python -O -m compileall qubesmanager
 %install
 mkdir -p $RPM_BUILD_ROOT/usr/bin/
 cp qubes-manager $RPM_BUILD_ROOT/usr/bin
-cp qubes-appmenu-select $RPM_BUILD_ROOT/usr/bin
+cp qubes-vm-settings $RPM_BUILD_ROOT/usr/bin
 
 mkdir -p $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 cp qubesmanager/mount_for_backup.sh $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
@@ -77,7 +77,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 /usr/bin/qubes-manager
-/usr/bin/qubes-appmenu-select
+/usr/bin/qubes-vm-settings
 /usr/libexec/qubes-manager/mount_for_backup.sh
 %{python_sitearch}/qubesmanager/__init__.py
 %{python_sitearch}/qubesmanager/__init__.pyo
