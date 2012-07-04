@@ -1152,7 +1152,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.qvm_collection.lock_db_for_reading()
         self.qvm_collection.load()
         self.qvm_collection.unlock_db()
- 
+        vm = self.qvm_collection[vm.qid]
+
         if vm.is_template():
             dependent_vms = self.qvm_collection.get_vms_based_on(vm.qid)
             if len(dependent_vms) > 0:
@@ -1196,6 +1197,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         try:
             self.qvm_collection.lock_db_for_writing()
             self.qvm_collection.load()
+            vm = self.qvm_collection[vm.qid]
 
             #TODO: the following two conditions should really be checked by qvm_collection.pop() overload...
             if vm.is_template() and self.qvm_collection.default_template_qid == vm.qid:
