@@ -240,10 +240,12 @@ class VmInfoWidget (QWidget):
 
         self.on_icon = VmStatusIcon(vm)
         self.upd_info = VmUpdateInfoWidget(vm, show_text=False)
+        self.error_icon = VmIconWidget(":/warning.png")
         self.blk_icon = VmIconWidget(":/mount.png")
 
         layout.addWidget(self.on_icon)
         layout.addWidget(self.upd_info)
+        layout.addWidget(self.error_icon)
         layout.addItem(QSpacerItem(0, 10, QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding))
         layout.addWidget(self.blk_icon)
 
@@ -251,6 +253,7 @@ class VmInfoWidget (QWidget):
         self.setLayout(layout)
 
         self.blk_icon.setVisible(False)
+        self.error_icon.setVisible(False)
 
         self.tableItem = self.VmInfoItem(self.upd_info.tableItem, vm)
 
@@ -259,6 +262,8 @@ class VmInfoWidget (QWidget):
         self.upd_info.update_outdated(vm)
         if blk_visible != None:
             self.blk_icon.setVisible(blk_visible)
+        self.error_icon.setToolTip(vm.error_msg)
+        self.error_icon.setVisible(vm.error_msg is not None)
 
 
 class VmTemplateItem (QTableWidgetItem):
@@ -700,6 +705,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         self.running_vms_count = 0
 
+        self.vm_errors = {}
+
         self.frame_width = 0
         self.frame_height = 0
 
@@ -862,6 +869,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             vm.last_running = vm.last_power_state in ["Running", "Transient"]
             if vm.last_running:
                 running_count += 1
+            vm.error_msg = self.vm_errors[vm.qid] if vm.qid in self.vm_errors else None
 
         self.running_vms_count = running_count
 
@@ -932,6 +940,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                     if not prev_running and vm.last_running:
                         self.running_vms_count += 1
                         some_vms_have_changed_power_state = True
+                        # Clear error state when VM just started
+                        self.clear_error(vm.qid)
                     elif prev_running and not vm.last_running:
                         self.running_vms_count -= 1
                         some_vms_have_changed_power_state = True
@@ -1089,7 +1099,27 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.hide()
             event.ignore()
 
-    
+
+    def set_error(self, qid, message):
+        for vm in self.vms_list:
+            if vm.qid == qid:
+                vm.error_msg = message
+        # Store error in separate dict to make it immune to VM list reload
+        self.vm_errors[qid] = message
+
+    def clear_error(self, qid):
+        self.vm_errors.pop(qid, None)
+        for vm in self.vms_list:
+            if vm.qid == qid:
+                vm.error_msg = None
+
+    def clear_error_exact(self, qid, message):
+        for vm in self.vms_list:
+            if vm.qid == qid:
+                if vm.error_msg == message:
+                    vm.error_msg = None
+                    self.vm_errors.pop(qid, None)
+
     @pyqtSlot(name='on_action_createvm_triggered')
     def action_createvm_triggered(self):
         dialog = NewVmDlg(app, self.qvm_collection, trayIcon)
@@ -1205,6 +1235,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             trayIcon.showMessage ("VM '{0}' has been started.".format(vm.name), msecs=3000)
         else:
             trayIcon.showMessage ("Error starting VM <b>'{0}'</b>: {1}".format(vm.name, thread_monitor.error_msg ), msecs=3000)
+            self.set_error(vm.qid, "Error starting VM: %s" % thread_monitor.error_msg)
 
     def do_start_vm(self, vm, thread_monitor):
         try:
