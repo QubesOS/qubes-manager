@@ -1373,7 +1373,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             if vm.qid == 0:
                 subprocess.check_call (["/usr/bin/qubes-dom0-update", "--clean", "--gui"])
             else:
-                vm.run("user:gpk-update-viewer", verbose=False, autostart=True)
+                vm.run("user:gpk-update-viewer", verbose=False, autostart=True,
+                        notify_function=lambda lvl, msg: trayIcon.showMessage(msg, msecs=3000) )
         except Exception as ex:
             thread_monitor.set_error_msg(str(ex))
             thread_monitor.set_finished()
@@ -1402,31 +1403,19 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         cmd = ['kdialog', '--title', 'Qubes command entry', '--inputbox', 'Run command in <b>'+vm.name+'</b>:']
         kdialog = subprocess.Popen(cmd, stdout = subprocess.PIPE)
         command_to_run = kdialog.stdout.read()
-        command_to_run = "'"+command_to_run.strip()+"'"
+        command_to_run = command_to_run.strip()
         if command_to_run != "":
-            command_to_run = "qvm-run -a "+ vm.name + " " + command_to_run
             try:
-                subprocess.check_call(command_to_run, shell=True)
-            except OSError as ex:
-                if ex.errno == errno.EINTR:
-                    pass
-                else:
-                    thread_monitor.set_error_msg(str(ex))
-                    thread_monitor.set_finished()
+                vm.run("user:" + command_to_run, verbose=False, autostart=True,
+                        notify_function=lambda lvl, msg: trayIcon.showMessage(msg, msecs=3000) )
             except Exception as ex:
                 thread_monitor.set_error_msg(str(ex))
-                thread_monitor.set_finished()
         thread_monitor.set_finished()
-               
 
-        
-
- 
     @pyqtSlot(name='on_action_set_keyboard_layout_triggered')
     def action_set_keyboard_layout_triggered(self):
         vm = self.get_selected_vm()
-        subprocess.Popen( ['qvm-run', vm.name, 'qubes-change-keyboard-layout'])
-
+        vm.run('user:qubes-change-keyboard-layout', verbose = False)
 
     @pyqtSlot(name='on_action_showallvms_triggered')
     def action_showallvms_triggered(self):
