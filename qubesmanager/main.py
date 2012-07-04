@@ -94,15 +94,15 @@ class VmIconWidget (QWidget):
 
 
 class VmTypeWidget(VmIconWidget):
-    
+
     class VmTypeItem(QTableWidgetItem):
         def __init__(self, value):
             super(VmTypeWidget.VmTypeItem, self).__init__()
             self.value = value
 
         def set_value(self, value):
-            self.value = value            
-        
+            self.value = value
+
         def __lt__(self, other):
             return self.value < other.value
 
@@ -138,15 +138,15 @@ class VmTypeWidget(VmIconWidget):
 
 
 class VmLabelWidget(VmIconWidget):
-    
+
     class VmLabelItem(QTableWidgetItem):
         def __init__(self, value):
             super(VmLabelWidget.VmLabelItem, self).__init__()
             self.value = value
 
         def set_value(self, value):
-            self.value = value            
-        
+            self.value = value
+
         def __lt__(self, other):
             return self.value < other.value
 
@@ -165,7 +165,7 @@ class VmLabelWidget(VmIconWidget):
             self.value = vm.label.index
             return vm.label.icon_path
 
-        
+
 
 class VmNameItem (QTableWidgetItem):
     def __init__(self, vm):
@@ -174,7 +174,7 @@ class VmNameItem (QTableWidgetItem):
         self.setText(vm.name)
         self.setTextAlignment(Qt.AlignVCenter)
         self.qid = vm.qid
-        
+
 
 class VmStatusIcon(QLabel):
     def __init__(self, vm, parent=None):
@@ -210,7 +210,7 @@ class VmInfoWidget (QWidget):
             super(VmInfoWidget.VmInfoItem, self).__init__()
             self.upd_info_item = upd_info_item
             self.vm = vm
-        
+
         def __lt__(self, other):
             self_val = self.upd_info_item.value
             other_val = other.upd_info_item.value
@@ -226,7 +226,7 @@ class VmInfoWidget (QWidget):
                 return (self_val) > (other_val)
             else:
                 #it would be strange if this happened
-                return 
+                return
 
     def __init__(self, vm, parent = None):
         super (VmInfoWidget, self).__init__(parent)
@@ -306,14 +306,14 @@ class VmUsageBarWidget (QWidget):
             self.value = value
 
         def set_value(self, value):
-            self.value = value            
-        
+            self.value = value
+
         def __lt__(self, other):
             return int(self.value) < int(other.value)
 
     def __init__(self, min, max, format, update_func, vm, load, hue=210, parent = None):
         super (VmUsageBarWidget, self).__init__(parent)
-        
+
 
         self.min = min
         self.max = max
@@ -347,23 +347,23 @@ class VmUsageBarWidget (QWidget):
 
         self.update_load(vm, load)
 
-    
-        
+
+
     def update_load(self, vm, load):
         self.value = self.update_func(vm, load)
         self.widget.setValue(self.value)
         self.tableItem.set_value(self.value)
 
 class ChartWidget (QWidget):
-    
+
     class ChartItem (QTableWidgetItem):
         def __init__(self, value):
             super(ChartWidget.ChartItem, self).__init__()
             self.value = value
 
         def set_value(self, value):
-            self.value = value            
-        
+            self.value = value
+
         def __lt__(self, other):
             return self.value < other.value
 
@@ -429,10 +429,10 @@ class VmUpdateInfoWidget(QWidget):
             if value == "outdated":
                 self.value = 30
             elif value == "update":
-                self.value = 20 
+                self.value = 20
             else:
                 self.value = 0
- 
+
         def __lt__(self, other):
             return self.value < other.value
 
@@ -462,7 +462,7 @@ class VmUpdateInfoWidget(QWidget):
             self.update_status_widget("outdated")
         elif not outdated and self.previous_outdated:
             self.update_status_widget(None)
-                 
+
         self.previous_outdated = outdated
 
         if not vm.is_updateable():
@@ -482,7 +482,7 @@ class VmUpdateInfoWidget(QWidget):
                 update_recommended = False
             else:
                 if (not hasattr(vm, "updates_stat_file_read_time")) or vm.updates_stat_file_read_time <= os.path.getmtime(stat_file_path):
-        
+
                         stat_file = open(stat_file_path, "r")
                         updates = stat_file.read().strip()
                         stat_file.close()
@@ -490,7 +490,7 @@ class VmUpdateInfoWidget(QWidget):
                             updates = int(updates)
                         else:
                             updates = 0
- 
+
                         if updates == 0:
                             update_recommended = False
                         else:
@@ -501,7 +501,7 @@ class VmUpdateInfoWidget(QWidget):
             self.update_status_widget("update")
         elif self.previous_update_recommended and not update_recommended:
             self.update_status_widget(None)
-        
+
         self.previous_update_recommended = update_recommended
 
 
@@ -523,7 +523,7 @@ class VmUpdateInfoWidget(QWidget):
 
         if self.show_text:
             self.label.setText(label_text)
-        else:    
+        else:
             self.layout().removeWidget(self.icon)
             self.icon.deleteLater()
             if icon_path != None:
@@ -538,7 +538,7 @@ class VmSizeOnDiskItem (QTableWidgetItem):
     def __init__(self, vm):
         super(VmSizeOnDiskItem, self).__init__()
         self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
-        
+
         self.vm = vm
         self.value = 0
         self.update()
@@ -577,16 +577,16 @@ class VmRowInTable(object):
         table.setItem(row_no, VmManagerWindow.columns_indices['Name'], self.name_widget)
 
         self.info_widget = VmInfoWidget(vm)
-        table.setCellWidget(row_no, VmManagerWindow.columns_indices['State'], self.info_widget) 
+        table.setCellWidget(row_no, VmManagerWindow.columns_indices['State'], self.info_widget)
         table.setItem(row_no, VmManagerWindow.columns_indices['State'], self.info_widget.tableItem)
 
         self.template_widget = VmTemplateItem(vm)
         table.setItem(row_no,  VmManagerWindow.columns_indices['Template'], self.template_widget)
-                
+
         self.netvm_widget = VmNetvmItem(vm)
         table.setItem(row_no,  VmManagerWindow.columns_indices['NetVM'], self.netvm_widget)
 
-        self.cpu_usage_widget = VmUsageBarWidget(0, 100, "%v %", 
+        self.cpu_usage_widget = VmUsageBarWidget(0, 100, "%v %",
                             lambda vm, val: val if vm.last_running else 0, vm, 0, self.cpu_graph_hue)
         table.setCellWidget(row_no,  VmManagerWindow.columns_indices['CPU'], self.cpu_usage_widget)
         table.setItem(row_no,  VmManagerWindow.columns_indices['CPU'], self.cpu_usage_widget.tableItem)
@@ -595,7 +595,7 @@ class VmRowInTable(object):
         table.setCellWidget(row_no,  VmManagerWindow.columns_indices['CPU Graph'], self.load_widget)
         table.setItem(row_no,  VmManagerWindow.columns_indices['CPU Graph'], self.load_widget.tableItem)
 
-        self.mem_usage_widget = VmUsageBarWidget(0, qubes_host.memory_total/1024, "%v MB", 
+        self.mem_usage_widget = VmUsageBarWidget(0, qubes_host.memory_total/1024, "%v MB",
                             lambda vm, val: vm.get_mem()/1024 if vm.last_running else 0, vm, 0, self.mem_graph_hue)
         table.setCellWidget(row_no,  VmManagerWindow.columns_indices['MEM'], self.mem_usage_widget)
         table.setItem(row_no,  VmManagerWindow.columns_indices['MEM'], self.mem_usage_widget.tableItem)
@@ -669,7 +669,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         super(VmManagerWindow, self).__init__()
         self.setupUi(self)
         self.toolbar = self.toolBar
-        
+
         self.qubes_watch = qubesutils.QubesWatch()
         self.qvm_collection = QubesVmCollection()
         self.blk_manager = QubesBlockDevicesManager(self.qvm_collection)
@@ -679,7 +679,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.blk_watch_thread.start()
 
         self.connect(self.table, SIGNAL("itemSelectionChanged()"), self.table_selection_changed)
-        
+
         self.table.setColumnWidth(0, self.column_width)
         self.setSizeIncrement(QtCore.QSize(200, 30))
         self.centralwidget.setSizeIncrement(QtCore.QSize(200, 30))
@@ -714,7 +714,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.columns_actions[ self.columns_indices["MEM Graph"] ] = self.action_mem_graph
         self.columns_actions[ self.columns_indices["Size"] ] = self.action_size_on_disk
 
- 
+
         self.visible_columns_count = len(self.columns_indices);
         self.table.setColumnHidden( self.columns_indices["NetVM"], True)
         self.action_netvm.setChecked(False)
@@ -733,7 +733,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.action_showallvms.setChecked(True)
 
         self.table.horizontalHeader().setResizeMode(QHeaderView.Fixed)
-    
+
         self.table.sortItems(self.columns_indices["Type"], Qt.AscendingOrder)
 
         self.context_menu = QMenu(self)
@@ -762,7 +762,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.table.setContentsMargins(0,0,0,0)
         self.centralwidget.layout().setContentsMargins(0,0,0,0)
         self.layout().setContentsMargins(0,0,0,0)
-    
+
         self.connect(self.action_menubar, SIGNAL("toggled(bool)"), self.showhide_menubar)
         self.connect(self.action_toolbar, SIGNAL("toggled(bool)"), self.showhide_toolbar)
 
@@ -782,8 +782,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         desktop_width = app.desktop().availableGeometry(self).width() - self.frame_width # might be wrong...
         desktop_height = app.desktop().availableGeometry(self).height() - self.frame_height # might be wrong...
-        desktop_height -= self.row_height #UGLY! to somehow ommit taskbar... 
- 
+        desktop_height -= self.row_height #UGLY! to somehow ommit taskbar...
+
         W = self.table.horizontalHeader().length() +\
             self.table.verticalScrollBar().width() +\
             2*self.table.frameWidth() +1
@@ -811,7 +811,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             n = self.table.rowCount()
         else:
             n = self.running_vms_count
- 
+
         if n > default_rows:
             H += default_rows*self.row_height
             self.table.verticalScrollBar().show()
@@ -821,7 +821,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             W -= self.table.verticalScrollBar().width()
 
         W = min(desktop_width, W)
-        
+
         self.centralwidget.setFixedHeight(H)
 
         H += mainwindow_to_add
@@ -867,7 +867,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.table.clearContents()
         vms_list = self.get_vms_list()
         self.table.setRowCount(len(vms_list))
-    
+
         vms_in_table = {}
 
         row_no = 0
@@ -876,7 +876,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 continue
             vm_row = VmRowInTable (vm, row_no, self.table, self.blk_manager)
             vms_in_table[vm.qid] = vm_row
-    
+
             row_no += 1
 
         self.table.setRowCount(row_no)
@@ -906,7 +906,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                     self.table.setRowHidden(row_no, True)
                 row_no += 1
 
-        
+
     def mark_table_for_update(self):
         self.reload_table = True
 
@@ -972,12 +972,12 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                     else:
                         cur_cpu_load = 0
 
-                    if rows_with_blk != None: 
+                    if rows_with_blk != None:
                         if vm_row.vm.name in rows_with_blk:
                             blk_visible = True
                         else:
                             blk_visible = False
-                    
+
                     vm_row.update(blk_visible=blk_visible, cpu_load = cur_cpu_load, update_size_on_disk = self.update_size_on_disk)
 
             else:
@@ -999,7 +999,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 self.table.sortItems(self.columns_indices["State"], self.sort_by_state)
             elif self.sort_by_size_on_disk != None and self.update_size_on_disk == True:
                 self.table.sortItems(self.columns_indices["Size"], self.sort_by_size_on_disk)
-            
+
             self.table_selection_changed()
 
         self.update_size_on_disk = False
@@ -1007,7 +1007,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.counter += 1
             QTimer.singleShot (self.update_interval, self.update_table)
 
- 
+
     def update_block_devices(self):
         res, msg = self.blk_manager.check_for_updates()
         if msg != None and len(msg) > 0:
@@ -1029,13 +1029,13 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.sort_by_size_on_disk = None
             self.sort_by_mem = order
             return
-        elif column == self.columns_indices["State"]: 
+        elif column == self.columns_indices["State"]:
             self.sort_by_cpu = None
             self.sort_by_mem = None
             self.sort_by_size_on_disk = None
             self.sort_by_state = order
             return
-        elif column == self.columns_indices["Size"]: 
+        elif column == self.columns_indices["Size"]:
             self.sort_by_cpu = None
             self.sort_by_mem = None
             self.sort_by_state = None
@@ -1046,7 +1046,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.sort_by_mem = None
             self.sort_by_state = None
 
-       
+
     def table_selection_changed (self):
 
         vm = self.get_selected_vm()
@@ -1090,7 +1090,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         dialog = NewVmDlg(app, self.qvm_collection, trayIcon)
         dialog.exec_()
 
-           
+
     def get_selected_vm(self):
         #vm selection relies on the VmInfo widget's value used for sorting by VM name
         row_index = self.table.currentRow()
@@ -1286,7 +1286,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         vm = self.get_selected_vm()
         settings_window = VMSettingsWindow(vm, app, self.qvm_collection, "basic")
         settings_window.exec_()
-   
+
 
     @pyqtSlot(name='on_action_appmenus_triggered')
     def action_appmenus_triggered(self):
@@ -1322,10 +1322,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         while not thread_monitor.is_finished():
             app.processEvents()
             time.sleep (0.2)
-            
+
         progress.hide()
 
-        if vm.qid != 0:    
+        if vm.qid != 0:
             if not thread_monitor.success:
                 QMessageBox.warning (None, "Error VM update!", "ERROR: {0}".format(thread_monitor.error_msg))
 
@@ -1341,7 +1341,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             return
         thread_monitor.set_finished()
 
- 
+
     @pyqtSlot(name='on_action_run_command_in_vm_triggered')
     def action_run_command_in_vm_triggered(self):
         vm = self.get_selected_vm()
@@ -1426,7 +1426,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.context_menu.addAction(self.action_menubar)
         else:
             self.context_menu.removeAction(self.action_menubar)
-            
+
 
     def showhide_toolbar(self, checked):
         self.toolbar.setVisible(checked)
@@ -1467,22 +1467,22 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
     def on_action_state_toggled(self, checked):
         self.showhide_column( self.columns_indices['State'], checked)
- 
+
     def on_action_template_toggled(self, checked):
         self.showhide_column( self.columns_indices['Template'], checked)
 
     def on_action_netvm_toggled(self, checked):
         self.showhide_column( self.columns_indices['NetVM'], checked)
-    
+
     def on_action_cpu_toggled(self, checked):
         self.showhide_column( self.columns_indices['CPU'], checked)
-    
+
     def on_action_cpu_graph_toggled(self, checked):
-        self.showhide_column( self.columns_indices['CPU Graph'], checked)    
+        self.showhide_column( self.columns_indices['CPU Graph'], checked)
 
     def on_action_mem_toggled(self, checked):
-        self.showhide_column( self.columns_indices['MEM'], checked)   
-    
+        self.showhide_column( self.columns_indices['MEM'], checked)
+
     def on_action_mem_graph_toggled(self, checked):
         self.showhide_column( self.columns_indices['MEM Graph'], checked)
 
@@ -1494,7 +1494,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def action_about_qubes_triggered(self):
         QMessageBox.about(self, "About...", "<b>Qubes OS</b><br><br>Release 1.0")
 
-            
+
     def createPopupMenu(self):
         menu = QMenu()
         menu.addAction(self.action_toolbar)
@@ -1542,7 +1542,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
                     menu_empty = False
             self.logs_menu.setEnabled(not menu_empty)
-                    
+
         # blk menu
         if not running:
             self.blk_menu.setEnabled(False)
@@ -1592,7 +1592,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.blk_manager.attach_device(vm, dev)
         self.blk_manager.blk_lock.release()
 
-  
+
 class QubesBlockDevicesManager():
     def __init__(self, qvm_collection):
         self.qvm_collection = qvm_collection
@@ -1627,24 +1627,23 @@ class QubesBlockDevicesManager():
         self.blk_lock.acquire()
 
         ret = (self.blk_state_changed, self.msg)
-        
+
         if self.blk_state_changed == True:
             self.check_counter += 1
-            
+
             self.update()
             ret = (self.blk_state_changed, self.msg)
-            
+
             #let the update last for 3 manager-update cycles
             if self.check_counter == 3:
                 self.check_counter = 0
                 self.blk_state_changed = False
-        self.msg = []            
+        self.msg = []
 
         self.blk_lock.release()
 
         return ret
-            
-            
+
     def update(self):
         blk = qubesutils.block_list()
         for b in blk:
@@ -1683,7 +1682,7 @@ class QubesBlockDevicesManager():
                 self.attached_devs[b] = self.__make_entry__(b, self.current_blk[b], self.current_attached[b])
             else:
                 self.free_devs[b] = self.__make_entry__(b, self.current_blk[b], None)
-                
+
     def __make_entry__(self, k, dev, att):
         size_str = qubesutils.bytes_to_kmg(dev['size'])
         entry = {   'dev': dev['device'],
@@ -1699,13 +1698,13 @@ class QubesBlockDevicesManager():
         backend_vm = self.qvm_collection.get_vm_by_name(backend_vm_name)
         trayIcon.showMessage ("Qubes VM Manager", "{0} - attaching {1}".format(vm.name, dev), msecs=3000)
         qubesutils.block_attach(vm, backend_vm, dev_id)
-      
+
     def detach_device(self, vm, dev_name):
         dev_id = self.attached_devs[dev_name]['attached_to']['devid']
         vm_xid = self.attached_devs[dev_name]['attached_to']['xid']
         trayIcon.showMessage ("Qubes VM Manager", "{0} - detaching {1}".format(vm.name, dev_name), msecs=3000)
         qubesutils.block_detach(None, dev_id, vm_xid)
-                
+
     def check_if_serves_as_backend(self, vm):
         serves_for = []
         for d in self.attached_devs:
@@ -1782,7 +1781,7 @@ class QubesTrayIcon(QSystemTrayIcon):
 def get_frame_size():
     w = 0
     h = 0
-    cmd = ['xprop', '-name', 'Qubes VM Manager', '|', 'grep', '_NET_FRAME_EXTENTS'] 
+    cmd = ['xprop', '-name', 'Qubes VM Manager', '|', 'grep', '_NET_FRAME_EXTENTS']
     xprop = subprocess.Popen(cmd, stdout = subprocess.PIPE)
     for l in xprop.stdout:
         line = l.split('=')
@@ -1797,7 +1796,7 @@ def get_frame_size():
         w = 10
     if h <= 0:
         h = 30
-    
+
     manager_window.frame_width = w
     manager_window.frame_height = h
     return
@@ -1808,12 +1807,12 @@ def show_manager():
     manager_window.repaint()
     app.processEvents()
 
-    get_frame_size() 
+    get_frame_size()
     #print manager_window.frame_width, " x ", manager_window.frame_height
     manager_window.set_table_geom_size()
 
 def bring_manager_to_front():
-    
+
     if manager_window.isVisible():
         subprocess.check_call(['wmctrl', '-R', str(manager_window.windowTitle())])
 
@@ -1856,7 +1855,7 @@ def handle_exception( exc_type, exc_value, exc_traceback ):
                     "<b><i>%s</i></b>" % error +
                     "<br/>at line <b>%d</b><br/>of file %s.<br/><br/>"
                     % ( line, filename ))
-    
+
     msg_box.exec_()
 
 def sighup_handler(signum, frame):
