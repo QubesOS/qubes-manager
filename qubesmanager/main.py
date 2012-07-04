@@ -26,6 +26,8 @@ import signal
 import fcntl
 import errno
 import dbus
+import dbus.service
+from dbus.mainloop.qt import DBusQtMainLoop
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
@@ -61,6 +63,9 @@ qubes_dom0_updates_stat_file = '/var/lib/qubes/updates/dom0-updates-available'
 qubes_guid_path = '/usr/bin/qubes_guid'
 
 update_suggestion_interval = 14 # 14 days
+
+dbus_object_path = '/org/qubesos/QubesManager'
+dbus_interface = 'org.qubesos.QubesManager'
 
 power_order = Qt.DescendingOrder
 update_order = Qt.AscendingOrder
@@ -1810,6 +1815,42 @@ class QubesTrayIcon(QSystemTrayIcon):
             action.setCheckable(True)
         return action
 
+class QubesDbusNotify(dbus.service.Object):
+    def __init__(self, bus, manager_window):
+        # export to system bus (instead of session) to make possible
+        # communication from outside of session (eg. from qmemman)
+        dbus.service.Object.__init__(self, bus, dbus_object_path)
+        self.manager_window = manager_window
+
+    @dbus.service.method(dbus_interface=dbus_interface,
+            in_signature='ss', out_signature='')
+    def notify_error(self, vmname, message):
+        vm = self.manager_window.qvm_collection.get_vm_by_name(vmname)
+        if vm:
+            self.manager_window.set_error(vm.qid, message)
+        else:
+            # ignore VM-not-found error
+            pass
+    @dbus.service.method(dbus_interface=dbus_interface,
+            in_signature='ss', out_signature='')
+    def clear_error_exact(self, vmname, message):
+        vm = self.manager_window.qvm_collection.get_vm_by_name(vmname)
+        if vm:
+            self.manager_window.clear_error_exact(vm.qid, message)
+        else:
+            # ignore VM-not-found error
+            pass
+
+    @dbus.service.method(dbus_interface=dbus_interface,
+            in_signature='s', out_signature='')
+    def clear_error(self, vmname):
+        vm = self.manager_window.qvm_collection.get_vm_by_name(vmname)
+        if vm:
+            self.manager_window.clear_error(vm.qid, message)
+        else:
+            # ignore VM-not-found error
+            pass
+
 def get_frame_size():
     w = 0
     h = 0
@@ -1923,6 +1964,10 @@ def main():
 
     sys.excepthook = handle_exception
 
+    # setup dbus connection
+    DBusQtMainLoop(set_as_default=True)
+
+
     global manager_window
     manager_window = VmManagerWindow()
     wm = WatchManager()
@@ -1932,6 +1977,11 @@ def main():
     notifier = ThreadedNotifier(wm, QubesConfigFileWatcher(manager_window.mark_table_for_update))
     notifier.start()
     wdd = wm.add_watch(qubes_store_filename, mask)
+
+    global system_bus
+    system_bus = dbus.SystemBus()
+    name = dbus.service.BusName('org.qubesos.QubesManager', system_bus)
+    dbus_notifier = QubesDbusNotify(system_bus, manager_window)
 
     global trayIcon
     trayIcon = QubesTrayIcon(QIcon(":/qubes.png"))
