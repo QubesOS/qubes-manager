@@ -1215,12 +1215,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             thread_monitor.set_finished()
             return
 
-        retcode = subprocess.call ([qubes_guid_path, "-d", str(xid), "-c", vm.label.color, "-i", vm.label.icon, "-l", str(vm.label.index)])
-        if (retcode != 0):
-            thread_monitor.set_error_msg("Cannot start qubes_guid!")
-
         thread_monitor.set_finished()
- 
+
     @pyqtSlot(name='on_action_pausevm_triggered')
     def action_pausevm_triggered(self):
         vm = self.get_selected_vm()
