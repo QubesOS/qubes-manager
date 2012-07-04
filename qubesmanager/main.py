@@ -78,20 +78,25 @@ class VmIconWidget (QWidget):
     def __init__(self, icon_path, enabled=True, size_multiplier=0.7, tooltip = None, parent=None):
         super(VmIconWidget, self).__init__(parent)
 
-        label_icon = QLabel()
+        self.label_icon = QLabel()
         icon = QIcon (icon_path)
         icon_sz = QSize (VmManagerWindow.row_height * size_multiplier, VmManagerWindow.row_height * size_multiplier)
         icon_pixmap = icon.pixmap(icon_sz, QIcon.Disabled if not enabled else QIcon.Normal)
-        label_icon.setPixmap (icon_pixmap)
-        label_icon.setFixedSize (icon_sz)
+        self.label_icon.setPixmap (icon_pixmap)
+        self.label_icon.setFixedSize (icon_sz)
         if tooltip != None:
-            label_icon.setToolTip(tooltip)
-        
+            self.label_icon.setToolTip(tooltip)
+
         layout = QHBoxLayout()
-        layout.addWidget(label_icon)
+        layout.addWidget(self.label_icon)
         layout.setContentsMargins(0,0,0,0)
         self.setLayout(layout)
 
+    def setToolTip(self, tooltip):
+        if tooltip is not None:
+            self.label_icon.setToolTip(tooltip)
+        else:
+            self.label_icon.setToolTip('')
 
 class VmTypeWidget(VmIconWidget):
 
