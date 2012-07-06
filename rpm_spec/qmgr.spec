@@ -13,6 +13,7 @@ License:	GPL
 URL:		http://fixme
 Requires:	python, PyQt4, qubes-core-dom0 > 1.7.23, kdebase
 Requires:	pmount, cryptsetup, wmctrl
+Requires:	dbus
 BuildRequires:	PyQt4-devel
 AutoReq:	0
 
@@ -63,6 +64,9 @@ mkdir -p $RPM_BUILD_ROOT/usr/share/applications
 cp qubes-manager.desktop $RPM_BUILD_ROOT/usr/share/applications
 mkdir -p $RPM_BUILD_ROOT/etc/xdg/autostart/
 cp qubes-manager.desktop $RPM_BUILD_ROOT/etc/xdg/autostart/
+
+install -D org.qubesos.QubesManager.conf $RPM_BUILD_ROOT/etc/dbus-1/system.d/org.qubesos.QubesManager.conf
+install -D org.qubesos.QubesManager.xml $RPM_BUILD_ROOT/usr/share/dbus-1/interfaces/org.qubesos.QubesManager.xml
 
 %post
 update-desktop-database &> /dev/null || :
@@ -152,3 +156,5 @@ rm -rf $RPM_BUILD_ROOT
 
 /usr/share/applications/qubes-manager.desktop
 /etc/xdg/autostart/qubes-manager.desktop
+/etc/dbus-1/system.d/org.qubesos.QubesManager.conf
+/usr/share/dbus-1/interfaces/org.qubesos.QubesManager.xml

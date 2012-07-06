@@ -154,7 +154,7 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
         progress.hide()
 
         if thread_monitor.success:
-            self.trayIcon.showMessage ("Qubes VM Manager", "VM '{0}' has been created.".format(vmname), msecs=3000)
+            self.trayIcon.showMessage ("VM '{0}' has been created.".format(vmname), msecs=3000)
         else:
             QMessageBox.warning (None, "Error creating AppVM!", "ERROR: {0}".format(thread_monitor.error_msg))
 

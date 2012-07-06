@@ -11,6 +11,7 @@
     <file alias="update-recommended.png">icons/update-recommended.png</file>
     <file alias="show-all-running.png">icons/show-all-running.png</file>
     <file alias="mount.png">icons/mount.png</file>
+    <file alias="warning.png">icons/warning.png</file>
     <file alias="log.png">icons/log.png</file>
     <file alias="run-command.png">icons/run-command.png</file>
     <file alias="kbd-layout.png">icons/kbd-layout.png</file>

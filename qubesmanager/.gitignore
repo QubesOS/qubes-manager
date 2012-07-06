@@ -1,3 +1,4 @@
 qrc_resources.py
-ui_newappvmdlg.py
-ui_newfwruledlg.py
+resources_rc.py
+ui_*.py
+*.py[co]
