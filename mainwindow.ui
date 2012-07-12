@@ -276,7 +276,7 @@
     </widget>
     <widget class="QMenu" name="blk_menu">
      <property name="title">
-      <string>Block devices</string>
+      <string>Attach/detach block devices</string>
      </property>
      <property name="icon">
       <iconset resource="resources.qrc">
@@ -429,10 +429,10 @@
      <normaloff>:/apps.png</normaloff>:/apps.png</iconset>
    </property>
    <property name="text">
-    <string>Select VM applications</string>
+    <string>Add/remove app shortcuts</string>
    </property>
    <property name="toolTip">
-    <string>Select applications present in menu for this VM</string>
+    <string>Add/remove app shortcuts for this VM</string>
    </property>
   </action>
   <action name="action_updatevm">
@@ -475,10 +475,10 @@
      <normaloff>:/firewall.png</normaloff>:/firewall.png</iconset>
    </property>
    <property name="text">
-    <string>Edit VM Firewall rules</string>
+    <string>Edit VM firewall rules</string>
    </property>
    <property name="toolTip">
-    <string>Edit VM Firewall rules</string>
+    <string>Edit VM firewall rules</string>
    </property>
   </action>
   <action name="action_showgraphs">
