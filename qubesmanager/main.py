@@ -39,6 +39,7 @@ from qubes.qubes import dry_run
 from qubes.qubes import qubes_guid_path
 from qubes.qubes import QubesDaemonPidfile
 from qubes.qubes import QubesHost
+from qubes import qubes
 from qubes import qubesutils
 
 import qubesmanager.resources_rc
@@ -754,6 +755,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.context_menu = QMenu(self)
         self.context_menu.addAction(self.action_removevm)
         self.context_menu.addAction(self.action_resumevm)
+        self.context_menu.addAction(self.action_clonevm)
         self.context_menu.addAction(self.action_pausevm)
         self.context_menu.addAction(self.action_shutdownvm)
         self.context_menu.addAction(self.action_killvm)
@@ -1073,6 +1075,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             # Update available actions:
             self.action_settings.setEnabled(vm.qid != 0)
             self.action_removevm.setEnabled(not vm.installed_by_rpm and not (vm.last_running))
+            self.action_clonevm.setEnabled(not vm.installed_by_rpm and not (vm.last_running) and not vm.is_netvm())
             self.action_resumevm.setEnabled(not vm.last_running)
             self.action_pausevm.setEnabled(vm.last_running and vm.qid != 0)
             self.action_shutdownvm.setEnabled(vm.last_running and vm.qid != 0)
@@ -1085,6 +1088,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         else:
             self.action_settings.setEnabled(False)
             self.action_removevm.setEnabled(False)
+            self.action_clonevm.setEnabled(False)
             self.action_resumevm.setEnabled(False)
             self.action_pausevm.setEnabled(False)
             self.action_shutdownvm.setEnabled(False)
@@ -1211,6 +1215,68 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         finally:
             self.qvm_collection.unlock_db()
 
+        thread_monitor.set_finished()
+
+    @pyqtSlot(name='on_action_clonevm_triggered')
+    def action_clonevm_triggered(self):
+        vm = self.get_selected_vm()
+
+        name_number = 1
+        name_format = vm.name + '-clone-%d'
+        while self.qvm_collection.get_vm_by_name(name_format % name_number):
+            name_number += 1
+
+        cmd = ['kdialog', '--title', 'Qubes clone VM', '--inputbox', 'Enter name for VM <b>'+vm.name+'</b> clone:', name_format % name_number]
+        kdialog = subprocess.Popen(cmd, stdout = subprocess.PIPE)
+        clone_name = kdialog.stdout.read().strip()
+        if clone_name == "":
+            return
+
+        thread_monitor = ThreadMonitor()
+        thread = threading.Thread (target=self.do_clone_vm, args=(vm, clone_name, thread_monitor))
+        thread.daemon = True
+        thread.start()
+
+        progress = QProgressDialog ("Cloning VM <b>{0}</b> to <b>{1}</b>...".format(vm.name, clone_name), "", 0, 0)
+        progress.setCancelButton(None)
+        progress.setModal(True)
+        progress.show()
+
+        while not thread_monitor.is_finished():
+            app.processEvents()
+            time.sleep (0.2)
+
+        progress.hide()
+
+        if not thread_monitor.success:
+            QMessageBox.warning (None, "Error while cloning VM", "Exception while cloning:<br>{0}".format(thread_monitor.error_msg))
+
+
+    def do_clone_vm(self, vm, dst_name, thread_monitor):
+        try:
+            self.qvm_collection.lock_db_for_writing()
+            self.qvm_collection.load()
+            src_vm = self.qvm_collection[vm.qid]
+
+            dst_vm = None
+            if isinstance(src_vm, qubes.QubesTemplateVm):
+                dst_vm = self.qvm_collection.add_new_templatevm(name=dst_name,
+                        installed_by_rpm=False)
+            elif isinstance(src_vm, qubes.QubesAppVm):
+                dst_vm = self.qvm_collection.add_new_appvm(name=dst_name, template=src_vm.template,
+                            label=src_vm.label)
+            elif hasattr(qubes, 'QubesHVm') and isinstance(src_vm, qubes.QubesHVm):
+                dst_vm = self.qvm_collection.add_new_hvm(name=dst_name, label=src_vm.label)
+
+            dst_vm.clone_attrs(src_vm)
+            dst_vm.clone_disk_files (src_vm=src_vm, verbose=False)
+            self.qvm_collection.save()
+            self.qvm_collection.unlock_db()
+        except Exception as ex:
+            if dst_vm:
+                self.qvm_collection.pop(dst_vm.qid)
+            self.qvm_collection.unlock_db()
+            thread_monitor.set_error_msg(str(ex))
         thread_monitor.set_finished()
 
     @pyqtSlot(name='on_action_resumevm_triggered')
