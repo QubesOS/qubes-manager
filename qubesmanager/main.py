@@ -1654,6 +1654,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 for d in self.blk_manager.free_devs:
                     if d.startswith(vm.name):
                         continue
+                    # skip partitions heuristic
+                    if d[-1].isdigit() and d[0:-1] in self.blk_manager.current_blk:
+                        continue
                     text = "Attach  " + d + " " + unicode(self.blk_manager.free_devs[d]['size']) + " " + self.blk_manager.free_devs[d]['desc']
                     action = self.blk_menu.addAction(QIcon(":/add.png"), text)
                     action.setData(QVariant(d))
