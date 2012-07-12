@@ -753,20 +753,27 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.table.sortItems(self.columns_indices["Type"], Qt.AscendingOrder)
 
         self.context_menu = QMenu(self)
-        self.context_menu.addAction(self.action_removevm)
+
+        self.context_menu.addAction(self.action_settings)
+        self.context_menu.addAction(self.action_editfwrules)
+        self.context_menu.addAction(self.action_appmenus)
+        self.context_menu.addAction(self.action_set_keyboard_layout)
+        self.context_menu.addMenu(self.blk_menu)
+        self.context_menu.addSeparator()
+
+        self.context_menu.addAction(self.action_updatevm)
+        self.context_menu.addAction(self.action_run_command_in_vm)
         self.context_menu.addAction(self.action_resumevm)
-        self.context_menu.addAction(self.action_clonevm)
         self.context_menu.addAction(self.action_pausevm)
         self.context_menu.addAction(self.action_shutdownvm)
         self.context_menu.addAction(self.action_killvm)
-        self.context_menu.addAction(self.action_settings)
-        self.context_menu.addAction(self.action_appmenus)
-        self.context_menu.addAction(self.action_editfwrules)
-        self.context_menu.addAction(self.action_updatevm)
-        self.context_menu.addAction(self.action_run_command_in_vm)
-        self.context_menu.addAction(self.action_set_keyboard_layout)
+        self.context_menu.addSeparator()
+
+        self.context_menu.addAction(self.action_clonevm)
+        self.context_menu.addAction(self.action_removevm)
+        self.context_menu.addSeparator()
+
         self.context_menu.addMenu(self.logs_menu)
-        self.context_menu.addMenu(self.blk_menu)
         self.context_menu.addSeparator()
 
         self.table_selection_changed()
