@@ -2052,5 +2052,6 @@ def main():
     trayIcon = QubesTrayIcon(QIcon(":/qubes.png"))
     trayIcon.show()
 
+    show_manager()
     app.exec_()
     trayIcon = None
