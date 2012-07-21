@@ -72,6 +72,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.source_vm = self.vm
  
         self.setupUi(self)
+        self.setWindowTitle("Settings: %s" % self.vm.name)
         if init_page in self.tabs_indices:
             idx = self.tabs_indices[init_page]
             assert (idx in range(self.tabWidget.count()))
