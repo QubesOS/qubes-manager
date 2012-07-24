@@ -67,6 +67,7 @@ update_suggestion_interval = 14 # 14 days
 
 dbus_object_path = '/org/qubesos/QubesManager'
 dbus_interface = 'org.qubesos.QubesManager'
+system_bus = None
 
 power_order = Qt.DescendingOrder
 update_order = Qt.AscendingOrder
@@ -1916,6 +1917,11 @@ class QubesDbusNotify(dbus.service.Object):
             # ignore VM-not-found error
             pass
 
+    @dbus.service.method(dbus_interface=dbus_interface,
+            in_signature='', out_signature='')
+    def show_manager(self):
+        bring_manager_to_front()
+
 def get_frame_size():
     w = 0
     h = 0
@@ -1957,6 +1963,18 @@ def bring_manager_to_front():
     else:
         show_manager()
 
+def show_running_manager_via_dbus():
+    global system_bus
+    if system_bus is None:
+        system_bus = dbus.SystemBus()
+
+    try:
+        qubes_manager = system_bus.get_object('org.qubesos.QubesManager',
+                '/org/qubesos/QubesManager')
+        qubes_manager.show_manager(dbus_interface='org.qubesos.QubesManager')
+    except dbus.DBusException:
+        # ignore the case when no qubes-manager is running
+        pass
 
 def exit_app():
     notifier.stop()
@@ -2011,6 +2029,7 @@ def main():
             lock.remove_pidfile()
             print "Removed stale pidfile (has the previous daemon instance crashed?)."
         else:
+            show_running_manager_via_dbus()
             exit (0)
 
     lock.create_pidfile()
@@ -2031,7 +2050,6 @@ def main():
 
     # setup dbus connection
     DBusQtMainLoop(set_as_default=True)
-
 
     global manager_window
     manager_window = VmManagerWindow()
