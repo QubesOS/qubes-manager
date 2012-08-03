@@ -131,6 +131,6 @@ class AppmenuSelectManager:
  
     def save_appmenu_select_changes(self):
         if self.save_list_of_selected():
-            subprocess.check_call([qubes_appmenu_remove_cmd, self.vm.name])
-            subprocess.check_call([qubes_appmenu_create_cmd, self.source_vm.appmenus_templates_dir, self.vm.name])
+            self.vm.remove_appmenus()
+            self.vm.cretae_appmenus(verbose=False)            
 
