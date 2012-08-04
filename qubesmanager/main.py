@@ -700,10 +700,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.centralwidget.setSizeIncrement(QtCore.QSize(200, 30))
         self.table.setSizeIncrement(QtCore.QSize(200, 30))
 
-        self.sort_by_mem = None
-        self.sort_by_cpu = None
-        self.sort_by_state = None
-        self.sort_by_size_on_disk = None
+        self.sort_by_column = "Type"
+        self.sort_order = Qt.AscendingOrder
 
         self.screen_number = -1
         self.screen_changed = False
@@ -751,7 +749,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         self.table.horizontalHeader().setResizeMode(QHeaderView.Fixed)
 
-        self.table.sortItems(self.columns_indices["Type"], Qt.AscendingOrder)
+        self.table.sortItems(self.columns_indices[self.sort_by_column], self.sort_order)
 
         self.context_menu = QMenu(self)
 
@@ -973,8 +971,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 self.showhide_inactive_vms(False)
                 self.set_table_geom_size()
 
-            if self.sort_by_state != None and some_vms_have_changed_power_state:
-                self.table.sortItems(self.columns_indices["State"], self.sort_by_state)
+            if self.sort_by_column == "State" and some_vms_have_changed_power_state:
+                self.table.sortItems(self.columns_indices[self.sort_by_column], self.sort_order)
 
             blk_visible = None
             rows_with_blk = None
@@ -1018,15 +1016,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
                     vm_row.update(blk_visible=blk_visible, update_size_on_disk = self.update_size_on_disk)
 
-            if self.sort_by_cpu != None:
-                self.table.sortItems(self.columns_indices["CPU"], self.sort_by_cpu)
-            elif self.sort_by_mem != None:
-                self.table.sortItems(self.columns_indices["MEM"], self.sort_by_mem)
-            elif self.sort_by_state != None and reload_table:
-                #needed to sort after reload (fill_table sorts items with setSortingEnabled, but by that time the widgets values are not correct yet).
-                self.table.sortItems(self.columns_indices["State"], self.sort_by_state)
-            elif self.sort_by_size_on_disk != None and self.update_size_on_disk == True:
-                self.table.sortItems(self.columns_indices["Size"], self.sort_by_size_on_disk)
+            if self.sort_by_column in ["CPU", "CPU Graph", "MEM", "MEM Graph", "State", "Size" ]:
+                # "State": needed to sort after reload (fill_table sorts items with setSortingEnabled, but by that time the widgets values are not correct yet).
+                self.table.sortItems(self.columns_indices[self.sort_by_column], self.sort_order)
 
             self.table_selection_changed()
 
@@ -1045,35 +1037,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
 
     def sortIndicatorChanged(self, column, order):
-        if column == self.columns_indices["CPU"] or column == self.columns_indices["CPU Graph"]:
-            self.sort_by_mem = None
-            self.sort_by_state = None
-            self.sort_by_size_on_disk = None
-            self.sort_by_cpu = order
-            return
-        elif column == self.columns_indices["MEM"] or column == self.columns_indices["MEM Graph"]:
-            self.sort_by_cpu = None
-            self.sort_by_state = None
-            self.sort_by_size_on_disk = None
-            self.sort_by_mem = order
-            return
-        elif column == self.columns_indices["State"]:
-            self.sort_by_cpu = None
-            self.sort_by_mem = None
-            self.sort_by_size_on_disk = None
-            self.sort_by_state = order
-            return
-        elif column == self.columns_indices["Size"]:
-            self.sort_by_cpu = None
-            self.sort_by_mem = None
-            self.sort_by_state = None
-            self.sort_by_size_on_disk = order
-            return
-        else:
-            self.sort_by_cpu = None
-            self.sort_by_mem = None
-            self.sort_by_state = None
-
+        self.sort_by_column = [name for name in self.columns_indices.keys() if self.columns_indices[name] == column][0]
+        self.sort_order = order
 
     def table_selection_changed (self):
 
