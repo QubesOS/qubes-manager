@@ -666,6 +666,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     min_visible_rows = 10
     update_interval = 1000 # in msec
     show_inactive_vms = True
+    # suppress saving settings while initializing widgets
+    settings_loaded = False
     columns_indices = { "Type": 0,
                         "Label": 1,
                         "Name": 2,
@@ -684,6 +686,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         super(VmManagerWindow, self).__init__()
         self.setupUi(self)
         self.toolbar = self.toolBar
+
+        self.manager_settings = QSettings()
 
         self.qubes_watch = qubesutils.QubesWatch()
         self.qvm_collection = QubesVmCollection()
@@ -713,7 +717,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.frame_width = 0
         self.frame_height = 0
 
-        self.fill_table()
         self.move(self.x(), 0)
 
         self.columns_actions = {}
@@ -745,7 +748,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.table.setColumnWidth(self.columns_indices["Label"], 40)
         self.table.setColumnWidth(self.columns_indices["Type"], 40)
         self.table.setColumnWidth(self.columns_indices["Size"], 100)
-        self.action_showallvms.setChecked(True)
 
         self.table.horizontalHeader().setResizeMode(QHeaderView.Fixed)
 
@@ -789,6 +791,12 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.connect(self.action_menubar, SIGNAL("toggled(bool)"), self.showhide_menubar)
         self.connect(self.action_toolbar, SIGNAL("toggled(bool)"), self.showhide_toolbar)
 
+        self.load_manager_settings()
+
+        self.action_showallvms.setChecked(self.show_inactive_vms)
+
+        self.fill_table()
+
         self.counter = 0
         self.update_size_on_disk = False
         self.shutdown_monitor = {}
@@ -796,6 +804,27 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.last_measure_time = time.time()
         QTimer.singleShot (self.update_interval, self.update_table)
 
+    def load_manager_settings(self):
+        # visible columns
+        self.manager_settings.beginGroup("columns")
+        for col in self.columns_indices.keys():
+            col_no = self.columns_indices[col]
+            visible = self.manager_settings.value(col, defaultValue=not self.table.isColumnHidden(col_no)).toBool()
+            self.columns_actions[col_no].setChecked(visible)
+        self.manager_settings.endGroup()
+        self.show_inactive_vms = self.manager_settings.value("view/show_inactive_vms", defaultValue=False).toBool()
+        self.sort_by_column = str(self.manager_settings.value("view/sort_column", defaultValue=self.sort_by_column).toString())
+        self.sort_order = Qt.SortOrder(self.manager_settings.value("view/sort_order", defaultValue=self.sort_order).toInt()[0])
+        self.table.sortItems(self.columns_indices[self.sort_by_column], self.sort_order)
+        if not self.manager_settings.value("view/menubar_visible", defaultValue=True).toBool():
+            self.action_menubar.setChecked(False)
+        if not self.manager_settings.value("view/toolbar_visible", defaultValue=True).toBool():
+            self.action_toolbar.setChecked(False)
+        x = self.manager_settings.value('position/x', defaultValue=-1).toInt()[0]
+        y = self.manager_settings.value('position/y', defaultValue=-1).toInt()[0]
+        if x != -1 or y != -1:
+            self.move(x, y)
+        self.settings_loaded = True
 
     def show(self):
         super(VmManagerWindow, self).show()
@@ -865,7 +894,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         if self.screen_number != screen_number:
                 self.screen_changed = True
                 self.screen_number = screen_number
-
+        if self.settings_loaded:
+            self.manager_settings.setValue('position/x', self.x())
+            self.manager_settings.setValue('position/y', self.y())
+            # do not sync for performance reasons
 
     def get_vms_list(self):
         self.qvm_collection.lock_db_for_reading()
@@ -929,7 +961,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 if not running:
                     self.table.setRowHidden(row_no, True)
                 row_no += 1
-
 
     def mark_table_for_update(self):
         self.reload_table = True
@@ -1039,6 +1070,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def sortIndicatorChanged(self, column, order):
         self.sort_by_column = [name for name in self.columns_indices.keys() if self.columns_indices[name] == column][0]
         self.sort_order = order
+        if self.settings_loaded:
+            self.manager_settings.setValue('view/sort_column', self.sort_by_column)
+            self.manager_settings.setValue('view/sort_order', self.sort_order)
+            self.manager_settings.sync()
 
     def table_selection_changed (self):
 
@@ -1460,6 +1495,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         self.showhide_inactive_vms(self.show_inactive_vms)
         self.set_table_geom_size()
+        if self.settings_loaded:
+            self.manager_settings.setValue('view/show_inactive_vms', self.show_inactive_vms)
+            self.manager_settings.sync()
 
     @pyqtSlot(name='on_action_editfwrules_triggered')
     def action_editfwrules_triggered(self):
@@ -1485,13 +1523,15 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
 
     def showhide_menubar(self, checked):
-        self.menuWidget().setVisible(checked)
+        self.menubar.setVisible(checked)
         self.set_table_geom_size()
         if not checked:
             self.context_menu.addAction(self.action_menubar)
         else:
             self.context_menu.removeAction(self.action_menubar)
-
+        if self.settings_loaded:
+            self.manager_settings.setValue('view/menubar_visible', checked)
+            self.manager_settings.sync()
 
     def showhide_toolbar(self, checked):
         self.toolbar.setVisible(checked)
@@ -1500,7 +1540,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.context_menu.addAction(self.action_toolbar)
         else:
             self.context_menu.removeAction(self.action_toolbar)
-
+        if self.settings_loaded:
+            self.manager_settings.setValue('view/toolbar_visible', checked)
+            self.manager_settings.sync()
 
     def showhide_column(self, col_num, show):
         self.table.setColumnHidden( col_num, not show)
@@ -1520,6 +1562,11 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 if not self.columns_actions[c].isEnabled():
                     self.columns_actions[c].setEnabled(True)
                     break;
+
+        if self.settings_loaded:
+            col_name = [name for name in self.columns_indices.keys() if self.columns_indices[name] == col_num][0]
+            self.manager_settings.setValue('columns/%s' % col_name, show)
+            self.manager_settings.sync()
 
     def on_action_vm_type_toggled(self, checked):
         self.showhide_column( self.columns_indices['Type'], checked)
