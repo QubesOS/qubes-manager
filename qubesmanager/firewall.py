@@ -200,9 +200,12 @@ class QubesFirewallRulesModel(QAbstractItemModel):
         if idx==0:
             self.children.sort(key=attrgetter('address'), reverse = rev)
         if idx==1:
-            self.children.sort(key=lambda x: self.get_service_name(attrgetter('portBegin')) if attrgetter('portEnd') == None else attrgetter('portBegin'), reverse = rev)
+            self.children.sort(key=lambda x: self.get_service_name(x.portBegin) if x.portEnd == None else x.portBegin, reverse = rev)
         if idx==2:
             self.children.sort(key=attrgetter('protocol'), reverse = rev)
+        index1 = self.createIndex(0, 0)
+        index2 = self.createIndex(len(self)-1, len(self.__columnValues)-1)
+        self.dataChanged.emit(index1, index2)
 
 
     def get_service_name(self, port):
