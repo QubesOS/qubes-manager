@@ -189,6 +189,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
     def __init_basic_tab__(self):
         self.vmname.setText(self.vm.name)
+        self.vmname.setValidator(QRegExpValidator(QRegExp("[a-zA-Z0-9-]*", Qt.CaseInsensitive), None))
         
         #self.qvm_collection.lock_db_for_reading()
         #self.qvm_collection.load()

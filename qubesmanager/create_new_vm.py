@@ -56,7 +56,7 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
         # Instead we lock for writing in the actual worker thread
 
         try:
-            from qubes.qubes import QubesHVM
+            from qubes.qubes import QubesHVm
         except ImportError:
             pass
         else: 
@@ -83,6 +83,7 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
                 self.template_name.insertItem(i, vm.name)
         self.template_name.setCurrentIndex(default_index)
 
+        self.vmname.setValidator(QRegExpValidator(QRegExp("[a-zA-Z0-9-]*", Qt.CaseInsensitive), None))
         self.vmname.selectAll()
         self.vmname.setFocus()
 
