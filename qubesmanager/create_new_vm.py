@@ -56,7 +56,7 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
         # Instead we lock for writing in the actual worker thread
 
         try:
-            from qubes.qubes import QubesHVM
+            from qubes.qubes import QubesHVm
         except ImportError:
             pass
         else: 
