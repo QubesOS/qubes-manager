@@ -381,7 +381,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
     def __init_advanced_tab__(self):
 
         #mem/cpu
-	qubes_memory = QubesHost().memory_total/1024
+        qubes_memory = QubesHost().memory_total/1024
 
         self.init_mem.setValue(int(self.vm.memory))
         self.init_mem.setMaximum(qubes_memory)
@@ -599,7 +599,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
     def __remove_service__(self):
         item = self.services_list.currentItem()
         if str(item.text()) == 'meminfo-writer':    
-                    QMessageBox.information(None, "Service can not be removed", "Service meminfo-writer can not be removed from the list.")
+            QMessageBox.information(None, "Service can not be removed", "Service meminfo-writer can not be removed from the list.")
         else:
             row = self.services_list.currentRow()
             item = self.services_list.takeItem(row)
