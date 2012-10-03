@@ -83,7 +83,6 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         self.tabWidget.currentChanged.connect(self.current_tab_changed)
 
-        self.tabWidget.setTabEnabled(self.tabs_indices["applications"], not vm.is_netvm())
         self.tabWidget.setTabEnabled(self.tabs_indices["firewall"], vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
 
         ###### basic tab
