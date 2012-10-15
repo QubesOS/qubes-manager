@@ -61,11 +61,9 @@ def mount_device(dev_path):
 def umount_device(dev_mount_path):
     while True:
         try:
-            pumount_cmd = ["pumount", "--luks-force", dev_mount_path]
+            pumount_cmd = ["sudo", "pumount", "--luks-force", dev_mount_path]
             res = subprocess.check_call(pumount_cmd)
             if res == 0:
-                if dev_mount_path.startswith('/media/backup'):
-                    os.rmdir(dev_mount_path)
                 dev_mount_path = None
                 return dev_mount_path
         except Exception as ex:
@@ -145,9 +143,12 @@ def dev_combobox_activated(dialog, idx):
                 return
                 
     dialog.prev_dev_idx = idx
-    # Initialize path with root of mounted device
-    dialog.dir_line_edit.setText(dialog.dev_mount_path)
-    dialog.backup_dir = dialog.dev_mount_path
+
+    if dialog.dev_mount_path != None:
+      # Initialize path with root of mounted device
+      dialog.dir_line_edit.setText(dialog.dev_mount_path)
+      dialog.backup_dir = dialog.dev_mount_path
+
     dialog.select_dir_page.emit(SIGNAL("completeChanged()"))
 
                    
