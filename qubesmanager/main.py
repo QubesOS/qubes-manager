@@ -2030,8 +2030,6 @@ def sighup_handler(signum, frame):
     os.execl("/usr/bin/qubes-manager")
 
 def main():
-
-
     # Avoid starting more than one instance of the app
     lock = QubesDaemonPidfile ("qubes-manager")
     if lock.pidfile_exists():
@@ -2084,4 +2082,9 @@ def main():
 
     show_manager()
     app.exec_()
+    
+    lock.remove_pidfile()
     trayIcon = None
+
+if __name__ == "__main__":
+    main()
