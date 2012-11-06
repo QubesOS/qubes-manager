@@ -68,6 +68,7 @@ update_suggestion_interval = 14 # 14 days
 dbus_object_path = '/org/qubesos/QubesManager'
 dbus_interface = 'org.qubesos.QubesManager'
 system_bus = None
+session_bus = None
 
 power_order = Qt.DescendingOrder
 update_order = Qt.AscendingOrder
@@ -249,26 +250,31 @@ class VmInfoWidget (QWidget):
         self.upd_info = VmUpdateInfoWidget(vm, show_text=False)
         self.error_icon = VmIconWidget(":/warning.png")
         self.blk_icon = VmIconWidget(":/mount.png")
+        self.rec_icon = VmIconWidget(":/mic.png")
 
         layout.addWidget(self.on_icon)
         layout.addWidget(self.upd_info)
         layout.addWidget(self.error_icon)
         layout.addItem(QSpacerItem(0, 10, QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding))
         layout.addWidget(self.blk_icon)
+        layout.addWidget(self.rec_icon)
 
         layout.setContentsMargins(5,0,5,0)
         self.setLayout(layout)
 
+        self.rec_icon.setVisible(False)
         self.blk_icon.setVisible(False)
         self.error_icon.setVisible(False)
 
         self.tableItem = self.VmInfoItem(self.upd_info.tableItem, vm)
 
-    def update_vm_state(self, vm, blk_visible):
+    def update_vm_state(self, vm, blk_visible, rec_visible=None):
         self.on_icon.update()
         self.upd_info.update_outdated(vm)
         if blk_visible != None:
             self.blk_icon.setVisible(blk_visible)
+        if rec_visible != None:
+            self.rec_icon.setVisible(rec_visible)
         self.error_icon.setToolTip(vm.error_msg)
         self.error_icon.setVisible(vm.error_msg is not None)
 
@@ -625,8 +631,8 @@ class VmRowInTable(object):
         table.setItem(row_no,  VmManagerWindow.columns_indices['Size'], self.size_widget)
 
 
-    def update(self, blk_visible = None, cpu_load = None, update_size_on_disk = False):
-        self.info_widget.update_vm_state(self.vm, blk_visible)
+    def update(self, blk_visible = None, cpu_load = None, update_size_on_disk = False, rec_visible = None):
+        self.info_widget.update_vm_state(self.vm, blk_visible, rec_visible)
         if cpu_load is not None:
             self.cpu_usage_widget.update_load(self.vm, cpu_load)
             self.mem_usage_widget.update_load(self.vm, None)
@@ -713,6 +719,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.running_vms_count = 0
 
         self.vm_errors = {}
+        self.vm_rec = {}
 
         self.frame_width = 0
         self.frame_height = 0
@@ -760,6 +767,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.context_menu.addAction(self.action_appmenus)
         self.context_menu.addAction(self.action_set_keyboard_layout)
         self.context_menu.addMenu(self.blk_menu)
+        self.context_menu.addAction(self.action_toggle_audio_input)
         self.context_menu.addSeparator()
 
         self.context_menu.addAction(self.action_updatevm)
@@ -790,6 +798,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         self.connect(self.action_menubar, SIGNAL("toggled(bool)"), self.showhide_menubar)
         self.connect(self.action_toolbar, SIGNAL("toggled(bool)"), self.showhide_toolbar)
+
+        self.register_dbus_watches()
 
         self.load_manager_settings()
 
@@ -985,6 +995,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         # Clear error state when VM just started
                         self.clear_error(vm.qid)
                     elif prev_running and not vm.last_running:
+                        # FIXME: remove when recAllowed state will be preserved
+                        self.vm_rec.pop(vm.name)
                         self.running_vms_count -= 1
                         some_vms_have_changed_power_state = True
 
@@ -1035,7 +1047,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         else:
                             blk_visible = False
 
-                    vm_row.update(blk_visible=blk_visible, cpu_load = cur_cpu_load, update_size_on_disk = self.update_size_on_disk)
+                    vm_row.update(blk_visible=blk_visible, cpu_load = cur_cpu_load, update_size_on_disk = self.update_size_on_disk, rec_visible = self.vm_rec.get(vm_row.vm.name, False))
 
             else:
                 for vm_row in self.vms_in_table.values():
@@ -1045,7 +1057,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         else:
                             blk_visible = False
 
-                    vm_row.update(blk_visible=blk_visible, update_size_on_disk = self.update_size_on_disk)
+                    vm_row.update(blk_visible=blk_visible, update_size_on_disk = self.update_size_on_disk, rec_visible = self.vm_rec.get(vm_row.vm.name, False))
 
             if self.sort_by_column in ["CPU", "CPU Graph", "MEM", "MEM Graph", "State", "Size" ]:
                 # "State": needed to sort after reload (fill_table sorts items with setSortingEnabled, but by that time the widgets values are not correct yet).
@@ -1066,6 +1078,24 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             trayIcon.showMessage (str, msecs=5000)
         return res
 
+    def recAllowedChanged(self, state, path = None):
+        if path is None:
+            print "dbus signal: No path found"
+            return
+
+        if not path.startswith('/org/qubesos/audio/'):
+            print "dbus signal: Invalid object caller: %s" % path
+
+        vmname = path.strip('/org/qubesos/audio/')
+        self.vm_rec[vmname] = bool(state)
+
+    def register_dbus_watches(self):
+        global session_bus
+
+        if not session_bus:
+            session_bus = dbus.SessionBus()
+
+        session_bus.add_signal_receiver(self.recAllowedChanged, signal_name="RecAllowedChanged", dbus_interface="org.QubesOS.Audio", path_keyword='path')
 
     def sortIndicatorChanged(self, column, order):
         self.sort_by_column = [name for name in self.columns_indices.keys() if self.columns_indices[name] == column][0]
@@ -1091,6 +1121,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.action_appmenus.setEnabled(not vm.is_netvm())
             self.action_editfwrules.setEnabled(vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
             self.action_updatevm.setEnabled(vm.is_updateable() or vm.qid == 0)
+            self.action_toggle_audio_input.setEnabled(vm.last_running and vm.qid != 0)
             self.action_run_command_in_vm.setEnabled(vm.qid != 0)
             self.action_set_keyboard_layout.setEnabled(vm.qid != 0 and vm.last_running)
         else:
@@ -1104,6 +1135,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.action_appmenus.setEnabled(False)
             self.action_editfwrules.setEnabled(False)
             self.action_updatevm.setEnabled(False)
+            self.action_toggle_audio_input.setEnabled(False)
             self.action_run_command_in_vm.setEnabled(False)
             self.action_set_keyboard_layout.setEnabled(False)
 
@@ -1405,6 +1437,14 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         settings_window = VMSettingsWindow(vm, app, self.qvm_collection, "applications")
         settings_window.exec_()
 
+    @pyqtSlot(name='on_action_toggle_audio_input_triggered')
+    def action_toggle_audio_input_triggered(self):
+        vm = self.get_selected_vm()
+        audio = session_bus.get_object('org.QubesOS.Audio.%s' % vm.name,
+                                      '/org/qubesos/audio/%s' % vm.name)
+        current_audio = bool(audio.Get('org.QubesOS.Audio', 'RecAllowed'))
+        audio.Set('org.QubesOS.Audio', 'RecAllowed', dbus.Boolean(not current_audio, variant_level=1))
+        # icon will be updated based on dbus signal
 
     @pyqtSlot(name='on_action_updatevm_triggered')
     def action_updatevm_triggered(self):
@@ -2075,6 +2115,9 @@ def main():
     system_bus = dbus.SystemBus()
     name = dbus.service.BusName('org.qubesos.QubesManager', system_bus)
     dbus_notifier = QubesDbusNotify(system_bus, manager_window)
+
+    global session_bus
+    session_bus = dbus.SessionBus()
 
     global trayIcon
     trayIcon = QubesTrayIcon(QIcon(":/qubes.png"))

@@ -47,6 +47,7 @@
     <file alias="resumevm.png">icons/resumevm.png</file>
     <file alias="pausevm.png">icons/pausevm.png</file>
     <file alias="showcpuload.png">icons/showcpuload.png</file>
+    <file alias="mic.png">icons/mic.png</file>
   </qresource>
   <qresource/>
 </RCC>
