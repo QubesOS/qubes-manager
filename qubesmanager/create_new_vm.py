@@ -176,11 +176,9 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
                 vm = createvm_method(vmname, label = label)
                 vm.create_on_disk(verbose=False)
 
-            if allow_networking is not None:
-                firewall = vm.get_firewall_conf()
-                firewall["allow"] = allow_networking
-                firewall["allowDns"] = allow_networking
-                vm.write_firewall_conf(firewall)
+            if allow_networking == False:
+                vm.uses_default_netvm = False
+                vm.netvm = None
             self.qvm_collection.save()
 
         except Exception as ex:
