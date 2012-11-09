@@ -85,6 +85,13 @@
        </property>
       </widget>
      </item>
+     <item row="1" column="3">
+      <widget class="QCheckBox" name="standalone">
+       <property name="text">
+        <string>Standalone</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>

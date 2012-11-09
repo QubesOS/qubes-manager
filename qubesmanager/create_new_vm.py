@@ -102,7 +102,12 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
     def on_hvm_radio_toggled(self, checked):
         if checked:
             self.template_name.setEnabled(False)
+            self.standalone.setEnabled(False)
+            self.standalone.setChecked(True)
             self.allow_networking.setEnabled(True)
+        else:
+            self.standalone.setEnabled(True)
+            self.standalone.setChecked(False)
 
 
     def reject(self):
@@ -119,6 +124,8 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
         template_vm = None
         if self.template_name.isEnabled():
             template_vm = self.template_vm_list[self.template_name.currentIndex()]
+
+        standalone = self.standalone.isChecked()
 
         allow_networking = None
         if self.allow_networking.isEnabled():
@@ -139,7 +146,7 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
 
 
         thread_monitor = ThreadMonitor()
-        thread = threading.Thread (target=self.do_create_vm, args=(createvm_method, vmname, label, template_vm, allow_networking, thread_monitor))
+        thread = threading.Thread (target=self.do_create_vm, args=(createvm_method, vmname, label, template_vm, standalone, allow_networking, thread_monitor))
         thread.daemon = True
         thread.start()
 
@@ -163,14 +170,17 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
 
 
 
-    def do_create_vm (self, createvm_method, vmname, label, template_vm, allow_networking, thread_monitor):
+    def do_create_vm (self, createvm_method, vmname, label, template_vm, standalone, allow_networking, thread_monitor):
         vm = None
         try:
             self.qvm_collection.lock_db_for_writing()
             self.qvm_collection.load()
 
             if template_vm is not None:
-                vm = createvm_method(vmname, template_vm, label = label)
+                if not standalone:
+                    vm = createvm_method(vmname, template_vm, label = label)
+                else:
+                    vm = createvm_method(vmname, None, label = label)
                 vm.create_on_disk(verbose=False, source_template = template_vm)
             else:
                 vm = createvm_method(vmname, label = label)
