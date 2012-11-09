@@ -996,7 +996,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         self.clear_error(vm.qid)
                     elif prev_running and not vm.last_running:
                         # FIXME: remove when recAllowed state will be preserved
-                        self.vm_rec.pop(vm.name)
+                        if self.vm_rec.has_key(vm.name):
+                            self.vm_rec.pop(vm.name)
                         self.running_vms_count -= 1
                         some_vms_have_changed_power_state = True
 
