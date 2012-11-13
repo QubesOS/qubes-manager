@@ -1486,7 +1486,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             if vm.qid == 0:
                 subprocess.check_call (["/usr/bin/qubes-dom0-update", "--clean", "--gui"])
             else:
-                vm.run("user:gpk-update-viewer;sudo service qubes-update-check start", verbose=False, autostart=True,
+                vm.run("gpk-update-viewer;sudo service qubes-update-check start", verbose=False, autostart=True,
                         notify_function=lambda lvl, msg: trayIcon.showMessage(msg, msecs=3000) )
         except Exception as ex:
             thread_monitor.set_error_msg(str(ex))
@@ -1519,7 +1519,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         command_to_run = command_to_run.strip()
         if command_to_run != "":
             try:
-                vm.run("user:" + command_to_run, verbose=False, autostart=True,
+                vm.run(command_to_run, verbose=False, autostart=True,
                         notify_function=lambda lvl, msg: trayIcon.showMessage(msg, msecs=3000) )
             except Exception as ex:
                 thread_monitor.set_error_msg(str(ex))
@@ -1528,7 +1528,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot(name='on_action_set_keyboard_layout_triggered')
     def action_set_keyboard_layout_triggered(self):
         vm = self.get_selected_vm()
-        vm.run('user:qubes-change-keyboard-layout', verbose = False)
+        vm.run('qubes-change-keyboard-layout', verbose = False)
 
     @pyqtSlot(name='on_action_showallvms_triggered')
     def action_showallvms_triggered(self):
