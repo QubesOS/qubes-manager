@@ -8,7 +8,11 @@ help:
 	@echo "make update-repo-installer -- copy dom0 rpms to installer repo"
 
 
-rpms:	
+rpms: rpms-dom0
+
+rpms-vm:
+
+rpms-dom0:
 	rpmbuild --define "_rpmdir $(RPMS_DIR)" -bb rpm_spec/qmgr.spec
 	rpm --addsign $(RPMS_DIR)/x86_64/qubes-manager*$(VERSION)*.rpm
 
