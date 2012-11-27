@@ -79,8 +79,10 @@ class AppmenuSelectManager:
             whitelisted = [item.strip() for item in f]
             f.close()
 
-        self.app_list.clear()
+        # Check if appmenu entry is really installed
+        whitelisted = [a for a in whitelisted if os.path.exists('%s/apps/%s-%s' % (self.vm.dir_path, self.vm.name, a))]
 
+        self.app_list.clear()
 
         available_appmenus = []
         for template_file in template_file_list:
