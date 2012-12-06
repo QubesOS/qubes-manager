@@ -1079,15 +1079,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             trayIcon.showMessage (str, msecs=5000)
         return res
 
-    def recAllowedChanged(self, state, path = None):
-        if path is None:
-            print "dbus signal: No path found"
-            return
-
-        if not path.startswith('/org/qubesos/audio/'):
-            print "dbus signal: Invalid object caller: %s" % path
-
-        vmname = path.strip('/org/qubesos/audio/')
+    def recAllowedChanged(self, state, vmname):
         self.vm_rec[vmname] = bool(state)
 
     def register_dbus_watches(self):
@@ -1096,7 +1088,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         if not session_bus:
             session_bus = dbus.SessionBus()
 
-        session_bus.add_signal_receiver(self.recAllowedChanged, signal_name="RecAllowedChanged", dbus_interface="org.QubesOS.Audio", path_keyword='path')
+        session_bus.add_signal_receiver(self.recAllowedChanged, signal_name="RecAllowedChanged", dbus_interface="org.QubesOS.Audio")
 
     def sortIndicatorChanged(self, column, order):
         self.sort_by_column = [name for name in self.columns_indices.keys() if self.columns_indices[name] == column][0]
@@ -1442,7 +1434,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def action_toggle_audio_input_triggered(self):
         vm = self.get_selected_vm()
         audio = session_bus.get_object('org.QubesOS.Audio.%s' % vm.name,
-                                      '/org/qubesos/audio/%s' % vm.name)
+                                      '/org/qubesos/audio')
         current_audio = bool(audio.Get('org.QubesOS.Audio', 'RecAllowed'))
         audio.Set('org.QubesOS.Audio', 'RecAllowed', dbus.Boolean(not current_audio, variant_level=1))
         # icon will be updated based on dbus signal
