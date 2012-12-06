@@ -1114,7 +1114,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.action_appmenus.setEnabled(not vm.is_netvm())
             self.action_editfwrules.setEnabled(vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
             self.action_updatevm.setEnabled(vm.is_updateable() or vm.qid == 0)
-            self.action_toggle_audio_input.setEnabled(vm.last_running and vm.qid != 0)
+            self.action_toggle_audio_input.setEnabled(vm.last_running and vm.qid != 0 and \
+                    session_bus.name_has_owner('org.QubesOS.Audio.%s' % vm.name))
             self.action_run_command_in_vm.setEnabled(vm.qid != 0)
             self.action_set_keyboard_layout.setEnabled(vm.qid != 0 and vm.last_running)
         else:
