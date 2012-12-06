@@ -461,10 +461,10 @@
      <normaloff>:/mic.png</normaloff>:/mic.png</iconset>
    </property>
    <property name="text">
-    <string>Toggle audio-input to the VM</string>
+    <string>Attach/detach audio-input to the VM</string>
    </property>
    <property name="toolTip">
-    <string>Toggle audio-input to the VM</string>
+    <string>Attach/detach audio-input to the VM</string>
    </property>
   </action>
   <action name="action_showallvms">
