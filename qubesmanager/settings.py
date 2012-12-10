@@ -274,7 +274,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.networking_groupbox.setEnabled(True);
             self.ip_label.setText(self.vm.ip if self.vm.ip is not None else "none")
             self.netmask_label.setText(self.vm.netmask if self.vm.netmask is not None else "none")
-            self.gateway_label.setText(self.vm.gateway if self.vm.gateway is not None else "none")
+            self.gateway_label.setText(self.vm.netvm.gateway if self.vm.netvm is not None else "none")
         else:
             self.networking_groupbox.setEnabled(False);
 
