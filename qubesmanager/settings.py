@@ -392,8 +392,11 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.vcpus.setMaximum(QubesHost().no_cpus)
         self.vcpus.setValue(int(self.vm.vcpus))
 
+        self.include_in_balancing.setEnabled(True)
         self.include_in_balancing.setChecked(self.vm.services['meminfo-writer']==True)
-
+        if self.vm.type == "HVM":
+            self.include_in_balancing.setChecked(False)
+            self.include_in_balancing.setEnabled(False)
 
         #paths
         self.dir_path.setText(self.vm.dir_path)
