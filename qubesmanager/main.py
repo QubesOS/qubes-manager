@@ -1171,7 +1171,11 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         #vm selection relies on the VmInfo widget's value used for sorting by VM name
         row_index = self.table.currentRow()
         if row_index != -1:
-            qid = self.table.item(row_index, self.columns_indices["Name"]).qid
+            vm_item = self.table.item(row_index, self.columns_indices["Name"])
+            # here is possible race with update_table timer so check if really got the item
+            if vm_item is None:
+                return None
+            qid = vm_item.qid
             assert self.vms_in_table[qid] is not None
             vm = self.vms_in_table[qid].vm
             return vm
