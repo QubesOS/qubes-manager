@@ -1895,7 +1895,7 @@ class QubesTrayIcon(QSystemTrayIcon):
 
         self.connect (self, SIGNAL("activated (QSystemTrayIcon::ActivationReason)"), self.icon_clicked)
 
-        self.tray_object = dbus.SessionBus().get_object("org.freedesktop.Notifications", "/org/freedesktop/Notifications")
+        self.tray_object = dbus.SessionBus().get_object("org.freedesktop.Notifications", "/org/freedesktop/Notifications", follow_name_owner_changes=True)
         self.tray_notifier = dbus.Interface(self.tray_object, "org.freedesktop.Notifications" )
 
     def icon_clicked(self, reason):
