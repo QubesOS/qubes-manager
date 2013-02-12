@@ -1264,14 +1264,13 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         while self.qvm_collection.get_vm_by_name(name_format % name_number):
             name_number += 1
 
-        cmd = ['kdialog', '--title', 'Qubes clone VM', '--inputbox', 'Enter name for VM <b>'+vm.name+'</b> clone:', name_format % name_number]
-        kdialog = subprocess.Popen(cmd, stdout = subprocess.PIPE)
-        clone_name = kdialog.stdout.read().strip()
-        if clone_name == "":
+        (clone_name, ok) = QInputDialog.getText(self, 'Qubes clone VM',
+                'Enter name for VM <b>'+vm.name+'</b> clone:', text=name_format % name_number)
+        if not ok or clone_name == "":
             return
 
         thread_monitor = ThreadMonitor()
-        thread = threading.Thread (target=self.do_clone_vm, args=(vm, clone_name, thread_monitor))
+        thread = threading.Thread (target=self.do_clone_vm, args=(vm, str(clone_name), thread_monitor))
         thread.daemon = True
         thread.start()
 
@@ -1496,8 +1495,12 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def action_run_command_in_vm_triggered(self):
         vm = self.get_selected_vm()
 
+        (command_to_run, ok) = QInputDialog.getText(self, 'Qubes command entry',
+                'Run command in <b>'+vm.name+'</b>:')
+        if not ok or command_to_run == "":
+            return
         thread_monitor = ThreadMonitor()
-        thread = threading.Thread (target=self.do_run_command_in_vm, args=(vm, thread_monitor))
+        thread = threading.Thread (target=self.do_run_command_in_vm, args=(vm, str(command_to_run), thread_monitor))
         thread.daemon = True
         thread.start()
 
@@ -1509,17 +1512,12 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             QMessageBox.warning (None, "Error while running command", "Exception while running command:<br>{0}".format(thread_monitor.error_msg))
 
 
-    def do_run_command_in_vm(self, vm, thread_monitor):
-        cmd = ['kdialog', '--title', 'Qubes command entry', '--inputbox', 'Run command in <b>'+vm.name+'</b>:']
-        kdialog = subprocess.Popen(cmd, stdout = subprocess.PIPE)
-        command_to_run = kdialog.stdout.read()
-        command_to_run = command_to_run.strip()
-        if command_to_run != "":
-            try:
-                vm.run(command_to_run, verbose=False, autostart=True,
-                        notify_function=lambda lvl, msg: trayIcon.showMessage(msg, msecs=3000) )
-            except Exception as ex:
-                thread_monitor.set_error_msg(str(ex))
+    def do_run_command_in_vm(self, vm, command_to_run, thread_monitor):
+        try:
+            vm.run(command_to_run, verbose=False, autostart=True,
+                    notify_function=lambda lvl, msg: trayIcon.showMessage(msg, msecs=3000) )
+        except Exception as ex:
+            thread_monitor.set_error_msg(str(ex))
         thread_monitor.set_finished()
 
     @pyqtSlot(name='on_action_set_keyboard_layout_triggered')

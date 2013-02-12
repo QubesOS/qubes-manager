@@ -9,10 +9,17 @@ if [ ! -e $1 ]; then
     exit 1; #no such path
 fi
 
+if type kdialog &> /dev/null; then
+    PROMPT="kdialog --title Qubes --password"
+else
+    PROMPT="zenity --entry --title Qubes --hide-text --text"
+fi
+
+
 #check if luks-encrypted
 if sudo cryptsetup isLuks $1 ; then
     # Is a luks device
-    if ! kdialog --password "Please unlock the LUKS-encrypted $1 device:" | sudo pmount $1 $2 ; then
+    if ! $PROMPT "Please unlock the LUKS-encrypted $1 device:" | sudo pmount $1 $2 ; then
         exit 1;
     fi
 else

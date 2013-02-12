@@ -11,7 +11,7 @@ Group:		Qubes
 Vendor:		Invisible Things Lab
 License:	GPL
 URL:		http://fixme
-Requires:	python, PyQt4, qubes-core-dom0 > 1.7.23, kdebase
+Requires:	python, PyQt4, qubes-core-dom0 > 1.7.23
 Requires:	pmount, cryptsetup, wmctrl
 Requires:	dbus
 BuildRequires:	PyQt4-devel
