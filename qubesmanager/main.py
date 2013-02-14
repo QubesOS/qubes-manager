@@ -2063,7 +2063,7 @@ def handle_exception( exc_type, exc_value, exc_traceback ):
     msg_box.exec_()
 
 def sighup_handler(signum, frame):
-    os.execl("/usr/bin/qubes-manager")
+    os.execl("/usr/bin/qubes-manager", "qubes-manager")
 
 def main():
     # Avoid starting more than one instance of the app
