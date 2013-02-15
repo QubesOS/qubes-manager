@@ -232,6 +232,9 @@
      <height>22</height>
     </rect>
    </property>
+   <property name="contextMenuPolicy">
+    <enum>Qt::CustomContextMenu</enum>
+   </property>
    <widget class="QMenu" name="menu_system">
     <property name="title">
      <string>System</string>
@@ -323,6 +326,9 @@
    </property>
    <property name="floatable">
     <bool>false</bool>
+   </property>
+   <property name="contextMenuPolicy">
+    <enum>Qt::CustomContextMenu</enum>
    </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>

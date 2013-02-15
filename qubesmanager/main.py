@@ -785,10 +785,18 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.context_menu.addMenu(self.logs_menu)
         self.context_menu.addSeparator()
 
+        self.tools_context_menu = QMenu(self)
+        self.tools_context_menu.addAction(self.action_toolbar)
+        self.tools_context_menu.addAction(self.action_menubar)
+
         self.table_selection_changed()
 
         self.connect(self.table.horizontalHeader(), SIGNAL("sortIndicatorChanged(int, Qt::SortOrder)"), self.sortIndicatorChanged)
         self.connect(self.table, SIGNAL("customContextMenuRequested(const QPoint&)"), self.open_context_menu)
+        self.connect(self.menubar, SIGNAL("customContextMenuRequested(const QPoint&)"),
+            lambda pos: self.open_tools_context_menu(self.menubar, pos))
+        self.connect(self.toolBar, SIGNAL("customContextMenuRequested(const QPoint&)"),
+            lambda pos: self.open_tools_context_menu(self.toolBar, pos))
         self.connect(self.blk_menu, SIGNAL("triggered(QAction *)"), self.attach_dettach_device_triggered)
         self.connect(self.logs_menu, SIGNAL("triggered(QAction *)"), self.show_log)
 
@@ -1648,6 +1656,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         menu.addAction(self.action_toolbar)
         menu.addAction(self.action_menubar)
         return menu
+
+    def open_tools_context_menu(self, widget, point):
+        self.tools_context_menu.exec_(widget.mapToGlobal(point))
 
 
     @pyqtSlot('const QPoint&')
