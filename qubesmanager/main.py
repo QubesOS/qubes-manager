@@ -619,11 +619,11 @@ class VmRowInTable(object):
         table.setItem(row_no,  VmManagerWindow.columns_indices['CPU Graph'], self.load_widget.tableItem)
 
         self.mem_usage_widget = VmUsageBarWidget(0, qubes_host.memory_total/1024, "%v MB",
-                            lambda vm, val: vm.get_mem()/1024 if vm.last_running else 0, vm, 0, self.mem_graph_hue)
+                            lambda vm, val: vm.get_mem()/1024, vm, 0, self.mem_graph_hue)
         table.setCellWidget(row_no,  VmManagerWindow.columns_indices['MEM'], self.mem_usage_widget)
         table.setItem(row_no,  VmManagerWindow.columns_indices['MEM'], self.mem_usage_widget.tableItem)
 
-        self.mem_widget = ChartWidget(vm, lambda vm, val: vm.get_mem()*100/qubes_host.memory_total if vm.last_running else 0, self.mem_graph_hue, 0)
+        self.mem_widget = ChartWidget(vm, lambda vm, val: vm.get_mem()*100/qubes_host.memory_total, self.mem_graph_hue, 0)
         table.setCellWidget(row_no,  VmManagerWindow.columns_indices['MEM Graph'], self.mem_widget)
         table.setItem(row_no,  VmManagerWindow.columns_indices['MEM Graph'], self.mem_widget.tableItem)
 
