@@ -1118,7 +1118,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.action_resumevm.setEnabled(not vm.last_running)
             self.action_pausevm.setEnabled(vm.last_running and vm.qid != 0)
             self.action_shutdownvm.setEnabled(vm.last_running and vm.qid != 0)
-            self.action_killvm.setEnabled(vm.last_running and vm.qid != 0)
+            self.action_killvm.setEnabled((vm.last_running or vm.last_power_state == "Paused") and vm.qid != 0)
             self.action_appmenus.setEnabled(not vm.is_netvm())
             self.action_editfwrules.setEnabled(vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
             self.action_updatevm.setEnabled(vm.is_updateable() or vm.qid == 0)
@@ -1409,7 +1409,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot(name='on_action_killvm_triggered')
     def action_killvm_triggered(self):
         vm = self.get_selected_vm()
-        assert vm.is_running()
+        assert vm.is_running() or vm.is_paused()
 
         reply = QMessageBox.question(None, "VM Kill Confirmation",
                                      "Are you sure you want to kill the VM <b>'{0}'</b>?<br>"
