@@ -21,6 +21,7 @@
     <file alias="add.png">icons/add.png</file>
     <file alias="flag-blue.png">icons/flag-blue.png</file>
     <file alias="on.png">icons/running.png</file>
+    <file alias="paused.png">icons/paused.png</file>
     <file alias="transient.png">icons/transient.png</file>
     <file alias="flag-green.png">icons/flag-green.png</file>
     <file alias="flag-red.png">icons/flag-red.png</file>
@@ -49,5 +50,4 @@
     <file alias="showcpuload.png">icons/showcpuload.png</file>
     <file alias="mic.png">icons/mic.png</file>
   </qresource>
-  <qresource/>
 </RCC>

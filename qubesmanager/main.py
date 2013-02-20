@@ -204,6 +204,8 @@ class VmStatusIcon(QLabel):
     def set_on_icon(self):
         if self.vm.last_power_state == "Running":
             icon = QIcon (":/on.png")
+        elif self.vm.last_power_state in ["Paused"]:
+            icon = QIcon (":/paused.png")
         elif self.vm.last_power_state in ["Transient", "Halting", "Dying"]:
             icon = QIcon (":/transient.png")
         else:
