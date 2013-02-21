@@ -83,6 +83,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/bin/qubes-manager
 /usr/bin/qubes-vm-settings
 /usr/libexec/qubes-manager/mount_for_backup.sh
+%dir %{python_sitearch}/qubesmanager
 %{python_sitearch}/qubesmanager/__init__.py
 %{python_sitearch}/qubesmanager/__init__.pyo
 %{python_sitearch}/qubesmanager/__init__.pyc
