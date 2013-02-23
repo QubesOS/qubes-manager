@@ -154,26 +154,46 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.qvm_collection.lock_db_for_writing()
         self.anything_changed = False
         
-        ret = self.__apply_basic_tab__()
-        self.__apply_advanced_tab__()
-        self.__apply_devices_tab__()
-        self.__apply_services_tab__()
-
-        if len(ret) > 0 :
-            thread_monitor.set_error_msg('\n'.join(ret)) 
+        ret = []
+        try:
+            ret_tmp = self.__apply_basic_tab__()
+            if len(ret_tmp) > 0:
+                ret += ["Basic tab:"] + ret_tmp
+            ret_tmp = self.__apply_advanced_tab__()
+            if len(ret_tmp) > 0:
+                ret += ["Advanced tab:"] + ret_tmp
+            ret_tmp = self.__apply_devices_tab__()
+            if len(ret_tmp) > 0:
+                ret += ["Devices tab:"] + ret_tmp
+            ret_tmp = self.__apply_services_tab__()
+            if len(ret_tmp) > 0:
+                ret += ["Sevices tab:"] + ret_tmp
+        except Exception as ex:
+            ret.append('Error while saving changes: ' + str(ex))
 
         if self.anything_changed == True:
             self.qvm_collection.save()
         self.qvm_collection.unlock_db()
 
-        if self.tabWidget.isTabEnabled(self.tabs_indices["firewall"]):
-            self.fw_model.apply_rules(self.policyAllowRadioButton.isChecked(), self.dnsCheckBox.isChecked(), self.icmpCheckBox.isChecked(), self.yumproxyCheckBox.isChecked())
+        try:
+            if self.tabWidget.isTabEnabled(self.tabs_indices["firewall"]):
+                self.fw_model.apply_rules(self.policyAllowRadioButton.isChecked(),
+                        self.dnsCheckBox.isChecked(),
+                        self.icmpCheckBox.isChecked(),
+                        self.yumproxyCheckBox.isChecked())
+        except Exception as ex:
+            ret += ["Firewall tab:", str(ex)]
 
-        if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
-            self.AppListManager.save_appmenu_select_changes()
+        try:
+            if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
+                self.AppListManager.save_appmenu_select_changes()
+        except Exception as ex:
+            ret += ["Applications tab:", str(ex)]
+
+        if len(ret) > 0 :
+            thread_monitor.set_error_msg('\n'.join(ret))
 
         thread_monitor.set_finished()
- 
 
 
     def current_tab_changed(self, idx):
@@ -301,55 +321,70 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                     self.anything_changed = True
                 except Exception as ex:
                     msg.append(str(ex))
-                    
+
         #vm label changed
-        if self.vmlabel.isVisible():
-            if self.vmlabel.currentIndex() != self.label_idx:
-                label = self.label_list[self.vmlabel.currentIndex()]
-                self.vm.label = label
-                self.anything_changed = True
+        try:
+            if self.vmlabel.isVisible():
+                if self.vmlabel.currentIndex() != self.label_idx:
+                    label = self.label_list[self.vmlabel.currentIndex()]
+                    self.vm.label = label
+                    self.anything_changed = True
+        except Exception as ex:
+            msg.append(str(ex))
 
         #vm template changed
-        if self.template_name.currentIndex() != self.template_idx:
-            new_template_name = self.template_name.currentText()
-            new_template_name = new_template_name.split(' ')[0]
-            template_vm = self.qvm_collection.get_vm_by_name(new_template_name)
-            assert (template_vm is not None and template_vm.qid in self.qvm_collection)
-            assert template_vm.is_template()
-            self.vm.template = template_vm
-            self.anything_changed = True
+        try:
+            if self.template_name.currentIndex() != self.template_idx:
+                new_template_name = self.template_name.currentText()
+                new_template_name = new_template_name.split(' ')[0]
+                template_vm = self.qvm_collection.get_vm_by_name(new_template_name)
+                assert (template_vm is not None and template_vm.qid in self.qvm_collection)
+                assert template_vm.is_template()
+                self.vm.template = template_vm
+                self.anything_changed = True
+        except Exception as ex:
+            msg.append(str(ex))
 
         #vm netvm changed
-        if self.netVM.currentIndex() != self.netvm_idx:
-            new_netvm_name = self.netVM.currentText()
-            new_netvm_name = new_netvm_name.split(' ')[0]
-    
-            uses_default_netvm = False
+        try:
+            if self.netVM.currentIndex() != self.netvm_idx:
+                new_netvm_name = self.netVM.currentText()
+                new_netvm_name = new_netvm_name.split(' ')[0]
 
-            if new_netvm_name == "default":
-                new_netvm_name = self.qvm_collection.get_default_netvm().name
-                uses_default_netvm = True
+                uses_default_netvm = False
 
-            if new_netvm_name == "none":
-                netvm = None
-            else:
-                netvm = self.qvm_collection.get_vm_by_name(new_netvm_name)
-            assert (netvm is None or (netvm is not None and netvm.qid in self.qvm_collection and netvm.is_netvm()))
-            
-            self.vm.netvm = netvm
-            self.vm.uses_default_netvm = uses_default_netvm
-            self.anything_changed = True
+                if new_netvm_name == "default":
+                    new_netvm_name = self.qvm_collection.get_default_netvm().name
+                    uses_default_netvm = True
+
+                if new_netvm_name == "none":
+                    netvm = None
+                else:
+                    netvm = self.qvm_collection.get_vm_by_name(new_netvm_name)
+                assert (netvm is None or (netvm is not None and netvm.qid in self.qvm_collection and netvm.is_netvm()))
+
+                self.vm.netvm = netvm
+                self.vm.uses_default_netvm = uses_default_netvm
+                self.anything_changed = True
+        except Exception as ex:
+            msg.append(str(ex))
 
         #include in backups
-        if self.vm.include_in_backups != self.include_in_backups.isChecked():
-            self.vm.include_in_backups = self.include_in_backups.isChecked()
-            self.anything_changed = True
+        try:
+            if self.vm.include_in_backups != self.include_in_backups.isChecked():
+                self.vm.include_in_backups = self.include_in_backups.isChecked()
+                self.anything_changed = True
+        except Exception as ex:
+            msg.append(str(ex))
 
         #run_in_debug_mode
-        if self.run_in_debug_mode.isVisible():
-            if self.vm.debug != self.run_in_debug_mode.isChecked():
-                self.vm.debug = self.run_in_debug_mode.isChecked()
-                self.anything_changed = True
+        try:
+            if self.run_in_debug_mode.isVisible():
+                if self.vm.debug != self.run_in_debug_mode.isChecked():
+                    self.vm.debug = self.run_in_debug_mode.isChecked()
+                    self.anything_changed = True
+        except Exception as ex:
+            msg.append(str(ex))
 
         #max priv storage
         priv_size = self.max_priv_storage.value()
@@ -449,46 +484,55 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                 
        
     def __apply_advanced_tab__(self):
+        msg = []
 
         #mem/cpu
-        if self.init_mem.value() != int(self.vm.memory):
-            self.vm.memory = self.init_mem.value()
-            self.anything_changed = True
+        try:
+            if self.init_mem.value() != int(self.vm.memory):
+                self.vm.memory = self.init_mem.value()
+                self.anything_changed = True
 
-        if self.max_mem_size.value() != int(self.vm.maxmem):
-            self.vm.maxmem = self.max_mem_size.value()
-            self.anything_changed = True
+            if self.max_mem_size.value() != int(self.vm.maxmem):
+                self.vm.maxmem = self.max_mem_size.value()
+                self.anything_changed = True
 
-        if self.vcpus.value() != int(self.vm.vcpus):
-            self.vm.vcpus = self.vcpus.value() 
-            self.anything_changed = True
+            if self.vcpus.value() != int(self.vm.vcpus):
+                self.vm.vcpus = self.vcpus.value()
+                self.anything_changed = True
+        except Exception as ex:
+            msg.append(str(ex))
 
         #include_in_memory_balancing applied in services tab
 
-        
+
         #in case VM is not Linux
         if not hasattr(self.vm, "kernel"):
-            return;
+            return msg;
 
         #kernel changed
         if not self.kernel_groupbox.isVisible():
-            return
+            return msg
 
-        if self.kernel.currentIndex() != self.kernel_idx:
-            new_kernel = self.kernel.currentText()
-            new_kernel = new_kernel.split(' ')[0]
-            if(new_kernel == "default"):
-                kernel = self.qvm_collection.get_default_kernel()
-                self.vm.uses_default_kernel = True
-            elif(new_kernel == "none"):
-                kernel = None
-                self.vm.uses_default_kernel = False;
-            else:
-                kernel = new_kernel
-                self.vm.uses_default_kernel = False;
+        try:
+            if self.kernel.currentIndex() != self.kernel_idx:
+                new_kernel = self.kernel.currentText()
+                new_kernel = new_kernel.split(' ')[0]
+                if(new_kernel == "default"):
+                    kernel = self.qvm_collection.get_default_kernel()
+                    self.vm.uses_default_kernel = True
+                elif(new_kernel == "none"):
+                    kernel = None
+                    self.vm.uses_default_kernel = False;
+                else:
+                    kernel = new_kernel
+                    self.vm.uses_default_kernel = False;
 
-            self.vm.kernel = kernel
-            self.anything_changed = True
+                self.vm.kernel = kernel
+                self.anything_changed = True
+        except Exception as ex:
+            msg.append(str(ex))
+
+        return msg
 
 
     ######## devices tab
@@ -528,26 +572,32 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
 
     def __apply_devices_tab__(self):
+        msg = []
         sth_changed = False
         added = []
 
-        for i in range(self.dev_list.selected_list.count()):
-            item = self.dev_list.selected_list.item(i)
-            if item.slot not in self.vm.pcidevs:
-                added.append(item)
-        
-        if self.dev_list.selected_list.count() - len(added) < len(self.vm.pcidevs): #sth removed
-            sth_changed = True;
-        elif len(added) > 0:
-            sth_changed = True;
-        
-        if sth_changed == True:
-            pcidevs = []
+        try:
             for i in range(self.dev_list.selected_list.count()):
-                slot = self.dev_list.selected_list.item(i).slot
-                pcidevs.append(slot)
-            self.vm.pcidevs = pcidevs
-            self.anything_changed = True
+                item = self.dev_list.selected_list.item(i)
+                if item.slot not in self.vm.pcidevs:
+                    added.append(item)
+
+            if self.dev_list.selected_list.count() - len(added) < len(self.vm.pcidevs): #sth removed
+                sth_changed = True;
+            elif len(added) > 0:
+                sth_changed = True;
+
+            if sth_changed == True:
+                pcidevs = []
+                for i in range(self.dev_list.selected_list.count()):
+                    slot = self.dev_list.selected_list.item(i).slot
+                    pcidevs.append(slot)
+                self.vm.pcidevs = pcidevs
+                self.anything_changed = True
+        except Exception as ex:
+            msg.append(str(ex))
+
+        return msg
 
     def include_in_balancing_state_changed(self, state):
         for r in range (self.services_list.count()):
@@ -583,7 +633,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             else:
                 item.setCheckState(QtCore.Qt.Unchecked)
             self.services_list.addItem(item)
-        
+
         self.connect(self.services_list, SIGNAL("itemClicked(QListWidgetItem *)"), self.services_item_clicked)
         self.new_srv_dict = copy(self.vm.services)
 
@@ -619,21 +669,28 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
 
     def __apply_services_tab__(self):
-        for r in range (self.services_list.count()):
-            item = self.services_list.item(r)
-            self.new_srv_dict[str(item.text())] = (item.checkState() == QtCore.Qt.Checked)
-        
-        balancing_was_checked = (self.vm.services['meminfo-writer']==True)
-        balancing_is_checked =  self.include_in_balancing.isChecked()
-        meminfo_writer_checked = (self.new_srv_dict['meminfo-writer'] == True)
+        msg = []
 
-        if balancing_is_checked != meminfo_writer_checked:
-            if balancing_is_checked != balancing_was_checked:
-                self.new_srv_dict['meminfo-writer'] = balancing_is_checked
+        try:
+            for r in range (self.services_list.count()):
+                item = self.services_list.item(r)
+                self.new_srv_dict[str(item.text())] = (item.checkState() == QtCore.Qt.Checked)
 
-        if self.new_srv_dict != self.vm.services:
-            self.vm.services = self.new_srv_dict
-            self.anything_changed = True
+            balancing_was_checked = (self.vm.services['meminfo-writer']==True)
+            balancing_is_checked =  self.include_in_balancing.isChecked()
+            meminfo_writer_checked = (self.new_srv_dict['meminfo-writer'] == True)
+
+            if balancing_is_checked != meminfo_writer_checked:
+                if balancing_is_checked != balancing_was_checked:
+                    self.new_srv_dict['meminfo-writer'] = balancing_is_checked
+
+            if self.new_srv_dict != self.vm.services:
+                self.vm.services = self.new_srv_dict
+                self.anything_changed = True
+        except Exception as ex:
+            msg.append(str(ex))
+
+        return msg
 
 
     ######### firewall tab related
