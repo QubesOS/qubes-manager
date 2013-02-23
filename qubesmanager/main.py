@@ -656,7 +656,7 @@ class VmShutdownMonitor(QObject):
     def check_if_vm_has_shutdown(self):
         vm = self.vm
         vm_start_time = vm.get_start_time()
-        if not vm.is_running() or (vm_start_time and vm_start_time >= datetime.utcnow() - timedelta(0,self.shutdown_time/1000)):
+        if not vm.is_running() or (vm_start_time and vm_start_time >= datetime.now() - timedelta(0,self.shutdown_time/1000)):
             return
 
         reply = QMessageBox.question(None, "VM Shutdown",
