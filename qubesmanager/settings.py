@@ -145,7 +145,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         progress.hide()
         
         if not thread_monitor.success:
-            QMessageBox.warning (None, "Error while changing settings for {0}!", "ERROR: {1}".format(self.vm.name, thread_monitor.error_msg))
+            QMessageBox.warning (None, "Error while changing settings for {0}!".format(self.vm.name),
+                    "ERROR: {0}".format(thread_monitor.error_msg))
 
         self.done(0)
 
