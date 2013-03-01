@@ -86,8 +86,8 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 
         self.connect(self, SIGNAL("currentIdChanged(int)"), self.current_page_changed)
         self.connect(self.select_vms_widget, SIGNAL("selected_changed()"), self.check_running)
-        self.connect(self.select_vms_widget, SIGNAL("items_removed(list)"), self.vms_removed)
-        self.connect(self.select_vms_widget, SIGNAL("items_added(list)"), self.vms_added)
+        self.connect(self.select_vms_widget, SIGNAL("items_removed(PyQt_PyObject)"), self.vms_removed)
+        self.connect(self.select_vms_widget, SIGNAL("items_added(PyQt_PyObject)"), self.vms_added)
         self.refresh_button.clicked.connect(self.check_running)
         self.shutdown_running_vms_button.clicked.connect(self.shutdown_all_running_selected)
         self.connect(self.dev_combobox, SIGNAL("activated(int)"), self.dev_combobox_activated)
