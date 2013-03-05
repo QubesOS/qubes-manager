@@ -322,6 +322,17 @@ class VmNetvmItem (QTableWidgetItem):
 
         self.setTextAlignment(Qt.AlignVCenter)
 
+class VmInternalItem(QTableWidgetItem):
+    def __init__(self, vm):
+        super(VmInternalItem, self).__init__()
+        self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+
+        self.internal = vm.internal
+
+        if self.internal:
+            self.setText("Yes")
+        else:
+            self.setText("")
 
 class VmUsageBarWidget (QWidget):
 
@@ -632,6 +643,8 @@ class VmRowInTable(object):
         self.size_widget = VmSizeOnDiskItem(vm)
         table.setItem(row_no,  VmManagerWindow.columns_indices['Size'], self.size_widget)
 
+        self.internal_widget = VmInternalItem(vm)
+        table.setItem(row_no, VmManagerWindow.columns_indices['Internal'], self.internal_widget)
 
     def update(self, blk_visible = None, cpu_load = None, update_size_on_disk = False, rec_visible = None):
         self.info_widget.update_vm_state(self.vm, blk_visible, rec_visible)
@@ -686,7 +699,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         "CPU Graph": 7,
                         "MEM": 8,
                         "MEM Graph": 9,
-                        "Size": 10,}
+                        "Size": 10,
+                        "Internal": 11,}
 
 
 
@@ -740,7 +754,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.columns_actions[ self.columns_indices["MEM"] ] = self.action_mem
         self.columns_actions[ self.columns_indices["MEM Graph"] ] = self.action_mem_graph
         self.columns_actions[ self.columns_indices["Size"] ] = self.action_size_on_disk
-
+        self.columns_actions[ self.columns_indices["Internal"] ] = self.action_internal
 
         self.visible_columns_count = len(self.columns_indices);
         self.table.setColumnHidden( self.columns_indices["NetVM"], True)
@@ -757,6 +771,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.table.setColumnWidth(self.columns_indices["Label"], 40)
         self.table.setColumnWidth(self.columns_indices["Type"], 40)
         self.table.setColumnWidth(self.columns_indices["Size"], 100)
+        self.table.setColumnWidth(self.columns_indices["Internal"], 60)
 
         self.table.horizontalHeader().setResizeMode(QHeaderView.Fixed)
 
@@ -948,8 +963,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         row_no = 0
         for vm in vms_list:
-            if vm.internal:
-                continue
+            #if vm.internal:
+            #    continue
             vm_row = VmRowInTable (vm, row_no, self.table, self.blk_manager)
             vms_in_table[vm.qid] = vm_row
 
@@ -1070,7 +1085,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
                     vm_row.update(blk_visible=blk_visible, update_size_on_disk = self.update_size_on_disk, rec_visible = self.vm_rec.get(vm_row.vm.name, False))
 
-            if self.sort_by_column in ["CPU", "CPU Graph", "MEM", "MEM Graph", "State", "Size" ]:
+            if self.sort_by_column in ["CPU", "CPU Graph", "MEM", "MEM Graph", "State", "Size", "Internal" ]:
                 # "State": needed to sort after reload (fill_table sorts items with setSortingEnabled, but by that time the widgets values are not correct yet).
                 self.table.sortItems(self.columns_indices[self.sort_by_column], self.sort_order)
 
@@ -1625,6 +1640,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
     def on_action_state_toggled(self, checked):
         self.showhide_column( self.columns_indices['State'], checked)
+
+    def on_action_internal_toggled(self, checked):
+        self.showhide_column( self.columns_indices['Internal'], checked)
 
     def on_action_template_toggled(self, checked):
         self.showhide_column( self.columns_indices['Template'], checked)

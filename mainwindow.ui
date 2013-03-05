@@ -219,6 +219,11 @@
         <string>Size</string>
        </property>
       </column>
+      <column>
+       <property name="text">
+        <string>Internal</string>
+       </property>
+      </column>
      </widget>
     </item>
    </layout>
@@ -258,6 +263,7 @@
     <addaction name="action_mem"/>
     <addaction name="action_mem_graph"/>
     <addaction name="action_size_on_disk"/>
+    <addaction name="action_internal"/>
     <addaction name="separator"/>
     <addaction name="action_toolbar"/>
     <addaction name="action_menubar"/>
@@ -772,6 +778,20 @@
    </property>
    <property name="text">
     <string>Clone VM</string>
+   </property>
+  </action>
+  <action name="action_internal">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Internal</string>
+   </property>
+   <property name="toolTip">
+    <string>Is an internal VM</string>
    </property>
   </action>
  </widget>
