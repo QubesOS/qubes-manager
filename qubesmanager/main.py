@@ -687,6 +687,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     min_visible_rows = 10
     update_interval = 1000 # in msec
     show_inactive_vms = True
+    show_internal_vms = False
     # suppress saving settings while initializing widgets
     settings_loaded = False
     columns_indices = { "Type": 0,
@@ -831,6 +832,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.load_manager_settings()
 
         self.action_showallvms.setChecked(self.show_inactive_vms)
+        self.action_showinternalvms.setChecked(self.show_internal_vms)
 
         self.fill_table()
 
@@ -850,6 +852,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.columns_actions[col_no].setChecked(visible)
         self.manager_settings.endGroup()
         self.show_inactive_vms = self.manager_settings.value("view/show_inactive_vms", defaultValue=False).toBool()
+        self.show_internal_vms = self.manager_settings.value("view/show_internal_vms", defaultValue=False).toBool()
         self.sort_by_column = str(self.manager_settings.value("view/sort_column", defaultValue=self.sort_by_column).toString())
         self.sort_order = Qt.SortOrder(self.manager_settings.value("view/sort_order", defaultValue=self.sort_order).toInt()[0])
         self.table.sortItems(self.columns_indices[self.sort_by_column], self.sort_order)
@@ -1560,6 +1563,16 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.set_table_geom_size()
         if self.settings_loaded:
             self.manager_settings.setValue('view/show_inactive_vms', self.show_inactive_vms)
+            self.manager_settings.sync()
+
+    @pyqtSlot(name='on_action_showinternalvms_triggered')
+    def action_showinternalvms_triggered(self):
+        self.show_internal_vms = self.action_showinternalvms.isChecked()
+
+        self.showhide_internal_vms(self.show_internal_vms)
+        self.set_table_geom_size()
+        if self.settings_loaded:
+            self.manager_settings.setValue('view/show_internal_vms', self.show_internal_vms)
             self.manager_settings.sync()
 
     @pyqtSlot(name='on_action_editfwrules_triggered')
