@@ -734,6 +734,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.screen_changed = False
 
         self.running_vms_count = 0
+        self.internal_vms_count = 0
 
         self.vm_errors = {}
         self.vm_rec = {}
@@ -903,6 +904,15 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             n = self.table.rowCount()
         else:
             n = self.running_vms_count
+        if self.show_internal_vms:
+            if self.show_inactive_vms:
+                n = self.table.rowCount()
+            else:
+                n = self.running_vms_count
+        elif self.show_inactive_vms:
+            n = self.table.rowCount() - self.internal_vms_count
+        else:
+            n = self.running_vms_count
 
         if n > default_rows:
             H += default_rows*self.row_height
@@ -945,6 +955,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.qvm_collection.unlock_db()
 
         running_count = 0
+        internal_count = 0
 
         vms_list = [vm for vm in self.qvm_collection.values()]
         for vm in vms_list:
@@ -952,10 +963,12 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             vm.last_running = vm.last_power_state in ["Running", "Transient"]
             if vm.last_running:
                 running_count += 1
+            if vm.internal:
+                internal_count += 1
             vm.error_msg = self.vm_errors[vm.qid] if vm.qid in self.vm_errors else None
 
         self.running_vms_count = running_count
-
+        self.internal_vms_count = internal_count
         return vms_list
 
     def fill_table(self):
@@ -981,14 +994,14 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.reload_table = False
         self.table.setSortingEnabled(True)
 
-        self.showhide_inactive_vms(True)
+        self.showhide_vms(True, True)
         self.set_table_geom_size()
-        if not self.show_inactive_vms:
-            self.showhide_inactive_vms(self.show_inactive_vms)
+        if (not self.show_inactive_vms) or (not self.show_internal_vms):
+            self.showhide_vms(self.show_inactive_vms, self.show_internal_vms)
             self.set_table_geom_size()
 
-    def showhide_inactive_vms(self, show_inactive):
-        if show_inactive:
+    def showhide_vms(self, show_inactive, show_internal):
+        if show_inactive and show_internal:
             row_no = 0
             while row_no < self.table.rowCount():
                 self.table.setRowHidden(row_no, False)
@@ -998,22 +1011,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             while row_no < self.table.rowCount():
                 widget = self.table.cellWidget(row_no, self.columns_indices["State"])
                 running = widget.vm.last_running
-                if not running:
-                    self.table.setRowHidden(row_no, True)
-                row_no += 1
-
-    def showhide_internal_vms(self, show_internal):
-        if show_internal:
-            row_no = 0
-            while row_no < self.table.rowCount():
-                self.table.setRowHidden(row_no, False)
-                row_no += 1
-        else:
-            row_no = 0
-            while row_no < self.table.rowCount():
-                widget = self.table.cellWidget(row_no, self.columns_indices["State"])
                 internal = widget.vm.internal
-                if internal:
+                if not (show_inactive or running) or not (show_internal or not internal):
                     self.table.setRowHidden(row_no, True)
                 row_no += 1
 
@@ -1056,8 +1055,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 update_devs=True
 
             if (not self.show_inactive_vms) and some_vms_have_changed_power_state:
-                self.showhide_inactive_vms(True)
-                self.showhide_inactive_vms(False)
+                self.showhide_vms(True, True)
+                self.showhide_vms(False, self.show_internal_vms)
                 self.set_table_geom_size()
 
             if self.sort_by_column == "State" and some_vms_have_changed_power_state:
@@ -1574,7 +1573,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def action_showallvms_triggered(self):
         self.show_inactive_vms = self.action_showallvms.isChecked()
 
-        self.showhide_inactive_vms(self.show_inactive_vms)
+        self.showhide_vms(self.show_inactive_vms, self.show_internal_vms)
         self.set_table_geom_size()
         if self.settings_loaded:
             self.manager_settings.setValue('view/show_inactive_vms', self.show_inactive_vms)
@@ -1584,7 +1583,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def action_showinternalvms_triggered(self):
         self.show_internal_vms = self.action_showinternalvms.isChecked()
 
-        self.showhide_internal_vms(self.show_internal_vms)
+        self.showhide_vms(self.show_inactive_vms, self.show_internal_vms)
         self.set_table_geom_size()
         if self.settings_loaded:
             self.manager_settings.setValue('view/show_internal_vms', self.show_internal_vms)
