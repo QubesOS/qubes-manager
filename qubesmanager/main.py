@@ -765,6 +765,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.action_mem_graph.setChecked(False)
         self.table.setColumnHidden( self.columns_indices["Size"], True)
         self.action_size_on_disk.setChecked(False)
+        self.table.setColumnHidden( self.columns_indices["Internal"], True)
+        self.action_internal.setChecked(False)
 
         self.table.setColumnWidth(self.columns_indices["State"], 80)
         self.table.setColumnWidth(self.columns_indices["Name"], 150)
