@@ -1002,6 +1002,21 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                     self.table.setRowHidden(row_no, True)
                 row_no += 1
 
+    def showhide_internal_vms(self, show_internal):
+        if show_internal:
+            row_no = 0
+            while row_no < self.table.rowCount():
+                self.table.setRowHidden(row_no, False)
+                row_no += 1
+        else:
+            row_no = 0
+            while row_no < self.table.rowCount():
+                widget = self.table.cellWidget(row_no, self.columns_indices["State"])
+                internal = widget.vm.internal
+                if internal:
+                    self.table.setRowHidden(row_no, True)
+                row_no += 1
+
     def mark_table_for_update(self):
         self.reload_table = True
 
