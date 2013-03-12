@@ -60,6 +60,7 @@ import time
 from datetime import datetime,timedelta
 from qubes.qubes import updates_stat_file
 qubes_dom0_updates_stat_file = '/var/lib/qubes/updates/dom0-updates-available'
+qubes_clipboard_info_file = "/var/run/qubes/qubes_clipboard.bin.source"
 
 qubes_guid_path = '/usr/bin/qubes_guid'
 
@@ -74,12 +75,28 @@ power_order = Qt.DescendingOrder
 update_order = Qt.AscendingOrder
 
 
-class QubesConfigFileWatcher(ProcessEvent):
+class QubesManagerFileWatcher(ProcessEvent):
     def __init__ (self, update_func):
         self.update_func = update_func
 
     def process_IN_MODIFY (self, event):
-        self.update_func()
+        if event.path == qubes_store_filename:
+            self.update_func()
+
+    def process_IN_CLOSE_WRITE (self, event):
+        if event.path == qubes_clipboard_info_file:
+            src_info_file = open (qubes_clipboard_info_file, 'r')
+            src_vmname = src_info_file.readline().strip('\n')
+            if src_vmname == "":
+                trayIcon.showMessage("Qubes Clipboard has been copied to the VM and wiped.\n"\
+                    "<small>Trigger a paste operation (e.g. Ctrl-v) to insert it into an application.</small>",
+                   msecs=3000)
+            else:
+                print src_vmname
+                trayIcon.showMessage("Qubes Clipboard fetched from VM: <b>'{0}'</b>\n"\
+                        "<small>Press Ctrl-Shift-v to copy this clipboard onto dest VM's clipboard.</small>".format(src_vmname),
+                        msecs=3000)
+            src_info_file.close()
 
 
 class VmIconWidget (QWidget):
@@ -2160,12 +2177,12 @@ def main():
     global manager_window
     manager_window = VmManagerWindow()
     wm = WatchManager()
-    mask = EventsCodes.OP_FLAGS.get('IN_MODIFY')
 
     global notifier
-    notifier = ThreadedNotifier(wm, QubesConfigFileWatcher(manager_window.mark_table_for_update))
+    notifier = ThreadedNotifier(wm, QubesManagerFileWatcher(manager_window.mark_table_for_update))
     notifier.start()
-    wdd = wm.add_watch(qubes_store_filename, mask)
+    wm.add_watch(qubes_store_filename, EventsCodes.OP_FLAGS.get('IN_MODIFY'))
+    wm.add_watch(qubes_clipboard_info_file, EventsCodes.OP_FLAGS.get('IN_CLOSE_WRITE'))
 
     global system_bus
     system_bus = dbus.SystemBus()
