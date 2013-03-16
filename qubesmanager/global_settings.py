@@ -30,7 +30,7 @@ from qubes.qubes import QubesVmCollection
 from qubes.qubes import QubesException
 from qubes.qubes import QubesDaemonPidfile
 from qubes.qubes import QubesHost
-from qubes.qubes import qubes_kernels_base_dir
+from qubes.qubes import system_path
 
 import qubesmanager.resources_rc
 
@@ -169,7 +169,7 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
 
     def __init_kernel_defaults__(self):
         kernel_list = []
-        for k in os.listdir(qubes_kernels_base_dir):
+        for k in os.listdir(system_path["qubes_kernels_base_dir"]):
             kernel_list.append(k)
 
         self.kernel_idx = 0

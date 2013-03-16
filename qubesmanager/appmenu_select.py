@@ -27,11 +27,8 @@ from PyQt4.QtGui import *
 
 from qubes.qubes import QubesVmCollection
 from qubes.qubes import QubesException
-from qubes.qubes import qubes_appmenu_create_cmd
-from qubes.qubes import qubes_appmenu_remove_cmd
 from qubes.qubes import QubesDaemonPidfile
 from qubes.qubes import QubesHost
-from qubes.qubes import qrexec_client_path
 
 import qubesmanager.resources_rc
 

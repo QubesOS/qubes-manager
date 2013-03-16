@@ -33,7 +33,7 @@ from PyQt4.QtGui import *
 
 from qubes.qubes import QubesVmCollection
 from qubes.qubes import QubesException
-from qubes.qubes import qubes_store_filename
+from qubes.qubes import system_path,vm_files
 from qubes.qubes import QubesVmLabels
 from qubes.qubes import dry_run
 from qubes.qubes import QubesDaemonPidfile
@@ -57,7 +57,6 @@ from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, Pro
 import subprocess
 import time
 from datetime import datetime,timedelta
-from qubes.qubes import updates_stat_file
 qubes_dom0_updates_stat_file = '/var/lib/qubes/updates/dom0-updates-available'
 qubes_clipboard_info_file = "/var/run/qubes/qubes_clipboard.bin.source"
 
@@ -77,7 +76,7 @@ class QubesManagerFileWatcher(ProcessEvent):
         self.update_func = update_func
 
     def process_IN_MODIFY (self, event):
-        if event.path == qubes_store_filename:
+        if event.path == system_path["qubes_store_filename"]:
             self.update_func()
 
     def process_IN_CLOSE_WRITE (self, event):
@@ -527,7 +526,7 @@ class VmUpdateInfoWidget(QWidget):
 
         else:
             update_recommended = self.previous_update_recommended
-            stat_file_path = vm.dir_path + '/' + updates_stat_file
+            stat_file_path = vm.dir_path + '/' + vm_files["updates_stat_file"]
             if not os.path.exists(stat_file_path):
                 update_recommended = False
             else:
@@ -2178,7 +2177,7 @@ def main():
     global notifier
     notifier = ThreadedNotifier(wm, QubesManagerFileWatcher(manager_window.mark_table_for_update))
     notifier.start()
-    wm.add_watch(qubes_store_filename, EventsCodes.OP_FLAGS.get('IN_MODIFY'))
+    wm.add_watch(system_path["qubes_store_filename"], EventsCodes.OP_FLAGS.get('IN_MODIFY'))
     wm.add_watch(qubes_clipboard_info_file, EventsCodes.OP_FLAGS.get('IN_CLOSE_WRITE'))
 
     global system_bus

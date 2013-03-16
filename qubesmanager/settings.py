@@ -29,12 +29,9 @@ from PyQt4.QtGui import *
 from qubes.qubes import QubesVmCollection
 from qubes.qubes import QubesVmLabels
 from qubes.qubes import QubesException
-from qubes.qubes import qubes_appmenu_create_cmd
-from qubes.qubes import qubes_appmenu_remove_cmd
 from qubes.qubes import QubesDaemonPidfile
 from qubes.qubes import QubesHost
-from qubes.qubes import qrexec_client_path
-from qubes.qubes import qubes_kernels_base_dir
+from qubes.qubes import system_path
 
 import qubesmanager.resources_rc
 
@@ -460,7 +457,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         # construct available kernels list
         text = "default (" + self.qvm_collection.get_default_kernel() +")"
         kernel_list = [text]
-        for k in os.listdir(qubes_kernels_base_dir):
+        for k in os.listdir(system_path["qubes_kernels_base_dir"]):
             kernel_list.append(k)
         kernel_list.append("none")
     

@@ -30,7 +30,6 @@ from qubes.qubes import QubesVmCollection
 from qubes.qubes import QubesException
 from qubes.qubes import QubesDaemonPidfile
 from qubes.qubes import QubesHost
-from qubes.qubes import qubes_base_dir
 import qubesmanager.resources_rc
 
 from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
