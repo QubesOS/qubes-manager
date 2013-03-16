@@ -36,7 +36,6 @@ from qubes.qubes import QubesException
 from qubes.qubes import qubes_store_filename
 from qubes.qubes import QubesVmLabels
 from qubes.qubes import dry_run
-from qubes.qubes import qubes_guid_path
 from qubes.qubes import QubesDaemonPidfile
 from qubes.qubes import QubesHost
 from qubes import qubes
@@ -61,8 +60,6 @@ from datetime import datetime,timedelta
 from qubes.qubes import updates_stat_file
 qubes_dom0_updates_stat_file = '/var/lib/qubes/updates/dom0-updates-available'
 qubes_clipboard_info_file = "/var/run/qubes/qubes_clipboard.bin.source"
-
-qubes_guid_path = '/usr/bin/qubes_guid'
 
 update_suggestion_interval = 14 # 14 days
 
