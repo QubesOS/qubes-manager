@@ -58,7 +58,7 @@ import subprocess
 import time
 from datetime import datetime,timedelta
 qubes_dom0_updates_stat_file = '/var/lib/qubes/updates/dom0-updates-available'
-qubes_clipboard_info_file = "/var/run/qubes/qubes_clipboard.bin.source"
+qubes_clipboard_info_file = "/var/run/qubes/qubes-clipboard.bin.source"
 
 update_suggestion_interval = 14 # 14 days
 

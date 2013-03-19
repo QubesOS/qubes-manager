@@ -71,11 +71,11 @@ def copy_text_to_qubes_clipboard(text):
         QMessageBox.warning (None, "Warning!", "Error while accessing Qubes clipboard!")
         return
 
-    qubes_clipboard = open("/var/run/qubes/qubes_clipboard.bin", 'w')
+    qubes_clipboard = open("/var/run/qubes/qubes-clipboard.bin", 'w')
     qubes_clipboard.write(text)
     qubes_clipboard.close()
         
-    qubes_clip_source = open("/var/run/qubes/qubes_clipboard.bin.source", 'w')
+    qubes_clip_source = open("/var/run/qubes/qubes-clipboard.bin.source", 'w')
     qubes_clip_source.write("dom0")
     qubes_clip_source.close()
 
