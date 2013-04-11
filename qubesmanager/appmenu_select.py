@@ -130,6 +130,6 @@ class AppmenuSelectManager:
  
     def save_appmenu_select_changes(self):
         if self.save_list_of_selected():
-            self.vm.remove_appmenus()
-            self.vm.create_appmenus(verbose=False)            
+            self.vm.appmenus_remove()
+            self.vm.appmenus_create(verbose=False)
 
