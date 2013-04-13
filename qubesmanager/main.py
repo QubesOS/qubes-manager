@@ -1394,7 +1394,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         if vm.is_paused():
             try:
-                subprocess.check_call (["/usr/sbin/xl", "unpause", vm.name])
+                vm.unpause()
             except Exception as ex:
                 QMessageBox.warning (None, "Error unpausing VM!", "ERROR: {0}".format(ex))
             return
@@ -1432,8 +1432,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         vm = self.get_selected_vm()
         assert vm.is_running()
         try:
-            subprocess.check_call (["/usr/sbin/xl", "pause", vm.name])
-
+            vm.pause()
         except Exception as ex:
             QMessageBox.warning (None, "Error pausing VM!", "ERROR: {0}".format(ex))
             return
@@ -1458,7 +1457,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
     def shutdown_vm(self, vm, shutdown_time = vm_shutdown_timeout):
         try:
-            subprocess.check_call (["/usr/sbin/xl", "shutdown", vm.name])
+            vm.shutdown()
         except Exception as ex:
             QMessageBox.warning (None, "Error shutting down VM!", "ERROR: {0}".format(ex))
             return
