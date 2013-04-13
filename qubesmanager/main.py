@@ -70,6 +70,11 @@ session_bus = None
 power_order = Qt.DescendingOrder
 update_order = Qt.AscendingOrder
 
+class QMVmState:
+    ErrorMsg = 1
+    AudioRecAvailable = 2
+    AudioRecAllowed = 3
+
 
 class QubesManagerFileWatcher(ProcessEvent):
     def __init__ (self, update_func):
@@ -290,8 +295,8 @@ class VmInfoWidget (QWidget):
             self.blk_icon.setVisible(blk_visible)
         if rec_visible != None:
             self.rec_icon.setVisible(rec_visible)
-        self.error_icon.setToolTip(vm.error_msg)
-        self.error_icon.setVisible(vm.error_msg is not None)
+        self.error_icon.setToolTip(vm.qubes_manager_state[QMVmState.ErrorMsg])
+        self.error_icon.setVisible(vm.qubes_manager_state[QMVmState.ErrorMsg] is not None)
 
 
 class VmTemplateItem (QTableWidgetItem):
@@ -976,14 +981,13 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         for vm in vms_list:
             vm.last_power_state = vm.get_power_state()
             vm.last_running = vm.last_power_state in ["Running", "Transient"]
-            vm.rec_available = session_bus.interface().isServiceRegistered('org.QubesOS.Audio.%s' % vm.name).value()
-            if vm.rec_available:
-                self.vm_rec[vm.name] = self.get_audio_rec_allowed(vm.name)
             if vm.last_running:
                 running_count += 1
             if vm.internal:
                 internal_count += 1
-            vm.error_msg = self.vm_errors[vm.qid] if vm.qid in self.vm_errors else None
+            vm.qubes_manager_state = {}
+            self.update_audio_rec_info(vm)
+            vm.qubes_manager_state[QMVmState.ErrorMsg]= self.vm_errors[vm.qid] if vm.qid in self.vm_errors else None
 
         self.running_vms_count = running_count
         self.internal_vms_count = internal_count
@@ -1051,10 +1055,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                     prev_running = vm.last_running
                     vm.last_power_state = state
                     vm.last_running = (state in ["Running", "Transient"])
-                    vm.rec_available = session_bus.interface().isServiceRegistered(
-                            'org.QubesOS.Audio.%s' % vm.name).value()
-                    if vm.rec_available:
-                        self.vm_rec[vm.name] = self.get_audio_rec_allowed(vm.name)
+                    self.update_audio_rec_info(vm)
                     if not prev_running and vm.last_running:
                         self.running_vms_count += 1
                         some_vms_have_changed_power_state = True
@@ -1186,7 +1187,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.action_appmenus.setEnabled(not vm.is_netvm())
             self.action_editfwrules.setEnabled(vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
             self.action_updatevm.setEnabled(vm.is_updateable() or vm.qid == 0)
-            self.action_toggle_audio_input.setEnabled(vm.rec_available)
+            self.action_toggle_audio_input.setEnabled(vm.qubes_manager_state[QMVmState.AudioRecAvailable])
             self.action_run_command_in_vm.setEnabled(not vm.last_power_state == "Paused" and vm.qid != 0)
             self.action_set_keyboard_layout.setEnabled(vm.qid != 0 and vm.last_running)
         else:
@@ -1215,7 +1216,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def set_error(self, qid, message):
         for vm in self.vms_list:
             if vm.qid == qid:
-                vm.error_msg = message
+                vm.qubes_manager_state[QMVmState.ErrorMsg] = message
         # Store error in separate dict to make it immune to VM list reload
         self.vm_errors[qid] = message
 
@@ -1223,13 +1224,13 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.vm_errors.pop(qid, None)
         for vm in self.vms_list:
             if vm.qid == qid:
-                vm.error_msg = None
+                vm.qubes_manager_state[QMVmState.ErrorMsg] = None
 
     def clear_error_exact(self, qid, message):
         for vm in self.vms_list:
             if vm.qid == qid:
-                if vm.error_msg == message:
-                    vm.error_msg = None
+                if vm.qubes_manager_state[QMVmState.ErrorMsg] == message:
+                    vm.qubes_manager_state[QMVmState.ErrorMsg] = None
                     self.vm_errors.pop(qid, None)
 
     @pyqtSlot(name='on_action_createvm_triggered')
@@ -1503,6 +1504,14 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         vm = self.get_selected_vm()
         settings_window = VMSettingsWindow(vm, app, self.qvm_collection, "applications")
         settings_window.exec_()
+
+    def update_audio_rec_info(self, vm):
+        vm.qubes_manager_state[QMVmState.AudioRecAvailable] = (
+                session_bus.interface().isServiceRegistered('org.QubesOS.Audio.%s' % vm.name).value())
+        if vm.qubes_manager_state[QMVmState.AudioRecAvailable]:
+            vm.qubes_manager_state[QMVmState.AudioRecAllowed] = self.get_audio_rec_allowed(vm.name)
+        else:
+            vm.qubes_manager_state[QMVmState.AudioRecAllowed] = False
 
     def get_audio_rec_allowed(self, vmname):
         properties = QDBusInterface('org.QubesOS.Audio.%s' % vmname,
