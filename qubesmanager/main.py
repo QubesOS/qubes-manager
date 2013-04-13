@@ -25,11 +25,11 @@ import os
 import signal
 import fcntl
 import errno
-import dbus
-import dbus.service
-from dbus.mainloop.qt import DBusQtMainLoop
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
+from PyQt4.QtDBus import QDBus,QDBusVariant
+from PyQt4.QtDBus import QDBusConnection
+from PyQt4.QtDBus import QDBusInterface,QDBusAbstractAdaptor
 
 from qubes.qubes import QubesVmCollection
 from qubes.qubes import QubesException
@@ -857,6 +857,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.last_measure_time = time.time()
         QTimer.singleShot (self.update_interval, self.update_table)
 
+        QubesDbusNotifyServerAdaptor(self)
+
     def load_manager_settings(self):
         # visible columns
         self.manager_settings.beginGroup("columns")
@@ -974,6 +976,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         for vm in vms_list:
             vm.last_power_state = vm.get_power_state()
             vm.last_running = vm.last_power_state in ["Running", "Transient"]
+            vm.rec_available = session_bus.interface().isServiceRegistered('org.QubesOS.Audio.%s' % vm.name).value()
+            if vm.rec_available:
+                self.vm_rec[vm.name] = self.get_audio_rec_allowed(vm.name)
             if vm.last_running:
                 running_count += 1
             if vm.internal:
@@ -1046,6 +1051,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                     prev_running = vm.last_running
                     vm.last_power_state = state
                     vm.last_running = (state in ["Running", "Transient"])
+                    vm.rec_available = session_bus.interface().isServiceRegistered(
+                            'org.QubesOS.Audio.%s' % vm.name).value()
+                    if vm.rec_available:
+                        self.vm_rec[vm.name] = self.get_audio_rec_allowed(vm.name)
                     if not prev_running and vm.last_running:
                         self.running_vms_count += 1
                         some_vms_have_changed_power_state = True
@@ -1136,16 +1145,22 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             trayIcon.showMessage (str, msecs=5000)
         return res
 
+    @pyqtSlot(bool, str)
     def recAllowedChanged(self, state, vmname):
-        self.vm_rec[vmname] = bool(state)
+        self.vm_rec[str(vmname)] = bool(state)
 
     def register_dbus_watches(self):
         global session_bus
 
         if not session_bus:
-            session_bus = dbus.SessionBus()
+            session_bus = QDBusConnection.sessionBus()
 
-        session_bus.add_signal_receiver(self.recAllowedChanged, signal_name="RecAllowedChanged", dbus_interface="org.QubesOS.Audio")
+        if not session_bus.connect(QString(), # service
+                QString(), # path
+                QString("org.QubesOS.Audio"), # interface
+                QString("RecAllowedChanged"), # name
+                self.recAllowedChanged): # slot
+            print session_bus.lastError().message()
 
     def sortIndicatorChanged(self, column, order):
         self.sort_by_column = [name for name in self.columns_indices.keys() if self.columns_indices[name] == column][0]
@@ -1171,8 +1186,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.action_appmenus.setEnabled(not vm.is_netvm())
             self.action_editfwrules.setEnabled(vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
             self.action_updatevm.setEnabled(vm.is_updateable() or vm.qid == 0)
-            self.action_toggle_audio_input.setEnabled(vm.last_running and vm.qid != 0 and \
-                    session_bus.name_has_owner('org.QubesOS.Audio.%s' % vm.name))
+            self.action_toggle_audio_input.setEnabled(vm.rec_available)
             self.action_run_command_in_vm.setEnabled(not vm.last_power_state == "Paused" and vm.qid != 0)
             self.action_set_keyboard_layout.setEnabled(vm.qid != 0 and vm.last_running)
         else:
@@ -1491,13 +1505,23 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         settings_window = VMSettingsWindow(vm, app, self.qvm_collection, "applications")
         settings_window.exec_()
 
+    def get_audio_rec_allowed(self, vmname):
+        properties = QDBusInterface('org.QubesOS.Audio.%s' % vmname,
+                                '/org/qubesos/audio', 'org.freedesktop.DBus.Properties', session_bus)
+
+        current_audio = properties.call('Get', 'org.QubesOS.Audio', 'RecAllowed')
+        if current_audio.type() == current_audio.ReplyMessage:
+            value = current_audio.arguments()[0].toPyObject().toBool()
+            return bool(value)
+        return False
+
     @pyqtSlot(name='on_action_toggle_audio_input_triggered')
     def action_toggle_audio_input_triggered(self):
         vm = self.get_selected_vm()
-        audio = session_bus.get_object('org.QubesOS.Audio.%s' % vm.name,
-                                      '/org/qubesos/audio')
-        current_audio = bool(audio.Get('org.QubesOS.Audio', 'RecAllowed'))
-        audio.Set('org.QubesOS.Audio', 'RecAllowed', dbus.Boolean(not current_audio, variant_level=1))
+        properties = QDBusInterface('org.QubesOS.Audio.%s' % vm.name,
+                                '/org/qubesos/audio', 'org.freedesktop.DBus.Properties', session_bus)
+        properties.call('Set', 'org.QubesOS.Audio', 'RecAllowed',
+                QDBusVariant(not self.get_audio_rec_allowed(vm.name)))
         # icon will be updated based on dbus signal
 
     @pyqtSlot(name='on_action_updatevm_triggered')
@@ -1966,8 +1990,9 @@ class QubesTrayIcon(QSystemTrayIcon):
 
         self.connect (self, SIGNAL("activated (QSystemTrayIcon::ActivationReason)"), self.icon_clicked)
 
-        self.tray_object = dbus.SessionBus().get_object("org.freedesktop.Notifications", "/org/freedesktop/Notifications", follow_name_owner_changes=True)
-        self.tray_notifier = dbus.Interface(self.tray_object, "org.freedesktop.Notifications" )
+        self.tray_notifier = QDBusInterface("org.freedesktop.Notifications",
+                "/org/freedesktop/Notifications",
+                "org.freedesktop.Notifications", session_bus)
 
     def icon_clicked(self, reason):
         if reason == QSystemTrayIcon.Context:
@@ -1984,7 +2009,15 @@ class QubesTrayIcon(QSystemTrayIcon):
                 target.addAction(action)
 
     def showMessage(self, message, msecs):
-        self.tray_notifier.Notify("Qubes", 0, "/usr/share/qubes/icons/qubes.png", "Qubes VM Manager", message, [], [], msecs)
+        # QtDBus bindings doesn't use introspection to get proper method
+        # parameters types, so must cast explicitly
+        v_replace_id = QVariant(0)
+        v_replace_id.convert(QVariant.UInt)
+        v_actions = QVariant([])
+        v_actions.convert(QVariant.StringList)
+        self.tray_notifier.call("Notify", "Qubes", v_replace_id,
+                "/usr/share/qubes/icons/qubes.png", "Qubes VM Manager",
+                message, v_actions, QVariant.fromMap({}), msecs)
 
     def createAction(self, text, slot=None, shortcut=None, icon=None,
                      tip=None, checkable=False, signal="triggered()"):
@@ -2002,44 +2035,39 @@ class QubesTrayIcon(QSystemTrayIcon):
             action.setCheckable(True)
         return action
 
-class QubesDbusNotify(dbus.service.Object):
-    def __init__(self, bus, manager_window):
-        # export to system bus (instead of session) to make possible
-        # communication from outside of session (eg. from qmemman)
-        dbus.service.Object.__init__(self, bus, dbus_object_path)
-        self.manager_window = manager_window
+class QubesDbusNotifyServerAdaptor(QDBusAbstractAdaptor):
+    """ This provides the DBus adaptor to the outside world"""
 
-    @dbus.service.method(dbus_interface=dbus_interface,
-            in_signature='ss', out_signature='')
+    Q_CLASSINFO("D-Bus Interface", dbus_interface)
+
+    @pyqtSlot(str, str)
     def notify_error(self, vmname, message):
-        vm = self.manager_window.qvm_collection.get_vm_by_name(vmname)
+        vm = self.parent().qvm_collection.get_vm_by_name(vmname)
         if vm:
-            self.manager_window.set_error(vm.qid, message)
+            self.parent().set_error(vm.qid, message)
         else:
             # ignore VM-not-found error
             pass
-    @dbus.service.method(dbus_interface=dbus_interface,
-            in_signature='ss', out_signature='')
+
+    @pyqtSlot(str, str)
     def clear_error_exact(self, vmname, message):
-        vm = self.manager_window.qvm_collection.get_vm_by_name(vmname)
+        vm = self.parent().qvm_collection.get_vm_by_name(vmname)
         if vm:
-            self.manager_window.clear_error_exact(vm.qid, message)
+            self.parent().clear_error_exact(vm.qid, message)
         else:
             # ignore VM-not-found error
             pass
 
-    @dbus.service.method(dbus_interface=dbus_interface,
-            in_signature='s', out_signature='')
+    @pyqtSlot(str)
     def clear_error(self, vmname):
-        vm = self.manager_window.qvm_collection.get_vm_by_name(vmname)
+        vm = self.parent().qvm_collection.get_vm_by_name(vmname)
         if vm:
-            self.manager_window.clear_error(vm.qid, message)
+            self.parent().clear_error(vm.qid)
         else:
             # ignore VM-not-found error
             pass
 
-    @dbus.service.method(dbus_interface=dbus_interface,
-            in_signature='', out_signature='')
+    @pyqtSlot()
     def show_manager(self):
         bring_manager_to_front()
 
@@ -2087,15 +2115,11 @@ def bring_manager_to_front():
 def show_running_manager_via_dbus():
     global system_bus
     if system_bus is None:
-        system_bus = dbus.SystemBus()
+        system_bus = QDBusConnection.systemBus()
 
-    try:
-        qubes_manager = system_bus.get_object('org.qubesos.QubesManager',
-                '/org/qubesos/QubesManager')
-        qubes_manager.show_manager(dbus_interface='org.qubesos.QubesManager')
-    except dbus.DBusException:
-        # ignore the case when no qubes-manager is running
-        pass
+    qubes_manager = QDBusInterface('org.qubesos.QubesManager',
+            '/org/qubesos/QubesManager', 'org.qubesos.QubesManager', system_bus)
+    qubes_manager.call('show_manager')
 
 def exit_app():
     notifier.stop()
@@ -2167,9 +2191,6 @@ def main():
 
     sys.excepthook = handle_exception
 
-    # setup dbus connection
-    DBusQtMainLoop(set_as_default=True)
-
     global manager_window
     manager_window = VmManagerWindow()
     wm = WatchManager()
@@ -2181,12 +2202,12 @@ def main():
     wm.add_watch(qubes_clipboard_info_file, EventsCodes.OP_FLAGS.get('IN_CLOSE_WRITE'))
 
     global system_bus
-    system_bus = dbus.SystemBus()
-    name = dbus.service.BusName('org.qubesos.QubesManager', system_bus)
-    dbus_notifier = QubesDbusNotify(system_bus, manager_window)
+    system_bus = QDBusConnection.systemBus()
+    system_bus.registerService('org.qubesos.QubesManager')
+    system_bus.registerObject(dbus_object_path, manager_window)
 
     global session_bus
-    session_bus = dbus.SessionBus()
+    session_bus = QDBusConnection.sessionBus()
 
     global trayIcon
     trayIcon = QubesTrayIcon(QIcon(":/qubes.png"))
