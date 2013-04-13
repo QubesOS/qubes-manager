@@ -1036,6 +1036,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 internal = widget.vm.internal
                 if not (show_inactive or running) or not (show_internal or not internal):
                     self.table.setRowHidden(row_no, True)
+                else:
+                    self.table.setRowHidden(row_no, False)
                 row_no += 1
 
     def mark_table_for_update(self):
