@@ -1562,7 +1562,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             if vm.qid == 0:
                 subprocess.check_call (["/usr/bin/qubes-dom0-update", "--clean", "--gui"])
             else:
-                vm.run("gpk-update-viewer;sudo service qubes-update-check start", verbose=False, autostart=True,
+                vm.run("sudo yum clean expire-cache;gpk-update-viewer;sudo service qubes-update-check start", verbose=False, autostart=True,
                         notify_function=lambda lvl, msg: trayIcon.showMessage(msg, msecs=3000) )
         except Exception as ex:
             thread_monitor.set_error_msg(str(ex))
