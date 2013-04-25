@@ -1744,7 +1744,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
     @pyqtSlot(name='on_action_about_qubes_triggered')
     def action_about_qubes_triggered(self):
-        QMessageBox.about(self, "About...", "<b>Qubes OS</b><br><br>Release 1.0")
+        release_file = open('/etc/qubes-release', 'r')
+        release = release_file.read()
+        release_file.close()
+        QMessageBox.about(self, "About...", "<b>Qubes OS</b><br><br>%s" % release)
 
 
     def createPopupMenu(self):
