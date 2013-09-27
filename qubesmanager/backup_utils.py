@@ -75,6 +75,20 @@ def umount_device(dev_mount_path):
             if button == QMessageBox.Ok:
                 return dev_mount_path
 
+def fill_appvms_list(dialog):
+    dialog.appvm_combobox.clear()
+    dialog.appvm_combobox.addItem("None")
+
+    dialog.appvm_combobox.setCurrentIndex(0) #current selected is null ""
+    
+    for vm in dialog.qvm_collection.values():
+        if vm.is_appvm() and vm.internal:
+            continue
+        if vm.is_template() and vm.installed_by_rpm:
+            continue
+
+        if vm.is_running() and vm.qid != 0:
+            dialog.appvm_combobox.addItem(vm.name)
 
 def fill_devs_list(dialog):
     dialog.dev_combobox.clear()
@@ -157,17 +171,21 @@ def select_path_button_clicked(dialog):
     file_dialog = QFileDialog()
     file_dialog.setReadOnly(True)
 
-    if dialog.dev_mount_path != None:
+    new_appvm = None
+    new_path = None
+    if dialog.appvm_combobox.currentText() != "None":   #An existing appvm chosen 
+        new_appvm = str(dialog.appvm_combobox.currentText())
+    elif dialog.dev_mount_path != None:
         new_path = file_dialog.getExistingDirectory(dialog, "Select backup directory.", dialog.dev_mount_path)
     else:
         new_path = file_dialog.getExistingDirectory(dialog, "Select backup directory.", "~")
         
-    if new_path:
+    if new_path != None:
         dialog.dir_line_edit.setText(new_path)
         dialog.backup_dir = new_path
+
+    if (new_path or new_appvm) and len(dialog.backup_dir) > 0:
         dialog.select_dir_page.emit(SIGNAL("completeChanged()"))
-
-
 
 def simulate_long_lasting_proces(period, progress_callback):
     for i in range(period):
