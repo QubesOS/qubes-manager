@@ -79,7 +79,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.setupUi(self)
 
         self.show_running_vms_warning(False)
-        self.dir_line_edit.setReadOnly(True)
+        self.dir_line_edit.setReadOnly(False)
 
         self.select_vms_widget = MultiSelectWidget(self)
         self.verticalLayout.insertWidget(1, self.select_vms_widget)
@@ -102,6 +102,8 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.total_size = 0
         self.__fill_vms_list__()
         fill_devs_list(self)
+
+        fill_appvms_list(self)
 
     def show_running_vms_warning(self, show):
         self.running_vms_warning.setVisible(show)
@@ -261,10 +263,12 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 
     def __do_backup__(self, thread_monitor):
         msg = []
+
         try:
-            qubesutils.backup_do(str(self.backup_dir), self.files_to_backup, self.update_progress_bar)
+            qubesutils.backup_do_copy(str(self.backup_dir), self.files_to_backup, str(self.passphrase_line_edit.text()), self.update_progress_bar, encrypt=self.encryption_checkbox.isChecked(), appvm=self.target_appvm)
             #simulate_long_lasting_proces(10, self.update_progress_bar) 
         except Exception as ex:
+            print "Exception:",ex
             msg.append(str(ex))
 
         if len(msg) > 0 :
@@ -275,11 +279,19 @@ class BackupVMsWindow(Ui_Backup, QWizard):
     
     def current_page_changed(self, id):
         if self.currentPage() is self.confirm_page:
+
+            self.target_appvm = None
+            if self.appvm_combobox.currentText() != "None":   #An existing appvm chosen 
+                self.target_appvm = str(self.appvm_combobox.currentText())
+
+            # FIXME: ensure that at least a non empty passphrase has been provided
+
             del self.func_output[:]
             try:
                 self.files_to_backup = qubesutils.backup_prepare(str(self.backup_dir), exclude_list = self.excluded, print_callback = self.gather_output)
             except Exception as ex:
-                QMessageBox.critical(None, "Error while prepering backup.", "ERROR: {0}".format(ex))
+                print "Exception:",ex
+                QMessageBox.critical(None, "Error while preparing backup.", "ERROR: {0}".format(ex))
 
             self.textEdit.setReadOnly(True)
             self.textEdit.setFontFamily("Monospace")
