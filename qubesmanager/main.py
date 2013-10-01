@@ -1847,11 +1847,15 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         vm = self.get_selected_vm()
 
         self.blk_manager.blk_lock.acquire()
-        if dev in self.blk_manager.attached_devs:
-            self.blk_manager.detach_device(vm, dev)
-        else:
-            self.blk_manager.attach_device(vm, dev)
-        self.blk_manager.blk_lock.release()
+        try:
+            if dev in self.blk_manager.attached_devs:
+                self.blk_manager.detach_device(vm, dev)
+            else:
+                self.blk_manager.attach_device(vm, dev)
+            self.blk_manager.blk_lock.release()
+        except QubesException as e:
+            self.blk_manager.blk_lock.release()
+            QMessageBox.critical(None, "Block attach/detach error!", str(e))
 
 
 class QubesBlockDevicesManager():
