@@ -999,6 +999,14 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         return vms_list
 
     def fill_table(self):
+        # save current selection
+        row_index = self.table.currentRow()
+        selected_qid = -1
+        if row_index != -1:
+            vm_item = self.table.item(row_index, self.columns_indices["Name"])
+            if vm_item:
+                selected_qid = vm_item.qid
+
         self.table.setSortingEnabled(False)
         self.table.clearContents()
         vms_list = self.get_vms_list()
@@ -1019,6 +1027,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.vms_list = vms_list
         self.vms_in_table = vms_in_table
         self.reload_table = False
+        if selected_qid in vms_in_table.keys():
+            self.table.setCurrentItem(self.vms_in_table[selected_qid].name_widget)
         self.table.setSortingEnabled(True)
 
         self.showhide_vms(True, True)
