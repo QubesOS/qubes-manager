@@ -22,6 +22,7 @@
 
 import sys
 import os
+import os.path
 import signal
 import fcntl
 import errno
@@ -98,6 +99,11 @@ class QubesManagerFileWatcher(ProcessEvent):
                         "<small>Press Ctrl-Shift-v to copy this clipboard onto dest VM's clipboard.</small>".format(src_vmname),
                         msecs=3000)
             src_info_file.close()
+    def process_IN_CREATE(self, event):
+        if event.name == os.path.basename(qubes_clipboard_info_file):
+            event.path = qubes_clipboard_info_file
+            self.process_IN_CLOSE_WRITE(event)
+            wm.add_watch(qubes_clipboard_info_file, EventsCodes.OP_FLAGS.get('IN_CLOSE_WRITE'))
 
 
 class VmIconWidget (QWidget):
@@ -2210,13 +2216,15 @@ def main():
 
     global manager_window
     manager_window = VmManagerWindow()
-    wm = WatchManager()
 
+    global wm
+    wm = WatchManager()
     global notifier
     notifier = ThreadedNotifier(wm, QubesManagerFileWatcher(manager_window.mark_table_for_update))
     notifier.start()
     wm.add_watch(system_path["qubes_store_filename"], EventsCodes.OP_FLAGS.get('IN_MODIFY'))
     wm.add_watch(qubes_clipboard_info_file, EventsCodes.OP_FLAGS.get('IN_CLOSE_WRITE'))
+    wm.add_watch(os.path.dirname(qubes_clipboard_info_file), EventsCodes.OP_FLAGS.get('IN_CREATE'))
 
     global system_bus
     system_bus = QDBusConnection.systemBus()
