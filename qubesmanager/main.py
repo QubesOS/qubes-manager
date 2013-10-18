@@ -94,7 +94,6 @@ class QubesManagerFileWatcher(ProcessEvent):
                     "<small>Trigger a paste operation (e.g. Ctrl-v) to insert it into an application.</small>",
                    msecs=3000)
             else:
-                print src_vmname
                 trayIcon.showMessage("Qubes Clipboard fetched from VM: <b>'{0}'</b>\n"\
                         "<small>Press Ctrl-Shift-v to copy this clipboard onto dest VM's clipboard.</small>".format(src_vmname),
                         msecs=3000)
