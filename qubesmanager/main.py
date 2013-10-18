@@ -1792,18 +1792,18 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 action.setData(QVariant(text))
                 menu_empty = False
 
-            if running:
-                xid = vm.xid
-                if xid != None:
-                    text = "/var/log/qubes/guid."+str(xid)+".log"
-                    action = self.logs_menu.addAction(QIcon(":/log.png"), text)
-                    action.setData(QVariant(text))
+            text = "/var/log/qubes/guid."+vm.name+".log"
+            if os.path.exists(text):
+                action = self.logs_menu.addAction(QIcon(":/log.png"), text)
+                action.setData(QVariant(text))
+                menu_empty = False
 
-                    text = "/var/log/qubes/qrexec."+str(xid)+".log"
-                    action = self.logs_menu.addAction(QIcon(":/log.png"), text)
-                    action.setData(QVariant(text))
+            text = "/var/log/qubes/qrexec."+vm.name+".log"
+            if os.path.exists(text):
+                action = self.logs_menu.addAction(QIcon(":/log.png"), text)
+                action.setData(QVariant(text))
+                menu_empty = False
 
-                    menu_empty = False
             self.logs_menu.setEnabled(not menu_empty)
 
         # blk menu
