@@ -45,8 +45,9 @@ from multiselectwidget import *
 whitelisted_filename = 'whitelisted-appmenus.list'
 
 class AppListWidgetItem(QListWidgetItem):
-    def __init__(self, name, filename, parent = None):
+    def __init__(self, name, filename, command, parent = None):
         super(AppListWidgetItem, self).__init__(name, parent)
+        self.setToolTip(command)
         self.filename = filename
 
 
@@ -84,21 +85,25 @@ class AppmenuSelectManager:
         available_appmenus = []
         for template_file in template_file_list:
             desktop_template = open(template_dir + '/' + template_file, 'r')
+            desktop_name = None
+            desktop_command = None
             for line in desktop_template:
                 if line.startswith("Name=%VMNAME%: "):
                     desktop_name = line.partition('Name=%VMNAME%: ')[2].strip()
-                    available_appmenus.append( (template_file, desktop_name) )
-                    break
+                if line.startswith("Exec=qvm-run"):
+                    desktop_command = line[line.find("'"):].strip("'\n")
+            if desktop_name and desktop_command:
+                available_appmenus.append( (template_file, desktop_name, desktop_command) )
             desktop_template.close()
 
         self.whitelisted_appmenus = [a for a in available_appmenus if a[0] in whitelisted]
         available_appmenus = [a for a in available_appmenus if a[0] not in whitelisted]
                 
         for a in available_appmenus:
-            self.app_list.available_list.addItem( AppListWidgetItem(a[1], a[0]))
+            self.app_list.available_list.addItem( AppListWidgetItem(a[1], a[0], a[2]))
 
         for a in self.whitelisted_appmenus:
-            self.app_list.selected_list.addItem( AppListWidgetItem(a[1], a[0]))
+            self.app_list.selected_list.addItem( AppListWidgetItem(a[1], a[0], a[2]))
    
         self.app_list.available_list.sortItems()
         self.app_list.selected_list.sortItems()
