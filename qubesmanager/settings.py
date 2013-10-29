@@ -427,6 +427,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         self.include_in_balancing.setEnabled(True)
         self.include_in_balancing.setChecked(self.vm.services['meminfo-writer']==True)
+        self.max_mem_size.setEnabled(self.include_in_balancing.isChecked())
         if self.vm.type == "HVM":
             self.include_in_balancing.setChecked(False)
             self.include_in_balancing.setEnabled(False)
@@ -611,6 +612,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             else:
                 self.dmm_warning_adv.hide()
                 self.dmm_warning_dev.hide()
+        self.max_mem_size.setEnabled(self.include_in_balancing.isChecked())
 
     def devices_selection_changed(self):
         if self.include_in_balancing.isChecked():
