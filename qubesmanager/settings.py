@@ -398,15 +398,15 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
 
     def init_mem_changed(self, value):
-	if value > self.max_mem_size.value() and value <= self.max_mem_size.maximum():
-	    self.max_mem_size.setValue(value)
+        if value > self.max_mem_size.value() and value <= self.max_mem_size.maximum():
+            self.max_mem_size.setValue(value)
     
 
     def max_mem_size_changed(self):
-	if self.max_mem_size.value() < self.init_mem.value():
+        if self.max_mem_size.value() < self.init_mem.value():
             QMessageBox.warning(None, "Warning!", "Max memory can't be lower than initial memory.<br>Setting max memory equaling initial memory.")
-	    self.max_mem_size.setValue(self.init_mem.value())
-	
+            self.max_mem_size.setValue(self.init_mem.value())
+
 
     ######### advanced tab
 
@@ -427,10 +427,10 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         self.include_in_balancing.setEnabled(True)
         self.include_in_balancing.setChecked(self.vm.services['meminfo-writer']==True)
-        self.max_mem_size.setEnabled(self.include_in_balancing.isChecked())
         if self.vm.type == "HVM":
             self.include_in_balancing.setChecked(False)
             self.include_in_balancing.setEnabled(False)
+        self.max_mem_size.setEnabled(self.include_in_balancing.isChecked())
 
         #paths
         self.dir_path.setText(self.vm.dir_path)
