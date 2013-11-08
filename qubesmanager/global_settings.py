@@ -47,7 +47,7 @@ from ConfigParser import SafeConfigParser
 from qubes.qubesutils import parse_size
 from qubes import qmemman_algo
 
-dont_keep_dvm_in_memory_path = '/var/lib/qubes/dvmdata/dont_use_shm'
+dont_keep_dvm_in_memory_path = '/var/lib/qubes/dvmdata/dont-use-shm'
 qmemman_config_path = '/etc/qubes/qmemman.conf'
 
 
