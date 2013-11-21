@@ -1384,15 +1384,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.qvm_collection.load()
             src_vm = self.qvm_collection[vm.qid]
 
-            dst_vm = None
-            if isinstance(src_vm, qubes.QubesTemplateVm):
-                dst_vm = self.qvm_collection.add_new_templatevm(name=dst_name,
-                        installed_by_rpm=False)
-            elif isinstance(src_vm, qubes.QubesAppVm):
-                dst_vm = self.qvm_collection.add_new_appvm(name=dst_name, template=src_vm.template,
-                            label=src_vm.label)
-            elif hasattr(qubes, 'QubesHVm') and isinstance(src_vm, qubes.QubesHVm):
-                dst_vm = self.qvm_collection.add_new_hvm(name=dst_name, label=src_vm.label)
+            dst_vm = qvm_collection.add_new_vm(src_vm.__class__.__name__,
+                    name=dst_name, template=src_vm.template,
+                    dir_path=options.dir_path, installed_by_rpm=False)
 
             dst_vm.clone_attrs(src_vm)
             dst_vm.clone_disk_files (src_vm=src_vm, verbose=False)
