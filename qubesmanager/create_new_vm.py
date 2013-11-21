@@ -115,14 +115,16 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
             self.allow_networking.setEnabled(True)
     def on_hvm_radio_toggled(self, checked):
         if checked:
-            self.template_name.setEnabled(False)
-            self.standalone.setEnabled(False)
             self.standalone.setChecked(True)
             self.allow_networking.setEnabled(True)
         else:
-            self.standalone.setEnabled(True)
             self.standalone.setChecked(False)
-
+        self.fill_template_list()
+    def on_standalone_toggled(self, checked):
+        if checked and self.hvm_radio.isChecked():
+            self.template_name.setEnabled(False)
+        else:
+            self.template_name.setEnabled(True)
 
     def reject(self):
         self.done(0)
