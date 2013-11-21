@@ -145,8 +145,9 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
             vmtype = "HVM"
 
 
+        vmclass = "Qubes" + vmtype.replace("VM", "Vm")
         thread_monitor = ThreadMonitor()
-        thread = threading.Thread (target=self.do_create_vm, args=(createvm_method, vmname, label, template_vm, standalone, allow_networking, thread_monitor))
+        thread = threading.Thread (target=self.do_create_vm, args=(vmclass, vmname, label, template_vm, standalone, allow_networking, thread_monitor))
         thread.daemon = True
         thread.start()
 
@@ -170,21 +171,17 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
 
 
 
-    def do_create_vm (self, createvm_method, vmname, label, template_vm, standalone, allow_networking, thread_monitor):
+    def do_create_vm (self, vmclass, vmname, label, template_vm, standalone, allow_networking, thread_monitor):
         vm = None
         try:
             self.qvm_collection.lock_db_for_writing()
             self.qvm_collection.load()
 
-            if template_vm is not None:
-                if not standalone:
-                    vm = createvm_method(vmname, template_vm, label = label)
-                else:
-                    vm = createvm_method(vmname, None, label = label)
-                vm.create_on_disk(verbose=False, source_template = template_vm)
+            if not standalone:
+                vm = self.qvm_collection.add_new_vm(vmclass, name=vmname, template=template_vm, label=label)
             else:
-                vm = createvm_method(vmname, label = label)
-                vm.create_on_disk(verbose=False)
+                vm = self.qvm_collection.add_new_vm(vmclass, name=vmname, template=None, label=label)
+            vm.create_on_disk(verbose=False, source_template = template_vm)
 
             if allow_networking == False:
                 vm.uses_default_netvm = False
