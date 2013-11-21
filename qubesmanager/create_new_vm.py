@@ -79,6 +79,8 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
         self.vmname.selectAll()
         self.vmname.setFocus()
 
+        self.hvmtemplatewarningbox.hide()
+
     def fill_template_list(self):
         def filter_template(vm):
             if vm.internal:
@@ -125,6 +127,11 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
             self.template_name.setEnabled(False)
         else:
             self.template_name.setEnabled(True)
+
+        if not checked and self.hvm_radio.isChecked():
+            self.hvmtemplatewarningbox.show()
+        else:
+            self.hvmtemplatewarningbox.hide()
 
     def reject(self):
         self.done(0)
