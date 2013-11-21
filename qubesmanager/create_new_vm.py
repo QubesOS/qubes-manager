@@ -29,6 +29,7 @@ from PyQt4.QtGui import *
 from qubes.qubes import QubesVmCollection
 from qubes.qubes import QubesVmLabels
 from qubes.qubes import QubesException
+from qubes.qubes import QubesVm,QubesHVm
 
 import qubesmanager.resources_rc
 
@@ -72,8 +73,25 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
             self.vmlabel.insertItem(i, label.name)
             self.vmlabel.setItemIcon (i, QIcon(label.icon_path))
 
-        self.template_vm_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_template()]
+        self.fill_template_list()
 
+        self.vmname.setValidator(QRegExpValidator(QRegExp("[a-zA-Z0-9-]*", Qt.CaseInsensitive), None))
+        self.vmname.selectAll()
+        self.vmname.setFocus()
+
+    def fill_template_list(self):
+        def filter_template(vm):
+            if vm.internal:
+                return False
+            if not vm.is_template():
+                return False
+            if self.hvm_radio.isChecked():
+                return QubesHVm.is_template_compatible(vm)
+            else:
+                return QubesVm.is_template_compatible(vm)
+        self.template_vm_list = filter(filter_template, self.qvm_collection.values())
+
+        self.template_name.clear()
         default_index = 0
         for (i, vm) in enumerate(self.template_vm_list):
             if vm is self.qvm_collection.get_default_template():
@@ -82,10 +100,6 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
             else:
                 self.template_name.insertItem(i, vm.name)
         self.template_name.setCurrentIndex(default_index)
-
-        self.vmname.setValidator(QRegExpValidator(QRegExp("[a-zA-Z0-9-]*", Qt.CaseInsensitive), None))
-        self.vmname.selectAll()
-        self.vmname.setFocus()
 
     def on_appvm_radio_toggled(self, checked):
         if checked:

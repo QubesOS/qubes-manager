@@ -230,7 +230,10 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             template_vm_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_template()]
             self.template_idx = -1
 
-            for (i, vm) in enumerate(template_vm_list):
+            i = 0
+            for vm in template_vm_list:
+                if not self.vm.is_template_compatible(vm):
+                    continue
                 text = vm.name
                 if vm is self.qvm_collection.get_default_template():
                     text += " (default)"
@@ -238,6 +241,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                     self.template_idx = i
                     text += " (current)"
                 self.template_name.insertItem(i, text)
+                i += 1
             self.template_name.setCurrentIndex(self.template_idx)
         else:
             self.template_name.setEnabled(False)
