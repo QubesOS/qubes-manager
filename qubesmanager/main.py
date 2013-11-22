@@ -159,15 +159,12 @@ class VmTypeWidget(VmIconWidget):
         elif vm.is_proxyvm():
             self.value = 2
             return (":/proxyvm.png", "ProxyVM")
-        elif vm.type == "HVM":
-            self.value = 5
-            return (":/hvm.png", "HVM")
-        elif vm.is_template():
-            self.value = 3
-            return (":/templatevm.png", "TemplateVM")
         elif vm.is_appvm() and vm.template is None:
             self.value = 4
             return (":/standalonevm.png", "StandaloneVM")
+        elif vm.is_template():
+            self.value = 3
+            return (":/templatevm.png", "TemplateVM")
         elif vm.is_appvm() or vm.is_disposablevm():
             self.value = 5 + vm.label.index
             return (":/appvm.png", "AppVM")

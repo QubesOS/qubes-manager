@@ -31,7 +31,6 @@
     <file alias="qubes.png">icons/qubes.png</file>
     <file alias="appvm.png">icons/appvm.png</file>
     <file alias="netvm.png">icons/netvm.png</file>
-    <file alias="hvm.png">icons/hvm.png</file>
     <file alias="proxyvm.png">icons/proxyvm.png</file>
     <file alias="standalonevm.png">icons/standalonevm.png</file>
     <file alias="networking.png">icons/networking.png</file>
