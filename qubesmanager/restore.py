@@ -30,6 +30,7 @@ from qubes.qubes import QubesVmCollection
 from qubes.qubes import QubesException
 from qubes.qubes import QubesDaemonPidfile
 from qubes.qubes import QubesHost
+from qubes.qubes import qubes_base_dir
 import qubesmanager.resources_rc
 
 from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
@@ -50,7 +51,7 @@ from backup_utils import *
 
 class RestoreVMsWindow(Ui_Restore, QWizard):
 
-    __pyqtSignals__ = ("restore_progress(int)",)
+    __pyqtSignals__ = ("restore_progress(int)","backup_progress(int)")
 
     def __init__(self, app, qvm_collection, blk_manager, parent=None):
         super(RestoreVMsWindow, self).__init__(parent)
@@ -82,6 +83,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.connect(self, SIGNAL("currentIdChanged(int)"), self.current_page_changed)
         self.connect(self.dev_combobox, SIGNAL("activated(int)"), self.dev_combobox_activated)
         self.connect(self, SIGNAL("restore_progress(QString)"), self.commit_text_edit.append)
+        self.connect(self, SIGNAL("backup_progress(int)"), self.progress_bar.setValue)
 
         self.select_dir_page.isComplete = self.has_selected_dir
         self.select_vms_page.isComplete = self.has_selected_vms
@@ -90,6 +92,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.select_vms_page.connect(self.select_vms_widget, SIGNAL("selected_changed()"), SIGNAL("completeChanged()")) 
 
         fill_devs_list(self)
+        fill_appvms_list(self)
         self.__init_restore_options__()
 
 
@@ -118,7 +121,13 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.select_vms_widget.selected_list.clear()
         self.select_vms_widget.available_list.clear()
         
-        self.vms_to_restore = qubesutils.backup_restore_prepare(str(self.backup_dir), self.restore_options, self.qvm_collection)
+        self.target_appvm = None
+        if self.appvm_combobox.currentText() != "None":   #An existing appvm chosen 
+            self.target_appvm = str(self.appvm_combobox.currentText())
+
+        self.restore_tmpdir, qubes_xml = qubesutils.backup_restore_header(str(self.backup_dir), str(self.passphrase_line_edit.text()), self.encryption_checkbox.isChecked(), appvm=self.target_appvm)
+        self.vms_to_restore = qubesutils.backup_restore_prepare(str(self.backup_dir),os.path.join(self.restore_tmpdir, qubes_xml), str(self.passphrase_line_edit.text()), options=self.restore_options, host_collection=self.qvm_collection, encrypt=self.encryption_checkbox.isChecked(), appvm=self.target_appvm)
+
         for vmname in self.vms_to_restore:
             self.select_vms_widget.available_list.addItem(vmname)
 
@@ -147,17 +156,20 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
     def restore_error_output(self, s):
         self.emit(SIGNAL("restore_progress(QString)"), '<font color="red">{0}</font>'.format(s))
         
-
     def restore_output(self, s):
         self.emit(SIGNAL("restore_progress(QString)"),'<font color="black">{0}</font>'.format(s))
 
+    def update_progress_bar(self, value):
+        self.emit(SIGNAL("backup_progress(int)"), value)
 
     def __do_restore__(self, thread_monitor):
         err_msg = []
         self.qvm_collection.lock_db_for_writing()
         try:
-            qubesutils.backup_restore_do(str(self.backup_dir), self.vms_to_restore, self.qvm_collection, self.restore_output, self.restore_error_output)
+            qubesutils.backup_restore_do(str(self.backup_dir), self.restore_tmpdir, str(self.passphrase_line_edit.text()), self.vms_to_restore, self.qvm_collection, encrypted=self.encryption_checkbox.isChecked(), appvm=self.target_appvm, print_callback=self.restore_output, error_callback=self.restore_error_output, progress_callback
+=self.update_progress_bar)
         except Exception as ex:
+            print "Exception:",ex
             err_msg.append(str(ex))
 
         self.qvm_collection.unlock_db()
