@@ -93,13 +93,25 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.shutdown_running_vms_button.clicked.connect(self.shutdown_all_running_selected)
         self.connect(self.dev_combobox, SIGNAL("activated(int)"), self.dev_combobox_activated)
         self.connect(self, SIGNAL("backup_progress(int)"), self.progress_bar.setValue)
+        self.dir_line_edit.connect(self.dir_line_edit, SIGNAL("textChanged(QString)"), self.backup_location_changed)
 
         self.select_vms_page.isComplete = self.has_selected_vms
-        self.select_dir_page.isComplete = self.has_selected_dir
+        self.select_dir_page.isComplete = self.has_selected_dir_and_pass
         #FIXME
         #this causes to run isComplete() twice, I don't know why
-        self.select_vms_page.connect(self.select_vms_widget, SIGNAL("selected_changed()"), SIGNAL("completeChanged()")) 
-        
+        self.select_vms_page.connect(
+                self.select_vms_widget,
+                SIGNAL("selected_changed()"),
+                SIGNAL("completeChanged()"))
+        self.passphrase_line_edit.connect(
+                self.passphrase_line_edit,
+                SIGNAL("textChanged(QString)"),
+                self.backup_location_changed)
+        self.passphrase_line_edit_verify.connect(
+                self.passphrase_line_edit_verify,
+                SIGNAL("textChanged(QString)"),
+                self.backup_location_changed)
+
         self.total_size = 0
         self.__fill_vms_list__()
         fill_devs_list(self)
@@ -354,10 +366,16 @@ class BackupVMsWindow(Ui_Backup, QWizard):
     def has_selected_vms(self):
         return self.select_vms_widget.selected_list.count() > 0
 
-    def has_selected_dir(self):
-        return self.backup_dir != None
-            
+    def has_selected_dir_and_pass(self):
+        if not len(self.passphrase_line_edit.text()):
+            return False
+        if self.passphrase_line_edit.text() != self.passphrase_line_edit_verify.text():
+            return False
+        return self.backup_location != None
 
+    def backup_location_changed(self, new_dir = None):
+        self.backup_location = str(self.dir_line_edit.text())
+        self.select_dir_page.emit(SIGNAL("completeChanged()"))
 
 
 # Bases on the original code by:

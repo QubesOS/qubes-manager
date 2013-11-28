@@ -77,7 +77,7 @@ def umount_device(dev_mount_path):
 
 def fill_appvms_list(dialog):
     dialog.appvm_combobox.clear()
-    dialog.appvm_combobox.addItem("None")
+    dialog.appvm_combobox.addItem("dom0")
 
     dialog.appvm_combobox.setCurrentIndex(0) #current selected is null ""
 

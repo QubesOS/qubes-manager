@@ -88,9 +88,10 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
         self.select_dir_page.isComplete = self.has_selected_dir
         self.select_vms_page.isComplete = self.has_selected_vms
+        self.confirm_page.isComplete = self.all_vms_good
         #FIXME
         #this causes to run isComplete() twice, I don't know why
-        self.select_vms_page.connect(self.select_vms_widget, SIGNAL("selected_changed()"), SIGNAL("completeChanged()")) 
+        self.select_vms_page.connect(self.select_vms_widget, SIGNAL("selected_changed()"), SIGNAL("completeChanged()"))
 
         fill_devs_list(self)
         fill_appvms_list(self)
@@ -222,6 +223,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
             self.confirm_text_edit.setFontFamily("Monospace")
             self.confirm_text_edit.setText("\n".join(self.func_output))
 
+            self.confirm_page.emit(SIGNAL("completeChanged()"))
 
         elif self.currentPage() is self.commit_page:
             self.button(self.CancelButton).setDisabled(True)
@@ -242,6 +244,13 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
             if self.dev_mount_path != None:
                 umount_device(self.dev_mount_path)
             self.button(self.FinishButton).setEnabled(True)
+
+    def all_vms_good(self):
+        for vminfo in self.vms_to_restore.values():
+            if not vminfo['good-to-go']:
+                print vminfo['vm'].name, str(vminfo)
+                return False
+        return True
 
     def reject(self):
         if self.dev_mount_path != None:
