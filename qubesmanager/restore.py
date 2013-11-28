@@ -72,7 +72,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
             if vm.qid == 0:
                 self.vm = vm
                 break;
-        
+
         assert self.vm != None
 
         self.setupUi(self)
@@ -98,7 +98,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
     def dev_combobox_activated(self, idx):
         dev_combobox_activated(self, idx)
-                   
+
     @pyqtSlot(name='on_select_path_button_clicked')
     def select_path_button_clicked(self):
         select_path_button_clicked(self)
@@ -148,14 +148,12 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         if 'dom0-home' in self.restore_options:
             self.skip_dom0.setChecked(self.restore_options['dom0-home'])
 
-
- 
     def gather_output(self, s):
         self.func_output.append(s)
 
     def restore_error_output(self, s):
         self.emit(SIGNAL("restore_progress(QString)"), '<font color="red">{0}</font>'.format(s))
-        
+
     def restore_output(self, s):
         self.emit(SIGNAL("restore_progress(QString)"),'<font color="black">{0}</font>'.format(s))
 
@@ -181,7 +179,6 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
         thread_monitor.set_finished()
 
- 
     def current_page_changed(self, id):
 
         if self.currentPage() is self.select_vms_page:
@@ -206,7 +203,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         elif self.currentPage() is self.commit_page:
             self.button(self.CancelButton).setDisabled(True)
             self.button(self.FinishButton).setDisabled(True)
-            
+
             self.thread_monitor = ThreadMonitor()
             thread = threading.Thread (target= self.__do_restore__ , args=(self.thread_monitor,))
             thread.daemon = True
@@ -227,8 +224,6 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         if self.dev_mount_path != None:
             umount_device(self.dev_mount_path)
         self.done(0)
- 
-
 
     def has_selected_dir(self):
         return self.backup_dir != None

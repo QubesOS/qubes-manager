@@ -73,7 +73,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             if vm.qid == 0:
                 self.vm = vm
                 break;
-        
+
         assert self.vm != None
 
         self.setupUi(self)
@@ -118,9 +118,9 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                 home_dir = pwd.getpwnam(local_user).pw_dir
                 self.size = qubesutils.get_disk_usage(home_dir)
             else:
-                self.size = self.get_vm_size(vm) 
+                self.size = self.get_vm_size(vm)
             super(BackupVMsWindow.VmListItem, self).__init__(vm.name+ " (" + qubesutils.size_to_human(self.size) + ")")
-        
+
         def get_vm_size(self, vm):
             size = 0
             if vm.private_img is not None:
@@ -169,7 +169,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                 item.setForeground(QBrush(QColor(0, 0, 0)))
 
         self.show_running_vms_warning(some_selected_vms_running)
-    
+
         for i in range(self.select_vms_widget.available_list.count()):
             item =  self.select_vms_widget.available_list.item(i)
             if item.vm.is_running() and item.vm.qid != 0:
@@ -195,7 +195,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.app.processEvents()
 
         if reply == QMessageBox.Yes:
-            
+
             wait_time = 60.0
             for vm in vms:
                 self.shutdown_vm_func(vm, wait_time*1000)
@@ -212,7 +212,6 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 
             progress.hide()
 
-
     def get_running_vms(self):
         names = []
         vms = []
@@ -223,12 +222,8 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                 vms.append(item.vm)
         return (names, vms)
 
-
-
-
     def dev_combobox_activated(self, idx):
         dev_combobox_activated(self, idx)
-                   
 
     @pyqtSlot(name='on_select_path_button_clicked')
     def select_path_button_clicked(self):
@@ -276,7 +271,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 
         thread_monitor.set_finished()
 
-    
+
     def current_page_changed(self, id):
         if self.currentPage() is self.confirm_page:
 
@@ -323,7 +318,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             if self.dev_mount_path != None:
                 umount_device(self.dev_mount_path)
             self.button(self.FinishButton).setEnabled(True)
- 
+
 
     def reject(self):
         #cancell clicked while the backup is in progress.
@@ -348,7 +343,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         if self.dev_mount_path != None:
             umount_device(self.dev_mount_path)
         self.done(0)
- 
+
 
     def has_selected_vms(self):
         return self.select_vms_widget.selected_list.count() > 0

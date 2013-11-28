@@ -80,7 +80,7 @@ def fill_appvms_list(dialog):
     dialog.appvm_combobox.addItem("None")
 
     dialog.appvm_combobox.setCurrentIndex(0) #current selected is null ""
-    
+
     for vm in dialog.qvm_collection.values():
         if vm.is_appvm() and vm.internal:
             continue
@@ -93,7 +93,7 @@ def fill_appvms_list(dialog):
 def fill_devs_list(dialog):
     dialog.dev_combobox.clear()
     dialog.dev_combobox.addItem("None")
-    
+
     dialog.blk_manager.blk_lock.acquire()
     for a in dialog.blk_manager.attached_devs:
         if dialog.blk_manager.attached_devs[a]['attached_to']['vm'] == dialog.vm.name :
@@ -112,7 +112,7 @@ def fill_devs_list(dialog):
 
 def enable_dir_line_edit(dialog, boolean):
     dialog.dir_line_edit.setEnabled(boolean)
-    dialog.select_path_button.setEnabled(boolean)      
+    dialog.select_path_button.setEnabled(boolean)
 
 
 def dev_combobox_activated(dialog, idx):
@@ -129,7 +129,7 @@ def dev_combobox_activated(dialog, idx):
             dialog.dev_combobox.setCurrentIndex(dialog.prev_dev_idx)
             return
 
-    if dialog.dev_combobox.currentText() != "None":   #An existing device chosen 
+    if dialog.dev_combobox.currentText() != "None":   #An existing device chosen
         dev_name = str(dialog.dev_combobox.itemData(idx).toString())
 
         dialog.blk_manager.blk_lock.acquire()
@@ -155,7 +155,7 @@ def dev_combobox_activated(dialog, idx):
                 dialog.dev_combobox.setCurrentIndex(0) #if couldn't mount - set current device to "None"
                 dialog.prev_dev_idx = 0
                 return
-                
+
     dialog.prev_dev_idx = idx
 
     if dialog.dev_mount_path != None:
