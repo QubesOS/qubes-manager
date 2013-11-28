@@ -79,6 +79,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 
         self.setupUi(self)
 
+        self.progress_status.text = "Backup in progress..."
         self.show_running_vms_warning(False)
         self.dir_line_edit.setReadOnly(False)
 
@@ -252,20 +253,29 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             for i in range(self.select_vms_widget.selected_list.count()):
                 self.selected_vms.append(self.select_vms_widget.selected_list.item(i).vm)
 
+        elif self.currentPage() is self.select_dir_page:
+            if not self.backup_location:
+                QMessageBox.information(None, "Wait!", "Enter backup target location first.")
+                return False
+            if self.appvm_combobox.currentIndex() == 0 and \
+                   not os.path.isdir(self.backup_location):
+                QMessageBox.information(None, "Wait!",
+                        "Selected directory do not exists or not a directory (%s)." % self.backup_location)
+                return False
+            if not len(self.passphrase_line_edit.text()):
+                QMessageBox.information(None, "Wait!", "Enter passphrase for backup encryption/verification first.")
+                return False
+            if self.passphrase_line_edit.text() != self.passphrase_line_edit_verify.text():
+                QMessageBox.information(None, "Wait!", "Enter the same passphrase in both fields.")
+                return False
+
         return True
 
     def gather_output(self, s):
         self.func_output.append(s)
 
     def update_progress_bar(self, value):
-        if value == 100:
-            self.emit(SIGNAL("backup_progress(int)"), value)
-
-    def check_backup_progress(self, initial_usage, total_backup_size):
-        du = qubesutils.get_disk_usage(self.backup_dir)
-        done = du - initial_usage
-        percent = int((float(done)/total_backup_size)*100)
-        return percent
+        self.emit(SIGNAL("backup_progress(int)"), value)
 
     def __do_backup__(self, thread_monitor):
         msg = []
@@ -314,7 +324,6 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             self.button(self.FinishButton).setDisabled(True)
             self.button(self.CancelButton).setDisabled(True)
             self.thread_monitor = ThreadMonitor()
-            initial_usage = qubesutils.get_disk_usage(self.backup_dir)
             thread = threading.Thread (target= self.__do_backup__ , args=(self.thread_monitor,))
             thread.daemon = True
             thread.start()
@@ -324,15 +333,13 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             while not self.thread_monitor.is_finished():
                 self.app.processEvents()
                 time.sleep (0.1)
-                counter += 1
-                if counter == 20:
-                    progress = self.check_backup_progress(initial_usage, self.total_size)
-                    self.progress_bar.setValue(progress)
-                    counter = 0
 
             if not self.thread_monitor.success:
-                QMessageBox.warning (None, "Backup error!", "ERROR: {1}".format(self.vm.name, self.thread_monitor.error_msg))
-
+                self.progress_status.setText = "Backup error."
+                QMessageBox.warning (None, "Backup error!", "ERROR: {}".format(self.thread_monitor.error_msg))
+            else:
+                self.progress_bar.setValue(100)
+                self.progress_status.setText = "Backup finished."
             if self.dev_mount_path != None:
                 umount_device(self.dev_mount_path)
             self.button(self.FinishButton).setEnabled(True)
@@ -340,23 +347,19 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 
     def reject(self):
         #cancell clicked while the backup is in progress.
-        #calling kill on cp.
+        #calling kill on tar.
         if self.currentPage() is self.commit_page:
             manager_pid = os.getpid()
-            cp_pid_cmd = ["ps" ,"--ppid", str(manager_pid)]
-            pid = None
+            archive_pid_cmd = ["ps" ,"--ppid", str(manager_pid)]
 
             while not self.thread_monitor.is_finished():
-                cp_pid = subprocess.Popen(cp_pid_cmd, stdout = subprocess.PIPE)
-                output = cp_pid.stdout.read().split("\n")
-                
+                archive_pid = subprocess.Popen(archive_pid_cmd, stdout = subprocess.PIPE)
+                output = archive_pid.stdout.readlines()
+
                 for l in output:
-                    if l.endswith("cp"):
-                        pid = l.split(" ")[1]
-                        break
-                if pid != None:
-                    os.kill(int(pid), signal.SIGTERM)
-                    break
+                    if l.strip().endswith("tar"):
+                        os.kill(int(l.split(" ")[0]), signal.SIGTERM)
+                time.sleep(0.1)
 
         if self.dev_mount_path != None:
             umount_device(self.dev_mount_path)
