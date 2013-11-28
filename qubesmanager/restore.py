@@ -40,6 +40,7 @@ import time
 from operator import itemgetter
 from thread_monitor import *
 
+from qubes import backup
 from qubes import qubesutils
 
 from ui_restoredlg import *
@@ -61,7 +62,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.blk_manager = blk_manager
 
         self.dev_mount_path = None
-        self.backup_dir = None
+        self.backup_location = None
         self.restore_options = None
         self.backup_vms_list = None
         self.func_output = []
@@ -101,7 +102,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
     @pyqtSlot(name='on_select_path_button_clicked')
     def select_path_button_clicked(self):
-        select_path_button_clicked(self)
+        select_path_button_clicked(self, True)
 
     def on_ignore_missing_toggled(self, checked):
         self.restore_options['use-default-template'] = checked
@@ -120,13 +121,25 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
         self.select_vms_widget.selected_list.clear()
         self.select_vms_widget.available_list.clear()
-        
-        self.target_appvm = None
-        if self.appvm_combobox.currentText() != "None":   #An existing appvm chosen 
-            self.target_appvm = str(self.appvm_combobox.currentText())
 
-        self.restore_tmpdir, qubes_xml = qubesutils.backup_restore_header(str(self.backup_dir), str(self.passphrase_line_edit.text()), self.encryption_checkbox.isChecked(), appvm=self.target_appvm)
-        self.vms_to_restore = qubesutils.backup_restore_prepare(str(self.backup_dir),os.path.join(self.restore_tmpdir, qubes_xml), str(self.passphrase_line_edit.text()), options=self.restore_options, host_collection=self.qvm_collection, encrypt=self.encryption_checkbox.isChecked(), appvm=self.target_appvm)
+        self.target_appvm = None
+        if self.appvm_combobox.currentIndex() != 0:   #An existing appvm chosen
+            self.target_appvm = self.qvm_collection.get_vm_by_name(
+                    str(self.appvm_combobox.currentText()))
+
+        self.restore_tmpdir, qubes_xml = backup.backup_restore_header(
+                str(self.backup_location),
+                str(self.passphrase_line_edit.text()),
+                encrypted=self.encryption_checkbox.isChecked(),
+                appvm=self.target_appvm)
+        self.vms_to_restore = backup.backup_restore_prepare(
+                str(self.backup_location),
+                os.path.join(self.restore_tmpdir, qubes_xml),
+                str(self.passphrase_line_edit.text()),
+                options=self.restore_options,
+                host_collection=self.qvm_collection,
+                encrypt=self.encryption_checkbox.isChecked(),
+                appvm=self.target_appvm)
 
         for vmname in self.vms_to_restore:
             self.select_vms_widget.available_list.addItem(vmname)
@@ -134,8 +147,8 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
     def __init_restore_options__(self):
         if not self.restore_options:
             self.restore_options = {}
-            qubesutils.backup_restore_set_defaults(self.restore_options)
-    
+            backup.backup_restore_set_defaults(self.restore_options)
+
         if 'use-default-template' in self.restore_options and 'use-default-netvm' in self.restore_options:
             val = self.restore_options['use-default-template'] and self.restore_options['use-default-netvm']
             self.ignore_missing.setChecked(val)
@@ -164,8 +177,17 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         err_msg = []
         self.qvm_collection.lock_db_for_writing()
         try:
-            qubesutils.backup_restore_do(str(self.backup_dir), self.restore_tmpdir, str(self.passphrase_line_edit.text()), self.vms_to_restore, self.qvm_collection, encrypted=self.encryption_checkbox.isChecked(), appvm=self.target_appvm, print_callback=self.restore_output, error_callback=self.restore_error_output, progress_callback
-=self.update_progress_bar)
+            backup.backup_restore_do(
+                    str(self.backup_location),
+                    self.restore_tmpdir,
+                    str(self.passphrase_line_edit.text()),
+                    self.vms_to_restore,
+                    self.qvm_collection,
+                    encrypted=self.encryption_checkbox.isChecked(),
+                    appvm=self.target_appvm,
+                    print_callback=self.restore_output,
+                    error_callback=self.restore_error_output,
+                    progress_callback=self.update_progress_bar)
         except Exception as ex:
             print "Exception:",ex
             err_msg.append(str(ex))
@@ -194,7 +216,8 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                 del self.vms_to_restore[str(vmname)]
 
             del self.func_output[:]
-            qubesutils.backup_restore_print_summary(self.vms_to_restore, print_callback = self.gather_output)
+            backup.backup_restore_print_summary(
+                    self.vms_to_restore, print_callback = self.gather_output)
             self.confirm_text_edit.setReadOnly(True)
             self.confirm_text_edit.setFontFamily("Monospace")
             self.confirm_text_edit.setText("\n".join(self.func_output))
@@ -226,8 +249,8 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.done(0)
 
     def has_selected_dir(self):
-        return self.backup_dir != None
-            
+        return self.backup_location != None
+
     def has_selected_vms(self):
         return self.select_vms_widget.selected_list.count() > 0
 

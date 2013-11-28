@@ -121,7 +121,7 @@ def dev_combobox_activated(dialog, idx):
     #there was a change
 
     dialog.dir_line_edit.setText("")
-    dialog.backup_dir = None
+    dialog.backup_location = None
 
     if dialog.dev_mount_path != None:
         dialog.dev_mount_path = umount_device(dialog.dev_mount_path)
@@ -161,30 +161,35 @@ def dev_combobox_activated(dialog, idx):
     if dialog.dev_mount_path != None:
       # Initialize path with root of mounted device
       dialog.dir_line_edit.setText(dialog.dev_mount_path)
-      dialog.backup_dir = dialog.dev_mount_path
+      dialog.backup_location = dialog.dev_mount_path
 
     dialog.select_dir_page.emit(SIGNAL("completeChanged()"))
 
-                   
-def select_path_button_clicked(dialog):
-    dialog.backup_dir = dialog.dir_line_edit.text()
+
+def select_path_button_clicked(dialog, select_file = False):
+    dialog.backup_location = dialog.dir_line_edit.text()
     file_dialog = QFileDialog()
     file_dialog.setReadOnly(True)
 
+    if select_file:
+        file_dialog_function = file_dialog.getOpenFileName
+    else:
+        file_dialog_function = file_dialog.getExistingDirectory
+
     new_appvm = None
     new_path = None
-    if dialog.appvm_combobox.currentText() != "None":   #An existing appvm chosen 
+    if dialog.appvm_combobox.currentIndex() != 0:   #An existing appvm chosen
         new_appvm = str(dialog.appvm_combobox.currentText())
     elif dialog.dev_mount_path != None:
-        new_path = file_dialog.getExistingDirectory(dialog, "Select backup directory.", dialog.dev_mount_path)
+        new_path = file_dialog_function(dialog, "Select backup location.", dialog.dev_mount_path)
     else:
-        new_path = file_dialog.getExistingDirectory(dialog, "Select backup directory.", "~")
-        
+        new_path = file_dialog_function(dialog, "Select backup location.", "~")
+
     if new_path != None:
         dialog.dir_line_edit.setText(new_path)
-        dialog.backup_dir = new_path
+        dialog.backup_location = new_path
 
-    if (new_path or new_appvm) and len(dialog.backup_dir) > 0:
+    if (new_path or new_appvm) and len(dialog.backup_location) > 0:
         dialog.select_dir_page.emit(SIGNAL("completeChanged()"))
 
 def simulate_long_lasting_proces(period, progress_callback):

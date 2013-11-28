@@ -31,6 +31,7 @@ from qubes.qubes import QubesVmCollection
 from qubes.qubes import QubesException
 from qubes.qubes import QubesDaemonPidfile
 from qubes.qubes import QubesHost
+from qubes import backup
 from qubes import qubesutils
 
 import qubesmanager.resources_rc
@@ -65,9 +66,9 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.shutdown_vm_func = shutdown_vm_func
 
         self.dev_mount_path = None
-        self.backup_dir = None
+        self.backup_location = None
         self.func_output = []
-        self.excluded = []
+        self.selected_vms = []
 
         for vm in self.qvm_collection.values():
             if vm.qid == 0:
@@ -116,7 +117,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             if vm.qid == 0:
                 local_user = grp.getgrnam('qubes').gr_mem[0]
                 home_dir = pwd.getpwnam(local_user).pw_dir
-                self.size = qubesutils.get_disk_usage(home_dir)
+                self.size = backup.get_disk_usage(home_dir)
             else:
                 self.size = self.get_vm_size(vm)
             super(BackupVMsWindow.VmListItem, self).__init__(vm.name+ " (" + qubesutils.size_to_human(self.size) + ")")
@@ -231,16 +232,14 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 
     def validateCurrentPage(self):
         if self.currentPage() is self.select_vms_page:
-            for i in range(self.select_vms_widget.selected_list.count()):
-                if self.check_running() == True:
-                    QMessageBox.information(None, "Wait!", "Some selected VMs are running. Running VMs can not be backuped. Please shut them down or remove them from the list.")
-                    return False
+            if self.check_running():
+                QMessageBox.information(None, "Wait!", "Some selected VMs are running. Running VMs can not be backuped. Please shut them down or remove them from the list.")
+                return False
 
-            del self.excluded[:]
-            for i in range(self.select_vms_widget.available_list.count()):
-                vmname =  self.select_vms_widget.available_list.item(i).vm.name
-                self.excluded.append(vmname)
-                
+            self.selected_vms = []
+            for i in range(self.select_vms_widget.selected_list.count()):
+                self.selected_vms.append(self.select_vms_widget.selected_list.item(i).vm)
+
         return True
 
     def gather_output(self, s):
@@ -260,8 +259,13 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         msg = []
 
         try:
-            qubesutils.backup_do_copy(str(self.backup_dir), self.files_to_backup, str(self.passphrase_line_edit.text()), self.update_progress_bar, encrypt=self.encryption_checkbox.isChecked(), appvm=self.target_appvm)
-            #simulate_long_lasting_proces(10, self.update_progress_bar) 
+            backup.backup_do(str(self.backup_location),
+                    self.files_to_backup,
+                    str(self.passphrase_line_edit.text()),
+                    progress_callback=self.update_progress_bar,
+                    encrypt=self.encryption_checkbox.isChecked(),
+                    appvm=self.target_appvm)
+            #simulate_long_lasting_proces(10, self.update_progress_bar)
         except Exception as ex:
             print "Exception:",ex
             msg.append(str(ex))
@@ -276,14 +280,16 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         if self.currentPage() is self.confirm_page:
 
             self.target_appvm = None
-            if self.appvm_combobox.currentText() != "None":   #An existing appvm chosen 
-                self.target_appvm = str(self.appvm_combobox.currentText())
-
-            # FIXME: ensure that at least a non empty passphrase has been provided
+            if self.appvm_combobox.currentIndex() != 0:   #An existing appvm chosen
+                self.target_appvm = self.qvm_collection.get_vm_by_name(
+                        self.appvm_combobox.currentText())
 
             del self.func_output[:]
             try:
-                self.files_to_backup = qubesutils.backup_prepare(str(self.backup_dir), exclude_list = self.excluded, print_callback = self.gather_output)
+                self.files_to_backup = backup.backup_prepare(
+                        self.selected_vms,
+                        print_callback = self.gather_output,
+                        hide_vm_names=self.encryption_checkbox.isChecked())
             except Exception as ex:
                 print "Exception:",ex
                 QMessageBox.critical(None, "Error while preparing backup.", "ERROR: {0}".format(ex))
