@@ -31,6 +31,7 @@ from qubes.qubes import QubesVmCollection
 from qubes.qubes import QubesException
 from qubes.qubes import QubesDaemonPidfile
 from qubes.qubes import QubesHost
+from qubes import backup
 from qubes import qubesutils
 
 import qubesmanager.resources_rc
@@ -65,21 +66,22 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.shutdown_vm_func = shutdown_vm_func
 
         self.dev_mount_path = None
-        self.backup_dir = None
+        self.backup_location = None
         self.func_output = []
-        self.excluded = []
+        self.selected_vms = []
 
         for vm in self.qvm_collection.values():
             if vm.qid == 0:
                 self.vm = vm
                 break;
-        
+
         assert self.vm != None
 
         self.setupUi(self)
 
+        self.progress_status.text = "Backup in progress..."
         self.show_running_vms_warning(False)
-        self.dir_line_edit.setReadOnly(True)
+        self.dir_line_edit.setReadOnly(False)
 
         self.select_vms_widget = MultiSelectWidget(self)
         self.verticalLayout.insertWidget(1, self.select_vms_widget)
@@ -92,16 +94,30 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.shutdown_running_vms_button.clicked.connect(self.shutdown_all_running_selected)
         self.connect(self.dev_combobox, SIGNAL("activated(int)"), self.dev_combobox_activated)
         self.connect(self, SIGNAL("backup_progress(int)"), self.progress_bar.setValue)
+        self.dir_line_edit.connect(self.dir_line_edit, SIGNAL("textChanged(QString)"), self.backup_location_changed)
 
         self.select_vms_page.isComplete = self.has_selected_vms
-        self.select_dir_page.isComplete = self.has_selected_dir
+        self.select_dir_page.isComplete = self.has_selected_dir_and_pass
         #FIXME
         #this causes to run isComplete() twice, I don't know why
-        self.select_vms_page.connect(self.select_vms_widget, SIGNAL("selected_changed()"), SIGNAL("completeChanged()")) 
-        
+        self.select_vms_page.connect(
+                self.select_vms_widget,
+                SIGNAL("selected_changed()"),
+                SIGNAL("completeChanged()"))
+        self.passphrase_line_edit.connect(
+                self.passphrase_line_edit,
+                SIGNAL("textChanged(QString)"),
+                self.backup_location_changed)
+        self.passphrase_line_edit_verify.connect(
+                self.passphrase_line_edit_verify,
+                SIGNAL("textChanged(QString)"),
+                self.backup_location_changed)
+
         self.total_size = 0
         self.__fill_vms_list__()
         fill_devs_list(self)
+
+        fill_appvms_list(self)
 
     def show_running_vms_warning(self, show):
         self.running_vms_warning.setVisible(show)
@@ -114,11 +130,11 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             if vm.qid == 0:
                 local_user = grp.getgrnam('qubes').gr_mem[0]
                 home_dir = pwd.getpwnam(local_user).pw_dir
-                self.size = qubesutils.get_disk_usage(home_dir)
+                self.size = backup.get_disk_usage(home_dir)
             else:
-                self.size = self.get_vm_size(vm) 
+                self.size = self.get_vm_size(vm)
             super(BackupVMsWindow.VmListItem, self).__init__(vm.name+ " (" + qubesutils.size_to_human(self.size) + ")")
-        
+
         def get_vm_size(self, vm):
             size = 0
             if vm.private_img is not None:
@@ -167,7 +183,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                 item.setForeground(QBrush(QColor(0, 0, 0)))
 
         self.show_running_vms_warning(some_selected_vms_running)
-    
+
         for i in range(self.select_vms_widget.available_list.count()):
             item =  self.select_vms_widget.available_list.item(i)
             if item.vm.is_running() and item.vm.qid != 0:
@@ -193,7 +209,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.app.processEvents()
 
         if reply == QMessageBox.Yes:
-            
+
             wait_time = 60.0
             for vm in vms:
                 self.shutdown_vm_func(vm, wait_time*1000)
@@ -210,7 +226,6 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 
             progress.hide()
 
-
     def get_running_vms(self):
         names = []
         vms = []
@@ -221,12 +236,8 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                 vms.append(item.vm)
         return (names, vms)
 
-
-
-
     def dev_combobox_activated(self, idx):
         dev_combobox_activated(self, idx)
-                   
 
     @pyqtSlot(name='on_select_path_button_clicked')
     def select_path_button_clicked(self):
@@ -234,37 +245,51 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 
     def validateCurrentPage(self):
         if self.currentPage() is self.select_vms_page:
-            for i in range(self.select_vms_widget.selected_list.count()):
-                if self.check_running() == True:
-                    QMessageBox.information(None, "Wait!", "Some selected VMs are running. Running VMs can not be backuped. Please shut them down or remove them from the list.")
-                    return False
+            if self.check_running():
+                QMessageBox.information(None, "Wait!", "Some selected VMs are running. Running VMs can not be backuped. Please shut them down or remove them from the list.")
+                return False
 
-            del self.excluded[:]
-            for i in range(self.select_vms_widget.available_list.count()):
-                vmname =  self.select_vms_widget.available_list.item(i).vm.name
-                self.excluded.append(vmname)
-                
+            self.selected_vms = []
+            for i in range(self.select_vms_widget.selected_list.count()):
+                self.selected_vms.append(self.select_vms_widget.selected_list.item(i).vm)
+
+        elif self.currentPage() is self.select_dir_page:
+            if not self.backup_location:
+                QMessageBox.information(None, "Wait!", "Enter backup target location first.")
+                return False
+            if self.appvm_combobox.currentIndex() == 0 and \
+                   not os.path.isdir(self.backup_location):
+                QMessageBox.information(None, "Wait!",
+                        "Selected directory do not exists or not a directory (%s)." % self.backup_location)
+                return False
+            if not len(self.passphrase_line_edit.text()):
+                QMessageBox.information(None, "Wait!", "Enter passphrase for backup encryption/verification first.")
+                return False
+            if self.passphrase_line_edit.text() != self.passphrase_line_edit_verify.text():
+                QMessageBox.information(None, "Wait!", "Enter the same passphrase in both fields.")
+                return False
+
         return True
 
     def gather_output(self, s):
         self.func_output.append(s)
 
     def update_progress_bar(self, value):
-        if value == 100:
-            self.emit(SIGNAL("backup_progress(int)"), value)
-
-    def check_backup_progress(self, initial_usage, total_backup_size):
-        du = qubesutils.get_disk_usage(self.backup_dir)
-        done = du - initial_usage
-        percent = int((float(done)/total_backup_size)*100)
-        return percent
+        self.emit(SIGNAL("backup_progress(int)"), value)
 
     def __do_backup__(self, thread_monitor):
         msg = []
+
         try:
-            qubesutils.backup_do(str(self.backup_dir), self.files_to_backup, self.update_progress_bar)
-            #simulate_long_lasting_proces(10, self.update_progress_bar) 
+            backup.backup_do(str(self.backup_location),
+                    self.files_to_backup,
+                    str(self.passphrase_line_edit.text()),
+                    progress_callback=self.update_progress_bar,
+                    encrypt=self.encryption_checkbox.isChecked(),
+                    appvm=self.target_appvm)
+            #simulate_long_lasting_proces(10, self.update_progress_bar)
         except Exception as ex:
+            print "Exception:",ex
             msg.append(str(ex))
 
         if len(msg) > 0 :
@@ -272,14 +297,24 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 
         thread_monitor.set_finished()
 
-    
+
     def current_page_changed(self, id):
         if self.currentPage() is self.confirm_page:
+
+            self.target_appvm = None
+            if self.appvm_combobox.currentIndex() != 0:   #An existing appvm chosen
+                self.target_appvm = self.qvm_collection.get_vm_by_name(
+                        self.appvm_combobox.currentText())
+
             del self.func_output[:]
             try:
-                self.files_to_backup = qubesutils.backup_prepare(str(self.backup_dir), exclude_list = self.excluded, print_callback = self.gather_output)
+                self.files_to_backup = backup.backup_prepare(
+                        self.selected_vms,
+                        print_callback = self.gather_output,
+                        hide_vm_names=self.encryption_checkbox.isChecked())
             except Exception as ex:
-                QMessageBox.critical(None, "Error while prepering backup.", "ERROR: {0}".format(ex))
+                print "Exception:",ex
+                QMessageBox.critical(None, "Error while preparing backup.", "ERROR: {0}".format(ex))
 
             self.textEdit.setReadOnly(True)
             self.textEdit.setFontFamily("Monospace")
@@ -289,7 +324,6 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             self.button(self.FinishButton).setDisabled(True)
             self.button(self.CancelButton).setDisabled(True)
             self.thread_monitor = ThreadMonitor()
-            initial_usage = qubesutils.get_disk_usage(self.backup_dir)
             thread = threading.Thread (target= self.__do_backup__ , args=(self.thread_monitor,))
             thread.daemon = True
             thread.start()
@@ -299,52 +333,52 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             while not self.thread_monitor.is_finished():
                 self.app.processEvents()
                 time.sleep (0.1)
-                counter += 1
-                if counter == 20:
-                    progress = self.check_backup_progress(initial_usage, self.total_size)
-                    self.progress_bar.setValue(progress)
-                    counter = 0
 
             if not self.thread_monitor.success:
-                QMessageBox.warning (None, "Backup error!", "ERROR: {1}".format(self.vm.name, self.thread_monitor.error_msg))
-
+                self.progress_status.setText = "Backup error."
+                QMessageBox.warning (None, "Backup error!", "ERROR: {}".format(self.thread_monitor.error_msg))
+            else:
+                self.progress_bar.setValue(100)
+                self.progress_status.setText = "Backup finished."
             if self.dev_mount_path != None:
                 umount_device(self.dev_mount_path)
             self.button(self.FinishButton).setEnabled(True)
- 
+
 
     def reject(self):
         #cancell clicked while the backup is in progress.
-        #calling kill on cp.
+        #calling kill on tar.
         if self.currentPage() is self.commit_page:
             manager_pid = os.getpid()
-            cp_pid_cmd = ["ps" ,"--ppid", str(manager_pid)]
-            pid = None
+            archive_pid_cmd = ["ps" ,"--ppid", str(manager_pid)]
 
             while not self.thread_monitor.is_finished():
-                cp_pid = subprocess.Popen(cp_pid_cmd, stdout = subprocess.PIPE)
-                output = cp_pid.stdout.read().split("\n")
-                
+                archive_pid = subprocess.Popen(archive_pid_cmd, stdout = subprocess.PIPE)
+                output = archive_pid.stdout.readlines()
+
                 for l in output:
-                    if l.endswith("cp"):
-                        pid = l.split(" ")[1]
-                        break
-                if pid != None:
-                    os.kill(int(pid), signal.SIGTERM)
-                    break
+                    if l.strip().endswith("tar"):
+                        os.kill(int(l.split(" ")[0]), signal.SIGTERM)
+                time.sleep(0.1)
 
         if self.dev_mount_path != None:
             umount_device(self.dev_mount_path)
         self.done(0)
- 
+
 
     def has_selected_vms(self):
         return self.select_vms_widget.selected_list.count() > 0
 
-    def has_selected_dir(self):
-        return self.backup_dir != None
-            
+    def has_selected_dir_and_pass(self):
+        if not len(self.passphrase_line_edit.text()):
+            return False
+        if self.passphrase_line_edit.text() != self.passphrase_line_edit_verify.text():
+            return False
+        return self.backup_location != None
 
+    def backup_location_changed(self, new_dir = None):
+        self.backup_location = str(self.dir_line_edit.text())
+        self.select_dir_page.emit(SIGNAL("completeChanged()"))
 
 
 # Bases on the original code by:

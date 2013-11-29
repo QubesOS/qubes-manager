@@ -30,6 +30,7 @@ from qubes.qubes import QubesVmCollection
 from qubes.qubes import QubesException
 from qubes.qubes import QubesDaemonPidfile
 from qubes.qubes import QubesHost
+from qubes.qubes import qubes_base_dir
 import qubesmanager.resources_rc
 
 from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
@@ -39,18 +40,19 @@ import time
 from operator import itemgetter
 from thread_monitor import *
 
+from qubes import backup
 from qubes import qubesutils
 
 from ui_restoredlg import *
 from multiselectwidget import *
 
 from backup_utils import *
-
-
+from multiprocessing import Queue
+from multiprocessing.queues import Empty
 
 class RestoreVMsWindow(Ui_Restore, QWizard):
 
-    __pyqtSignals__ = ("restore_progress(int)",)
+    __pyqtSignals__ = ("restore_progress(int)","backup_progress(int)")
 
     def __init__(self, app, qvm_collection, blk_manager, parent=None):
         super(RestoreVMsWindow, self).__init__(parent)
@@ -60,10 +62,11 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.blk_manager = blk_manager
 
         self.dev_mount_path = None
-        self.backup_dir = None
+        self.backup_location = None
         self.restore_options = None
         self.backup_vms_list = None
         self.func_output = []
+        self.feedback_queue = Queue()
 
         self.excluded = {}
 
@@ -71,7 +74,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
             if vm.qid == 0:
                 self.vm = vm
                 break;
-        
+
         assert self.vm != None
 
         self.setupUi(self)
@@ -82,23 +85,26 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.connect(self, SIGNAL("currentIdChanged(int)"), self.current_page_changed)
         self.connect(self.dev_combobox, SIGNAL("activated(int)"), self.dev_combobox_activated)
         self.connect(self, SIGNAL("restore_progress(QString)"), self.commit_text_edit.append)
+        self.connect(self, SIGNAL("backup_progress(int)"), self.progress_bar.setValue)
 
         self.select_dir_page.isComplete = self.has_selected_dir
         self.select_vms_page.isComplete = self.has_selected_vms
+        self.confirm_page.isComplete = self.all_vms_good
         #FIXME
         #this causes to run isComplete() twice, I don't know why
-        self.select_vms_page.connect(self.select_vms_widget, SIGNAL("selected_changed()"), SIGNAL("completeChanged()")) 
+        self.select_vms_page.connect(self.select_vms_widget, SIGNAL("selected_changed()"), SIGNAL("completeChanged()"))
 
         fill_devs_list(self)
+        fill_appvms_list(self)
         self.__init_restore_options__()
 
 
     def dev_combobox_activated(self, idx):
         dev_combobox_activated(self, idx)
-                   
+
     @pyqtSlot(name='on_select_path_button_clicked')
     def select_path_button_clicked(self):
-        select_path_button_clicked(self)
+        select_path_button_clicked(self, True)
 
     def on_ignore_missing_toggled(self, checked):
         self.restore_options['use-default-template'] = checked
@@ -117,16 +123,37 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
         self.select_vms_widget.selected_list.clear()
         self.select_vms_widget.available_list.clear()
-        
-        self.vms_to_restore = qubesutils.backup_restore_prepare(str(self.backup_dir), self.restore_options, self.qvm_collection)
-        for vmname in self.vms_to_restore:
-            self.select_vms_widget.available_list.addItem(vmname)
+
+        self.target_appvm = None
+        if self.appvm_combobox.currentIndex() != 0:   #An existing appvm chosen
+            self.target_appvm = self.qvm_collection.get_vm_by_name(
+                    str(self.appvm_combobox.currentText()))
+
+        try:
+            self.restore_tmpdir, qubes_xml = backup.backup_restore_header(
+                    str(self.backup_location),
+                    str(self.passphrase_line_edit.text()),
+                    encrypted=self.encryption_checkbox.isChecked(),
+                    appvm=self.target_appvm)
+            self.vms_to_restore = backup.backup_restore_prepare(
+                    str(self.backup_location),
+                    os.path.join(self.restore_tmpdir, qubes_xml),
+                    str(self.passphrase_line_edit.text()),
+                    options=self.restore_options,
+                    host_collection=self.qvm_collection,
+                    encrypt=self.encryption_checkbox.isChecked(),
+                    appvm=self.target_appvm)
+
+            for vmname in self.vms_to_restore:
+                self.select_vms_widget.available_list.addItem(vmname)
+        except QubesException as ex:
+            QMessageBox.warning (None, "Restore error!", str(ex))
 
     def __init_restore_options__(self):
         if not self.restore_options:
             self.restore_options = {}
-            qubesutils.backup_restore_set_defaults(self.restore_options)
-    
+            backup.backup_restore_set_defaults(self.restore_options)
+
         if 'use-default-template' in self.restore_options and 'use-default-netvm' in self.restore_options:
             val = self.restore_options['use-default-template'] and self.restore_options['use-default-netvm']
             self.ignore_missing.setChecked(val)
@@ -139,25 +166,36 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         if 'dom0-home' in self.restore_options:
             self.skip_dom0.setChecked(self.restore_options['dom0-home'])
 
-
- 
     def gather_output(self, s):
         self.func_output.append(s)
 
     def restore_error_output(self, s):
-        self.emit(SIGNAL("restore_progress(QString)"), '<font color="red">{0}</font>'.format(s))
-        
+        self.feedback_queue.put((SIGNAL("restore_progress(QString)"), '<font color="red">{0}</font>'.format(s)))
 
     def restore_output(self, s):
-        self.emit(SIGNAL("restore_progress(QString)"),'<font color="black">{0}</font>'.format(s))
+        self.feedback_queue.put((SIGNAL("restore_progress(QString)"),'<font color="black">{0}</font>'.format(s)))
 
+    def update_progress_bar(self, value):
+        print "progress %d" % value
+        self.feedback_queue.put((SIGNAL("backup_progress(int)"), value))
 
     def __do_restore__(self, thread_monitor):
         err_msg = []
         self.qvm_collection.lock_db_for_writing()
         try:
-            qubesutils.backup_restore_do(str(self.backup_dir), self.vms_to_restore, self.qvm_collection, self.restore_output, self.restore_error_output)
+            backup.backup_restore_do(
+                    str(self.backup_location),
+                    self.restore_tmpdir,
+                    str(self.passphrase_line_edit.text()),
+                    self.vms_to_restore,
+                    self.qvm_collection,
+                    encrypted=self.encryption_checkbox.isChecked(),
+                    appvm=self.target_appvm,
+                    print_callback=self.restore_output,
+                    error_callback=self.restore_error_output,
+                    progress_callback=self.update_progress_bar)
         except Exception as ex:
+            print "Exception:",ex
             err_msg.append(str(ex))
 
         self.qvm_collection.unlock_db()
@@ -169,7 +207,6 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
         thread_monitor.set_finished()
 
- 
     def current_page_changed(self, id):
 
         if self.currentPage() is self.select_vms_page:
@@ -185,16 +222,18 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                 del self.vms_to_restore[str(vmname)]
 
             del self.func_output[:]
-            qubesutils.backup_restore_print_summary(self.vms_to_restore, print_callback = self.gather_output)
+            backup.backup_restore_print_summary(
+                    self.vms_to_restore, print_callback = self.gather_output)
             self.confirm_text_edit.setReadOnly(True)
             self.confirm_text_edit.setFontFamily("Monospace")
             self.confirm_text_edit.setText("\n".join(self.func_output))
 
+            self.confirm_page.emit(SIGNAL("completeChanged()"))
 
         elif self.currentPage() is self.commit_page:
             self.button(self.CancelButton).setDisabled(True)
             self.button(self.FinishButton).setDisabled(True)
-            
+
             self.thread_monitor = ThreadMonitor()
             thread = threading.Thread (target= self.__do_restore__ , args=(self.thread_monitor,))
             thread.daemon = True
@@ -203,24 +242,35 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
             while not self.thread_monitor.is_finished():
                 self.app.processEvents()
                 time.sleep (0.1)
+                try:
+                    for (signal,data) in iter(self.feedback_queue.get_nowait,None):
+                        self.emit(signal,data)
+                except Empty:
+                    pass
 
             #if not self.thread_monitor.success:
                 #QMessageBox.warning (None, "Backup error!", "ERROR: {1}".format(self.vm.name, self.thread_monitor.error_msg))
 
             if self.dev_mount_path != None:
                 umount_device(self.dev_mount_path)
+            self.progress_bar.setValue(100)
             self.button(self.FinishButton).setEnabled(True)
+
+    def all_vms_good(self):
+        for vminfo in self.vms_to_restore.values():
+            if not vminfo['good-to-go']:
+                print vminfo['vm'].name, str(vminfo)
+                return False
+        return True
 
     def reject(self):
         if self.dev_mount_path != None:
             umount_device(self.dev_mount_path)
         self.done(0)
- 
-
 
     def has_selected_dir(self):
-        return self.backup_dir != None
-            
+        return self.backup_location != None
+
     def has_selected_vms(self):
         return self.select_vms_widget.selected_list.count() > 0
 

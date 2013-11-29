@@ -75,11 +75,25 @@ def umount_device(dev_mount_path):
             if button == QMessageBox.Ok:
                 return dev_mount_path
 
+def fill_appvms_list(dialog):
+    dialog.appvm_combobox.clear()
+    dialog.appvm_combobox.addItem("dom0")
+
+    dialog.appvm_combobox.setCurrentIndex(0) #current selected is null ""
+
+    for vm in dialog.qvm_collection.values():
+        if vm.is_appvm() and vm.internal:
+            continue
+        if vm.is_template() and vm.installed_by_rpm:
+            continue
+
+        if vm.is_running() and vm.qid != 0:
+            dialog.appvm_combobox.addItem(vm.name)
 
 def fill_devs_list(dialog):
     dialog.dev_combobox.clear()
     dialog.dev_combobox.addItem("None")
-    
+
     dialog.blk_manager.blk_lock.acquire()
     for a in dialog.blk_manager.attached_devs:
         if dialog.blk_manager.attached_devs[a]['attached_to']['vm'] == dialog.vm.name :
@@ -98,7 +112,7 @@ def fill_devs_list(dialog):
 
 def enable_dir_line_edit(dialog, boolean):
     dialog.dir_line_edit.setEnabled(boolean)
-    dialog.select_path_button.setEnabled(boolean)      
+    dialog.select_path_button.setEnabled(boolean)
 
 
 def dev_combobox_activated(dialog, idx):
@@ -107,7 +121,7 @@ def dev_combobox_activated(dialog, idx):
     #there was a change
 
     dialog.dir_line_edit.setText("")
-    dialog.backup_dir = None
+    dialog.backup_location = None
 
     if dialog.dev_mount_path != None:
         dialog.dev_mount_path = umount_device(dialog.dev_mount_path)
@@ -115,7 +129,7 @@ def dev_combobox_activated(dialog, idx):
             dialog.dev_combobox.setCurrentIndex(dialog.prev_dev_idx)
             return
 
-    if dialog.dev_combobox.currentText() != "None":   #An existing device chosen 
+    if dialog.dev_combobox.currentText() != "None":   #An existing device chosen
         dev_name = str(dialog.dev_combobox.itemData(idx).toString())
 
         dialog.blk_manager.blk_lock.acquire()
@@ -141,33 +155,42 @@ def dev_combobox_activated(dialog, idx):
                 dialog.dev_combobox.setCurrentIndex(0) #if couldn't mount - set current device to "None"
                 dialog.prev_dev_idx = 0
                 return
-                
+
     dialog.prev_dev_idx = idx
 
     if dialog.dev_mount_path != None:
       # Initialize path with root of mounted device
       dialog.dir_line_edit.setText(dialog.dev_mount_path)
-      dialog.backup_dir = dialog.dev_mount_path
+      dialog.backup_location = dialog.dev_mount_path
 
     dialog.select_dir_page.emit(SIGNAL("completeChanged()"))
 
-                   
-def select_path_button_clicked(dialog):
-    dialog.backup_dir = dialog.dir_line_edit.text()
+
+def select_path_button_clicked(dialog, select_file = False):
+    dialog.backup_location = dialog.dir_line_edit.text()
     file_dialog = QFileDialog()
     file_dialog.setReadOnly(True)
 
-    if dialog.dev_mount_path != None:
-        new_path = file_dialog.getExistingDirectory(dialog, "Select backup directory.", dialog.dev_mount_path)
+    if select_file:
+        file_dialog_function = file_dialog.getOpenFileName
     else:
-        new_path = file_dialog.getExistingDirectory(dialog, "Select backup directory.", "~")
-        
-    if new_path:
+        file_dialog_function = file_dialog.getExistingDirectory
+
+    new_appvm = None
+    new_path = None
+    if dialog.appvm_combobox.currentIndex() != 0:   #An existing appvm chosen
+        new_appvm = str(dialog.appvm_combobox.currentText())
+    elif dialog.dev_mount_path != None:
+        new_path = file_dialog_function(dialog, "Select backup location.", dialog.dev_mount_path)
+    else:
+        new_path = file_dialog_function(dialog, "Select backup location.", "~")
+
+    if new_path != None:
         dialog.dir_line_edit.setText(new_path)
-        dialog.backup_dir = new_path
+        dialog.backup_location = new_path
+
+    if (new_path or new_appvm) and len(dialog.backup_location) > 0:
         dialog.select_dir_page.emit(SIGNAL("completeChanged()"))
-
-
 
 def simulate_long_lasting_proces(period, progress_callback):
     for i in range(period):
