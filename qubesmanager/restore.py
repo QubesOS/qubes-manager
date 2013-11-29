@@ -129,22 +129,25 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
             self.target_appvm = self.qvm_collection.get_vm_by_name(
                     str(self.appvm_combobox.currentText()))
 
-        self.restore_tmpdir, qubes_xml = backup.backup_restore_header(
-                str(self.backup_location),
-                str(self.passphrase_line_edit.text()),
-                encrypted=self.encryption_checkbox.isChecked(),
-                appvm=self.target_appvm)
-        self.vms_to_restore = backup.backup_restore_prepare(
-                str(self.backup_location),
-                os.path.join(self.restore_tmpdir, qubes_xml),
-                str(self.passphrase_line_edit.text()),
-                options=self.restore_options,
-                host_collection=self.qvm_collection,
-                encrypt=self.encryption_checkbox.isChecked(),
-                appvm=self.target_appvm)
+        try:
+            self.restore_tmpdir, qubes_xml = backup.backup_restore_header(
+                    str(self.backup_location),
+                    str(self.passphrase_line_edit.text()),
+                    encrypted=self.encryption_checkbox.isChecked(),
+                    appvm=self.target_appvm)
+            self.vms_to_restore = backup.backup_restore_prepare(
+                    str(self.backup_location),
+                    os.path.join(self.restore_tmpdir, qubes_xml),
+                    str(self.passphrase_line_edit.text()),
+                    options=self.restore_options,
+                    host_collection=self.qvm_collection,
+                    encrypt=self.encryption_checkbox.isChecked(),
+                    appvm=self.target_appvm)
 
-        for vmname in self.vms_to_restore:
-            self.select_vms_widget.available_list.addItem(vmname)
+            for vmname in self.vms_to_restore:
+                self.select_vms_widget.available_list.addItem(vmname)
+        except QubesException as ex:
+            QMessageBox.warning (None, "Restore error!", str(ex))
 
     def __init_restore_options__(self):
         if not self.restore_options:
