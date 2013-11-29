@@ -47,8 +47,8 @@ from ui_restoredlg import *
 from multiselectwidget import *
 
 from backup_utils import *
-
-
+from multiprocessing import Queue
+from multiprocessing.queues import Empty
 
 class RestoreVMsWindow(Ui_Restore, QWizard):
 
@@ -66,6 +66,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.restore_options = None
         self.backup_vms_list = None
         self.func_output = []
+        self.feedback_queue = Queue()
 
         self.excluded = {}
 
@@ -166,13 +167,14 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.func_output.append(s)
 
     def restore_error_output(self, s):
-        self.emit(SIGNAL("restore_progress(QString)"), '<font color="red">{0}</font>'.format(s))
+        self.feedback_queue.put((SIGNAL("restore_progress(QString)"), '<font color="red">{0}</font>'.format(s)))
 
     def restore_output(self, s):
-        self.emit(SIGNAL("restore_progress(QString)"),'<font color="black">{0}</font>'.format(s))
+        self.feedback_queue.put((SIGNAL("restore_progress(QString)"),'<font color="black">{0}</font>'.format(s)))
 
     def update_progress_bar(self, value):
-        self.emit(SIGNAL("backup_progress(int)"), value)
+        print "progress %d" % value
+        self.feedback_queue.put((SIGNAL("backup_progress(int)"), value))
 
     def __do_restore__(self, thread_monitor):
         err_msg = []
@@ -237,12 +239,18 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
             while not self.thread_monitor.is_finished():
                 self.app.processEvents()
                 time.sleep (0.1)
+                try:
+                    for (signal,data) in iter(self.feedback_queue.get_nowait,None):
+                        self.emit(signal,data)
+                except Empty:
+                    pass
 
             #if not self.thread_monitor.success:
                 #QMessageBox.warning (None, "Backup error!", "ERROR: {1}".format(self.vm.name, self.thread_monitor.error_msg))
 
             if self.dev_mount_path != None:
                 umount_device(self.dev_mount_path)
+            self.progress_bar.setValue(100)
             self.button(self.FinishButton).setEnabled(True)
 
     def all_vms_good(self):
