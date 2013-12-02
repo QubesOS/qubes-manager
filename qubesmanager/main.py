@@ -2125,6 +2125,7 @@ def show_manager():
     manager_window.show()
     manager_window.set_table_geom_size()
     manager_window.repaint()
+    manager_window.update_table(out_of_schedule=True)
     app.processEvents()
 
     get_frame_size()
