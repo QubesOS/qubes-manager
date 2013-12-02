@@ -85,6 +85,10 @@ class QubesManagerFileWatcher(ProcessEvent):
         if event.path == system_path["qubes_store_filename"]:
             self.update_func()
 
+    def process_IN_MOVED_TO (self, event):
+        if event.pathname == system_path["qubes_store_filename"]:
+            self.update_func()
+
     def process_IN_CLOSE_WRITE (self, event):
         if event.path == qubes_clipboard_info_file:
             src_info_file = open (qubes_clipboard_info_file, 'r')
@@ -2223,6 +2227,7 @@ def main():
     notifier = ThreadedNotifier(wm, QubesManagerFileWatcher(manager_window.mark_table_for_update))
     notifier.start()
     wm.add_watch(system_path["qubes_store_filename"], EventsCodes.OP_FLAGS.get('IN_MODIFY'))
+    wm.add_watch(os.path.dirname(system_path["qubes_store_filename"]), EventsCodes.OP_FLAGS.get('IN_MOVED_TO'))
     wm.add_watch(qubes_clipboard_info_file, EventsCodes.OP_FLAGS.get('IN_CLOSE_WRITE'))
     wm.add_watch(os.path.dirname(qubes_clipboard_info_file), EventsCodes.OP_FLAGS.get('IN_CREATE'))
 
