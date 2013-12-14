@@ -1380,14 +1380,15 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
 
     def do_clone_vm(self, vm, dst_name, thread_monitor):
+        dst_vm = None
         try:
             self.qvm_collection.lock_db_for_writing()
             self.qvm_collection.load()
             src_vm = self.qvm_collection[vm.qid]
 
-            dst_vm = qvm_collection.add_new_vm(src_vm.__class__.__name__,
+            dst_vm = self.qvm_collection.add_new_vm(src_vm.__class__.__name__,
                     name=dst_name, template=src_vm.template,
-                    dir_path=options.dir_path, installed_by_rpm=False)
+                    installed_by_rpm=False)
 
             dst_vm.clone_attrs(src_vm)
             dst_vm.clone_disk_files (src_vm=src_vm, verbose=False)
