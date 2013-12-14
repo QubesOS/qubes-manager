@@ -92,7 +92,9 @@ class AppmenuSelectManager:
                     desktop_name = line.partition('Name=%VMNAME%: ')[2].strip()
                 if line.startswith("Exec=qvm-run"):
                     desktop_command = line[line.find("'"):].strip("'\n")
-            if desktop_name and desktop_command:
+            if not desktop_command:
+                desktop_command = ""
+            if desktop_name:
                 available_appmenus.append( (template_file, desktop_name, desktop_command) )
             desktop_template.close()
 
