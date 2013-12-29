@@ -86,6 +86,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.connect(self.dev_combobox, SIGNAL("activated(int)"), self.dev_combobox_activated)
         self.connect(self, SIGNAL("restore_progress(QString)"), self.commit_text_edit.append)
         self.connect(self, SIGNAL("backup_progress(int)"), self.progress_bar.setValue)
+        self.dir_line_edit.connect(self.dir_line_edit, SIGNAL("textChanged(QString)"), self.backup_location_changed)
 
         self.select_dir_page.isComplete = self.has_selected_dir
         self.select_vms_page.isComplete = self.has_selected_vms
@@ -274,6 +275,14 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
     def has_selected_vms(self):
         return self.select_vms_widget.selected_list.count() > 0
 
+    def backup_location_changed(self, new_dir = None):
+        if self.appvm_combobox.currentText() != "dom0" or \
+                os.path.isfile(str(self.dir_line_edit.text())) or \
+                os.path.isfile(os.path.join(str(self.dir_line_edit.text()), 'qubes.xml')):
+            self.backup_location = str(self.dir_line_edit.text())
+        else:
+            self.backup_location = None
+        self.select_dir_page.emit(SIGNAL("completeChanged()"))
 
 
 # Bases on the original code by:
