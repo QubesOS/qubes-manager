@@ -186,8 +186,11 @@ def select_path_button_clicked(dialog, select_file = False):
         new_path = file_dialog_function(dialog, "Select backup location.", "~")
 
     if new_path != None:
-        dialog.dir_line_edit.setText(new_path)
-        dialog.backup_location = new_path
+        if os.path.basename(new_path) == 'qubes.xml':
+            dialog.backup_location = os.path.dirname(str(new_path))
+        else:
+            dialog.backup_location = str(new_path)
+        dialog.dir_line_edit.setText(dialog.backup_location)
 
     if (new_path or new_appvm) and len(dialog.backup_location) > 0:
         dialog.select_dir_page.emit(SIGNAL("completeChanged()"))
