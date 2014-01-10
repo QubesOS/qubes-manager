@@ -197,7 +197,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                     error_callback=self.restore_error_output,
                     progress_callback=self.update_progress_bar)
         except Exception as ex:
-            print "Exception:",ex
+            print "Exception:", ex
             err_msg.append(str(ex))
 
         self.qvm_collection.unlock_db()
@@ -251,8 +251,8 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                 except Empty:
                     pass
 
-            #if not self.thread_monitor.success:
-                #QMessageBox.warning (None, "Backup error!", "ERROR: {1}".format(self.vm.name, self.thread_monitor.error_msg))
+            if not self.thread_monitor.success:
+                QMessageBox.warning (None, "Backup error!", "ERROR: {1}".format(self.vm.name, self.thread_monitor.error_msg))
 
             if self.dev_mount_path != None:
                 umount_device(self.dev_mount_path)
