@@ -32,6 +32,7 @@ from qubes.qubes import QubesDaemonPidfile
 from qubes.qubes import QubesHost
 from qubes.qubes import qubes_base_dir
 import qubesmanager.resources_rc
+import signal
 
 from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
 
@@ -210,6 +211,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
     def current_page_changed(self, id):
 
+        old_sigchld_handler = signal.signal(signal.SIGCHLD, signal.SIG_DFL)
         if self.currentPage() is self.select_vms_page:
             self.__fill_vms_list__()
 
@@ -244,8 +246,8 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                 self.app.processEvents()
                 time.sleep (0.1)
                 try:
-                    for (signal,data) in iter(self.feedback_queue.get_nowait,None):
-                        self.emit(signal,data)
+                    for (signal_to_emit,data) in iter(self.feedback_queue.get_nowait,None):
+                        self.emit(signal_to_emit,data)
                 except Empty:
                     pass
 
@@ -256,6 +258,8 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                 umount_device(self.dev_mount_path)
             self.progress_bar.setValue(100)
             self.button(self.FinishButton).setEnabled(True)
+
+        signal.signal(signal.SIGCHLD, old_sigchld_handler)
 
     def all_vms_good(self):
         for vminfo in self.vms_to_restore.values():
