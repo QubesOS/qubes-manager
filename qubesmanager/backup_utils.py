@@ -121,7 +121,6 @@ def dev_combobox_activated(dialog, idx):
     #there was a change
 
     dialog.dir_line_edit.setText("")
-    dialog.backup_location = None
 
     if dialog.dev_mount_path != None:
         dialog.dev_mount_path = umount_device(dialog.dev_mount_path)
@@ -161,13 +160,12 @@ def dev_combobox_activated(dialog, idx):
     if dialog.dev_mount_path != None:
       # Initialize path with root of mounted device
       dialog.dir_line_edit.setText(dialog.dev_mount_path)
-      dialog.backup_location = dialog.dev_mount_path
 
     dialog.select_dir_page.emit(SIGNAL("completeChanged()"))
 
 
 def select_path_button_clicked(dialog, select_file = False):
-    dialog.backup_location = str(dialog.dir_line_edit.text())
+    backup_location = str(dialog.dir_line_edit.text())
     file_dialog = QFileDialog()
     file_dialog.setReadOnly(True)
 
@@ -183,17 +181,17 @@ def select_path_button_clicked(dialog, select_file = False):
     elif dialog.dev_mount_path != None:
         new_path = file_dialog_function(dialog, "Select backup location.", dialog.dev_mount_path)
     else:
-        new_path = file_dialog_function(dialog, "Select backup location.", dialog.backup_location)
+        new_path = file_dialog_function(dialog, "Select backup location.", backup_location)
 
     if new_path != None:
         new_path = str(new_path)
         if os.path.basename(new_path) == 'qubes.xml':
-            dialog.backup_location = os.path.dirname(new_path)
+            backup_location = os.path.dirname(new_path)
         else:
-            dialog.backup_location = new_path
-        dialog.dir_line_edit.setText(dialog.backup_location)
+            backup_location = new_path
+        dialog.dir_line_edit.setText(backup_location)
 
-    if (new_path or new_appvm) and len(dialog.backup_location) > 0:
+    if (new_path or new_appvm) and len(backup_location) > 0:
         dialog.select_dir_page.emit(SIGNAL("completeChanged()"))
 
 def simulate_long_lasting_proces(period, progress_callback):

@@ -66,7 +66,6 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.shutdown_vm_func = shutdown_vm_func
 
         self.dev_mount_path = None
-        self.backup_location = None
         self.func_output = []
         self.selected_vms = []
 
@@ -254,13 +253,14 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                 self.selected_vms.append(self.select_vms_widget.selected_list.item(i).vm)
 
         elif self.currentPage() is self.select_dir_page:
-            if not self.backup_location:
+            backup_location = str(self.dir_line_edit.text())
+            if not backup_location:
                 QMessageBox.information(None, "Wait!", "Enter backup target location first.")
                 return False
             if self.appvm_combobox.currentIndex() == 0 and \
-                   not os.path.isdir(self.backup_location):
+                   not os.path.isdir(backup_location):
                 QMessageBox.information(None, "Wait!",
-                        "Selected directory do not exists or not a directory (%s)." % self.backup_location)
+                        "Selected directory do not exists or not a directory (%s)." % backup_location)
                 return False
             if not len(self.passphrase_line_edit.text()):
                 QMessageBox.information(None, "Wait!", "Enter passphrase for backup encryption/verification first.")
@@ -281,7 +281,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         msg = []
 
         try:
-            backup.backup_do(str(self.backup_location),
+            backup.backup_do(str(self.dir_line_edit.text()),
                     self.files_to_backup,
                     str(self.passphrase_line_edit.text()),
                     progress_callback=self.update_progress_bar,
@@ -374,10 +374,9 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             return False
         if self.passphrase_line_edit.text() != self.passphrase_line_edit_verify.text():
             return False
-        return self.backup_location != None
+        return len(self.dir_line_edit.text()) > 0
 
     def backup_location_changed(self, new_dir = None):
-        self.backup_location = str(self.dir_line_edit.text())
         self.select_dir_page.emit(SIGNAL("completeChanged()"))
 
 

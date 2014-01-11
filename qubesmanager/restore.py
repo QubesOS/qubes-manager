@@ -63,7 +63,6 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.blk_manager = blk_manager
 
         self.dev_mount_path = None
-        self.backup_location = None
         self.restore_options = None
         self.backup_vms_list = None
         self.func_output = []
@@ -133,12 +132,12 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
         try:
             self.restore_tmpdir, qubes_xml = backup.backup_restore_header(
-                    str(self.backup_location),
+                    str(self.dir_line_edit.text()),
                     str(self.passphrase_line_edit.text()),
                     encrypted=self.encryption_checkbox.isChecked(),
                     appvm=self.target_appvm)
             self.vms_to_restore = backup.backup_restore_prepare(
-                    str(self.backup_location),
+                    str(self.dir_line_edit.text()),
                     os.path.join(self.restore_tmpdir, qubes_xml),
                     str(self.passphrase_line_edit.text()),
                     options=self.restore_options,
@@ -186,7 +185,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.qvm_collection.lock_db_for_writing()
         try:
             backup.backup_restore_do(
-                    str(self.backup_location),
+                    str(self.dir_line_edit.text()),
                     self.restore_tmpdir,
                     str(self.passphrase_line_edit.text()),
                     self.vms_to_restore,
@@ -274,18 +273,20 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.done(0)
 
     def has_selected_dir(self):
-        return self.backup_location != None
+        backup_location = str(self.dir_line_edit.text())
+        if self.appvm_combobox.currentText() == "dom0":
+            if os.path.isfile(backup_location) or \
+                    os.path.isfile(os.path.join(backup_location, 'qubes.xml')):
+                return True
+        elif len(backup_location) > 0:
+            return True
+
+        return False
 
     def has_selected_vms(self):
         return self.select_vms_widget.selected_list.count() > 0
 
     def backup_location_changed(self, new_dir = None):
-        if self.appvm_combobox.currentText() != "dom0" or \
-                os.path.isfile(str(self.dir_line_edit.text())) or \
-                os.path.isfile(os.path.join(str(self.dir_line_edit.text()), 'qubes.xml')):
-            self.backup_location = str(self.dir_line_edit.text())
-        else:
-            self.backup_location = None
         self.select_dir_page.emit(SIGNAL("completeChanged()"))
 
 
