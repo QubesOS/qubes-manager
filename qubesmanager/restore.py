@@ -259,6 +259,10 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
             if self.dev_mount_path != None:
                 umount_device(self.dev_mount_path)
+                self.dev_mount_path = None
+                detach_device(self, str(self.dev_combobox.itemData(
+                        self.dev_combobox.currentIndex()).toString()))
+
             self.progress_bar.setValue(100)
             self.button(self.FinishButton).setEnabled(True)
 
@@ -274,6 +278,8 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
     def reject(self):
         if self.dev_mount_path != None:
             umount_device(self.dev_mount_path)
+        detach_device(self, str(self.dev_combobox.itemData(
+                self.dev_combobox.currentIndex()).toString()))
         self.done(0)
 
     def has_selected_dir(self):

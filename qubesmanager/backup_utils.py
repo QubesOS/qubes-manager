@@ -75,6 +75,13 @@ def umount_device(dev_mount_path):
             if button == QMessageBox.Ok:
                 return dev_mount_path
 
+def detach_device(dialog, dev_name):
+    """ Detach device from dom0, if device was attached from some VM"""
+    if not dev_name.startswith(dialog.vm.name+":"):
+        with dialog.blk_manager.blk_lock:
+            dialog.blk_manager.detach_device(dialog.vm, dev_name)
+            dialog.blk_manager.update()
+
 def fill_appvms_list(dialog):
     dialog.appvm_combobox.clear()
     dialog.appvm_combobox.addItem("dom0")
@@ -126,29 +133,40 @@ def dev_combobox_activated(dialog, idx):
 
     dialog.dir_line_edit.setText("")
 
+    # umount old device if any
     if dialog.dev_mount_path != None:
         dialog.dev_mount_path = umount_device(dialog.dev_mount_path)
         if dialog.dev_mount_path != None:
             dialog.dev_combobox.setCurrentIndex(dialog.prev_dev_idx)
             return
+        else:
+            detach_device(dialog,
+                str(dialog.dev_combobox.itemData(dialog.prev_dev_idx).toString()))
 
-    if dialog.dev_combobox.currentText() != "None":   #An existing device chosen
+    # then attach new one
+    if dialog.dev_combobox.currentIndex() != 0:   #An existing device chosen
         dev_name = str(dialog.dev_combobox.itemData(idx).toString())
 
-        dialog.blk_manager.blk_lock.acquire()
-        if dev_name in dialog.blk_manager.free_devs:
-            if dev_name.startswith(dialog.vm.name):       # originally attached to dom0
-                dev_path = "/dev/"+dev_name.split(":")[1]
+        try:
+            with dialog.blk_manager.blk_lock:
+                if dev_name in dialog.blk_manager.free_devs:
+                    if dev_name.startswith(dialog.vm.name):       # originally attached to dom0
+                        dev_path = "/dev/"+dev_name.split(":")[1]
 
-            else:       # originally attached to another domain, eg. usbvm
-                #attach it to dom0, then treat it as an attached device
-                dialog.blk_manager.attach_device(dialog.vm, dev_name)
-                dialog.blk_manager.update()
+                    else:       # originally attached to another domain, eg. usbvm
+                        #attach it to dom0, then treat it as an attached device
+                        dialog.blk_manager.attach_device(dialog.vm, dev_name)
+                        dialog.blk_manager.update()
 
-        if dev_name in dialog.blk_manager.attached_devs:       #is attached to dom0
-            assert dialog.blk_manager.attached_devs[dev_name]['attached_to']['vm'] == dialog.vm.name
-            dev_path = "/dev/" + dialog.blk_manager.attached_devs[dev_name]['attached_to']['frontend']
-        dialog.blk_manager.blk_lock.release()
+                if dev_name in dialog.blk_manager.attached_devs:       #is attached to dom0
+                    assert dialog.blk_manager.attached_devs[dev_name]['attached_to']['vm'] == dialog.vm.name
+                    dev_path = "/dev/" + dialog.blk_manager.attached_devs[dev_name]['attached_to']['frontend']
+        except QubesException as ex:
+            QMessageBox.warning (None, "Error attaching selected device!",
+                    "<b>Could not attach {0}.</b><br><br>ERROR: {1}".format(dev_name, ex))
+            dialog.dev_combobox.setCurrentIndex(0) #if couldn't mount - set current device to "None"
+            dialog.prev_dev_idx = 0
+            return
 
         #check if device mounted
         dialog.dev_mount_path = check_if_mounted(dev_path)
@@ -157,6 +175,8 @@ def dev_combobox_activated(dialog, idx):
             if dialog.dev_mount_path == None:
                 dialog.dev_combobox.setCurrentIndex(0) #if couldn't mount - set current device to "None"
                 dialog.prev_dev_idx = 0
+                detach_device(dialog,
+                        str(dialog.dev_combobox.itemData(idx).toString()))
                 return
 
     dialog.prev_dev_idx = idx

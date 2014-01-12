@@ -346,6 +346,8 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                 self.progress_status.setText = "Backup finished."
             if self.dev_mount_path != None:
                 umount_device(self.dev_mount_path)
+                detach_device(self, str(self.dev_combobox.itemData(
+                        self.dev_combobox.currentIndex()).toString()))
             self.button(self.FinishButton).setEnabled(True)
 
 
