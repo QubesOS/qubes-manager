@@ -181,12 +181,12 @@ def dev_combobox_activated(dialog, idx):
 
     dialog.prev_dev_idx = idx
 
-    if dialog.dev_mount_path != None:
-      # Initialize path with root of mounted device
-      dialog.dir_line_edit.setText(dialog.dev_mount_path)
-
-    dialog.select_dir_page.emit(SIGNAL("completeChanged()"))
-
+    if hasattr(dialog, 'selected_vms'):
+        # backup window
+        if dialog.dev_mount_path != None:
+            # Initialize path with root of mounted device
+            dialog.dir_line_edit.setText(dialog.dev_mount_path)
+            dialog.select_dir_page.emit(SIGNAL("completeChanged()"))
 
 def select_path_button_clicked(dialog, select_file = False):
     backup_location = str(dialog.dir_line_edit.text())
