@@ -91,6 +91,10 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.connect(self.dev_combobox, SIGNAL("activated(int)"), self.dev_combobox_activated)
         self.connect(self, SIGNAL("backup_progress(int)"), self.progress_bar.setValue)
         self.dir_line_edit.connect(self.dir_line_edit, SIGNAL("textChanged(QString)"), self.backup_location_changed)
+        self.connect(self.dev_combobox, SIGNAL("activated(int)"),
+                self.update_device_appvm_enabled)
+        self.connect(self.appvm_combobox, SIGNAL("activated(int)"),
+                self.update_device_appvm_enabled)
 
         self.select_vms_page.isComplete = self.has_selected_vms
         self.select_dir_page.isComplete = self.has_selected_dir_and_pass
@@ -234,6 +238,9 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 
     def dev_combobox_activated(self, idx):
         dev_combobox_activated(self, idx)
+
+    def update_device_appvm_enabled(self, idx):
+        update_device_appvm_enabled(self, idx)
 
     @pyqtSlot(name='on_select_path_button_clicked')
     def select_path_button_clicked(self):

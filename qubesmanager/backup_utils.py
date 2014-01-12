@@ -114,6 +114,10 @@ def enable_dir_line_edit(dialog, boolean):
     dialog.dir_line_edit.setEnabled(boolean)
     dialog.select_path_button.setEnabled(boolean)
 
+def update_device_appvm_enabled(dialog, idx):
+    # Only one of those can be used
+    dialog.dev_combobox.setEnabled(dialog.appvm_combobox.currentIndex() == 0)
+    dialog.appvm_combobox.setEnabled(dialog.dev_combobox.currentIndex() == 0)
 
 def dev_combobox_activated(dialog, idx):
     if idx == dialog.prev_dev_idx:    #nothing has changed

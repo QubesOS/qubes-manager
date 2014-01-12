@@ -84,6 +84,10 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.connect(self, SIGNAL("restore_progress(QString)"), self.commit_text_edit.append)
         self.connect(self, SIGNAL("backup_progress(int)"), self.progress_bar.setValue)
         self.dir_line_edit.connect(self.dir_line_edit, SIGNAL("textChanged(QString)"), self.backup_location_changed)
+        self.connect(self.dev_combobox, SIGNAL("activated(int)"),
+                self.update_device_appvm_enabled)
+        self.connect(self.appvm_combobox, SIGNAL("activated(int)"),
+                self.update_device_appvm_enabled)
 
         self.select_dir_page.isComplete = self.has_selected_dir
         self.select_vms_page.isComplete = self.has_selected_vms
@@ -99,6 +103,9 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
     def dev_combobox_activated(self, idx):
         dev_combobox_activated(self, idx)
+
+    def update_device_appvm_enabled(self, idx):
+        update_device_appvm_enabled(self, idx)
 
     @pyqtSlot(name='on_select_path_button_clicked')
     def select_path_button_clicked(self):
