@@ -70,10 +70,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
         self.excluded = {}
 
-        for vm in self.qvm_collection.values():
-            if vm.qid == 0:
-                self.vm = vm
-                break;
+        self.vm = self.qvm_collection[0]
 
         assert self.vm != None
 

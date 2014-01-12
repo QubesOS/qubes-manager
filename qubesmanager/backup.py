@@ -69,10 +69,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.func_output = []
         self.selected_vms = []
 
-        for vm in self.qvm_collection.values():
-            if vm.qid == 0:
-                self.vm = vm
-                break;
+        self.vm = self.qvm_collection[0]
 
         assert self.vm != None
 
