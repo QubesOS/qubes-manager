@@ -64,7 +64,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
         self.dev_mount_path = None
         self.restore_options = None
-        self.backup_vms_list = None
+        self.vms_to_restore = None
         self.func_output = []
         self.feedback_queue = Queue()
 
@@ -121,9 +121,14 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
     def on_skip_dom0_toggled(self, checked):
         self.restore_options['dom0-home'] = checked
 
+    def cleanupPage(self, p_int):
+        if self.page(p_int) is self.select_vms_page:
+            self.vms_to_restore = None
+        else:
+            super(RestoreVMsWindow, self).cleanupPage(p_int)
 
     def __fill_vms_list__(self):
-        if self.backup_vms_list != None:
+        if self.vms_to_restore is not None:
             return
 
         self.select_vms_widget.selected_list.clear()
@@ -219,6 +224,8 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                 del self.vms_to_restore[str(vmname)]
 
             del self.func_output[:]
+            self.vms_to_restore = backup.restore_info_verify(self.vms_to_restore,
+                                                             self.qvm_collection)
             backup.backup_restore_print_summary(
                     self.vms_to_restore, print_callback = self.gather_output)
             self.confirm_text_edit.setReadOnly(True)
