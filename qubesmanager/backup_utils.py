@@ -155,26 +155,28 @@ def dev_combobox_activated(dialog, idx):
     if dialog.dev_combobox.currentIndex() != 0:   #An existing device chosen
         dev_name = str(dialog.dev_combobox.itemData(idx).toString())
 
-        try:
-            with dialog.blk_manager.blk_lock:
-                if dev_name in dialog.blk_manager.free_devs:
-                    if dev_name.startswith(dialog.vm.name):       # originally attached to dom0
-                        dev_path = "/dev/"+dev_name.split(":")[1]
-
-                    else:       # originally attached to another domain, eg. usbvm
+        if dev_name.startswith(dialog.vm.name+":"):
+            # originally attached to dom0
+            dev_path = "/dev/"+dev_name.split(":")[1]
+        else:
+            try:
+                with dialog.blk_manager.blk_lock:
+                    if dev_name in dialog.blk_manager.free_devs:
                         #attach it to dom0, then treat it as an attached device
                         dialog.blk_manager.attach_device(dialog.vm, dev_name)
                         dialog.blk_manager.update()
 
-                if dev_name in dialog.blk_manager.attached_devs:       #is attached to dom0
-                    assert dialog.blk_manager.attached_devs[dev_name]['attached_to']['vm'] == dialog.vm.name
-                    dev_path = "/dev/" + dialog.blk_manager.attached_devs[dev_name]['attached_to']['frontend']
-        except QubesException as ex:
-            QMessageBox.warning (None, "Error attaching selected device!",
-                    "<b>Could not attach {0}.</b><br><br>ERROR: {1}".format(dev_name, ex))
-            dialog.dev_combobox.setCurrentIndex(0) #if couldn't mount - set current device to "None"
-            dialog.prev_dev_idx = 0
-            return
+                    if dev_name in dialog.blk_manager.attached_devs:       #is attached to dom0
+                        assert dialog.blk_manager.attached_devs[dev_name]['attached_to']['vm'] == dialog.vm.name
+                        dev_path = "/dev/" + dialog.blk_manager.attached_devs[dev_name]['attached_to']['frontend']
+                    else:
+                        raise QubesException("device not attached?!")
+            except QubesException as ex:
+                QMessageBox.warning (None, "Error attaching selected device!",
+                        "<b>Could not attach {0}.</b><br><br>ERROR: {1}".format(dev_name, ex))
+                dialog.dev_combobox.setCurrentIndex(0) #if couldn't mount - set current device to "None"
+                dialog.prev_dev_idx = 0
+                return
 
         #check if device mounted
         dialog.dev_mount_path = check_if_mounted(dev_path)

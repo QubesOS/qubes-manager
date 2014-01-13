@@ -270,17 +270,19 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
     def reject(self):
         if self.dev_mount_path != None:
             umount_device(self.dev_mount_path)
-        detach_device(self, str(self.dev_combobox.itemData(
+            detach_device(self, str(self.dev_combobox.itemData(
                 self.dev_combobox.currentIndex()).toString()))
         self.done(0)
 
     def has_selected_dir(self):
         backup_location = str(self.dir_line_edit.text())
-        if self.appvm_combobox.currentText() == "dom0":
+        if not backup_location:
+            return False
+        if self.appvm_combobox.currentIndex() == 0:
             if os.path.isfile(backup_location) or \
                     os.path.isfile(os.path.join(backup_location, 'qubes.xml')):
                 return True
-        elif len(backup_location) > 0:
+        else:
             return True
 
         return False
