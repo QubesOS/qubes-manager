@@ -135,21 +135,18 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                     str(self.appvm_combobox.currentText()))
 
         try:
-            self.restore_tmpdir, qubes_xml = backup.backup_restore_header(
-                    str(self.dir_line_edit.text()),
-                    str(self.passphrase_line_edit.text()),
-                    encrypted=self.encryption_checkbox.isChecked(),
-                    appvm=self.target_appvm)
             self.vms_to_restore = backup.backup_restore_prepare(
                     str(self.dir_line_edit.text()),
-                    os.path.join(self.restore_tmpdir, qubes_xml),
                     str(self.passphrase_line_edit.text()),
                     options=self.restore_options,
                     host_collection=self.qvm_collection,
-                    encrypt=self.encryption_checkbox.isChecked(),
+                    encrypted=self.encryption_checkbox.isChecked(),
                     appvm=self.target_appvm)
 
             for vmname in self.vms_to_restore:
+                if vmname.startswith('$'):
+                    # Internal info
+                    continue
                 self.select_vms_widget.available_list.addItem(vmname)
         except QubesException as ex:
             QMessageBox.warning (None, "Restore error!", str(ex))
@@ -188,17 +185,11 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         err_msg = []
         self.qvm_collection.lock_db_for_writing()
         try:
-            backup.backup_restore_do(
-                    str(self.dir_line_edit.text()),
-                    self.restore_tmpdir,
-                    str(self.passphrase_line_edit.text()),
-                    self.vms_to_restore,
-                    self.qvm_collection,
-                    encrypted=self.encryption_checkbox.isChecked(),
-                    appvm=self.target_appvm,
-                    print_callback=self.restore_output,
-                    error_callback=self.restore_error_output,
-                    progress_callback=self.update_progress_bar)
+            backup.backup_restore_do(self.vms_to_restore,
+                                     self.qvm_collection,
+                                     print_callback=self.restore_output,
+                                     error_callback=self.restore_error_output,
+                                     progress_callback=self.update_progress_bar)
         except Exception as ex:
             print "Exception:", ex
             err_msg.append(str(ex))
@@ -270,8 +261,9 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
     def all_vms_good(self):
         for vminfo in self.vms_to_restore.values():
+            if not vminfo.has_key('vm'):
+                continue
             if not vminfo['good-to-go']:
-                print vminfo['vm'].name, str(vminfo)
                 return False
         return True
 
