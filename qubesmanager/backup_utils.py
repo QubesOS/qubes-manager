@@ -25,10 +25,9 @@ import os
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
-
 import subprocess
 import time
+from qubes.qubes import QubesException
 
 from thread_monitor import *
 
