@@ -19,7 +19,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 #
-
+import re
 import sys
 import os
 from PyQt4.QtCore import *
@@ -34,6 +34,8 @@ from thread_monitor import *
 from datetime import datetime
 from string import replace
 
+path_re = re.compile(r"[a-zA-Z0-9/:.,_+=() -]*")
+path_max_len = 512
 mount_for_backup_path = '/usr/libexec/qubes-manager/mount_for_backup.sh'
 
 def check_if_mounted(dev_path):
@@ -198,6 +200,20 @@ def dev_combobox_activated(dialog, idx):
             dialog.dir_line_edit.setText(dialog.dev_mount_path)
             dialog.select_dir_page.emit(SIGNAL("completeChanged()"))
 
+
+def get_path_for_vm(vm, service_name):
+    if not vm:
+        return None
+    proc = vm.run("QUBESRPC %s dom0" % service_name, passio_popen=True)
+    proc.stdin.close()
+    untrusted_path = proc.stdout.readline(path_max_len)
+    if len(untrusted_path) == 0:
+        return None
+    if path_re.match(untrusted_path):
+        return untrusted_path
+    else:
+        return None
+
 def select_path_button_clicked(dialog, select_file = False):
     backup_location = str(dialog.dir_line_edit.text())
     file_dialog = QFileDialog()
@@ -212,6 +228,10 @@ def select_path_button_clicked(dialog, select_file = False):
     new_path = None
     if dialog.appvm_combobox.currentIndex() != 0:   #An existing appvm chosen
         new_appvm = str(dialog.appvm_combobox.currentText())
+        vm = dialog.qvm_collection.get_vm_by_name(new_appvm)
+        if vm:
+            new_path = get_path_for_vm(vm, "qubes.SelectFile" if select_file
+                    else "qubes.SelectDirectory")
     elif dialog.dev_mount_path != None:
         new_path = file_dialog_function(dialog, "Select backup location.", dialog.dev_mount_path)
     else:
