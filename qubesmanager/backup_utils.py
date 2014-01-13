@@ -81,6 +81,15 @@ def detach_device(dialog, dev_name):
         with dialog.blk_manager.blk_lock:
             dialog.blk_manager.detach_device(dialog.vm, dev_name)
             dialog.blk_manager.update()
+    else:
+        # umount/LUKS remove do not trigger udev event on underlying device,
+        # so trigger it manually - to publish back as available device
+        subprocess.call(["sudo", "udevadm", "trigger", "--action=change",
+                                 "--subsystem-match=block",
+                                 "--sysname-match=%s" % dev_name.split(":")[1]])
+        with dialog.blk_manager.blk_lock:
+            dialog.blk_manager.update()
+
 
 def fill_appvms_list(dialog):
     dialog.appvm_combobox.clear()
