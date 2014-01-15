@@ -70,6 +70,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.selected_vms = []
 
         self.vm = self.qvm_collection[0]
+        self.files_to_backup = None
 
         assert self.vm != None
 
@@ -339,11 +340,12 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                 time.sleep (0.1)
 
             if not self.thread_monitor.success:
-                self.progress_status.setText = "Backup error."
-                QMessageBox.warning (None, "Backup error!", "ERROR: {}".format(self.thread_monitor.error_msg))
+                self.progress_status.setText("Backup error.")
+                QMessageBox.warning (self, "Backup error!", "ERROR: {}".format(
+                    self.thread_monitor.error_msg))
             else:
                 self.progress_bar.setValue(100)
-                self.progress_status.setText = "Backup finished."
+                self.progress_status.setText("Backup finished.")
             if self.dev_mount_path != None:
                 umount_device(self.dev_mount_path)
                 detach_device(self, str(self.dev_combobox.itemData(
