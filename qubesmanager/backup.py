@@ -289,7 +289,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                     self.files_to_backup,
                     str(self.passphrase_line_edit.text()),
                     progress_callback=self.update_progress_bar,
-                    encrypt=self.encryption_checkbox.isChecked(),
+                    encrypted=self.encryption_checkbox.isChecked(),
                     appvm=self.target_appvm)
             #simulate_long_lasting_proces(10, self.update_progress_bar)
         except Exception as ex:
