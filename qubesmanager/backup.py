@@ -304,6 +304,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 
 
     def current_page_changed(self, id):
+        old_sigchld_handler = signal.signal(signal.SIGCHLD, signal.SIG_DFL)
         if self.currentPage() is self.confirm_page:
 
             self.target_appvm = None
@@ -351,7 +352,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                 detach_device(self, str(self.dev_combobox.itemData(
                         self.dev_combobox.currentIndex()).toString()))
             self.button(self.FinishButton).setEnabled(True)
-
+        signal.signal(signal.SIGCHLD, old_sigchld_handler)
 
     def reject(self):
         #cancell clicked while the backup is in progress.
