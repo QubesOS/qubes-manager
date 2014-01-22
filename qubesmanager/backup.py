@@ -347,10 +347,17 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             else:
                 self.progress_bar.setValue(100)
                 self.progress_status.setText("Backup finished.")
-            if self.dev_mount_path != None:
+                if self.dev_mount_path is not None:
+                    self.progress_status.setText(
+                        "Backup finished. You can disconnect your backup "
+                        "device")
+                else:
+                    self.progress_status.setText("Backup finished.")
+            if self.dev_mount_path is not None:
                 umount_device(self.dev_mount_path)
                 detach_device(self, str(self.dev_combobox.itemData(
-                        self.dev_combobox.currentIndex()).toString()))
+                    self.dev_combobox.currentIndex()).toString()))
+                self.dev_mount_path = None
             self.button(self.FinishButton).setEnabled(True)
         signal.signal(signal.SIGCHLD, old_sigchld_handler)
 
