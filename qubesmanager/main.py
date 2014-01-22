@@ -136,22 +136,25 @@ class VmIconWidget (QWidget):
 class VmTypeWidget(VmIconWidget):
 
     class VmTypeItem(QTableWidgetItem):
-        def __init__(self, value):
+        def __init__(self, value, vm):
             super(VmTypeWidget.VmTypeItem, self).__init__()
             self.value = value
+            self.vm = vm
 
         def set_value(self, value):
             self.value = value
 
         def __lt__(self, other):
-            return self.value < other.value
-
+            if self.value == other.value:
+                return self.vm.qid < other.vm.qid
+            else:
+                return self.value < other.value
 
     def __init__(self, vm, parent=None):
         (icon_path, tooltip) = self.get_vm_icon(vm)
         super (VmTypeWidget, self).__init__(icon_path, True, 0.8, tooltip, parent)
         self.vm = vm
-        self.tableItem = self.VmTypeItem(self.value)
+        self.tableItem = self.VmTypeItem(self.value, vm)
 
     def get_vm_icon(self, vm):
         if vm.qid == 0:
@@ -177,22 +180,25 @@ class VmTypeWidget(VmIconWidget):
 class VmLabelWidget(VmIconWidget):
 
     class VmLabelItem(QTableWidgetItem):
-        def __init__(self, value):
+        def __init__(self, value, vm):
             super(VmLabelWidget.VmLabelItem, self).__init__()
             self.value = value
+            self.vm = vm
 
         def set_value(self, value):
             self.value = value
 
         def __lt__(self, other):
-            return self.value < other.value
-
+            if self.value == other.value:
+                return self.vm.qid < other.vm.qid
+            else:
+                return self.value < other.value
 
     def __init__(self, vm, parent=None):
         icon_path = self.get_vm_icon_path(vm)
         super (VmLabelWidget, self).__init__(icon_path, True, 0.8, None, parent)
         self.vm = vm
-        self.tableItem = self.VmLabelItem(self.value)
+        self.tableItem = self.VmLabelItem(self.value, vm)
 
     def get_vm_icon_path(self, vm):
         if vm.qid == 0:
@@ -257,12 +263,18 @@ class VmInfoWidget (QWidget):
                 # the result will be sorted by upd, sorting order: Ascending
                 self_val += 1 if self.vm.is_running() else 0
                 other_val += 1 if other.vm.is_running() else 0
-                return (self_val) > (other_val)
+                if self_val == other_val:
+                    return self.vm.qid < other.vm.qid
+                else:
+                    return self_val > other_val
             elif self.tableWidget().horizontalHeader().sortIndicatorOrder() == power_order:
                 #the result will be sorted by power state, sorting order: Descending
                 self_val = -(self_val/10 + 10*(1 if self.vm.is_running() else 0))
                 other_val = -(other_val/10 + 10*(1 if other.vm.is_running() else 0))
-                return (self_val) > (other_val)
+                if self_val == other_val:
+                    return self.vm.qid < other.vm.qid
+                else:
+                    return self_val > other_val
             else:
                 #it would be strange if this happened
                 return
@@ -309,6 +321,7 @@ class VmTemplateItem (QTableWidgetItem):
     def __init__(self, vm):
         super(VmTemplateItem, self).__init__()
         self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+        self.vm = vm
 
         if vm.template is not None:
             self.setText(vm.template.name)
@@ -331,11 +344,20 @@ class VmTemplateItem (QTableWidgetItem):
 
         self.setTextAlignment(Qt.AlignVCenter)
 
+    def __lt__(self, other):
+        if self.text() == other.text():
+            return self.vm.qid < other.vm.qid
+        else:
+            return super(VmTemplateItem, self).__lt__(other)
+
+
+
 
 class VmNetvmItem (QTableWidgetItem):
     def __init__(self, vm):
         super(VmNetvmItem, self).__init__()
         self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+        self.vm = vm
 
         if vm.is_netvm() and not vm.is_proxyvm():
             self.setText("n/a")
@@ -345,6 +367,12 @@ class VmNetvmItem (QTableWidgetItem):
             self.setText("---")
 
         self.setTextAlignment(Qt.AlignVCenter)
+
+    def __lt__(self, other):
+        if self.text() == other.text():
+            return self.vm.qid < other.vm.qid
+        else:
+            return super(VmNetvmItem, self).__lt__(other)
 
 class VmInternalItem(QTableWidgetItem):
     def __init__(self, vm):
@@ -361,15 +389,19 @@ class VmInternalItem(QTableWidgetItem):
 class VmUsageBarWidget (QWidget):
 
     class VmUsageBarItem (QTableWidgetItem):
-        def __init__(self, value):
+        def __init__(self, value, vm):
             super(VmUsageBarWidget.VmUsageBarItem, self).__init__()
             self.value = value
+            self.vm = vm
 
         def set_value(self, value):
             self.value = value
 
         def __lt__(self, other):
-            return int(self.value) < int(other.value)
+            if self.value == other.value:
+                return self.vm.qid < other.vm.qid
+            else:
+                return int(self.value) < int(other.value)
 
     def __init__(self, min, max, format, update_func, vm, load, hue=210, parent = None):
         super (VmUsageBarWidget, self).__init__(parent)
@@ -403,7 +435,7 @@ class VmUsageBarWidget (QWidget):
         layout.addWidget(self.widget)
 
         self.setLayout(layout)
-        self.tableItem = self.VmUsageBarItem(min)
+        self.tableItem = self.VmUsageBarItem(min, vm)
 
         self.update_load(vm, load)
 
@@ -417,15 +449,19 @@ class VmUsageBarWidget (QWidget):
 class ChartWidget (QWidget):
 
     class ChartItem (QTableWidgetItem):
-        def __init__(self, value):
+        def __init__(self, value, vm):
             super(ChartWidget.ChartItem, self).__init__()
             self.value = value
+            self.vm = vm
 
         def set_value(self, value):
             self.value = value
 
         def __lt__(self, other):
-            return self.value < other.value
+            if self.value == other.value:
+                return self.vm.qid < other.vm.qid
+            else:
+                return self.value < other.value
 
     def __init__(self, vm, update_func, hue, load = 0, parent = None):
         super (ChartWidget, self).__init__(parent)
@@ -436,7 +472,7 @@ class ChartWidget (QWidget):
         self.load = load
         assert self.load >= 0 and self.load <= 100, "load = {0}".format(self.load)
         self.load_history = [self.load]
-        self.tableItem = ChartWidget.ChartItem(self.load)
+        self.tableItem = ChartWidget.ChartItem(self.load, vm)
 
     def update_load (self, vm, load):
         self.load = self.update_func(vm, load)
@@ -480,9 +516,10 @@ class ChartWidget (QWidget):
 class VmUpdateInfoWidget(QWidget):
 
     class VmUpdateInfoItem (QTableWidgetItem):
-        def __init__(self, value):
+        def __init__(self, value, vm):
             super(VmUpdateInfoWidget.VmUpdateInfoItem, self).__init__()
             self.value = 0
+            self.vm = vm
             self.set_value(value)
 
         def set_value(self, value):
@@ -494,7 +531,10 @@ class VmUpdateInfoWidget(QWidget):
                 self.value = 0
 
         def __lt__(self, other):
-            return self.value < other.value
+            if self.value == other.value:
+                return self.vm.qid < other.vm.qid
+            else:
+                return self.value < other.value
 
     def __init__(self, vm, show_text=True, parent = None):
         super (VmUpdateInfoWidget, self).__init__(parent)
@@ -511,7 +551,7 @@ class VmUpdateInfoWidget(QWidget):
         self.previous_outdated = False
         self.previous_update_recommended = None
         self.value = None
-        self.tableItem = VmUpdateInfoWidget.VmUpdateInfoItem(self.value)
+        self.tableItem = VmUpdateInfoWidget.VmUpdateInfoItem(self.value, vm)
 
     def update_outdated(self, vm):
         if vm.type == "HVM":
@@ -612,6 +652,9 @@ class VmSizeOnDiskItem (QTableWidgetItem):
             self.setText( str(self.value) + " MiB")
 
     def __lt__(self, other):
+        if self.value == other.value:
+            return self.vm.qid < other.vm.qid
+        else:
             return self.value < other.value
 
 
