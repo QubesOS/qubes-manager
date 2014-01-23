@@ -1128,7 +1128,11 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                             self.vm_rec.pop(vm.name)
                         self.running_vms_count -= 1
                         some_vms_have_changed_power_state = True
-
+                else:
+                    # pulseaudio agent register itself some time after VM
+                    # startup
+                    if state == "Running" and not vm.qubes_manager_state[QMVmState.AudioRecAvailable]:
+                        self.update_audio_rec_info(vm)
 
             if self.screen_changed == True:
                 reload_table = True
