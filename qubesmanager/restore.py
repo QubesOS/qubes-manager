@@ -118,9 +118,6 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
     def on_ignore_uname_mismatch_toggled(self, checked):
         self.restore_options['ignore-username-mismatch'] = checked
 
-    def on_skip_dom0_toggled(self, checked):
-        self.restore_options['dom0-home'] = checked
-
     def cleanupPage(self, p_int):
         if self.page(p_int) is self.select_vms_page:
             self.vms_to_restore = None
@@ -169,9 +166,6 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
         if 'ignore-username-mismatch' in self.restore_options:
             self.ignore_uname_mismatch.setChecked(self.restore_options['ignore-username-mismatch'])
-
-        if 'dom0-home' in self.restore_options:
-            self.skip_dom0.setChecked(self.restore_options['dom0-home'])
 
     def gather_output(self, s):
         self.func_output.append(s)
