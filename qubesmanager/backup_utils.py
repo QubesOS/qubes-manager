@@ -240,7 +240,7 @@ def select_path_button_clicked(dialog, select_file = False):
                                         else '/')
 
     if new_path != None:
-        new_path = str(new_path)
+        new_path = unicode(new_path)
         if os.path.basename(new_path) == 'qubes.xml':
             backup_location = os.path.dirname(new_path)
         else:

@@ -138,8 +138,8 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
         try:
             self.vms_to_restore = backup.backup_restore_prepare(
-                    str(self.dir_line_edit.text()),
-                    str(self.passphrase_line_edit.text()),
+                    unicode(self.dir_line_edit.text()),
+                    unicode(self.passphrase_line_edit.text()),
                     options=self.restore_options,
                     host_collection=self.qvm_collection,
                     encrypted=self.encryption_checkbox.isChecked(),
@@ -276,7 +276,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.done(0)
 
     def has_selected_dir(self):
-        backup_location = str(self.dir_line_edit.text())
+        backup_location = unicode(self.dir_line_edit.text())
         if not backup_location:
             return False
         if self.appvm_combobox.currentIndex() == 0:

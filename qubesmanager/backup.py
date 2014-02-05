@@ -286,9 +286,9 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         msg = []
 
         try:
-            backup.backup_do(str(self.dir_line_edit.text()),
+            backup.backup_do(unicode(self.dir_line_edit.text()),
                     self.files_to_backup,
-                    str(self.passphrase_line_edit.text()),
+                    unicode(self.passphrase_line_edit.text()),
                     progress_callback=self.update_progress_bar,
                     encrypted=self.encryption_checkbox.isChecked(),
                     appvm=self.target_appvm)
