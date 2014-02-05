@@ -235,7 +235,9 @@ def select_path_button_clicked(dialog, select_file = False):
     elif dialog.dev_mount_path != None:
         new_path = file_dialog_function(dialog, "Select backup location.", dialog.dev_mount_path)
     else:
-        new_path = file_dialog_function(dialog, "Select backup location.", backup_location)
+        new_path = file_dialog_function(dialog, "Select backup location.",
+                                        backup_location if backup_location
+                                        else '/')
 
     if new_path != None:
         new_path = str(new_path)
