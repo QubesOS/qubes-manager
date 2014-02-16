@@ -67,7 +67,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.source_vm = self.vm.template
         else:
             self.source_vm = self.vm
- 
+
         self.setupUi(self)
         self.setWindowTitle("Settings: %s" % self.vm.name)
         if init_page in self.tabs_indices:
@@ -105,7 +105,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         ####### devices tab
         self.__init_devices_tab__()
         self.connect(self.dev_list, SIGNAL("selected_changed()"), self.devices_selection_changed)
- 
+
         ####### services tab
         self.__init_services_tab__()
         self.add_srv_button.clicked.connect(self.__add_service__)
@@ -129,7 +129,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         thread = threading.Thread (target=self.__save_changes__, args=(thread_monitor,))
         thread.daemon = True
         thread.start()
-        
+
         progress = QProgressDialog ("Applying settings to <b>{0}</b>...".format(self.vm.name), "", 0, 0)
         progress.setCancelButton(None)
         progress.setModal(True)
@@ -140,7 +140,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             time.sleep (0.1)
 
         progress.hide()
-        
+
         if not thread_monitor.success:
             QMessageBox.warning (None, "Error while changing settings for {0}!".format(self.vm.name),
                     "ERROR: {0}".format(thread_monitor.error_msg))
@@ -151,7 +151,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         self.qvm_collection.lock_db_for_writing()
         self.anything_changed = False
-        
+
         ret = []
         try:
             ret_tmp = self.__apply_basic_tab__()
@@ -207,14 +207,14 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
     def __init_basic_tab__(self):
         self.vmname.setText(self.vm.name)
         self.vmname.setValidator(QRegExpValidator(QRegExp("[a-zA-Z0-9-]*", Qt.CaseInsensitive), None))
-        
+
         #self.qvm_collection.lock_db_for_reading()
         #self.qvm_collection.load()
         #self.qvm_collection.unlock_db()
-       
+
         if self.vm.qid == 0:
             self.vmlabel.setVisible(False)
-        else: 
+        else:
             self.vmlabel.setVisible(True)
             self.label_list = QubesVmLabels.values()
             self.label_list.sort(key=lambda l: l.index)
@@ -257,7 +257,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                 text += " (current)"
                 self.netvm_idx = 0
             self.netVM.insertItem(0, text)
-    
+
             for (i, vm) in enumerate(netvm_list):
                 text = vm.name
                 if self.vm.netvm is not None and vm.qid == self.vm.netvm.qid and not self.vm.uses_default_netvm:
@@ -404,7 +404,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
     def init_mem_changed(self, value):
         if value > self.max_mem_size.value() and value <= self.max_mem_size.maximum():
             self.max_mem_size.setValue(value)
-    
+
 
     def max_mem_size_changed(self):
         if self.max_mem_size.value() < self.init_mem.value():
@@ -484,8 +484,6 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         else:
             self.kernel_opts.setText(self.vm.kernelopts)
 
-                
-       
     def __apply_advanced_tab__(self):
         msg = []
 
@@ -510,7 +508,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         #in case VM is not Linux
         if not hasattr(self.vm, "kernel"):
-            return msg;
+            return msg
 
         #kernel changed
         if not self.kernel_groupbox.isVisible():
@@ -537,12 +535,11 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         return msg
 
-
     ######## devices tab
     def __init_devices_tab__(self):
         self.dev_list = MultiSelectWidget(self)
         self.devices_layout.addWidget(self.dev_list)
-        
+
         devs = []
         lspci = subprocess.Popen(["lspci",], stdout = subprocess.PIPE)
         for dev in lspci.stdout:
@@ -654,7 +651,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
     def __remove_service__(self):
         item = self.services_list.currentItem()
-        if str(item.text()) == 'meminfo-writer':    
+        if str(item.text()) == 'meminfo-writer':
             QMessageBox.information(None, "Service can not be removed", "Service meminfo-writer can not be removed from the list.")
         else:
             row = self.services_list.currentRow()
@@ -712,7 +709,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
     def set_allow(self, allow):
         self.policyAllowRadioButton.setChecked(allow)
         self.policyDenyRadioButton.setChecked(not allow)
- 
+
     def new_rule_button_pressed(self):
         dialog = NewFwRuleDlg()
         self.run_rule_dialog(dialog)
@@ -772,7 +769,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                     protocol = "tcp"
                 elif dialog.udp_radio.isChecked():
                     protocol = "udp"
-                          
+
                 try:
                     range = service.split("-", 1)
                     if len(range) == 2:
@@ -829,7 +826,7 @@ def handle_exception( exc_type, exc_value, exc_traceback ):
                     "<b><i>%s</i></b>" % error +
                     "<br/>at line <b>%d</b><br/>of file %s.<br/><br/>"
                     % ( line, filename ))
-    
+
     msg_box.exec_()
 
 
