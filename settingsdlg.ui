@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>2</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -50,6 +50,9 @@
               <property name="text">
                <string>Name &amp; label:</string>
               </property>
+              <property name="buddy">
+               <cstring>vmname</cstring>
+              </property>
              </widget>
             </item>
             <item row="0" column="1">
@@ -64,6 +67,9 @@
               <property name="text">
                <string>Template:</string>
               </property>
+              <property name="buddy">
+               <cstring>template_name</cstring>
+              </property>
              </widget>
             </item>
             <item row="1" column="1">
@@ -73,6 +79,9 @@
              <widget class="QLabel" name="label_18">
               <property name="text">
                <string>NetVM:</string>
+              </property>
+              <property name="buddy">
+               <cstring>netVM</cstring>
               </property>
              </widget>
             </item>
@@ -178,6 +187,9 @@
              <widget class="QLabel" name="label_3">
               <property name="text">
                <string>Private storage max. size:</string>
+              </property>
+              <property name="buddy">
+               <cstring>max_priv_storage</cstring>
               </property>
              </widget>
             </item>
@@ -325,6 +337,9 @@
               <property name="text">
                <string>Initial memory:</string>
               </property>
+              <property name="buddy">
+               <cstring>init_mem</cstring>
+              </property>
              </widget>
             </item>
             <item row="0" column="1">
@@ -364,6 +379,9 @@
               <property name="text">
                <string>Max memory:</string>
               </property>
+              <property name="buddy">
+               <cstring>max_mem_size</cstring>
+              </property>
              </widget>
             </item>
             <item row="1" column="1">
@@ -399,6 +417,9 @@
              <widget class="QLabel" name="label_4">
               <property name="text">
                <string>VCPUs no.:</string>
+              </property>
+              <property name="buddy">
+               <cstring>vcpus</cstring>
               </property>
              </widget>
             </item>
@@ -930,6 +951,40 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>vmname</tabstop>
+  <tabstop>vmlabel</tabstop>
+  <tabstop>template_name</tabstop>
+  <tabstop>netVM</tabstop>
+  <tabstop>include_in_backups</tabstop>
+  <tabstop>run_in_debug_mode</tabstop>
+  <tabstop>max_priv_storage</tabstop>
+  <tabstop>init_mem</tabstop>
+  <tabstop>max_mem_size</tabstop>
+  <tabstop>vcpus</tabstop>
+  <tabstop>include_in_balancing</tabstop>
+  <tabstop>kernel</tabstop>
+  <tabstop>drive_groupbox</tabstop>
+  <tabstop>drive_type</tabstop>
+  <tabstop>drive_domain</tabstop>
+  <tabstop>drive_path</tabstop>
+  <tabstop>drive_path_button</tabstop>
+  <tabstop>policyAllowRadioButton</tabstop>
+  <tabstop>policyDenyRadioButton</tabstop>
+  <tabstop>icmpCheckBox</tabstop>
+  <tabstop>dnsCheckBox</tabstop>
+  <tabstop>yumproxyCheckBox</tabstop>
+  <tabstop>newRuleButton</tabstop>
+  <tabstop>rulesTreeView</tabstop>
+  <tabstop>editRuleButton</tabstop>
+  <tabstop>deleteRuleButton</tabstop>
+  <tabstop>service_line_edit</tabstop>
+  <tabstop>add_srv_button</tabstop>
+  <tabstop>services_list</tabstop>
+  <tabstop>remove_srv_button</tabstop>
+  <tabstop>buttonBox</tabstop>
+ </tabstops>
  <resources>
   <include location="resources.qrc"/>
  </resources>
