@@ -457,32 +457,32 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         #in case VM is HVM
         if not hasattr(self.vm, "kernel"):
             self.kernel_groupbox.setVisible(False)
-            return;
-
-        # construct available kernels list
-        text = "default (" + self.qvm_collection.get_default_kernel() +")"
-        kernel_list = [text]
-        for k in os.listdir(system_path["qubes_kernels_base_dir"]):
-            kernel_list.append(k)
-        kernel_list.append("none")
-    
-        self.kernel_idx = 0
-    
-        # put available kernels to a combobox
-        for (i, k) in enumerate(kernel_list):
-            text = k
-            # and mark the current choice
-            if (text.startswith("default") and self.vm.uses_default_kernel) or ( self.vm.kernel == k and not self.vm.uses_default_kernel) or (k=="none" and self.vm.kernel==None):
-                text += " (current)"
-                self.kernel_idx = i
-            self.kernel.insertItem(i,text)
-        self.kernel.setCurrentIndex(self.kernel_idx)
-
-        #kernel opts
-        if self.vm.uses_default_kernelopts:
-            self.kernel_opts.setText(self.vm.kernelopts + " (default)")
         else:
-            self.kernel_opts.setText(self.vm.kernelopts)
+            self.kernel_groupbox.setVisible(True)
+            # construct available kernels list
+            text = "default (" + self.qvm_collection.get_default_kernel() +")"
+            kernel_list = [text]
+            for k in os.listdir(system_path["qubes_kernels_base_dir"]):
+                kernel_list.append(k)
+            kernel_list.append("none")
+
+            self.kernel_idx = 0
+
+            # put available kernels to a combobox
+            for (i, k) in enumerate(kernel_list):
+                text = k
+                # and mark the current choice
+                if (text.startswith("default") and self.vm.uses_default_kernel) or ( self.vm.kernel == k and not self.vm.uses_default_kernel) or (k=="none" and self.vm.kernel==None):
+                    text += " (current)"
+                    self.kernel_idx = i
+                self.kernel.insertItem(i,text)
+            self.kernel.setCurrentIndex(self.kernel_idx)
+
+            #kernel opts
+            if self.vm.uses_default_kernelopts:
+                self.kernel_opts.setText(self.vm.kernelopts + " (default)")
+            else:
+                self.kernel_opts.setText(self.vm.kernelopts)
 
     def __apply_advanced_tab__(self):
         msg = []
@@ -505,33 +505,27 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         #include_in_memory_balancing applied in services tab
 
-
         #in case VM is not Linux
-        if not hasattr(self.vm, "kernel"):
-            return msg
+        if hasattr(self.vm, "kernel") and self.kernel_groupbox.isVisible():
+            try:
+                if self.kernel.currentIndex() != self.kernel_idx:
+                    new_kernel = self.kernel.currentText()
+                    new_kernel = new_kernel.split(' ')[0]
+                    if new_kernel == "default":
+                        kernel = self.qvm_collection.get_default_kernel()
+                        self.vm.uses_default_kernel = True
+                    elif new_kernel == "none":
+                        kernel = None
+                        self.vm.uses_default_kernel = False
+                    else:
+                        kernel = new_kernel
+                        self.vm.uses_default_kernel = False
 
-        #kernel changed
-        if not self.kernel_groupbox.isVisible():
-            return msg
+                    self.vm.kernel = kernel
+                    self.anything_changed = True
+            except Exception as ex:
+                msg.append(str(ex))
 
-        try:
-            if self.kernel.currentIndex() != self.kernel_idx:
-                new_kernel = self.kernel.currentText()
-                new_kernel = new_kernel.split(' ')[0]
-                if(new_kernel == "default"):
-                    kernel = self.qvm_collection.get_default_kernel()
-                    self.vm.uses_default_kernel = True
-                elif(new_kernel == "none"):
-                    kernel = None
-                    self.vm.uses_default_kernel = False;
-                else:
-                    kernel = new_kernel
-                    self.vm.uses_default_kernel = False;
-
-                self.vm.kernel = kernel
-                self.anything_changed = True
-        except Exception as ex:
-            msg.append(str(ex))
 
         return msg
 
