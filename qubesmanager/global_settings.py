@@ -132,7 +132,7 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
     def __apply_system_defaults__(self):
         #upatevm
         if self.update_vm_combo.currentIndex() != self.updatevm_idx:
-            updatevm_name = self.update_vm_combo.currentText()
+            updatevm_name = str(self.update_vm_combo.currentText())
             updatevm_name = updatevm_name.split(' ')[0]
             updatevm = self.qvm_collection.get_vm_by_name(updatevm_name)
             
@@ -141,7 +141,7 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
 
         #clockvm
         if self.clock_vm_combo.currentIndex() != self.clockvm_idx:
-            clockvm_name = self.clock_vm_combo.currentText()
+            clockvm_name = str(self.clock_vm_combo.currentText())
             clockvm_name = clockvm_name.split(' ')[0]
             clockvm = self.qvm_collection.get_vm_by_name(clockvm_name)
             
@@ -150,7 +150,7 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
 
         #default netvm
         if self.default_netvm_combo.currentIndex() != self.netvm_idx:
-            name = self.default_netvm_combo.currentText()
+            name = str(self.default_netvm_combo.currentText())
             name = name.split(' ')[0]
             vm = self.qvm_collection.get_vm_by_name(name)
             
@@ -159,7 +159,7 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
 
         #default template
         if self.default_template_combo.currentIndex() != self.template_idx:
-            name = self.default_template_combo.currentText()
+            name = str(self.default_template_combo.currentText())
             name = name.split(' ')[0]
             vm = self.qvm_collection.get_vm_by_name(name)
             
@@ -184,7 +184,7 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
 
     def __apply_kernel_defaults__(self):
         if self.default_kernel_combo.currentIndex() != self.kernel_idx:
-            kernel = self.default_kernel_combo.currentText()
+            kernel = str(self.default_kernel_combo.currentText())
             kernel = kernel.split(' ')[0]
             
             self.qvm_collection.set_default_kernel(kernel)
