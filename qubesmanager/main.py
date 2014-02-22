@@ -1444,6 +1444,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         except Exception as ex:
             if dst_vm:
                 self.qvm_collection.pop(dst_vm.qid)
+                dst_vm.remove_from_disk()
             self.qvm_collection.unlock_db()
             thread_monitor.set_error_msg(str(ex))
         thread_monitor.set_finished()
