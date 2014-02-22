@@ -1382,9 +1382,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             if vm.is_netvm() and self.qvm_collection.default_netvm_qid == vm.qid:
                 self.qvm_collection.default_netvm_qid = None
 
-            vm.remove_from_disk()
             self.qvm_collection.pop(vm.qid)
             self.qvm_collection.save()
+            vm.remove_from_disk()
         except Exception as ex:
             thread_monitor.set_error_msg (str(ex))
         finally:
