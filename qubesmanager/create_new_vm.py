@@ -215,6 +215,7 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
             thread_monitor.set_error_msg (str(ex))
             if vm:
                 vm.remove_from_disk()
+                self.qvm_collection.pop(vm.qid)
         finally:
             self.qvm_collection.unlock_db()
 
