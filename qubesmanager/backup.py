@@ -197,7 +197,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
     def shutdown_all_running_selected(self):
         (names, vms) = self.get_running_vms()
         if len(vms) == 0:
-            return;
+            return
 
         for vm in vms:
             self.blk_manager.check_if_serves_as_backend(vm)

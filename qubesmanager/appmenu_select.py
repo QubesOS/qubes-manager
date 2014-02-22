@@ -120,9 +120,9 @@ class AppmenuSelectManager:
                 added.append(item)
         
         if self.app_list.selected_list.count() - len(added) < len(self.whitelisted_appmenus): #sth removed
-            sth_changed = True;
+            sth_changed = True
         elif len(added) > 0:
-            sth_changed = True;
+            sth_changed = True
         
         if sth_changed == True:
             whitelisted = open(self.vm.dir_path + '/' + whitelisted_filename, 'w')

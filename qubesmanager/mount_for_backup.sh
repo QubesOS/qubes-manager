@@ -20,15 +20,15 @@ fi
 if sudo cryptsetup isLuks $1 ; then
     # Is a luks device
     if ! $PROMPT "Please unlock the LUKS-encrypted $1 device:" | sudo pmount $1 $2 ; then
-        exit 1;
+        exit 1
     fi
 else
     #not luks!
     if ! sudo pmount $1 $2 ; then
-        exit 1;
+        exit 1
     fi
 fi
 
 #all ok :)
-exit 0;
+exit 0
 

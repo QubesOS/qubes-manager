@@ -11,7 +11,7 @@ class MultiSelectWidget(Ui_MultiSelectWidget, QWidget):
 
     def __init__(self, parent=None):
         super(MultiSelectWidget, self).__init__()
-        self.setupUi(self);
+        self.setupUi(self)
         self.add_selected_button.clicked.connect(self.add_selected)
         self.add_all_button.clicked.connect(self.add_all)
         self.remove_selected_button.clicked.connect(self.remove_selected)

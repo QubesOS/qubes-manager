@@ -294,12 +294,12 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         #networking info
         if self.vm.is_networked():
-            self.networking_groupbox.setEnabled(True);
+            self.networking_groupbox.setEnabled(True)
             self.ip_label.setText(self.vm.ip if self.vm.ip is not None else "none")
             self.netmask_label.setText(self.vm.netmask if self.vm.netmask is not None else "none")
             self.gateway_label.setText(self.vm.netvm.gateway if self.vm.netvm is not None else "none")
         else:
-            self.networking_groupbox.setEnabled(False);
+            self.networking_groupbox.setEnabled(False)
 
         #max priv storage
         self.priv_img_size = self.vm.get_private_img_sz()/1024/1024
@@ -426,7 +426,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.max_mem_size.setValue(int(self.vm.maxmem))
         self.max_mem_size.setMaximum(qubes_memory)
 
-        self.vcpus.setMinimum(1);
+        self.vcpus.setMinimum(1)
         self.vcpus.setMaximum(QubesHost().no_cpus)
         self.vcpus.setValue(int(self.vm.vcpus))
 
@@ -646,9 +646,9 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                     added.append(item)
 
             if self.dev_list.selected_list.count() - len(added) < len(self.vm.pcidevs): #sth removed
-                sth_changed = True;
+                sth_changed = True
             elif len(added) > 0:
-                sth_changed = True;
+                sth_changed = True
 
             if sth_changed == True:
                 pcidevs = []
@@ -667,7 +667,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             item = self.services_list.item(r)
             if str(item.text()) == 'meminfo-writer':
                 item.setCheckState(state)
-                break;
+                break
 
         if self.dev_list.selected_list.count() > 0:
             if state == QtCore.Qt.Checked:

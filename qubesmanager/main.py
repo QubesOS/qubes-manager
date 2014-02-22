@@ -415,7 +415,7 @@ class VmUsageBarWidget (QWidget):
         self.widget = QProgressBar()
         self.widget.setMinimum(min)
         self.widget.setMaximum(max)
-        self.widget.setFormat(format);
+        self.widget.setFormat(format)
 
         self.widget.setStyleSheet(
                                     "QProgressBar:horizontal{" +\
@@ -825,7 +825,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.columns_actions[ self.columns_indices["Size"] ] = self.action_size_on_disk
         self.columns_actions[ self.columns_indices["Internal"] ] = self.action_internal
 
-        self.visible_columns_count = len(self.columns_indices);
+        self.visible_columns_count = len(self.columns_indices)
         self.table.setColumnHidden( self.columns_indices["NetVM"], True)
         self.action_netvm.setChecked(False)
         self.table.setColumnHidden( self.columns_indices["CPU Graph"], True)
@@ -1756,7 +1756,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             for c in self.columns_actions:
                 if not self.columns_actions[c].isEnabled():
                     self.columns_actions[c].setEnabled(True)
-                    break;
+                    break
 
         if self.settings_loaded:
             col_name = [name for name in self.columns_indices.keys() if self.columns_indices[name] == col_num][0]
@@ -2158,7 +2158,7 @@ def get_frame_size():
             if len(line) == 4:
                 w = int(line[0].strip())+ int(line[1].strip())
                 h = int(line[2].strip())+ int(line[3].strip())
-                break;
+                break
     #in case of some weird window managers we have to assume sth...
     if w<= 0:
         w = 10
