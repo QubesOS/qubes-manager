@@ -137,8 +137,4 @@ class AppmenuSelectManager:
  
     def save_appmenu_select_changes(self):
         if self.save_list_of_selected():
-            self.vm.appicons_remove()
-            self.vm.appmenus_remove()
-            self.vm.appmenus_create(verbose=False)
-            self.vm.appicons_create()
-
+            self.vm.appmenus_recreate()
