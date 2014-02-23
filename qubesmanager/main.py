@@ -39,6 +39,10 @@ from qubes.qubes import QubesVmLabels
 from qubes.qubes import dry_run
 from qubes.qubes import QubesDaemonPidfile
 from qubes.qubes import QubesHost
+try:
+    from qubes.qubes import QubesHVm
+except ImportError:
+    pass
 from qubes import qubes
 from qubes import qubesutils
 
@@ -861,6 +865,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.context_menu.addAction(self.action_updatevm)
         self.context_menu.addAction(self.action_run_command_in_vm)
         self.context_menu.addAction(self.action_resumevm)
+        self.context_menu.addAction(self.action_startvm_tools_install)
         self.context_menu.addAction(self.action_pausevm)
         self.context_menu.addAction(self.action_shutdownvm)
         self.context_menu.addAction(self.action_killvm)
@@ -1246,6 +1251,13 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.action_removevm.setEnabled(not vm.installed_by_rpm and not (vm.last_running))
             self.action_clonevm.setEnabled(not (vm.last_running) and not vm.is_netvm())
             self.action_resumevm.setEnabled(not vm.last_running)
+            try:
+                self.action_startvm_tools_install.setVisible(isinstance(vm,
+                                                                    QubesHVm))
+            except NameError:
+                # ignore non existing QubesHVm
+                pass
+            self.action_startvm_tools_install.setEnabled(not vm.last_running)
             self.action_pausevm.setEnabled(vm.last_running and vm.qid != 0)
             self.action_shutdownvm.setEnabled(vm.last_running and vm.qid != 0)
             self.action_killvm.setEnabled((vm.last_running or vm.last_power_state == "Paused") and vm.qid != 0)
@@ -1258,6 +1270,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         else:
             self.action_settings.setEnabled(False)
             self.action_removevm.setEnabled(False)
+            self.action_startvm_tools_install.setVisible(False)
+            self.action_startvm_tools_install.setEnabled(False)
             self.action_clonevm.setEnabled(False)
             self.action_resumevm.setEnabled(False)
             self.action_pausevm.setEnabled(False)
@@ -1486,6 +1500,46 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             thread_monitor.set_error_msg(str(ex))
             thread_monitor.set_finished()
             return
+
+        thread_monitor.set_finished()
+
+    @pyqtSlot(name='on_action_startvm_tools_install_triggered')
+    def action_startvm_tools_install_triggered(self):
+        vm = self.get_selected_vm()
+        assert not vm.is_running()
+
+        thread_monitor = ThreadMonitor()
+        thread = threading.Thread (target=self.do_start_vm_tools_install,
+                                   args=(vm, thread_monitor))
+        thread.daemon = True
+        thread.start()
+
+        trayIcon.showMessage ("Starting '{0}'...".format(vm.name), msecs=3000)
+
+        while not thread_monitor.is_finished():
+            app.processEvents()
+            time.sleep (0.1)
+
+        if thread_monitor.success:
+            trayIcon.showMessage ("VM '{0}' has been started. Start Qubes "
+                                  "Tools installation from attached CD"
+                                  .format(vm.name), msecs=3000)
+        else:
+            trayIcon.showMessage ("Error starting VM <b>'{0}'</b>: {1}".format(vm.name, thread_monitor.error_msg ), msecs=3000)
+            self.set_error(vm.qid, "Error starting VM: %s" % thread_monitor.error_msg)
+
+    def do_start_vm_tools_install(self, vm, thread_monitor):
+        prev_drive = vm.drive
+        try:
+            vm.verify_files()
+            vm.drive = 'cdrom:dom0:/usr/lib/qubes/qubes-windows-tools.iso'
+            xid = vm.start()
+        except Exception as ex:
+            thread_monitor.set_error_msg(str(ex))
+            thread_monitor.set_finished()
+            return
+        finally:
+            vm.drive = prev_drive
 
         thread_monitor.set_finished()
 
