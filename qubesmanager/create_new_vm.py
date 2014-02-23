@@ -33,9 +33,6 @@ from qubes.qubes import QubesVm,QubesHVm
 
 import qubesmanager.resources_rc
 
-from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
-
-import subprocess
 import time
 import threading
 
@@ -155,16 +152,12 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
             allow_networking = self.allow_networking.isChecked()
 
         if self.appvm_radio.isChecked():
-            createvm_method = self.qvm_collection.add_new_appvm
             vmtype = "AppVM"
         elif self.netvm_radio.isChecked():
-            createvm_method = self.qvm_collection.add_new_netvm
             vmtype = "NetVM"
         elif self.proxyvm_radio.isChecked():
-            createvm_method = self.qvm_collection.add_new_proxyvm
             vmtype = "ProxyVM"
         else: #hvm_radio.isChecked()
-            createvm_method = self.qvm_collection.add_new_hvm
             vmtype = "HVM"
 
 
