@@ -161,6 +161,19 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>vmname</tabstop>
+  <tabstop>vmlabel</tabstop>
+  <tabstop>template_name</tabstop>
+  <tabstop>standalone</tabstop>
+  <tabstop>appvm_radio</tabstop>
+  <tabstop>netvm_radio</tabstop>
+  <tabstop>proxyvm_radio</tabstop>
+  <tabstop>hvm_radio</tabstop>
+  <tabstop>hvmtpl_radio</tabstop>
+  <tabstop>allow_networking</tabstop>
+  <tabstop>buttonBox</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>
