@@ -59,6 +59,7 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
             pass
         else: 
             self.hvm_radio.setEnabled(True)
+            self.hvmtpl_radio.setEnabled(True)
 
         self.qvm_collection.lock_db_for_reading()
         self.qvm_collection.load()
@@ -86,6 +87,8 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
                 return False
             if self.hvm_radio.isChecked():
                 return QubesHVm.is_template_compatible(vm)
+            elif self.hvmtpl_radio.isChecked():
+                return False
             else:
                 return QubesVm.is_template_compatible(vm)
         self.template_vm_list = filter(filter_template, self.qvm_collection.values())
@@ -108,19 +111,28 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
         if checked:
             self.template_name.setEnabled(True)
             self.allow_networking.setEnabled(False)
+
     def on_proxyvm_radio_toggled(self, checked):
         if checked:
             self.template_name.setEnabled(True)
             self.allow_networking.setEnabled(True)
+
     def on_hvm_radio_toggled(self, checked):
-        if checked:
+        if self.hvm_radio.isChecked() or self.hvmtpl_radio.isChecked():
             self.standalone.setChecked(True)
             self.allow_networking.setEnabled(True)
+            self.standalone.setEnabled(self.hvm_radio.isChecked())
         else:
             self.standalone.setChecked(False)
+            self.standalone.setEnabled(True)
         self.fill_template_list()
+
+    def on_hvmtpl_radio_toggled(self, checked):
+        return self.on_hvm_radio_toggled(checked)
+
     def on_standalone_toggled(self, checked):
-        if checked and self.hvm_radio.isChecked():
+        if checked and (self.hvm_radio.isChecked() or
+                        self.hvmtpl_radio.isChecked()):
             self.template_name.setEnabled(False)
         else:
             self.template_name.setEnabled(True)
@@ -157,8 +169,14 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
             vmtype = "NetVM"
         elif self.proxyvm_radio.isChecked():
             vmtype = "ProxyVM"
-        else: #hvm_radio.isChecked()
+        elif self.hvm_radio.isChecked():
             vmtype = "HVM"
+        elif self.hvmtpl_radio.isChecked():
+            vmtype = "TemplateHVM"
+        else:
+            QErrorMessage.showMessage(None, "Error creating AppVM!", "Unknown "
+                                                                   "VM type, this is error in Qubes Manager")
+            self.done(0)
 
 
         vmclass = "Qubes" + vmtype.replace("VM", "Vm")
