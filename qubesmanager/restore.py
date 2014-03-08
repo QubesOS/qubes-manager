@@ -23,6 +23,7 @@
 
 import sys
 import os
+import shutil
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
@@ -67,6 +68,8 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.vms_to_restore = None
         self.func_output = []
         self.feedback_queue = Queue()
+        self.canceled = False
+        self.tmpdir_to_remove = None
 
         self.excluded = {}
 
@@ -189,12 +192,19 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                                      print_callback=self.restore_output,
                                      error_callback=self.restore_error_output,
                                      progress_callback=self.update_progress_bar)
+        except backup.BackupCanceledError as ex:
+            self.canceled = True
+            self.tmpdir_to_remove = ex.tmpdir
+            err_msg.append(str(ex))
         except Exception as ex:
             print "Exception:", ex
             err_msg.append(str(ex))
 
         self.qvm_collection.unlock_db()
-        if len(err_msg) > 0 :
+        if self.canceled:
+            self.emit(SIGNAL("restore_progress(QString)"),
+                      '<b><font color="red">{0}</font></b>'.format("Restore aborted!"))
+        elif len(err_msg) > 0:
             thread_monitor.set_error_msg('\n'.join(err_msg))
             self.emit(SIGNAL("restore_progress(QString)"),'<b><font color="red">{0}</font></b>'.format("Finished with errors!"))
         else:
@@ -229,7 +239,6 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
             self.confirm_page.emit(SIGNAL("completeChanged()"))
 
         elif self.currentPage() is self.commit_page:
-            self.button(self.CancelButton).setDisabled(True)
             self.button(self.FinishButton).setDisabled(True)
 
             self.thread_monitor = ThreadMonitor()
@@ -247,7 +256,18 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                     pass
 
             if not self.thread_monitor.success:
-                QMessageBox.warning (None, "Backup error!", "ERROR: {1}".format(self.vm.name, self.thread_monitor.error_msg))
+                if self.canceled:
+                    if self.tmpdir_to_remove and \
+                        QMessageBox.warning(None, "Restore aborted",
+                                            "Do you want to remove temporary "
+                                            "files from %s?" % self
+                                                    .tmpdir_to_remove,
+                                            QMessageBox.Yes, QMessageBox.No) == \
+                            QMessageBox.Yes:
+                        shutil.rmtree(self.tmpdir_to_remove)
+                else:
+                    QMessageBox.warning (None, "Backup error!", "ERROR: {1}"
+                                      .format(self.vm.name, self.thread_monitor.error_msg))
 
             if self.dev_mount_path != None:
                 umount_device(self.dev_mount_path)
@@ -257,6 +277,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
             self.progress_bar.setValue(100)
             self.button(self.FinishButton).setEnabled(True)
+            self.button(self.CancelButton).setEnabled(False)
 
         signal.signal(signal.SIGCHLD, old_sigchld_handler)
 
@@ -269,11 +290,19 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         return True
 
     def reject(self):
-        if self.dev_mount_path != None:
-            umount_device(self.dev_mount_path)
-            detach_device(self, str(self.dev_combobox.itemData(
-                self.dev_combobox.currentIndex()).toString()))
-        self.done(0)
+        if self.currentPage() is self.commit_page:
+            if backup.backup_cancel():
+                self.emit(SIGNAL("restore_progress(QString)"),'<font '
+                                                              'color="red">{'
+                                                              '0}</font>'
+                          .format("Aborting the operation..."))
+                self.button(self.CancelButton).setDisabled(True)
+        else:
+            if self.dev_mount_path != None:
+                umount_device(self.dev_mount_path)
+                detach_device(self, str(self.dev_combobox.itemData(
+                    self.dev_combobox.currentIndex()).toString()))
+            self.done(0)
 
     def has_selected_dir(self):
         backup_location = unicode(self.dir_line_edit.text())

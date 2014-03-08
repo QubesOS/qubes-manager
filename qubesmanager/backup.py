@@ -24,6 +24,7 @@
 import sys
 import os
 import signal
+import shutil
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
@@ -68,6 +69,8 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.dev_mount_path = None
         self.func_output = []
         self.selected_vms = []
+        self.tmpdir_to_remove = None
+        self.canceled = False
 
         self.vm = self.qvm_collection[0]
         self.files_to_backup = None
@@ -293,6 +296,11 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                     encrypted=self.encryption_checkbox.isChecked(),
                     appvm=self.target_appvm)
             #simulate_long_lasting_proces(10, self.update_progress_bar)
+        except backup.BackupCanceledError as ex:
+            msg.append(str(ex))
+            self.canceled = True
+            if ex.tmpdir:
+                self.tmpdir_to_remove = ex.tmpdir
         except Exception as ex:
             print "Exception:",ex
             msg.append(str(ex))
@@ -328,12 +336,10 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 
         elif self.currentPage() is self.commit_page:
             self.button(self.FinishButton).setDisabled(True)
-            self.button(self.CancelButton).setDisabled(True)
             self.thread_monitor = ThreadMonitor()
             thread = threading.Thread (target= self.__do_backup__ , args=(self.thread_monitor,))
             thread.daemon = True
             thread.start()
-            self.button(self.CancelButton).setDisabled(False)
 
             counter = 0
             while not self.thread_monitor.is_finished():
@@ -341,9 +347,18 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                 time.sleep (0.1)
 
             if not self.thread_monitor.success:
-                self.progress_status.setText("Backup error.")
-                QMessageBox.warning (self, "Backup error!", "ERROR: {}".format(
-                    self.thread_monitor.error_msg))
+                if self.canceled:
+                    self.progress_status.setText("Backup aborted.")
+                    if self.tmpdir_to_remove:
+                        if QMessageBox.warning(None, "Backup aborted",
+                                "Do you want to remove temporary files from "
+                                "%s?" % self.tmpdir_to_remove,
+                                QMessageBox.Yes, QMessageBox.No) == QMessageBox.Yes:
+                            shutil.rmtree(self.tmpdir_to_remove)
+                else:
+                    self.progress_status.setText("Backup error.")
+                    QMessageBox.warning (self, "Backup error!", "ERROR: {}".format(
+                        self.thread_monitor.error_msg))
             else:
                 self.progress_bar.setValue(100)
                 self.progress_status.setText("Backup finished.")
@@ -358,6 +373,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                 detach_device(self, str(self.dev_combobox.itemData(
                     self.dev_combobox.currentIndex()).toString()))
                 self.dev_mount_path = None
+            self.button(self.CancelButton).setEnabled(False)
             self.button(self.FinishButton).setEnabled(True)
         signal.signal(signal.SIGCHLD, old_sigchld_handler)
 
@@ -365,22 +381,10 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         #cancell clicked while the backup is in progress.
         #calling kill on tar.
         if self.currentPage() is self.commit_page:
-            manager_pid = os.getpid()
-            archive_pid_cmd = ["ps" ,"--ppid", str(manager_pid)]
-
-            while not self.thread_monitor.is_finished():
-                archive_pid = subprocess.Popen(archive_pid_cmd, stdout = subprocess.PIPE)
-                output = archive_pid.stdout.readlines()
-
-                for l in output:
-                    if l.strip().endswith("tar"):
-                        os.kill(int(l.split(" ")[0]), signal.SIGTERM)
-                time.sleep(0.1)
-
-        if self.dev_mount_path != None:
-            umount_device(self.dev_mount_path)
-        self.done(0)
-
+            if backup.backup_cancel():
+                self.button(self.CancelButton).setDisabled(True)
+        else:
+            self.done(0)
 
     def has_selected_vms(self):
         return self.select_vms_widget.selected_list.count() > 0
