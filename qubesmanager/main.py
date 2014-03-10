@@ -689,6 +689,27 @@ class VmIncludeInBackupsItem(QTableWidgetItem):
         else:
             return self.vm.include_in_backups < other.vm.include_in_backups
 
+class VmLastBackupItem(QTableWidgetItem):
+    def __init__(self, vm):
+        super(VmLastBackupItem, self).__init__()
+        self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+
+        self.vm = vm
+        if self.vm.backup_timestamp:
+            self.setText(str(self.vm.backup_timestamp.date()))
+        else:
+            self.setText("")
+
+    def __lt__(self, other):
+        if self.vm.backup_timestamp == other.vm.backup_timestamp:
+            return self.vm.qid < other.vm.qid
+        elif not self.vm.backup_timestamp:
+            return False
+        elif not other.vm.backup_timestamp:
+            return True
+        else:
+            return self.vm.backup_timestamp < other.vm.backup_timestamp
+
 class VmRowInTable(object):
     cpu_graph_hue = 210
     mem_graph_hue = 120
@@ -751,6 +772,10 @@ class VmRowInTable(object):
         table.setItem(row_no, VmManagerWindow.columns_indices[
             'Backups'], self.include_in_backups_widget)
 
+        self.last_backup_widget = VmLastBackupItem(vm)
+        table.setItem(row_no, VmManagerWindow.columns_indices[
+            'Last backup'], self.last_backup_widget)
+
     def update(self, blk_visible = None, cpu_load = None, update_size_on_disk = False, rec_visible = None):
         self.info_widget.update_vm_state(self.vm, blk_visible, rec_visible)
         if cpu_load is not None:
@@ -809,6 +834,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         "Internal": 11,
                         "IP": 12,
                         "Backups": 13,
+                        "Last backup": 14,
     }
 
     def __init__(self, parent=None):
@@ -867,6 +893,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             .action_ip
         self.columns_actions[ self.columns_indices["Backups"] ] = self\
             .action_backups
+        self.columns_actions[ self.columns_indices["Last backup"] ] = self\
+            .action_last_backup
 
         self.visible_columns_count = len(self.columns_indices)
         self.table.setColumnHidden( self.columns_indices["NetVM"], True)
@@ -883,6 +911,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.action_ip.setChecked(False)
         self.table.setColumnHidden( self.columns_indices["Backups"], True)
         self.action_backups.setChecked(False)
+        self.table.setColumnHidden( self.columns_indices["Last backup"], True)
+        self.action_last_backup.setChecked(False)
 
         self.table.setColumnWidth(self.columns_indices["State"], 80)
         self.table.setColumnWidth(self.columns_indices["Name"], 150)
@@ -892,6 +922,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.table.setColumnWidth(self.columns_indices["Internal"], 60)
         self.table.setColumnWidth(self.columns_indices["IP"], 100)
         self.table.setColumnWidth(self.columns_indices["Backups"], 60)
+        self.table.setColumnWidth(self.columns_indices["Last backup"], 90)
 
         self.table.horizontalHeader().setResizeMode(QHeaderView.Fixed)
 
@@ -1883,6 +1914,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
     def on_action_backups_toggled(self, checked):
         self.showhide_column( self.columns_indices['Backups'], checked)
+
+    def on_action_last_backup_toggled(self, checked):
+        self.showhide_column( self.columns_indices['Last backup'], checked)
 
     def on_action_template_toggled(self, checked):
         self.showhide_column( self.columns_indices['Template'], checked)

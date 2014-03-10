@@ -118,7 +118,7 @@
        <number>10</number>
       </property>
       <property name="columnCount">
-       <number>14</number>
+       <number>15</number>
       </property>
       <attribute name="horizontalHeaderCascadingSectionResizes">
        <bool>false</bool>
@@ -237,6 +237,11 @@
         <string>Backups</string>
        </property>
       </column>
+      <column>
+       <property name="text">
+        <string>Last backup</string>
+       </property>
+      </column>
      </widget>
     </item>
    </layout>
@@ -279,6 +284,7 @@
     <addaction name="action_internal"/>
     <addaction name="action_ip"/>
     <addaction name="action_backups"/>
+    <addaction name="action_last_backup"/>
     <addaction name="separator"/>
     <addaction name="action_toolbar"/>
     <addaction name="action_menubar"/>
@@ -860,6 +866,17 @@
    </property>
    <property name="text">
     <string>Include in backups</string>
+   </property>
+  </action>
+  <action name="action_last_backup">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Last backup</string>
    </property>
   </action>
  </widget>
