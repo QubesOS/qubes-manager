@@ -2121,13 +2121,16 @@ class QubesBlockDevicesManager():
             else: #new device
                 self.current_blk[b] = blk[b]
                 self.current_attached[b] = att
-                self.msg.append("Attached new device: {0}".format(blk[b]['device']))
+                self.msg.append("Attached new device to <b>{}</b>: {}".format(
+                    blk[b]['vm'], blk[b]['device']))
 
         to_delete = []
         for b in self.current_blk: #remove devices that are not there anymore
             if b not in blk:
                 to_delete.append(b)
-                self.msg.append("Detached device: {0}".format(self.current_blk[b]['device']))
+                self.msg.append("Detached device from <b>{}</b>: {}".format(
+                    self.current_blk[b]['vm'],
+                    self.current_blk[b]['device']))
 
         for d in to_delete:
             del self.current_blk[d]
