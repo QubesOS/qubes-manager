@@ -661,6 +661,33 @@ class VmSizeOnDiskItem (QTableWidgetItem):
         else:
             return self.value < other.value
 
+class VmIPItem(QTableWidgetItem):
+    def __init__(self, vm):
+        super(VmIPItem, self).__init__()
+        self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+
+        self.ip = vm.ip
+        if self.ip:
+            self.setText(self.ip)
+        else:
+            self.setText("n/a")
+
+class VmIncludeInBackupsItem(QTableWidgetItem):
+    def __init__(self, vm):
+        super(VmIncludeInBackupsItem, self).__init__()
+        self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+
+        self.vm = vm
+        if self.vm.include_in_backups:
+            self.setText("Yes")
+        else:
+            self.setText("")
+
+    def __lt__(self, other):
+        if self.vm.include_in_backups == other.vm.include_in_backups:
+            return self.vm.qid < other.vm.qid
+        else:
+            return self.vm.include_in_backups < other.vm.include_in_backups
 
 class VmRowInTable(object):
     cpu_graph_hue = 210
@@ -717,6 +744,13 @@ class VmRowInTable(object):
         self.internal_widget = VmInternalItem(vm)
         table.setItem(row_no, VmManagerWindow.columns_indices['Internal'], self.internal_widget)
 
+        self.ip_widget = VmIPItem(vm)
+        table.setItem(row_no, VmManagerWindow.columns_indices['IP'], self.ip_widget)
+
+        self.include_in_backups_widget = VmIncludeInBackupsItem(vm)
+        table.setItem(row_no, VmManagerWindow.columns_indices[
+            'Backups'], self.include_in_backups_widget)
+
     def update(self, blk_visible = None, cpu_load = None, update_size_on_disk = False, rec_visible = None):
         self.info_widget.update_vm_state(self.vm, blk_visible, rec_visible)
         if cpu_load is not None:
@@ -772,9 +806,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         "MEM": 8,
                         "MEM Graph": 9,
                         "Size": 10,
-                        "Internal": 11,}
-
-
+                        "Internal": 11,
+                        "IP": 12,
+                        "Backups": 13,
+    }
 
     def __init__(self, parent=None):
         super(VmManagerWindow, self).__init__()
@@ -828,6 +863,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.columns_actions[ self.columns_indices["MEM Graph"] ] = self.action_mem_graph
         self.columns_actions[ self.columns_indices["Size"] ] = self.action_size_on_disk
         self.columns_actions[ self.columns_indices["Internal"] ] = self.action_internal
+        self.columns_actions[ self.columns_indices["IP"] ] = self\
+            .action_ip
+        self.columns_actions[ self.columns_indices["Backups"] ] = self\
+            .action_backups
 
         self.visible_columns_count = len(self.columns_indices)
         self.table.setColumnHidden( self.columns_indices["NetVM"], True)
@@ -840,6 +879,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.action_size_on_disk.setChecked(False)
         self.table.setColumnHidden( self.columns_indices["Internal"], True)
         self.action_internal.setChecked(False)
+        self.table.setColumnHidden( self.columns_indices["IP"], True)
+        self.action_ip.setChecked(False)
+        self.table.setColumnHidden( self.columns_indices["Backups"], True)
+        self.action_backups.setChecked(False)
 
         self.table.setColumnWidth(self.columns_indices["State"], 80)
         self.table.setColumnWidth(self.columns_indices["Name"], 150)
@@ -847,6 +890,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.table.setColumnWidth(self.columns_indices["Type"], 40)
         self.table.setColumnWidth(self.columns_indices["Size"], 100)
         self.table.setColumnWidth(self.columns_indices["Internal"], 60)
+        self.table.setColumnWidth(self.columns_indices["IP"], 100)
+        self.table.setColumnWidth(self.columns_indices["Backups"], 60)
 
         self.table.horizontalHeader().setResizeMode(QHeaderView.Fixed)
 
@@ -1832,6 +1877,12 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
     def on_action_internal_toggled(self, checked):
         self.showhide_column( self.columns_indices['Internal'], checked)
+
+    def on_action_ip_toggled(self, checked):
+        self.showhide_column( self.columns_indices['IP'], checked)
+
+    def on_action_backups_toggled(self, checked):
+        self.showhide_column( self.columns_indices['Backups'], checked)
 
     def on_action_template_toggled(self, checked):
         self.showhide_column( self.columns_indices['Template'], checked)

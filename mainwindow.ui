@@ -117,6 +117,9 @@
       <property name="rowCount">
        <number>10</number>
       </property>
+      <property name="columnCount">
+       <number>14</number>
+      </property>
       <attribute name="horizontalHeaderCascadingSectionResizes">
        <bool>false</bool>
       </attribute>
@@ -224,6 +227,16 @@
         <string>Internal</string>
        </property>
       </column>
+      <column>
+       <property name="text">
+        <string>IP</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Backups</string>
+       </property>
+      </column>
      </widget>
     </item>
    </layout>
@@ -264,6 +277,8 @@
     <addaction name="action_mem_graph"/>
     <addaction name="action_size_on_disk"/>
     <addaction name="action_internal"/>
+    <addaction name="action_ip"/>
+    <addaction name="action_backups"/>
     <addaction name="separator"/>
     <addaction name="action_toolbar"/>
     <addaction name="action_menubar"/>
@@ -823,6 +838,28 @@
    </property>
    <property name="toolTip">
     <string>Start VM for Window Tools installation</string>
+   </property>
+  </action>
+  <action name="action_ip">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>IP</string>
+   </property>
+  </action>
+  <action name="action_backups">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Include in backups</string>
    </property>
   </action>
  </widget>
