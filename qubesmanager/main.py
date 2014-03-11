@@ -98,13 +98,15 @@ class QubesManagerFileWatcher(ProcessEvent):
             src_info_file = open (qubes_clipboard_info_file, 'r')
             src_vmname = src_info_file.readline().strip('\n')
             if src_vmname == "":
-                trayIcon.showMessage("Qubes Clipboard has been copied to the VM and wiped.\n"\
+                trayIcon.showMessage(
+                    "Qubes Clipboard has been copied to the VM and wiped.<i/>\n"
                     "<small>Trigger a paste operation (e.g. Ctrl-v) to insert it into an application.</small>",
-                   msecs=3000)
+                    msecs=3000)
             else:
-                trayIcon.showMessage("Qubes Clipboard fetched from VM: <b>'{0}'</b>\n"\
-                        "<small>Press Ctrl-Shift-v to copy this clipboard onto dest VM's clipboard.</small>".format(src_vmname),
-                        msecs=3000)
+                trayIcon.showMessage(
+                    "Qubes Clipboard fetched from VM: <b>'{0}'</b>\n"
+                    "<small>Press Ctrl-Shift-v to copy this clipboard onto dest VM's clipboard.</small>".format(src_vmname),
+                    msecs=3000)
             src_info_file.close()
     def process_IN_CREATE(self, event):
         if event.name == os.path.basename(qubes_clipboard_info_file):
