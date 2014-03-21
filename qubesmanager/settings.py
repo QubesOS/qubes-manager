@@ -306,6 +306,12 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.max_priv_storage.setMinimum(self.priv_img_size)
         self.max_priv_storage.setValue(self.priv_img_size)
 
+        self.root_img_size = self.vm.get_root_img_sz()/1024/1024
+        self.root_resize.setValue(self.root_img_size)
+        self.root_resize.setMinimum(self.root_img_size)
+        self.root_resize.setEnabled(hasattr(self.vm, 'resize_root_img') and
+            not self.vm.template)
+        self.root_resize_label.setEnabled(self.root_resize.isEnabled())
 
     def __apply_basic_tab__(self):
         msg = []
@@ -398,6 +404,14 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             except Exception as ex:
                 msg.append(str(ex))
 
+        #max sys storage
+        sys_size = self.root_resize.value()
+        if self.root_img_size != sys_size:
+            try:
+                self.vm.resize_root_img(sys_size*1024*1024)
+                self.anything_changed = True
+            except Exception as ex:
+                msg.append(str(ex))
 
         return msg
 

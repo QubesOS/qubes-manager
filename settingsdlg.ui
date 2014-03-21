@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>694</width>
+    <width>704</width>
     <height>483</height>
    </rect>
   </property>
@@ -183,13 +183,22 @@
             <string>Disk storage</string>
            </property>
            <layout class="QGridLayout" name="gridLayout_3">
-            <item row="0" column="0">
-             <widget class="QLabel" name="label_3">
-              <property name="text">
-               <string>Private storage max. size:</string>
+            <item row="1" column="1">
+             <widget class="QSpinBox" name="root_resize">
+              <property name="enabled">
+               <bool>true</bool>
               </property>
-              <property name="buddy">
-               <cstring>max_priv_storage</cstring>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+              <property name="suffix">
+               <string>MB</string>
+              </property>
+              <property name="maximum">
+               <number>1048576</number>
+              </property>
+              <property name="singleStep">
+               <number>1024</number>
               </property>
              </widget>
             </item>
@@ -200,6 +209,9 @@
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+              <property name="suffix">
+               <string>MB</string>
               </property>
               <property name="minimum">
                <number>0</number>
@@ -215,10 +227,23 @@
               </property>
              </widget>
             </item>
-            <item row="0" column="2">
-             <widget class="QLabel" name="label_5">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_3">
               <property name="text">
-               <string>MB</string>
+               <string>Private storage max. size:</string>
+              </property>
+              <property name="buddy">
+               <cstring>max_priv_storage</cstring>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="root_resize_label">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="text">
+               <string>System storage max. size:</string>
               </property>
              </widget>
             </item>
