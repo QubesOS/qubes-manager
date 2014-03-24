@@ -1196,6 +1196,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             for vm in self.vms_list:
                 state = vm.get_power_state()
                 if vm.last_power_state != state:
+                    if state == "Running" and \
+                            self.vm_errors.get(vm.qid,  "")\
+                            .startswith("Error starting VM:"):
+                        self.clear_error(vm.qid)
                     prev_running = vm.last_running
                     vm.last_power_state = state
                     vm.last_running = (state in ["Running", "Transient"])
@@ -1216,6 +1220,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                     # startup
                     if state == "Running" and not vm.qubes_manager_state[QMVmState.AudioRecAvailable]:
                         self.update_audio_rec_info(vm)
+                if self.vm_errors.get(vm.qid, "") == \
+                        "Error starting VM: Cannot execute qrexec-daemon!" \
+                        and vm.is_qrexec_running():
+                    self.clear_error(vm.qid)
 
             if self.screen_changed == True:
                 reload_table = True
