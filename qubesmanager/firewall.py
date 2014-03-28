@@ -128,59 +128,22 @@ class NewFwRuleDlg (QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
         if checked:
             self.serviceComboBox.setEnabled(False)
 
-
-class QubesFirewallRuleItem(object):
-    def __init__(self, address = str(), netmask = 32, portBegin = 0, portEnd = None, protocol = "any"):
-        self.__address = address
-        self.__netmask = netmask
-        self.__portBegin = portBegin
-        self.__portEnd = portEnd
-        self.__protocol = protocol
-
-    @property
-    def address(self):
-        return self.__address
-
-    @property
-    def netmask(self):
-        return self.__netmask
-
-    @property
-    def portBegin(self):
-        return self.__portBegin
-
-    @property
-    def portEnd(self):
-        return self.__portEnd
-
-    @property
-    def protocol(self):
-        return self.__protocol
-
-    def hasChildren(self):
-        return False
-
-
-
 class QubesFirewallRulesModel(QAbstractItemModel):
     def __init__(self, parent=None):
         QAbstractItemModel.__init__(self, parent)
 
         self.__columnValues = {
-                0: lambda x: "*" if self.children[x].address == "0.0.0.0" and self.children[x].netmask == 0 \
-                        else self.children[x].address + ("" if self.children[x].netmask == 32 \
-                        else " /{0}".format(self.children[x].netmask)),
-                1: lambda x: "any" if self.children[x].portBegin == 0 \
-                        else "{0}-{1}".format(self.children[x].portBegin, self.children[x].portEnd) if self.children[x].portEnd is not None \
-                        else self.get_service_name(self.children[x].portBegin),
-                2: lambda x: self.children[x].protocol,
-        }
-        self.__columnNames = {
-                0: "Address",
-                1: "Service",
-                2: "Protocol",
-        }
-
+            0: lambda x: "*" if self.children[x]["address"] == "0.0.0.0" and
+                                self.children[x]["netmask"] == 0  else
+            self.children[x]["address"] + ("" if self.children[x][ "netmask"] == 32  else
+                                           " /{0}".format(self.children[x][
+                                               "netmask"])),
+            1: lambda x: "any" if self.children[x]["portBegin"] == 0  else
+            "{0}-{1}".format(self.children[x]["portBegin"], self.children[x][
+                "portEnd"]) if self.children[x]["portEnd"] is not None  else \
+                self.get_service_name(self.children[x]["portBegin"]),
+            2: lambda x: self.children[x]["proto"], }
+        self.__columnNames = {0: "Address", 1: "Service", 2: "Protocol", }
         self.__services = list()
         pattern = re.compile("(?P<name>[a-z][a-z0-9-]+)\s+(?P<port>[0-9]+)/(?P<protocol>[a-z]+)", re.IGNORECASE)
         f = open('/etc/services', 'r')
@@ -198,11 +161,14 @@ class QubesFirewallRulesModel(QAbstractItemModel):
 
         rev = (order == Qt.AscendingOrder)
         if idx==0:
-            self.children.sort(key=attrgetter('address'), reverse = rev)
+            self.children.sort(key=lambda x: x['address'], reverse = rev)
         if idx==1:
-            self.children.sort(key=lambda x: self.get_service_name(x.portBegin) if x.portEnd == None else x.portBegin, reverse = rev)
+            self.children.sort(key=lambda x: self.get_service_name(x[
+                "portBegin"]) if x["portEnd"] == None else x["portBegin"],
+                               reverse = rev)
         if idx==2:
-            self.children.sort(key=attrgetter('protocol'), reverse = rev)
+            self.children.sort(key=lambda x: x['proto'], reverse
+            = rev)
         index1 = self.createIndex(0, 0)
         index2 = self.createIndex(len(self)-1, len(self.__columnValues)-1)
         self.dataChanged.emit(index1, index2)
@@ -236,9 +202,7 @@ class QubesFirewallRulesModel(QAbstractItemModel):
         self.allowYumProxy = conf["allowYumProxy"]
 
         for rule in conf["rules"]:
-            self.appendChild(QubesFirewallRuleItem(
-                rule["address"], rule["netmask"], rule["portBegin"], rule["portEnd"], rule["proto"]
-                ))
+            self.appendChild(rule)
 
     def get_vm_name(self):
         return self.__vm.name
@@ -257,15 +221,7 @@ class QubesFirewallRulesModel(QAbstractItemModel):
             }
 
         for rule in self.children:
-            conf["rules"].append(
-                    {
-                        "address": rule.address,
-                        "netmask": rule.netmask,
-                        "portBegin": rule.portBegin,
-                        "portEnd": rule.portEnd,
-                        "proto": rule.protocol,
-                    }
-            )
+            conf["rules"].append(rule)
 
         if self.fw_changed:
             self.__vm.write_firewall_conf(conf)
@@ -295,7 +251,7 @@ class QubesFirewallRulesModel(QAbstractItemModel):
     def hasChildren(self, index=QModelIndex()):
         parentItem = index.internalPointer()
         if parentItem is not None:
-            return parentItem.hasChildren()
+            return False
         else:
             return True
 
@@ -323,6 +279,7 @@ class QubesFirewallRulesModel(QAbstractItemModel):
         self.endInsertRows()
         index = self.createIndex(row, 0, child)
         self.dataChanged.emit(index, index)
+        self.fw_changed = True
 
     def removeChild(self, i):
         if i >= len(self):
@@ -333,11 +290,13 @@ class QubesFirewallRulesModel(QAbstractItemModel):
         self.endRemoveRows()
         index = self.createIndex(i, 0)
         self.dataChanged.emit(index, index)
+        self.fw_changed = True
 
     def setChild(self, i, child):
         self.children[i] = child
         index = self.createIndex(i, 0, child)
         self.dataChanged.emit(index, index)
+        self.fw_changed = True
 
     def clearChildren(self):
         self.__children = list()

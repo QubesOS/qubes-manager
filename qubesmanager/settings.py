@@ -818,7 +818,6 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
     def delete_rule_button_pressed(self):
         for i in set([index.row() for index in self.rulesTreeView.selectedIndexes()]):
             self.fw_model.removeChild(i)
-            self.fw_model.fw_changed = True
 
     def run_rule_dialog(self, dialog, row = None):
         if dialog.exec_():
@@ -846,6 +845,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                     protocol = "tcp"
                 elif dialog.udp_radio.isChecked():
                     protocol = "udp"
+                else:
+                    protocol = "any"
 
                 try:
                     range = service.split("-", 1)
@@ -861,13 +862,16 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                 if port2 is not None and port2 <= port:
                     QMessageBox.warning(None, "Invalid service ports range", "Port {0} is lower than port {1}.".format(port2, port))
                 else:
-                    item = QubesFirewallRuleItem(address, netmask, port, port2, protocol)
+                    item = {"address": address,
+                            "netmask": netmask,
+                            "portBegin": port,
+                            "portEnd": port2,
+                            "proto": protocol,
+                    }
                     if row is not None:
                         self.fw_model.setChild(row, item)
-                        self.fw_model.fw_changed = True
                     else:
                         self.fw_model.appendChild(item)
-                        self.fw_model.fw_changed = True
             else:
                 QMessageBox.warning(None, "Invalid service name", "Service '{0} is unknown.".format(service))
 
