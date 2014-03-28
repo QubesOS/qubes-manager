@@ -26,6 +26,7 @@ import xml.etree.ElementTree
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
+import datetime
 
 from qubes.qubes import QubesVmCollection
 from qubes.qubes import QubesException
@@ -200,17 +201,23 @@ class QubesFirewallRulesModel(QAbstractItemModel):
         self.allowDns = conf["allowDns"]
         self.allowIcmp = conf["allowIcmp"]
         self.allowYumProxy = conf["allowYumProxy"]
+        self.tempFullAccessExpireTime = 0
 
         for rule in conf["rules"]:
             self.appendChild(rule)
+            if "expire" in rule and rule["address"] == "0.0.0.0":
+                self.tempFullAccessExpireTime = rule["expire"]
 
     def get_vm_name(self):
         return self.__vm.name
 
-    def apply_rules(self, allow, dns, icmp, yumproxy):
+    def apply_rules(self, allow, dns, icmp, yumproxy, tempFullAccess=False,
+                    tempFullAccessTime=None):
         assert self.__vm is not None
 
-        if(self.allow != allow or self.allowDns != dns or self.allowIcmp != icmp or self.allowYumProxy != yumproxy):
+        if self.allow != allow or self.allowDns != dns or \
+                self.allowIcmp != icmp or self.allowYumProxy != yumproxy or \
+                (self.tempFullAccessExpireTime != 0) != tempFullAccess:
             self.fw_changed = True
 
         conf = { "allow": allow,
@@ -221,7 +228,24 @@ class QubesFirewallRulesModel(QAbstractItemModel):
             }
 
         for rule in self.children:
+            if "expire" in rule and rule["address"] == "0.0.0.0" and \
+                    rule["netmask"] == 0 and rule["proto"] == "any":
+                # rule already present, update its time
+                if tempFullAccess:
+                    rule["expire"] = \
+                        int(datetime.datetime.now().strftime("%s")) + \
+                        tempFullAccessTime*60
+                tempFullAccess = False
             conf["rules"].append(rule)
+
+        if tempFullAccess and not allow:
+            conf["rules"].append({"address": "0.0.0.0",
+                                  "netmask": 0,
+                                  "proto": "any",
+                                  "expire": int(
+                                      datetime.datetime.now().strftime("%s"))+\
+                                        tempFullAccessTime*60
+                                  })
 
         if self.fw_changed:
             self.__vm.write_firewall_conf(conf)

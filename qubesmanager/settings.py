@@ -102,6 +102,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.newRuleButton.clicked.connect(self.new_rule_button_pressed)
             self.editRuleButton.clicked.connect(self.edit_rule_button_pressed)
             self.deleteRuleButton.clicked.connect(self.delete_rule_button_pressed)
+            self.policyDenyRadioButton.clicked.connect(self.policy_changed)
+            self.policyAllowRadioButton.clicked.connect(self.policy_changed)
 
         ####### devices tab
         self.__init_devices_tab__()
@@ -179,7 +181,9 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                 self.fw_model.apply_rules(self.policyAllowRadioButton.isChecked(),
                         self.dnsCheckBox.isChecked(),
                         self.icmpCheckBox.isChecked(),
-                        self.yumproxyCheckBox.isChecked())
+                        self.yumproxyCheckBox.isChecked(),
+                        self.tempFullAccess.isChecked(),
+                        self.tempFullAccessTime.value())
         except Exception as ex:
             ret += ["Firewall tab:", str(ex)]
 
@@ -782,10 +786,19 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.dnsCheckBox.setChecked(model.allowDns)
         self.icmpCheckBox.setChecked(model.allowIcmp)
         self.yumproxyCheckBox.setChecked(model.allowYumProxy)
+        if model.tempFullAccessExpireTime:
+            self.tempFullAccess.setChecked(True)
+            self.tempFullAccessTime.setValue(
+                (model.tempFullAccessExpireTime -
+                int(datetime.datetime.now().strftime("%s")))/60)
 
     def set_allow(self, allow):
         self.policyAllowRadioButton.setChecked(allow)
         self.policyDenyRadioButton.setChecked(not allow)
+        self.policy_changed(allow)
+
+    def policy_changed(self, checked):
+        self.tempFullAccessWidget.setEnabled(self.policyDenyRadioButton.isChecked())
 
     def new_rule_button_pressed(self):
         dialog = NewFwRuleDlg()
