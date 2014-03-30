@@ -37,6 +37,8 @@ cp qubesmanager/mount_for_backup.sh $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 
 mkdir -p $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager/
 cp qubesmanager/main.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/block.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/table_widgets.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/appmenu_select.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/backup.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/backup_utils.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
@@ -90,6 +92,12 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitearch}/qubesmanager/main.py
 %{python_sitearch}/qubesmanager/main.pyc
 %{python_sitearch}/qubesmanager/main.pyo
+%{python_sitearch}/qubesmanager/block.py
+%{python_sitearch}/qubesmanager/block.pyc
+%{python_sitearch}/qubesmanager/block.pyo
+%{python_sitearch}/qubesmanager/table_widgets.py
+%{python_sitearch}/qubesmanager/table_widgets.pyc
+%{python_sitearch}/qubesmanager/table_widgets.pyo
 %{python_sitearch}/qubesmanager/appmenu_select.py
 %{python_sitearch}/qubesmanager/appmenu_select.pyc
 %{python_sitearch}/qubesmanager/appmenu_select.pyo

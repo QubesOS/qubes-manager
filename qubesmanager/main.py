@@ -39,6 +39,13 @@ from qubes.qubes import QubesVmLabels
 from qubes.qubes import dry_run
 from qubes.qubes import QubesDaemonPidfile
 from qubes.qubes import QubesHost
+import table_widgets
+from block import QubesBlockDevicesManager
+from table_widgets import VmTypeWidget, VmLabelWidget, VmNameItem, \
+    VmInfoWidget, VmTemplateItem, VmNetvmItem, VmUsageBarWidget, ChartWidget, \
+    VmSizeOnDiskItem, VmInternalItem, VmIPItem, VmIncludeInBackupsItem, \
+    VmLastBackupItem
+
 try:
     from qubes.qubes import QubesHVm
 except ImportError:
@@ -62,7 +69,6 @@ from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, Pro
 import subprocess
 import time
 from datetime import datetime,timedelta
-qubes_dom0_updates_stat_file = '/var/lib/qubes/updates/dom0-updates-available'
 qubes_clipboard_info_file = "/var/run/qubes/qubes-clipboard.bin.source"
 
 update_suggestion_interval = 14 # 14 days
@@ -72,14 +78,11 @@ dbus_interface = 'org.qubesos.QubesManager'
 system_bus = None
 session_bus = None
 
-power_order = Qt.DescendingOrder
-update_order = Qt.AscendingOrder
 
 class QMVmState:
     ErrorMsg = 1
     AudioRecAvailable = 2
     AudioRecAllowed = 3
-
 
 class QubesManagerFileWatcher(ProcessEvent):
     def __init__ (self, update_func):
@@ -115,602 +118,6 @@ class QubesManagerFileWatcher(ProcessEvent):
             wm.add_watch(qubes_clipboard_info_file, EventsCodes.OP_FLAGS.get('IN_CLOSE_WRITE'))
 
 
-class VmIconWidget (QWidget):
-    def __init__(self, icon_path, enabled=True, size_multiplier=0.7, tooltip = None, parent=None):
-        super(VmIconWidget, self).__init__(parent)
-
-        self.label_icon = QLabel()
-        icon = QIcon (icon_path)
-        icon_sz = QSize (VmManagerWindow.row_height * size_multiplier, VmManagerWindow.row_height * size_multiplier)
-        icon_pixmap = icon.pixmap(icon_sz, QIcon.Disabled if not enabled else QIcon.Normal)
-        self.label_icon.setPixmap (icon_pixmap)
-        self.label_icon.setFixedSize (icon_sz)
-        if tooltip != None:
-            self.label_icon.setToolTip(tooltip)
-
-        layout = QHBoxLayout()
-        layout.addWidget(self.label_icon)
-        layout.setContentsMargins(0,0,0,0)
-        self.setLayout(layout)
-
-    def setToolTip(self, tooltip):
-        if tooltip is not None:
-            self.label_icon.setToolTip(tooltip)
-        else:
-            self.label_icon.setToolTip('')
-
-class VmTypeWidget(VmIconWidget):
-
-    class VmTypeItem(QTableWidgetItem):
-        def __init__(self, value, vm):
-            super(VmTypeWidget.VmTypeItem, self).__init__()
-            self.value = value
-            self.vm = vm
-
-        def set_value(self, value):
-            self.value = value
-
-        def __lt__(self, other):
-            if self.value == other.value:
-                return self.vm.qid < other.vm.qid
-            else:
-                return self.value < other.value
-
-    def __init__(self, vm, parent=None):
-        (icon_path, tooltip) = self.get_vm_icon(vm)
-        super (VmTypeWidget, self).__init__(icon_path, True, 0.8, tooltip, parent)
-        self.vm = vm
-        self.tableItem = self.VmTypeItem(self.value, vm)
-
-    def get_vm_icon(self, vm):
-        if vm.qid == 0:
-            self.value = 0
-            return (":/dom0.png", "Dom0")
-        elif vm.is_netvm() and not vm.is_proxyvm():
-            self.value = 1
-            return (":/netvm.png", "NetVM")
-        elif vm.is_proxyvm():
-            self.value = 2
-            return (":/proxyvm.png", "ProxyVM")
-        elif vm.is_appvm() and vm.template is None:
-            self.value = 4
-            return (":/standalonevm.png", "StandaloneVM")
-        elif vm.is_template():
-            self.value = 3
-            return (":/templatevm.png", "TemplateVM")
-        elif vm.is_appvm() or vm.is_disposablevm():
-            self.value = 5 + vm.label.index
-            return (":/appvm.png", "AppVM")
-
-
-class VmLabelWidget(VmIconWidget):
-
-    class VmLabelItem(QTableWidgetItem):
-        def __init__(self, value, vm):
-            super(VmLabelWidget.VmLabelItem, self).__init__()
-            self.value = value
-            self.vm = vm
-
-        def set_value(self, value):
-            self.value = value
-
-        def __lt__(self, other):
-            if self.value == other.value:
-                return self.vm.qid < other.vm.qid
-            else:
-                return self.value < other.value
-
-    def __init__(self, vm, parent=None):
-        icon_path = self.get_vm_icon_path(vm)
-        super (VmLabelWidget, self).__init__(icon_path, True, 0.8, None, parent)
-        self.vm = vm
-        self.tableItem = self.VmLabelItem(self.value, vm)
-
-    def get_vm_icon_path(self, vm):
-        if vm.qid == 0:
-            self.value = 100
-            return ":/off.png"
-        else:
-            self.value = vm.label.index
-            return vm.label.icon_path
-
-
-
-class VmNameItem (QTableWidgetItem):
-    def __init__(self, vm):
-        super(VmNameItem, self).__init__()
-        self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
-        self.setText(vm.name)
-        self.setTextAlignment(Qt.AlignVCenter)
-        self.qid = vm.qid
-
-
-class VmStatusIcon(QLabel):
-    def __init__(self, vm, parent=None):
-        super (VmStatusIcon, self).__init__(parent)
-        self.vm = vm
-        self.set_on_icon()
-        self.previous_power_state = vm.last_power_state
-
-    def update(self):
-        if self.previous_power_state != self.vm.last_power_state:
-            self.set_on_icon()
-            self.previous_power_state = self.vm.last_power_state
-
-    def set_on_icon(self):
-        if self.vm.last_power_state == "Running":
-            icon = QIcon (":/on.png")
-        elif self.vm.last_power_state in ["Paused"]:
-            icon = QIcon (":/paused.png")
-        elif self.vm.last_power_state in ["Transient", "Halting", "Dying"]:
-            icon = QIcon (":/transient.png")
-        else:
-            icon = QIcon (":/off.png")
-
-        icon_sz = QSize (VmManagerWindow.row_height * 0.5, VmManagerWindow.row_height *0.5)
-        icon_pixmap = icon.pixmap(icon_sz)
-        self.setPixmap (icon_pixmap)
-        self.setFixedSize (icon_sz)
-
-
-
-class VmInfoWidget (QWidget):
-
-    class VmInfoItem (QTableWidgetItem):
-        def __init__(self, upd_info_item, vm):
-            super(VmInfoWidget.VmInfoItem, self).__init__()
-            self.upd_info_item = upd_info_item
-            self.vm = vm
-
-        def __lt__(self, other):
-            self_val = self.upd_info_item.value
-            other_val = other.upd_info_item.value
-            if self.tableWidget().horizontalHeader().sortIndicatorOrder() == update_order:
-                # the result will be sorted by upd, sorting order: Ascending
-                self_val += 1 if self.vm.is_running() else 0
-                other_val += 1 if other.vm.is_running() else 0
-                if self_val == other_val:
-                    return self.vm.qid < other.vm.qid
-                else:
-                    return self_val > other_val
-            elif self.tableWidget().horizontalHeader().sortIndicatorOrder() == power_order:
-                #the result will be sorted by power state, sorting order: Descending
-                self_val = -(self_val/10 + 10*(1 if self.vm.is_running() else 0))
-                other_val = -(other_val/10 + 10*(1 if other.vm.is_running() else 0))
-                if self_val == other_val:
-                    return self.vm.qid < other.vm.qid
-                else:
-                    return self_val > other_val
-            else:
-                #it would be strange if this happened
-                return
-
-    def __init__(self, vm, parent = None):
-        super (VmInfoWidget, self).__init__(parent)
-        self.vm = vm
-        layout = QHBoxLayout ()
-
-        self.on_icon = VmStatusIcon(vm)
-        self.upd_info = VmUpdateInfoWidget(vm, show_text=False)
-        self.error_icon = VmIconWidget(":/warning.png")
-        self.blk_icon = VmIconWidget(":/mount.png")
-        self.rec_icon = VmIconWidget(":/mic.png")
-
-        layout.addWidget(self.on_icon)
-        layout.addWidget(self.upd_info)
-        layout.addWidget(self.error_icon)
-        layout.addItem(QSpacerItem(0, 10, QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding))
-        layout.addWidget(self.blk_icon)
-        layout.addWidget(self.rec_icon)
-
-        layout.setContentsMargins(5,0,5,0)
-        self.setLayout(layout)
-
-        self.rec_icon.setVisible(False)
-        self.blk_icon.setVisible(False)
-        self.error_icon.setVisible(False)
-
-        self.tableItem = self.VmInfoItem(self.upd_info.tableItem, vm)
-
-    def update_vm_state(self, vm, blk_visible, rec_visible=None):
-        self.on_icon.update()
-        self.upd_info.update_outdated(vm)
-        if blk_visible != None:
-            self.blk_icon.setVisible(blk_visible)
-        if rec_visible != None:
-            self.rec_icon.setVisible(rec_visible)
-        self.error_icon.setToolTip(vm.qubes_manager_state[QMVmState.ErrorMsg])
-        self.error_icon.setVisible(vm.qubes_manager_state[QMVmState.ErrorMsg] is not None)
-
-
-class VmTemplateItem (QTableWidgetItem):
-    def __init__(self, vm):
-        super(VmTemplateItem, self).__init__()
-        self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
-        self.vm = vm
-
-        if vm.template is not None:
-            self.setText(vm.template.name)
-        else:
-            font = QFont()
-            font.setStyle(QFont.StyleItalic)
-            self.setFont(font)
-            self.setTextColor(QColor("gray"))
-
-            if vm.is_appvm(): # and vm.template is None
-                self.setText("StandaloneVM")
-            elif vm.is_template():
-                self.setText("TemplateVM")
-            elif vm.qid == 0:
-                self.setText("AdminVM")
-            elif vm.is_netvm():
-                self.setText("NetVM")
-            else:
-                self.setText("---")
-
-        self.setTextAlignment(Qt.AlignVCenter)
-
-    def __lt__(self, other):
-        if self.text() == other.text():
-            return self.vm.qid < other.vm.qid
-        else:
-            return super(VmTemplateItem, self).__lt__(other)
-
-
-
-
-class VmNetvmItem (QTableWidgetItem):
-    def __init__(self, vm):
-        super(VmNetvmItem, self).__init__()
-        self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
-        self.vm = vm
-
-        if vm.is_netvm() and not vm.is_proxyvm():
-            self.setText("n/a")
-        elif vm.netvm is not None:
-            self.setText(vm.netvm.name)
-        else:
-            self.setText("---")
-
-        self.setTextAlignment(Qt.AlignVCenter)
-
-    def __lt__(self, other):
-        if self.text() == other.text():
-            return self.vm.qid < other.vm.qid
-        else:
-            return super(VmNetvmItem, self).__lt__(other)
-
-class VmInternalItem(QTableWidgetItem):
-    def __init__(self, vm):
-        super(VmInternalItem, self).__init__()
-        self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
-
-        self.internal = vm.internal
-
-        if self.internal:
-            self.setText("Yes")
-        else:
-            self.setText("")
-
-class VmUsageBarWidget (QWidget):
-
-    class VmUsageBarItem (QTableWidgetItem):
-        def __init__(self, value, vm):
-            super(VmUsageBarWidget.VmUsageBarItem, self).__init__()
-            self.value = value
-            self.vm = vm
-
-        def set_value(self, value):
-            self.value = value
-
-        def __lt__(self, other):
-            if self.value == other.value:
-                return self.vm.qid < other.vm.qid
-            else:
-                return int(self.value) < int(other.value)
-
-    def __init__(self, min, max, format, update_func, vm, load, hue=210, parent = None):
-        super (VmUsageBarWidget, self).__init__(parent)
-
-
-        self.min = min
-        self.max = max
-        self.update_func = update_func
-        self.value = min
-
-        self.widget = QProgressBar()
-        self.widget.setMinimum(min)
-        self.widget.setMaximum(max)
-        self.widget.setFormat(format)
-
-        self.widget.setStyleSheet(
-                                    "QProgressBar:horizontal{" +\
-                                        "border: 1px solid hsv({0}, 100, 250);".format(hue) +\
-                                        "border-radius: 4px;\
-                                        background: white;\
-                                        text-align: center;\
-                                    }\
-                                    QProgressBar::chunk:horizontal {\
-                                        background: qlineargradient(x1: 0, y1: 0.5, x2: 1, y2: 0.5, " +\
-                                        "stop: 0 hsv({0}, 170, 207),".format(hue) +
-                                        " stop: 1 white); \
-                                    }"
-            )
-
-        layout = QHBoxLayout()
-        layout.addWidget(self.widget)
-
-        self.setLayout(layout)
-        self.tableItem = self.VmUsageBarItem(min, vm)
-
-        self.update_load(vm, load)
-
-
-
-    def update_load(self, vm, load):
-        self.value = self.update_func(vm, load)
-        self.widget.setValue(self.value)
-        self.tableItem.set_value(self.value)
-
-class ChartWidget (QWidget):
-
-    class ChartItem (QTableWidgetItem):
-        def __init__(self, value, vm):
-            super(ChartWidget.ChartItem, self).__init__()
-            self.value = value
-            self.vm = vm
-
-        def set_value(self, value):
-            self.value = value
-
-        def __lt__(self, other):
-            if self.value == other.value:
-                return self.vm.qid < other.vm.qid
-            else:
-                return self.value < other.value
-
-    def __init__(self, vm, update_func, hue, load = 0, parent = None):
-        super (ChartWidget, self).__init__(parent)
-        self.update_func = update_func
-        self.hue = hue
-        if hue < 0 or hue > 255:
-            self.hue = 255
-        self.load = load
-        assert self.load >= 0 and self.load <= 100, "load = {0}".format(self.load)
-        self.load_history = [self.load]
-        self.tableItem = ChartWidget.ChartItem(self.load, vm)
-
-    def update_load (self, vm, load):
-        self.load = self.update_func(vm, load)
-
-        assert self.load >= 0, "load = {0}".format(self.load)
-        # assert self.load >= 0 and self.load <= 100, "load = {0}".format(self.load)
-        if self.load > 100:
-            # FIXME: This is an ugly workaround for cpu_load:/
-            self.load = 100
-
-        self.load_history.append (self.load)
-        self.tableItem.set_value(self.load)
-        self.repaint()
-
-    def paintEvent (self, Event = None):
-        p = QPainter (self)
-        dx = 4
-
-        W = self.width()
-        H = self.height() - 5
-        N = len(self.load_history)
-        if N > W/dx:
-            tail = N - W/dx
-            N = W/dx
-            self.load_history = self.load_history[tail:]
-
-        assert len(self.load_history) == N
-
-        for i in range (0, N-1):
-            val = self.load_history[N- i - 1]
-            sat = 70 + val*(255-70)/100
-            color = QColor.fromHsv (self.hue, sat, 255)
-            pen = QPen (color)
-            pen.setWidth(dx-1)
-            p.setPen(pen)
-            if val > 0:
-                p.drawLine (W - i*dx - dx, H , W - i*dx - dx, H - (H - 5) * val/100)
-
-
-
-class VmUpdateInfoWidget(QWidget):
-
-    class VmUpdateInfoItem (QTableWidgetItem):
-        def __init__(self, value, vm):
-            super(VmUpdateInfoWidget.VmUpdateInfoItem, self).__init__()
-            self.value = 0
-            self.vm = vm
-            self.set_value(value)
-
-        def set_value(self, value):
-            if value == "outdated":
-                self.value = 30
-            elif value == "update":
-                self.value = 20
-            else:
-                self.value = 0
-
-        def __lt__(self, other):
-            if self.value == other.value:
-                return self.vm.qid < other.vm.qid
-            else:
-                return self.value < other.value
-
-    def __init__(self, vm, show_text=True, parent = None):
-        super (VmUpdateInfoWidget, self).__init__(parent)
-        layout = QHBoxLayout ()
-        self.show_text = show_text
-        if self.show_text:
-            self.label=QLabel("")
-            layout.addWidget(self.label, alignment=Qt.AlignCenter)
-        else:
-            self.icon =  QLabel("")
-            layout.addWidget(self.icon, alignment=Qt.AlignCenter)
-        self.setLayout(layout)
-
-        self.previous_outdated = False
-        self.previous_update_recommended = None
-        self.value = None
-        self.tableItem = VmUpdateInfoWidget.VmUpdateInfoItem(self.value, vm)
-
-    def update_outdated(self, vm):
-        if vm.type == "HVM":
-            return
-
-        outdated = vm.is_outdated()
-        if outdated and not self.previous_outdated:
-            self.update_status_widget("outdated")
-        elif not outdated and self.previous_outdated:
-            self.update_status_widget(None)
-
-        self.previous_outdated = outdated
-
-        if not vm.is_updateable():
-            return
-
-        if vm.qid == 0:
-            update_recommended = self.previous_update_recommended
-            if os.path.exists(qubes_dom0_updates_stat_file):
-                update_recommended = True
-            else:
-                update_recommended = False
-
-        else:
-            update_recommended = self.previous_update_recommended
-            stat_file_path = vm.dir_path + '/' + vm_files["updates_stat_file"]
-            if not os.path.exists(stat_file_path):
-                update_recommended = False
-            else:
-                if (not hasattr(vm, "updates_stat_file_read_time")) or vm.updates_stat_file_read_time <= os.path.getmtime(stat_file_path):
-
-                        stat_file = open(stat_file_path, "r")
-                        updates = stat_file.read().strip()
-                        stat_file.close()
-                        if updates.isdigit():
-                            updates = int(updates)
-                        else:
-                            updates = 0
-
-                        if updates == 0:
-                            update_recommended = False
-                        else:
-                            update_recommended = True
-                        vm.updates_stat_file_read_time = time.time()
-
-        if update_recommended and not self.previous_update_recommended:
-            self.update_status_widget("update")
-        elif self.previous_update_recommended and not update_recommended:
-            self.update_status_widget(None)
-
-        self.previous_update_recommended = update_recommended
-
-
-    def update_status_widget(self, state):
-        self.value = state
-        self.tableItem.set_value(state)
-        if state == "update":
-            label_text = "<font color=\"#CCCC00\">Check updates</font>"
-            icon_path = ":/update-recommended.png"
-            tooltip_text = "Updates pending!"
-        elif state == "outdated":
-            label_text = "<font color=\"red\">VM outdated</font>"
-            icon_path = ":/outdated.png"
-            tooltip_text = "The VM must be restarted for its filesystem to reflect the template's recent changes."
-        elif state == None:
-            label_text = ""
-            icon_path = None
-            tooltip_text = None
-
-        if self.show_text:
-            self.label.setText(label_text)
-        else:
-            self.layout().removeWidget(self.icon)
-            self.icon.deleteLater()
-            if icon_path != None:
-                self.icon = VmIconWidget(icon_path, True, 0.7)
-                self.icon.setToolTip(tooltip_text)
-            else:
-                self.icon = QLabel(label_text)
-            self.layout().addWidget(self.icon, alignment=Qt.AlignCenter)
-
-
-class VmSizeOnDiskItem (QTableWidgetItem):
-    def __init__(self, vm):
-        super(VmSizeOnDiskItem, self).__init__()
-        self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
-
-        self.vm = vm
-        self.value = 0
-        self.update()
-        self.setTextAlignment(Qt.AlignVCenter)
-
-    def update(self):
-        if self.vm.qid == 0:
-            self.setText("n/a")
-        else:
-            self.value = self.vm.get_disk_utilization()/(1024*1024)
-            self.setText( str(self.value) + " MiB")
-
-    def __lt__(self, other):
-        if self.value == other.value:
-            return self.vm.qid < other.vm.qid
-        else:
-            return self.value < other.value
-
-class VmIPItem(QTableWidgetItem):
-    def __init__(self, vm):
-        super(VmIPItem, self).__init__()
-        self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
-
-        self.ip = vm.ip
-        if self.ip:
-            self.setText(self.ip)
-        else:
-            self.setText("n/a")
-
-class VmIncludeInBackupsItem(QTableWidgetItem):
-    def __init__(self, vm):
-        super(VmIncludeInBackupsItem, self).__init__()
-        self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
-
-        self.vm = vm
-        if self.vm.include_in_backups:
-            self.setText("Yes")
-        else:
-            self.setText("")
-
-    def __lt__(self, other):
-        if self.vm.include_in_backups == other.vm.include_in_backups:
-            return self.vm.qid < other.vm.qid
-        else:
-            return self.vm.include_in_backups < other.vm.include_in_backups
-
-class VmLastBackupItem(QTableWidgetItem):
-    def __init__(self, vm):
-        super(VmLastBackupItem, self).__init__()
-        self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
-
-        self.vm = vm
-        if self.vm.backup_timestamp:
-            self.setText(str(self.vm.backup_timestamp.date()))
-        else:
-            self.setText("")
-
-    def __lt__(self, other):
-        if self.vm.backup_timestamp == other.vm.backup_timestamp:
-            return self.vm.qid < other.vm.qid
-        elif not self.vm.backup_timestamp:
-            return False
-        elif not other.vm.backup_timestamp:
-            return True
-        else:
-            return self.vm.backup_timestamp < other.vm.backup_timestamp
 
 class VmRowInTable(object):
     cpu_graph_hue = 210
@@ -720,6 +127,7 @@ class VmRowInTable(object):
         self.vm = vm
         self.row_no = row_no
 
+        table_widgets.row_height = VmManagerWindow.row_height
         table.setRowHeight (row_no, VmManagerWindow.row_height)
 
         self.type_widget = VmTypeWidget(vm)
@@ -849,6 +257,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.qubes_watch = qubesutils.QubesWatch()
         self.qvm_collection = QubesVmCollection()
         self.blk_manager = QubesBlockDevicesManager(self.qvm_collection)
+        self.blk_manager.tray_message_func = trayIcon.showMessage
         self.qubes_watch.setup_block_watch(self.blk_manager.block_devs_event)
         self.blk_watch_thread = threading.Thread(target=self.qubes_watch.watch_loop)
         self.blk_watch_thread.daemon = True
@@ -2066,135 +1475,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             QMessageBox.critical(None, "Block attach/detach error!", str(e))
 
 
-class QubesBlockDevicesManager():
-    def __init__(self, qvm_collection):
-        self.qvm_collection = qvm_collection
-        self.attached_devs = {}
-        self.free_devs = {}
-
-        self.current_blk = {}
-        self.current_attached = {}
-        self.devs_changed = False
-
-        self.last_update_time = time.time()
-        self.blk_state_changed = True
-        self.msg = []
-        self.check_counter = 0
-        self.blk_lock = threading.Lock()
-
-        self.update()
-
-    def block_devs_event(self, xid):
-        now = time.time()
-        #don't update more often than 1/10 s
-        if now - self.last_update_time >= 0.1:
-            self.last_update_time = now
-
-            self.blk_lock.acquire()
-
-            self.blk_state_changed = True
-
-            self.blk_lock.release()
-
-    def check_for_updates(self):
-        self.blk_lock.acquire()
-
-        ret = (self.blk_state_changed, self.msg)
-
-        if self.blk_state_changed == True:
-            self.check_counter += 1
-
-            self.update()
-            ret = (self.blk_state_changed, self.msg)
-
-            #let the update last for 3 manager-update cycles
-            if self.check_counter == 3:
-                self.check_counter = 0
-                self.blk_state_changed = False
-        self.msg = []
-
-        self.blk_lock.release()
-
-        return ret
-
-    def update(self):
-        blk = qubesutils.block_list()
-        for b in blk:
-            att = qubesutils.block_check_attached(None, blk[b]['device'], backend_xid = blk[b]['xid'])
-            if b in self.current_blk:
-                if blk[b] == self.current_blk[b]:
-                    if self.current_attached[b] != att: #devices the same, sth with attaching changed
-                        self.current_attached[b] = att
-                else:   #device changed ?!
-                    self.current_blk[b] = blk[b]
-                    self.current_attached[b] = att
-            else: #new device
-                self.current_blk[b] = blk[b]
-                self.current_attached[b] = att
-                self.msg.append("Attached new device to <b>{}</b>: {}".format(
-                    blk[b]['vm'], blk[b]['device']))
-
-        to_delete = []
-        for b in self.current_blk: #remove devices that are not there anymore
-            if b not in blk:
-                to_delete.append(b)
-                self.msg.append("Detached device from <b>{}</b>: {}".format(
-                    self.current_blk[b]['vm'],
-                    self.current_blk[b]['device']))
-
-        for d in to_delete:
-            del self.current_blk[d]
-            del self.current_attached[d]
-
-        self.__update_blk_entries__()
-
-
-    def __update_blk_entries__(self):
-        self.free_devs.clear()
-        self.attached_devs.clear()
-
-        for b in self.current_attached:
-            if self.current_attached[b]:
-                self.attached_devs[b] = self.__make_entry__(b, self.current_blk[b], self.current_attached[b])
-            else:
-                self.free_devs[b] = self.__make_entry__(b, self.current_blk[b], None)
-
-    def __make_entry__(self, k, dev, att):
-        size_str = qubesutils.bytes_to_kmg(dev['size'])
-        entry = {   'dev': dev['device'],
-                    'backend_name': dev['vm'],
-                    'desc': dev['desc'],
-                    'size': size_str,
-                    'attached_to': att, }
-        return entry
-
-    def attach_device(self, vm, dev):
-        backend_vm_name = self.free_devs[dev]['backend_name']
-        dev_id = self.free_devs[dev]['dev']
-        backend_vm = self.qvm_collection.get_vm_by_name(backend_vm_name)
-        trayIcon.showMessage ("{0} - attaching {1}".format(vm.name, dev), msecs=3000)
-        qubesutils.block_attach(vm, backend_vm, dev_id)
-
-    def detach_device(self, vm, dev_name):
-        dev_id = self.attached_devs[dev_name]['attached_to']['devid']
-        vm_xid = self.attached_devs[dev_name]['attached_to']['xid']
-        trayIcon.showMessage ("{0} - detaching {1}".format(vm.name, dev_name), msecs=3000)
-        qubesutils.block_detach(None, dev_id, vm_xid)
-
-    def check_if_serves_as_backend(self, vm):
-        serves_for = []
-        for d in self.attached_devs:
-            if self.attached_devs[d]['backend_name'] == vm.name:
-                serves_for.append((self.attached_devs[d]['dev'], self.attached_devs[d]['attached_to']['vm']))
-
-        if len(serves_for) > 0:
-            msg = "VM <b>" + vm.name + "</b> attaches block devices to other VMs: "
-            msg += ', '.join(["<b>"+v+"</b>("+d+")" for (d,v) in serves_for ])
-            msg += ".<br><br> Shutting the VM down will dettach the devices from them."
-
-            QMessageBox.warning (None, "Warning!", msg)
-
-
 class QubesTrayIcon(QSystemTrayIcon):
     def __init__(self, icon):
         QSystemTrayIcon.__init__(self, icon)
@@ -2420,6 +1700,12 @@ def main():
 
     sys.excepthook = handle_exception
 
+    global session_bus
+    session_bus = QDBusConnection.sessionBus()
+
+    global trayIcon
+    trayIcon = QubesTrayIcon(QIcon(":/qubes.png"))
+
     global manager_window
     manager_window = VmManagerWindow()
 
@@ -2438,11 +1724,6 @@ def main():
     system_bus.registerService('org.qubesos.QubesManager')
     system_bus.registerObject(dbus_object_path, manager_window)
 
-    global session_bus
-    session_bus = QDBusConnection.sessionBus()
-
-    global trayIcon
-    trayIcon = QubesTrayIcon(QIcon(":/qubes.png"))
     trayIcon.show()
 
     show_manager()
