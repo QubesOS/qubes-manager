@@ -1524,7 +1524,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
 
 class QubesTrayIcon(QSystemTrayIcon):
-    def __init__(self, icon):
+    def __init__(self, icon, blk_manager):
         QSystemTrayIcon.__init__(self, icon)
         self.menu = QMenu()
 
@@ -1540,7 +1540,22 @@ class QubesTrayIcon(QSystemTrayIcon):
         action_set_netvm.setDisabled(True)
         action_sys_info.setDisabled(True)
 
-        self.addActions (self.menu, (action_showmanager, action_backup, action_sys_info, None, action_preferences, action_set_netvm, None, action_exit))
+        self.blk_manager = blk_manager
+
+        self.blk_menu = QMenu(self.menu)
+        self.blk_menu.setTitle("Block devices")
+        action_blk_menu = self.createAction("Block devices")
+        action_blk_menu.setMenu(self.blk_menu)
+
+        self.addActions (self.menu, (action_showmanager,
+                                     action_blk_menu,
+                                     action_backup,
+                                     action_sys_info,
+                                     None,
+                                     action_preferences,
+                                     action_set_netvm,
+                                     None,
+                                     action_exit))
 
         self.setContextMenu(self.menu)
 
@@ -1550,8 +1565,94 @@ class QubesTrayIcon(QSystemTrayIcon):
                 "/org/freedesktop/Notifications",
                 "org.freedesktop.Notifications", session_bus)
 
+    def update_blk_menu(self):
+        global manager_window
+
+        def create_vm_submenu(dev):
+            blk_vm_menu = QMenu(self.blk_menu)
+            blk_vm_menu.triggered.connect(
+                lambda a, d=dev: self.attach_device_triggered(a, dev))
+            for vm in sorted(manager_window.qvm_collection.values(),
+                             key=lambda x: x.name):
+                if not vm.is_running():
+                    continue
+                if vm.qid == 0:
+                    # skip dom0 to prevent (fatal) mistakes
+                    continue
+                action = blk_vm_menu.addAction(QIcon(":/add.png"), vm.name)
+                action.setData(QVariant(vm))
+            return blk_vm_menu
+
+        self.blk_menu.clear()
+        self.blk_menu.setEnabled(True)
+
+        self.blk_manager.blk_lock.acquire()
+        if len(self.blk_manager.attached_devs) > 0 :
+            for d in self.blk_manager.attached_devs:
+                vm = self.blk_manager.qvm_collection.get_vm_by_name(
+                    self.blk_manager.attached_devs[d]['attached_to']['vm']
+                )
+                text = "Detach %s %s (%s) from %s" % (
+                    d,
+                    self.blk_manager.attached_devs[d]['desc'],
+                    unicode(self.blk_manager.attached_devs[d]['size']),
+                    vm.name)
+                action = self.blk_menu.addAction(QIcon(":/remove.png"), text)
+                action.setData(QVariant(d))
+                action.triggered.connect(
+                    lambda b, a=action: self.dettach_device_triggered(a))
+
+
+        if len(self.blk_manager.free_devs) > 0:
+            for d in self.blk_manager.free_devs:
+                # skip partitions heuristic
+                if d[-1].isdigit() and d[0:-1] in self.blk_manager.current_blk:
+                    continue
+                text = "Attach  %s %s %s" % (
+                    d,
+                    unicode(self.blk_manager.free_devs[d]['size']),
+                    self.blk_manager.free_devs[d]['desc']
+                )
+                action = self.blk_menu.addAction(QIcon(":/add.png"), text)
+                action.setMenu(create_vm_submenu(d))
+
+        self.blk_manager.blk_lock.release()
+
+        if self.blk_menu.isEmpty():
+            self.blk_menu.setEnabled(False)
+
+    @pyqtSlot('QAction *')
+    def attach_device_triggered(self, action, dev):
+        vm = action.data().toPyObject()
+
+        self.blk_manager.blk_lock.acquire()
+        try:
+            self.blk_manager.attach_device(vm, dev)
+            self.blk_manager.blk_lock.release()
+        except QubesException as e:
+            self.blk_manager.blk_lock.release()
+            QMessageBox.critical(None, "Block attach/detach error!", str(e))
+
+    @pyqtSlot('QAction *')
+    def dettach_device_triggered(self, action):
+        dev = str(action.data().toString())
+        vm = self.blk_manager.qvm_collection.get_vm_by_name(
+            self.blk_manager.attached_devs[dev]['attached_to']['vm']
+        )
+
+
+        self.blk_manager.blk_lock.acquire()
+        try:
+            self.blk_manager.detach_device(vm, dev)
+            self.blk_manager.blk_lock.release()
+        except QubesException as e:
+            self.blk_manager.blk_lock.release()
+            QMessageBox.critical(None, "Block attach/detach error!", str(e))
+
+
     def icon_clicked(self, reason):
         if reason == QSystemTrayIcon.Context:
+            self.update_blk_menu()
             # Handle the right click normally, i.e. display the context menu
             return
         else:
@@ -1759,7 +1860,7 @@ def main():
     blk_manager = QubesBlockDevicesManager(qvm_collection)
 
     global trayIcon
-    trayIcon = QubesTrayIcon(QIcon(":/qubes.png"))
+    trayIcon = QubesTrayIcon(QIcon(":/qubes.png"), blk_manager)
 
     global manager_window
     manager_window = VmManagerWindow(qvm_collection, blk_manager)
