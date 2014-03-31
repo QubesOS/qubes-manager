@@ -51,6 +51,7 @@ from ui_backupdlg import *
 from multiselectwidget import *
 
 from backup_utils import *
+import main
 import grp,pwd
 
 
@@ -122,6 +123,40 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         fill_devs_list(self)
 
         fill_appvms_list(self)
+        self.load_settings()
+
+    def load_settings(self):
+        dest_vm_name = main.manager_window.manager_settings.value(
+            'backup/vmname', defaultValue="")
+        dest_vm_idx = self.appvm_combobox.findText(dest_vm_name.toString())
+        if dest_vm_idx > -1:
+            self.appvm_combobox.setCurrentIndex(dest_vm_idx)
+        else:
+            dest_blk_name = main.manager_window.manager_settings.value(
+                'backup/device', defaultValue="")
+            dest_blk_idx = self.dev_combobox.findText(dest_blk_name.toString())
+            if dest_blk_idx > -1:
+                self.dev_combobox.setCurrentIndex(dest_blk_idx)
+
+        if main.manager_window.manager_settings.contains('backup/path'):
+            dest_path = main.manager_window.manager_settings.value(
+                'backup/path', defaultValue=None)
+            self.dir_line_edit.setText(dest_path.toString())
+
+        if main.manager_window.manager_settings.contains('backup/encrypt'):
+            encrypt = main.manager_window.manager_settings.value(
+                'backup/encrypt', defaultValue=None)
+            self.encryption_checkbox.setChecked(encrypt.toBool())
+
+    def save_settings(self):
+        main.manager_window.manager_settings.setValue(
+            'backup/vmname', self.appvm_combobox.currentText())
+        main.manager_window.manager_settings.setValue(
+            'backup/device', self.dev_combobox.currentText())
+        main.manager_window.manager_settings.setValue(
+            'backup/path', self.dir_line_edit.text())
+        main.manager_window.manager_settings.setValue(
+            'backup/encrypt', self.encryption_checkbox.isChecked())
 
     def show_running_vms_warning(self, show):
         self.running_vms_warning.setVisible(show)
@@ -333,6 +368,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             self.textEdit.setReadOnly(True)
             self.textEdit.setFontFamily("Monospace")
             self.textEdit.setText("\n".join(self.func_output))
+            self.save_settings()
 
         elif self.currentPage() is self.commit_page:
             self.button(self.FinishButton).setDisabled(True)
@@ -420,7 +456,7 @@ def handle_exception( exc_type, exc_value, exc_traceback ):
                          % ( line, filename ))
 
 
-def main():
+def app_main():
 
     global qubes_host
     qubes_host = QubesHost()
@@ -449,4 +485,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    app_main()
