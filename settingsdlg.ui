@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>2</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -119,6 +119,13 @@
               </item>
              </layout>
             </item>
+            <item row="4" column="0">
+             <widget class="QCheckBox" name="seamless_gui">
+              <property name="text">
+               <string>Seamless GUI</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </item>
@@ -131,6 +138,9 @@
             <string>General</string>
            </property>
            <layout class="QFormLayout" name="formLayout_4">
+            <property name="fieldGrowthPolicy">
+             <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+            </property>
             <item row="0" column="0">
              <widget class="QLabel" name="label_13">
               <property name="text">

@@ -289,6 +289,12 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         else:
             self.run_in_debug_mode.setVisible(False)
 
+        if hasattr(self.vm, 'seamless_gui_mode'):
+            self.seamless_gui.setVisible(True)
+            self.seamless_gui.setChecked(self.vm.seamless_gui_mode)
+        else:
+            self.seamless_gui.setVisible(False)
+
         #type
         self.type_label.setText(self.vm.type)
 
@@ -395,6 +401,14 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             if self.run_in_debug_mode.isVisible():
                 if self.vm.debug != self.run_in_debug_mode.isChecked():
                     self.vm.debug = self.run_in_debug_mode.isChecked()
+                    self.anything_changed = True
+        except Exception as ex:
+            msg.append(str(ex))
+
+        try:
+            if self.seamless_gui.isVisible():
+                if self.vm.seamless_gui_mode != self.seamless_gui.isChecked():
+                    self.vm.seamless_gui_mode = self.seamless_gui.isChecked()
                     self.anything_changed = True
         except Exception as ex:
             msg.append(str(ex))
