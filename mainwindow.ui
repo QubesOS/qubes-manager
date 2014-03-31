@@ -118,7 +118,7 @@
        <number>10</number>
       </property>
       <property name="columnCount">
-       <number>15</number>
+       <number>17</number>
       </property>
       <attribute name="horizontalHeaderCascadingSectionResizes">
        <bool>false</bool>
@@ -219,6 +219,16 @@
       </column>
       <column>
        <property name="text">
+        <string>Req MEM</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Req MEM Graph</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
         <string>Size</string>
        </property>
       </column>
@@ -280,6 +290,8 @@
     <addaction name="action_cpu_graph"/>
     <addaction name="action_mem"/>
     <addaction name="action_mem_graph"/>
+    <addaction name="action_prefmem"/>
+    <addaction name="action_prefmem_graph"/>
     <addaction name="action_size_on_disk"/>
     <addaction name="action_internal"/>
     <addaction name="action_ip"/>
@@ -877,6 +889,28 @@
    </property>
    <property name="text">
     <string>Last backup</string>
+   </property>
+  </action>
+  <action name="action_prefmem">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Requested MEM</string>
+   </property>
+  </action>
+  <action name="action_prefmem_graph">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Requested MEM Graph</string>
    </property>
   </action>
  </widget>
