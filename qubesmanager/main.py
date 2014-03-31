@@ -274,7 +274,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         "Last backup": 16,
     }
 
-    def __init__(self, parent=None):
+    def __init__(self, qvm_collection, blk_manager, parent=None):
         super(VmManagerWindow, self).__init__()
         self.setupUi(self)
         self.toolbar = self.toolBar
@@ -282,9 +282,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.manager_settings = QSettings()
 
         self.qubes_watch = qubesutils.QubesWatch()
-        self.qvm_collection = QubesVmCollection()
+        self.qvm_collection = qvm_collection
         self.meminfo_changed = {}
-        self.blk_manager = QubesBlockDevicesManager(self.qvm_collection)
+        self.blk_manager = blk_manager
         self.blk_manager.tray_message_func = trayIcon.showMessage
         self.qubes_watch.setup_block_watch(self.blk_manager.block_devs_event)
         self.qubes_watch.setup_meminfo_watch(self.meminfo_update_event)
@@ -1751,11 +1751,18 @@ def main():
     global session_bus
     session_bus = QDBusConnection.sessionBus()
 
+    qvm_collection = QubesVmCollection()
+    qvm_collection.lock_db_for_reading()
+    qvm_collection.load()
+    qvm_collection.unlock_db()
+
+    blk_manager = QubesBlockDevicesManager(qvm_collection)
+
     global trayIcon
     trayIcon = QubesTrayIcon(QIcon(":/qubes.png"))
 
     global manager_window
-    manager_window = VmManagerWindow()
+    manager_window = VmManagerWindow(qvm_collection, blk_manager)
 
     global wm
     wm = WatchManager()
