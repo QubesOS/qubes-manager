@@ -295,9 +295,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.connect(self.table, SIGNAL("itemSelectionChanged()"), self.table_selection_changed)
 
         self.table.setColumnWidth(0, self.column_width)
-        self.setSizeIncrement(QtCore.QSize(200, 30))
-        self.centralwidget.setSizeIncrement(QtCore.QSize(200, 30))
-        self.table.setSizeIncrement(QtCore.QSize(200, 30))
 
         self.sort_by_column = "Type"
         self.sort_order = Qt.AscendingOrder
