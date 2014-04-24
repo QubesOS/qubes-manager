@@ -831,7 +831,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             if vm.qid == qid:
                 vm.qubes_manager_state[QMVmState.ErrorMsg] = message
         # Store error in separate dict to make it immune to VM list reload
-        self.vm_errors[qid] = message
+        self.vm_errors[qid] = str(message)
 
     def clear_error(self, qid):
         self.vm_errors.pop(qid, None)
