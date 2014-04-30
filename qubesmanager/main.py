@@ -1843,6 +1843,7 @@ def main():
     app.setOrganizationDomain("http://qubes-os.org")
     app.setApplicationName("Qubes VM Manager")
     app.setWindowIcon(QIcon(":/qubes.png"))
+    app.setAttribute(Qt.AA_DontShowIconsInMenus, False)
 
     sys.excepthook = handle_exception
 
