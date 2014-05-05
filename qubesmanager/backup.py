@@ -169,7 +169,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             if vm.qid == 0:
                 local_user = grp.getgrnam('qubes').gr_mem[0]
                 home_dir = pwd.getpwnam(local_user).pw_dir
-                self.size = backup.get_disk_usage(home_dir)
+                self.size = qubesutils.get_disk_usage(home_dir)
             else:
                 self.size = self.get_vm_size(vm)
             super(BackupVMsWindow.VmListItem, self).__init__(vm.name+ " (" + qubesutils.size_to_human(self.size) + ")")
@@ -177,10 +177,10 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         def get_vm_size(self, vm):
             size = 0
             if vm.private_img is not None:
-                size += vm.get_disk_usage (vm.private_img)
+                size += qubesutils.get_disk_usage (vm.private_img)
 
             if vm.updateable:
-                size += vm.get_disk_usage(vm.root_img)
+                size += qubesutils.get_disk_usage(vm.root_img)
 
             return size
 
