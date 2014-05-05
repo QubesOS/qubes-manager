@@ -746,7 +746,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def update_block_devices(self):
         res, msg = self.blk_manager.check_for_updates()
         if msg != None and len(msg) > 0:
-            str = "\n".join(msg)
+            if trayIcon.tray_notifier_type == "KDE":
+                str = "<br/>\n".join(msg)
+            else:
+                str = "\n".join(msg)
             trayIcon.showMessage (str, msecs=5000)
         return res
 
@@ -1561,6 +1564,8 @@ class QubesTrayIcon(QSystemTrayIcon):
         self.tray_notifier = QDBusInterface("org.freedesktop.Notifications",
                 "/org/freedesktop/Notifications",
                 "org.freedesktop.Notifications", session_bus)
+        srv_info = self.tray_notifier.call("GetServerInformation")
+        self.tray_notifier_type = srv_info.arguments()[1]
 
     def update_blk_menu(self):
         global manager_window
@@ -1882,7 +1887,7 @@ def main():
 
     show_manager()
     app.exec_()
-    
+
     lock.remove_pidfile()
     trayIcon = None
 
