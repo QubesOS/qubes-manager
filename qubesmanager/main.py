@@ -746,11 +746,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def update_block_devices(self):
         res, msg = self.blk_manager.check_for_updates()
         if msg != None and len(msg) > 0:
-            if trayIcon.tray_notifier_type == "KDE":
-                str = "<br/>\n".join(msg)
-            else:
-                str = "\n".join(msg)
-            trayIcon.showMessage (str, msecs=5000)
+            trayIcon.showMessage ('\n'.join(msg), msecs=5000)
         return res
 
     @pyqtSlot(bool, str)
@@ -1674,6 +1670,8 @@ class QubesTrayIcon(QSystemTrayIcon):
         v_replace_id.convert(QVariant.UInt)
         v_actions = QVariant([])
         v_actions.convert(QVariant.StringList)
+        if self.tray_notifier_type == "KDE":
+            message = message.replace('\n', '<br/>\n')
         self.tray_notifier.call("Notify", "Qubes", v_replace_id,
                 "/usr/share/qubes/icons/qubes.png", "Qubes VM Manager",
                 message, v_actions, QVariant.fromMap({}), msecs)
