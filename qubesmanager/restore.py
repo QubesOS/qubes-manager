@@ -240,6 +240,11 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
         elif self.currentPage() is self.commit_page:
             self.button(self.FinishButton).setDisabled(True)
+            self.showFileDialog.setEnabled(
+                self.appvm_combobox.currentIndex() != 0)
+            self.showFileDialog.setChecked(self.showFileDialog.isEnabled()
+                                           and str(self.dir_line_edit.text())
+                                           .count("media/") > 0)
 
             self.thread_monitor = ThreadMonitor()
             thread = threading.Thread (target= self.__do_restore__ , args=(self.thread_monitor,))
@@ -274,10 +279,18 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                 self.dev_mount_path = None
                 detach_device(self, str(self.dev_combobox.itemData(
                         self.dev_combobox.currentIndex()).toString()))
-
+            elif self.showFileDialog.isChecked():
+                self.emit(SIGNAL("restore_progress(QString)"),
+                          '<b><font color="black">{0}</font></b>'.format(
+                              "Please unmount your backup volume and cancel "
+                              "the file selection dialog."))
+                if self.target_appvm:
+                    self.target_appvm.run("QUBESRPC %s dom0" % "qubes"
+                                                               ".SelectDirectory")
             self.progress_bar.setValue(100)
             self.button(self.FinishButton).setEnabled(True)
             self.button(self.CancelButton).setEnabled(False)
+            self.showFileDialog.setEnabled(False)
 
         signal.signal(signal.SIGCHLD, old_sigchld_handler)
 

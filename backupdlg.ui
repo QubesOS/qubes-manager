@@ -362,6 +362,13 @@ p, li { white-space: pre-wrap; }
       </property>
      </widget>
     </item>
+    <item>
+     <widget class="QCheckBox" name="showFileDialog">
+      <property name="text">
+       <string>When finished, open file selection dialog to allow me unmount the disk</string>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
  </widget>

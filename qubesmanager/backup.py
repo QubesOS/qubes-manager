@@ -372,6 +372,11 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 
         elif self.currentPage() is self.commit_page:
             self.button(self.FinishButton).setDisabled(True)
+            self.showFileDialog.setEnabled(
+                self.appvm_combobox.currentIndex() != 0)
+            self.showFileDialog.setChecked(self.showFileDialog.isEnabled()
+                                           and str(self.dir_line_edit.text())
+                                           .count("media/") > 0)
             self.thread_monitor = ThreadMonitor()
             thread = threading.Thread (target= self.__do_backup__ , args=(self.thread_monitor,))
             thread.daemon = True
@@ -409,8 +414,17 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                 detach_device(self, str(self.dev_combobox.itemData(
                     self.dev_combobox.currentIndex()).toString()))
                 self.dev_mount_path = None
+            elif self.showFileDialog.isChecked():
+                orig_text = self.progress_status.text
+                self.progress_status.setText(
+                    orig_text + " Please unmount your backup volume and cancel "
+                              "the file selection dialog.")
+                if self.target_appvm:
+                    self.target_appvm.run("QUBESRPC %s dom0" % "qubes"
+                                                               ".SelectDirectory")
             self.button(self.CancelButton).setEnabled(False)
             self.button(self.FinishButton).setEnabled(True)
+            self.showFileDialog.setEnabled(False)
         signal.signal(signal.SIGCHLD, old_sigchld_handler)
 
     def reject(self):
