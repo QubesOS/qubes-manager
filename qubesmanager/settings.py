@@ -636,7 +636,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.devices_layout.addWidget(self.dev_list)
 
         devs = []
-        lspci = subprocess.Popen(["lspci",], stdout = subprocess.PIPE)
+        lspci = subprocess.Popen(["/usr/sbin/lspci",], stdout = subprocess.PIPE)
         for dev in lspci.stdout:
             devs.append( (dev.rstrip(), dev.split(' ')[0]) )
 
