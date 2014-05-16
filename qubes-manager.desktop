@@ -7,4 +7,4 @@ Terminal=false
 Name=Qubes VM Manager
 GenericName=Qubes VM Manager
 StartupNotify=false
-Categories=System;
+Categories=System;X-Xfce-Toplevel;
