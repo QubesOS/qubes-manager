@@ -289,6 +289,12 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         else:
             self.run_in_debug_mode.setVisible(False)
 
+        if hasattr(self.vm, 'autostart'):
+            self.autostart_vm.setVisible(True)
+            self.autostart_vm.setChecked(self.vm.autostart)
+        else:
+            self.autostart_vm.setVisible(False)
+
         if hasattr(self.vm, 'seamless_gui_mode'):
             self.seamless_gui.setVisible(True)
             self.seamless_gui.setChecked(self.vm.seamless_gui_mode)
@@ -405,6 +411,16 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         except Exception as ex:
             msg.append(str(ex))
 
+        #autostart_vm
+        try:
+            if self.autostart_vm.isVisible():
+                if self.vm.autostart != self.autostart_vm.isChecked():
+                    self.vm.autostart = self.autostart_vm.isChecked()
+                    self.anything_changed = True
+        except Exception as ex:
+            msg.append(str(ex))
+
+        #seamless_gui
         try:
             if self.seamless_gui.isVisible():
                 if self.vm.seamless_gui_mode != self.seamless_gui.isChecked():
