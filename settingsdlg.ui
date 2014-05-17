@@ -120,9 +120,9 @@
              </layout>
             </item>
             <item row="4" column="0" colspan="2">
-             <layout class="QHBoxLayout" name="horizontalLayout_3">	    
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
               <item>
-	       <widget class="QCheckBox" name="autostart_vm">
+               <widget class="QCheckBox" name="autostart_vm">
                 <property name="text">
                  <string>Start VM automatically on boot</string>
                 </property>
