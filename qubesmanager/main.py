@@ -28,7 +28,7 @@ import fcntl
 import errno
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-from PyQt4.QtDBus import QDBus,QDBusVariant
+from PyQt4.QtDBus import QDBus,QDBusVariant, QDBusMessage
 from PyQt4.QtDBus import QDBusConnection
 from PyQt4.QtDBus import QDBusInterface,QDBusAbstractAdaptor
 
@@ -1564,11 +1564,14 @@ class QubesTrayIcon(QSystemTrayIcon):
 
         self.connect (self, SIGNAL("activated (QSystemTrayIcon::ActivationReason)"), self.icon_clicked)
 
+        self.tray_notifier_type = None
         self.tray_notifier = QDBusInterface("org.freedesktop.Notifications",
                 "/org/freedesktop/Notifications",
                 "org.freedesktop.Notifications", session_bus)
         srv_info = self.tray_notifier.call("GetServerInformation")
-        self.tray_notifier_type = srv_info.arguments()[1]
+        if srv_info.type() == QDBusMessage.ReplyMessage and len(srv_info
+                .arguments()) > 1:
+            self.tray_notifier_type = srv_info.arguments()[1]
 
     def update_blk_menu(self):
         global manager_window
