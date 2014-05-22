@@ -1741,7 +1741,7 @@ class QubesDbusNotifyServerAdaptor(QDBusAbstractAdaptor):
 def get_frame_size():
     w = 0
     h = 0
-    cmd = ['xprop', '-name', 'Qubes VM Manager', '|', 'grep', '_NET_FRAME_EXTENTS']
+    cmd = ['/usr/bin/xprop', '-name', 'Qubes VM Manager', '|', 'grep', '_NET_FRAME_EXTENTS']
     xprop = subprocess.Popen(cmd, stdout = subprocess.PIPE)
     for l in xprop.stdout:
         line = l.split('=')
@@ -1775,7 +1775,7 @@ def show_manager():
 def bring_manager_to_front():
 
     if manager_window.isVisible():
-        subprocess.check_call(['wmctrl', '-R', str(manager_window.windowTitle())])
+        subprocess.check_call(['/usr/bin/wmctrl', '-R', str(manager_window.windowTitle())])
 
     else:
         show_manager()

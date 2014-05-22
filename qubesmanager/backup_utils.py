@@ -62,7 +62,7 @@ def mount_device(dev_path):
 def umount_device(dev_mount_path):
     while True:
         try:
-            pumount_cmd = ["sudo", "pumount", "--luks-force", dev_mount_path]
+            pumount_cmd = ["/usr/bin/sudo", "/usr/bin/pumount", "--luks-force", dev_mount_path]
             res = subprocess.check_call(pumount_cmd)
             if res == 0:
                 dev_mount_path = None
@@ -85,7 +85,7 @@ def detach_device(dialog, dev_name):
     else:
         # umount/LUKS remove do not trigger udev event on underlying device,
         # so trigger it manually - to publish back as available device
-        subprocess.call(["sudo", "udevadm", "trigger", "--action=change",
+        subprocess.call(["/usr/bin/sudo", "/bin/udevadm", "trigger", "--action=change",
                                  "--subsystem-match=block",
                                  "--sysname-match=%s" % dev_name.split(":")[1]])
         with dialog.blk_manager.blk_lock:

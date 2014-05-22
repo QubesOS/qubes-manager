@@ -34,7 +34,6 @@ import qubesmanager.resources_rc
 
 from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
 
-import subprocess
 import time
 
 from operator import itemgetter
