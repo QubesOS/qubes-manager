@@ -72,6 +72,7 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
             self.vmlabel.setItemIcon (i, QIcon(label.icon_path))
 
         self.fill_template_list()
+        self.fill_netvm_list()
 
         self.vmname.setValidator(QRegExpValidator(QRegExp("[a-zA-Z0-9-]*", Qt.CaseInsensitive), None))
         self.vmname.selectAll()
@@ -103,24 +104,60 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
                 self.template_name.insertItem(i, vm.name)
         self.template_name.setCurrentIndex(default_index)
 
+    def fill_netvm_list(self):
+        def filter_netvm(vm):
+            if vm.internal:
+                return False
+            if vm.is_netvm():
+                return True
+            if vm.is_proxyvm():
+                return True
+            else:
+                return False
+        self.netvm_list = filter(filter_netvm, self.qvm_collection.values())
+
+        self.netvm_name.clear()
+        default_index = 0
+        for (i, vm) in enumerate(self.netvm_list):
+            if vm is self.qvm_collection.get_default_netvm():
+                default_index = i
+                self.netvm_name.insertItem(i, vm.name + " (default)")
+            else:
+                self.netvm_name.insertItem(i, vm.name)
+        self.netvm_name.setCurrentIndex(default_index)
+
+    def on_allow_networking_toggled(self, checked):
+        if checked:
+            self.fill_netvm_list()
+            self.netvm_name.setEnabled(True)
+        else:    
+            self.netvm_name.clear()
+            self.netvm_name.setEnabled(False)
+
     def on_appvm_radio_toggled(self, checked):
         if checked:
             self.template_name.setEnabled(True)
             self.allow_networking.setEnabled(True)
+            self.netvm_name.setEnabled(self.allow_networking.isChecked())
+
     def on_netvm_radio_toggled(self, checked):
         if checked:
             self.template_name.setEnabled(True)
+            self.allow_networking.setChecked(True)
             self.allow_networking.setEnabled(False)
+            self.netvm_name.setEnabled(False)
 
     def on_proxyvm_radio_toggled(self, checked):
         if checked:
             self.template_name.setEnabled(True)
             self.allow_networking.setEnabled(True)
+            self.netvm_name.setEnabled(self.allow_networking.isChecked())
 
     def on_hvm_radio_toggled(self, checked):
         if self.hvm_radio.isChecked() or self.hvmtpl_radio.isChecked():
             self.standalone.setChecked(True)
             self.allow_networking.setEnabled(True)
+            self.netvm_name.setEnabled(self.allow_networking.isChecked())
             self.standalone.setEnabled(self.hvm_radio.isChecked())
         else:
             self.standalone.setChecked(False)
@@ -157,6 +194,10 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
         if self.template_name.isEnabled():
             template_vm = self.template_vm_list[self.template_name.currentIndex()]
 
+        netvm = None
+        if self.netvm_name.isEnabled():
+            netvm = self.netvm_list[self.netvm_name.currentIndex()]
+
         standalone = self.standalone.isChecked()
 
         allow_networking = None
@@ -181,7 +222,7 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
 
         vmclass = "Qubes" + vmtype.replace("VM", "Vm")
         thread_monitor = ThreadMonitor()
-        thread = threading.Thread (target=self.do_create_vm, args=(vmclass, vmname, label, template_vm, standalone, allow_networking, thread_monitor))
+        thread = threading.Thread (target=self.do_create_vm, args=(vmclass, vmname, label, template_vm, netvm, standalone, allow_networking, thread_monitor))
         thread.daemon = True
         thread.start()
 
@@ -205,7 +246,7 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
 
 
 
-    def do_create_vm (self, vmclass, vmname, label, template_vm, standalone, allow_networking, thread_monitor):
+    def do_create_vm (self, vmclass, vmname, label, template_vm, netvm, standalone, allow_networking, thread_monitor):
         vm = None
         try:
             self.qvm_collection.lock_db_for_writing()
@@ -220,6 +261,13 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
             if allow_networking == False:
                 vm.uses_default_netvm = False
                 vm.netvm = None
+            else:
+                vm.netvm = netvm
+                if vm.netvm == self.qvm_collection.get_default_netvm():
+                    vm.uses_default_netvm = True
+                else:
+                    vm.uses_default_netvm = False
+
             self.qvm_collection.save()
 
         except Exception as ex:
