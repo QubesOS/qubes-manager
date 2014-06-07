@@ -254,7 +254,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
 
         if (not self.vm.is_netvm() or self.vm.is_proxyvm()):
-            netvm_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_netvm()]
+            netvm_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_netvm() and vm.qid != 0]
             self.netvm_idx = -1
 
             text = "default ("+self.qvm_collection.get_default_netvm().name+")"

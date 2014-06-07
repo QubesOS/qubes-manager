@@ -108,6 +108,8 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
         def filter_netvm(vm):
             if vm.internal:
                 return False
+            if vm.qid == 0:
+                return False
             if vm.is_netvm():
                 return True
             if vm.is_proxyvm():
