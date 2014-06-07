@@ -194,6 +194,9 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
         
         template_vm = None
         if self.template_name.isEnabled():
+            if len(self.template_vm_list) == 0:
+                QMessageBox.warning (None, "No template available!", "Cannot create non-standalone VM when no compatible template exists. Create template VM first or choose to create standalone VM.")
+                return
             template_vm = self.template_vm_list[self.template_name.currentIndex()]
 
         netvm = None
