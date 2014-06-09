@@ -116,6 +116,9 @@ class QubesManagerFileWatcher(ProcessEvent):
             event.path = qubes_clipboard_info_file
             self.process_IN_CLOSE_WRITE(event)
             wm.add_watch(qubes_clipboard_info_file, EventsCodes.OP_FLAGS.get('IN_CLOSE_WRITE'))
+        elif event.name == os.path.basename(table_widgets\
+                .qubes_dom0_updates_stat_file):
+            trayIcon.showMessage("Qubes dom0 updates available.", msecs=0)
 
 
 
@@ -1573,6 +1576,10 @@ class QubesTrayIcon(QSystemTrayIcon):
                 .arguments()) > 1:
             self.tray_notifier_type = srv_info.arguments()[1]
 
+        if os.path.exists(table_widgets.qubes_dom0_updates_stat_file):
+            self.showMessage("Qubes dom0 updates available.", msecs=0)
+
+
     def update_blk_menu(self):
         global manager_window
 
@@ -1885,6 +1892,8 @@ def main():
     wm.add_watch(os.path.dirname(system_path["qubes_store_filename"]), EventsCodes.OP_FLAGS.get('IN_MOVED_TO'))
     wm.add_watch(qubes_clipboard_info_file, EventsCodes.OP_FLAGS.get('IN_CLOSE_WRITE'))
     wm.add_watch(os.path.dirname(qubes_clipboard_info_file), EventsCodes.OP_FLAGS.get('IN_CREATE'))
+    wm.add_watch(os.path.dirname(table_widgets.qubes_dom0_updates_stat_file),
+                 EventsCodes.OP_FLAGS.get('IN_CREATE'))
 
     global system_bus
     system_bus = QDBusConnection.systemBus()
