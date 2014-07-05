@@ -360,7 +360,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         #vm template changed
         try:
             if self.template_name.currentIndex() != self.template_idx:
-                new_template_name = self.template_name.currentText()
+                new_template_name = str(self.template_name.currentText())
                 new_template_name = new_template_name.split(' ')[0]
                 template_vm = self.qvm_collection.get_vm_by_name(new_template_name)
                 assert (template_vm is not None and template_vm.qid in self.qvm_collection)
@@ -373,7 +373,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         #vm netvm changed
         try:
             if self.netVM.currentIndex() != self.netvm_idx:
-                new_netvm_name = self.netVM.currentText()
+                new_netvm_name = str(self.netVM.currentText())
                 new_netvm_name = new_netvm_name.split(' ')[0]
 
                 uses_default_netvm = False
@@ -589,7 +589,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         if hasattr(self.vm, "kernel") and self.kernel_groupbox.isVisible():
             try:
                 if self.kernel.currentIndex() != self.kernel_idx:
-                    new_kernel = self.kernel.currentText()
+                    new_kernel = str(self.kernel.currentText())
                     new_kernel = new_kernel.split(' ')[0]
                     if new_kernel == "default":
                         kernel = self.qvm_collection.get_default_kernel()
@@ -631,7 +631,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         return msg
 
     def drive_path_button_pressed(self):
-        if self.drive_domain.currentText() in ["dom0", "dom0 (current)"]:
+        if str(self.drive_domain.currentText()) in ["dom0", "dom0 (current)"]:
             file_dialog = QFileDialog()
             file_dialog.setReadOnly(True)
             new_path = file_dialog.getOpenFileName(self, "Select drive image",
