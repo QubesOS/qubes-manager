@@ -14,6 +14,7 @@ URL:		http://fixme
 Requires:	python, PyQt4, qubes-core-dom0 > 1.7.23
 Requires:	pmount, cryptsetup, wmctrl
 Requires:	dbus
+Requires:	qubes-artwork
 BuildRequires:	PyQt4-devel
 AutoReq:	0
 

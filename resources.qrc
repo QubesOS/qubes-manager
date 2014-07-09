@@ -28,7 +28,6 @@
     <file alias="flag-yellow.png">icons/flag-yellow.png</file>
     <file alias="remove.png">icons/remove.png</file>
     <file alias="appsprefs.png">icons/appsprefs.png</file>
-    <file alias="qubes.png">icons/qubes.png</file>
     <file alias="appvm.png">icons/appvm.png</file>
     <file alias="netvm.png">icons/netvm.png</file>
     <file alias="proxyvm.png">icons/proxyvm.png</file>

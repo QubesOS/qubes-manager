@@ -1690,7 +1690,7 @@ class QubesTrayIcon(QSystemTrayIcon):
         if self.tray_notifier_type == "KDE":
             message = message.replace('\n', '<br/>\n')
         self.tray_notifier.call("Notify", "Qubes", v_replace_id,
-                "/usr/share/qubes/icons/qubes.png", "Qubes VM Manager",
+                "qubes-manager", "Qubes VM Manager",
                 message, v_actions, QVariant.fromMap({}), msecs)
 
     def createAction(self, text, slot=None, shortcut=None, icon=None,
@@ -1862,7 +1862,7 @@ def main():
     app.setOrganizationName("The Qubes Project")
     app.setOrganizationDomain("http://qubes-os.org")
     app.setApplicationName("Qubes VM Manager")
-    app.setWindowIcon(QIcon(":/qubes.png"))
+    app.setWindowIcon(QIcon.fromTheme("qubes-manager"))
     app.setAttribute(Qt.AA_DontShowIconsInMenus, False)
 
     sys.excepthook = handle_exception
@@ -1878,7 +1878,7 @@ def main():
     blk_manager = QubesBlockDevicesManager(qvm_collection)
 
     global trayIcon
-    trayIcon = QubesTrayIcon(QIcon(":/qubes.png"), blk_manager)
+    trayIcon = QubesTrayIcon(QIcon.fromTheme("qubes-manager"), blk_manager)
 
     global manager_window
     manager_window = VmManagerWindow(qvm_collection, blk_manager)

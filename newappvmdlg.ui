@@ -14,8 +14,7 @@
    <string>Create New VM</string>
   </property>
   <property name="windowIcon">
-   <iconset>
-    <normaloff>:/qubes.png</normaloff>:/qubes.png</iconset>
+   <iconset theme="qubes-manager"/>
   </property>
   <widget class="QFrame" name="hvmtemplatewarningbox">
    <property name="geometry">

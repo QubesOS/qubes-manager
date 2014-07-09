@@ -2,7 +2,7 @@
 Type=Application
 Exec=qubes-manager
 Path=/var/lib/qubes
-Icon=/usr/share/qubes/icons/qubes.png
+Icon=qubes-manager
 Terminal=false
 Name=Qubes VM Manager
 GenericName=Qubes VM Manager
