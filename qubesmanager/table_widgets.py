@@ -45,7 +45,10 @@ class VmIconWidget (QWidget):
         super(VmIconWidget, self).__init__(parent)
 
         self.label_icon = QLabel()
-        icon = QIcon (icon_path)
+        if icon_path[0] in ':/':
+            icon = QIcon (icon_path)
+        else:
+            icon = QIcon.fromTheme(icon_path)
         icon_sz = QSize (row_height * size_multiplier, row_height * size_multiplier)
         icon_pixmap = icon.pixmap(icon_sz, QIcon.Disabled if not enabled else QIcon.Normal)
         self.label_icon.setPixmap (icon_pixmap)
@@ -137,7 +140,7 @@ class VmLabelWidget(VmIconWidget):
             return ":/off.png"
         else:
             self.value = vm.label.index
-            return vm.label.icon_path
+            return vm.label.icon
 
 
 
