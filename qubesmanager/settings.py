@@ -762,12 +762,16 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
     def __remove_service__(self):
         item = self.services_list.currentItem()
+
+        if not item:
+            return
         if str(item.text()) == 'meminfo-writer':
             QMessageBox.information(None, "Service can not be removed", "Service meminfo-writer can not be removed from the list.")
-        else:
-            row = self.services_list.currentRow()
-            item = self.services_list.takeItem(row)
-            del self.new_srv_dict[str(item.text())]
+            return
+
+        row = self.services_list.currentRow()
+        item = self.services_list.takeItem(row)
+        del self.new_srv_dict[str(item.text())]
 
 
     def services_item_clicked(self, item):
