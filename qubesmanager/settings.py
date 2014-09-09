@@ -643,8 +643,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             backend_vm = self.qvm_collection.get_vm_by_name(drv_domain)
             if backend_vm:
                 new_path = get_path_for_vm(backend_vm, "qubes.SelectFile")
-                if new_path:
-                    self.drive_path.setText(new_path)
+        if new_path:
+            self.drive_path.setText(new_path)
 
     ######## devices tab
     def __init_devices_tab__(self):
