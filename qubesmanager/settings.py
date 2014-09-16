@@ -88,8 +88,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         ###### advanced tab
         self.__init_advanced_tab__()
         self.include_in_balancing.stateChanged.connect(self.include_in_balancing_state_changed)
-        self.connect(self.init_mem, SIGNAL("valueChanged(int)"), self.init_mem_changed)
-        self.connect(self.max_mem_size, SIGNAL("editingFinished()"), self.max_mem_size_changed)
+        self.connect(self.init_mem, SIGNAL("editingFinished()"), self.check_mem_changes)
+        self.connect(self.max_mem_size, SIGNAL("editingFinished()"), self.check_mem_changes)
         self.drive_path_button.clicked.connect(self.drive_path_button_pressed)
 
         ###### firewall tab
@@ -450,15 +450,15 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         return msg
 
 
-    def init_mem_changed(self, value):
-        if value > self.max_mem_size.value() and value <= self.max_mem_size.maximum():
-            self.max_mem_size.setValue(value)
-
-
-    def max_mem_size_changed(self):
+    def check_mem_changes(self):
         if self.max_mem_size.value() < self.init_mem.value():
-            QMessageBox.warning(None, "Warning!", "Max memory can't be lower than initial memory.<br>Setting max memory equaling initial memory.")
+            QMessageBox.warning(None, "Warning!", "Max memory can not be less than initial memory.<br>Setting max memory to equal initial memory.")
             self.max_mem_size.setValue(self.init_mem.value())
+        # Linux specific limit: init memory must not be below max_mem_size/10.79 in order to allow scaling up to max_mem_size (or else "add_memory() failed: -17" problem)
+        if self.init_mem.value() * 10 < self.max_mem_size.value():
+            QMessageBox.warning(None, "Warning!", "Initial memory can not be less than one tenth Max memory.<br>Setting initial memory to the minimum allowed value.")
+            self.init_mem.setValue(self.max_mem_size.value() / 10)
+
 
 
     ######### advanced tab
