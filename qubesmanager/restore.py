@@ -48,7 +48,7 @@ from ui_restoredlg import *
 from multiselectwidget import *
 
 from backup_utils import *
-from multiprocessing import Queue
+from multiprocessing import Queue, Event
 from multiprocessing.queues import Empty
 
 class RestoreVMsWindow(Ui_Restore, QWizard):
@@ -69,6 +69,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.feedback_queue = Queue()
         self.canceled = False
         self.tmpdir_to_remove = None
+        self.error_detected = Event()
 
         self.excluded = {}
 
@@ -90,6 +91,8 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                 self.update_device_appvm_enabled)
         self.connect(self.appvm_combobox, SIGNAL("activated(int)"),
                 self.update_device_appvm_enabled)
+        self.connect(self.verify_only, SIGNAL("stateChanged(int)"),
+                     self.on_verify_only_toogled)
 
         self.select_dir_page.isComplete = self.has_selected_dir
         self.select_vms_page.isComplete = self.has_selected_vms
@@ -119,6 +122,9 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
     def on_ignore_uname_mismatch_toggled(self, checked):
         self.restore_options['ignore-username-mismatch'] = checked
+
+    def on_verify_only_toogled(self, checked):
+        self.restore_options['verify-only'] = bool(checked)
 
     def cleanupPage(self, p_int):
         if self.page(p_int) is self.select_vms_page:
@@ -173,6 +179,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.func_output.append(s)
 
     def restore_error_output(self, s):
+        self.error_detected.set()
         self.feedback_queue.put((SIGNAL("restore_progress(QString)"),
                                  u'<font color="red">{0}</font>'.format(s)))
 
@@ -207,8 +214,9 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
             self.emit(SIGNAL("restore_progress(QString)"),
                       '<b><font color="red">{0}</font></b>'
                       .format("Restore aborted!"))
-        elif len(err_msg) > 0:
-            thread_monitor.set_error_msg('\n'.join(err_msg))
+        elif len(err_msg) > 0 or self.error_detected.is_set():
+            if len(err_msg) > 0:
+                thread_monitor.set_error_msg('\n'.join(err_msg))
             self.emit(SIGNAL("restore_progress(QString)"),
                       '<b><font color="red">{0}</font></b>'
                       .format("Finished with errors!"))

@@ -56,13 +56,20 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
+       <item row="3" column="0">
         <widget class="QCheckBox" name="ignore_uname_mismatch">
          <property name="toolTip">
           <string>Ignore dom0 username mismatch while restoring homedir.</string>
          </property>
          <property name="text">
           <string>ignore username mismatch</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QCheckBox" name="verify_only">
+         <property name="text">
+          <string>Verify backup integrity, do not restore the data</string>
          </property>
         </widget>
        </item>
