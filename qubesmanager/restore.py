@@ -173,13 +173,14 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.func_output.append(s)
 
     def restore_error_output(self, s):
-        self.feedback_queue.put((SIGNAL("restore_progress(QString)"), '<font color="red">{0}</font>'.format(s)))
+        self.feedback_queue.put((SIGNAL("restore_progress(QString)"),
+                                 u'<font color="red">{0}</font>'.format(s)))
 
     def restore_output(self, s):
-        self.feedback_queue.put((SIGNAL("restore_progress(QString)"),'<font color="black">{0}</font>'.format(s)))
+        self.feedback_queue.put((SIGNAL("restore_progress(QString)"),
+                                 u'<font color="black">{0}</font>'.format(s)))
 
     def update_progress_bar(self, value):
-        print "progress %d" % value
         self.feedback_queue.put((SIGNAL("backup_progress(int)"), value))
 
     def __do_restore__(self, thread_monitor):
@@ -194,20 +195,27 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         except backup.BackupCanceledError as ex:
             self.canceled = True
             self.tmpdir_to_remove = ex.tmpdir
-            err_msg.append(str(ex))
+            err_msg.append(unicode(ex))
         except Exception as ex:
             print "Exception:", ex
-            err_msg.append(str(ex))
+            err_msg.append(unicode(ex))
+            err_msg.append("Partially restored files left in "
+                           "/var/tmp/restore_*, investigate them and/or clean them up")
 
         self.qvm_collection.unlock_db()
         if self.canceled:
             self.emit(SIGNAL("restore_progress(QString)"),
-                      '<b><font color="red">{0}</font></b>'.format("Restore aborted!"))
+                      '<b><font color="red">{0}</font></b>'
+                      .format("Restore aborted!"))
         elif len(err_msg) > 0:
             thread_monitor.set_error_msg('\n'.join(err_msg))
-            self.emit(SIGNAL("restore_progress(QString)"),'<b><font color="red">{0}</font></b>'.format("Finished with errors!"))
+            self.emit(SIGNAL("restore_progress(QString)"),
+                      '<b><font color="red">{0}</font></b>'
+                      .format("Finished with errors!"))
         else:
-            self.emit(SIGNAL("restore_progress(QString)"),'<font color="green">{0}</font>'.format("Finished successfully!"))
+            self.emit(SIGNAL("restore_progress(QString)"),
+                      '<font color="green">{0}</font>'
+                      .format("Finished successfully!"))
 
         thread_monitor.set_finished()
 
@@ -304,9 +312,8 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
     def reject(self):
         if self.currentPage() is self.commit_page:
             if backup.backup_cancel():
-                self.emit(SIGNAL("restore_progress(QString)"),'<font '
-                                                              'color="red">{'
-                                                              '0}</font>'
+                self.emit(SIGNAL("restore_progress(QString)"),
+                          '<font color="red">{0}</font>'
                           .format("Aborting the operation..."))
                 self.button(self.CancelButton).setDisabled(True)
         else:
