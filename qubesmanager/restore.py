@@ -255,8 +255,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
         elif self.currentPage() is self.commit_page:
             self.button(self.FinishButton).setDisabled(True)
-            self.showFileDialog.setEnabled(
-                self.appvm_combobox.currentIndex() != 0)
+            self.showFileDialog.setEnabled(True)
             self.showFileDialog.setChecked(self.showFileDialog.isEnabled()
                                            and str(self.dir_line_edit.text())
                                            .count("media/") > 0)
@@ -302,6 +301,12 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                 if self.target_appvm:
                     self.target_appvm.run("QUBESRPC %s dom0" % "qubes"
                                                                ".SelectDirectory")
+                else:
+                    file_dialog = QFileDialog()
+                    file_dialog.setReadOnly(True)
+                    file_dialog.getExistingDirectory(self,
+                                                     "Detach backup device",
+                                                     self.dev_mount_path)
             self.progress_bar.setValue(100)
             self.button(self.FinishButton).setEnabled(True)
             self.button(self.CancelButton).setEnabled(False)
