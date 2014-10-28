@@ -212,6 +212,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
     def __init_basic_tab__(self):
         self.vmname.setText(self.vm.name)
         self.vmname.setValidator(QRegExpValidator(QRegExp("[a-zA-Z0-9-]*", Qt.CaseInsensitive), None))
+        self.vmname.setEnabled(not self.vm.is_running())
 
         #self.qvm_collection.lock_db_for_reading()
         #self.qvm_collection.load()
@@ -230,6 +231,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                 self.vmlabel.insertItem(i, label.name)
                 self.vmlabel.setItemIcon (i, QIcon(label.icon_path))
             self.vmlabel.setCurrentIndex(self.label_idx)
+        self.vmlabel.setEnabled(not self.vm.is_running())
 
         if not self.vm.is_template() and self.vm.template is not None:
             template_vm_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_template()]
