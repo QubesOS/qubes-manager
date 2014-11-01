@@ -651,6 +651,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
     ######## devices tab
     def __init_devices_tab__(self):
         self.dev_list = MultiSelectWidget(self)
+        self.dev_list.add_all_button.setVisible(False)
         self.devices_layout.addWidget(self.dev_list)
 
         devs = []
@@ -662,6 +663,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             def __init__(self, name, slot, parent = None):
                 super(DevListWidgetItem, self).__init__(name, parent)
                 self.slot = slot
+                self.Type
 
         for d in devs:
             if d[1] in self.vm.pcidevs:
