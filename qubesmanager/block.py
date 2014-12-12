@@ -78,9 +78,9 @@ class QubesBlockDevicesManager():
         return ret
 
     def update(self):
-        blk = qubesutils.block_list()
+        blk = qubesutils.block_list(self.qvm_collection)
         for b in blk:
-            att = qubesutils.block_check_attached(None, blk[b]['device'], backend_xid = blk[b]['xid'])
+            att = qubesutils.block_check_attached(self.qvm_collection, blk[b])
             if b in self.current_blk:
                 if blk[b] == self.current_blk[b]:
                     if self.current_attached[b] != att: #devices the same, sth with attaching changed
@@ -131,21 +131,21 @@ class QubesBlockDevicesManager():
 
     def attach_device(self, vm, dev):
         backend_vm_name = self.free_devs[dev]['backend_name']
-        dev_id = self.free_devs[dev]['dev']
         mode = self.free_devs[dev]['mode']
         backend_vm = self.qvm_collection.get_vm_by_name(backend_vm_name)
         if self.tray_message_func:
             self.tray_message_func("{0} - attaching {1}"
                                                  .format(vm.name, dev), msecs=3000)
-        qubesutils.block_attach(vm, backend_vm, dev_id, mode=mode)
+        qubesutils.block_attach(self.qvm_collection, vm, backend_vm,
+                                self.free_devs[dev], mode=mode)
 
     def detach_device(self, vm, dev_name):
-        dev_id = self.attached_devs[dev_name]['attached_to']['devid']
-        vm_xid = self.attached_devs[dev_name]['attached_to']['xid']
+        frontend = self.attached_devs[dev_name]['attached_to']['frontend']
+        vm = self.attached_devs[dev_name]['attached_to']['vm']
         if self.tray_message_func:
             self.tray_message_func("{0} - detaching {1}".format(vm.name,
                                                             dev_name), msecs=3000)
-        qubesutils.block_detach(None, dev_id, vm_xid)
+        qubesutils.block_detach(vm, frontend)
 
     def check_if_serves_as_backend(self, vm):
         serves_for = []
