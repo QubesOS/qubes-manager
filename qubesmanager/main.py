@@ -1092,7 +1092,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot(name='on_action_shutdownvm_triggered')
     def action_shutdownvm_triggered(self):
         vm = self.get_selected_vm()
-        assert vm.is_running()
+        if not vm.is_running():
+            return
 
         self.blk_manager.check_if_serves_as_backend(vm)
 
