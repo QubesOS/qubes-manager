@@ -290,7 +290,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.blk_manager = blk_manager
         self.blk_manager.tray_message_func = trayIcon.showMessage
         self.qubes_watch.setup_block_watch(self.blk_manager.block_devs_event)
-        self.qubes_watch.setup_meminfo_watch(self.meminfo_update_event)
+        #TODO self.qubes_watch.setup_meminfo_watch(self.meminfo_update_event)
         self.blk_watch_thread = threading.Thread(target=self.qubes_watch.watch_loop)
         self.blk_watch_thread.daemon = True
         self.blk_watch_thread.start()
