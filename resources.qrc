@@ -8,6 +8,7 @@
     <file alias="global-settings.png">icons/global-settings.png</file>
     <file alias="off.png">icons/on-icon/off.png</file>
     <file alias="outdated.png">icons/outdated.png</file>
+    <file alias="to-be-outdated.png">icons/to-be-outdated.png</file>
     <file alias="update-recommended.png">icons/update-recommended.png</file>
     <file alias="show-all-running.png">icons/show-all-running.png</file>
     <file alias="mount.png">icons/mount.png</file>
