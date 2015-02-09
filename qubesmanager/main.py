@@ -706,8 +706,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
             if self.counter % 3 == 0 or out_of_schedule:
                 (self.last_measure_time, self.last_measure_results) = \
-                    qubes_host.measure_cpu_usage(self.last_measure_results,
-                    self.last_measure_time)
+                    qubes_host.measure_cpu_usage(self.qvm_collection,
+                                                 self.last_measure_results,
+                                                 self.last_measure_time)
 
                 for vm_row in self.vms_in_table.values():
                     cur_cpu_load = None
