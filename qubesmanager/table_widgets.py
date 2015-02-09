@@ -459,7 +459,7 @@ class VmUpdateInfoWidget(QWidget):
             self.set_value(value)
 
         def set_value(self, value):
-            if value == "outdated":
+            if value in ("outdated", "to-be-outdated"):
                 self.value = 30
             elif value == "update":
                 self.value = 20
@@ -484,7 +484,7 @@ class VmUpdateInfoWidget(QWidget):
             layout.addWidget(self.icon, alignment=Qt.AlignCenter)
         self.setLayout(layout)
 
-        self.previous_outdated = False
+        self.previous_outdated_state = None
         self.previous_update_recommended = None
         self.value = None
         self.tableItem = VmUpdateInfoWidget.VmUpdateInfoItem(self.value, vm)
@@ -493,13 +493,22 @@ class VmUpdateInfoWidget(QWidget):
         if vm.type == "HVM":
             return
 
-        outdated = vm.is_outdated()
-        if outdated and not self.previous_outdated:
-            self.update_status_widget("outdated")
-        elif not outdated and self.previous_outdated:
-            self.update_status_widget(None)
+        if vm.is_outdated():
+            outdated_state = "outdated"
+        # During TemplateVM shutdown, there's an interval of a few seconds
+        # during which vm.template.is_running() returns false but
+        # vm.is_outdated() does not yet return true, so the icon disappears.
+        # This looks goofy, but we've decided not to fix it at this time
+        # (2015-02-09).
+        elif vm.template and vm.template.is_running():
+            outdated_state = "to-be-outdated"
+        else:
+            outdated_state = None
 
-        self.previous_outdated = outdated
+        if outdated_state != self.previous_outdated_state:
+            self.update_status_widget(outdated_state)
+
+        self.previous_outdated_state = outdated_state
 
         if not vm.is_updateable():
             return
@@ -551,7 +560,11 @@ class VmUpdateInfoWidget(QWidget):
         elif state == "outdated":
             label_text = "<font color=\"red\">VM outdated</font>"
             icon_path = ":/outdated.png"
-            tooltip_text = "The VM must be restarted for its filesystem to reflect the template's recent changes."
+            tooltip_text = "The VM must be restarted for its filesystem to reflect the template's recent committed changes."
+        elif state == "to-be-outdated":
+            label_text = "<font color=\"#800000\">TemplateVM running</font>"
+            icon_path = ":/to-be-outdated.png"
+            tooltip_text = "The TemplateVM must be stopped before changes from its current session can be picked up by this VM."
         elif state == None:
             label_text = ""
             icon_path = None
