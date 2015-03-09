@@ -79,7 +79,11 @@ class VmTypeWidget(VmIconWidget):
             self.value = value
 
         def __lt__(self, other):
-            if self.value == other.value:
+            if self.vm.qid == 0:
+                return True
+            elif other.vm.qid == 0:
+                return False
+            elif self.value == other.value:
                 return self.vm.qid < other.vm.qid
             else:
                 return self.value < other.value
@@ -123,7 +127,11 @@ class VmLabelWidget(VmIconWidget):
             self.value = value
 
         def __lt__(self, other):
-            if self.value == other.value:
+            if self.vm.qid == 0:
+                return True
+            elif other.vm.qid == 0:
+                return False
+            elif self.value == other.value:
                 return self.vm.qid < other.vm.qid
             else:
                 return self.value < other.value
@@ -151,6 +159,13 @@ class VmNameItem (QTableWidgetItem):
         self.setText(vm.name)
         self.setTextAlignment(Qt.AlignVCenter)
         self.qid = vm.qid
+
+    def __lt__(self, other):
+        if self.qid == 0:
+            return True
+        elif other.qid == 0:
+            return False
+        return super(VmNameItem, self).__lt__(other)
 
 
 class VmStatusIcon(QLabel):
@@ -191,6 +206,11 @@ class VmInfoWidget (QWidget):
             self.vm = vm
 
         def __lt__(self, other):
+            if self.vm.qid == 0:
+                return True
+            elif other.vm.qid == 0:
+                return False
+
             self_val = self.upd_info_item.value
             other_val = other.upd_info_item.value
             if self.tableWidget().horizontalHeader().sortIndicatorOrder() == update_order:
@@ -281,7 +301,11 @@ class VmTemplateItem (QTableWidgetItem):
         self.setTextAlignment(Qt.AlignVCenter)
 
     def __lt__(self, other):
-        if self.text() == other.text():
+        if self.vm.qid == 0:
+            return True
+        elif other.vm.qid == 0:
+            return False
+        elif self.text() == other.text():
             return self.vm.qid < other.vm.qid
         else:
             return super(VmTemplateItem, self).__lt__(other)
@@ -305,7 +329,11 @@ class VmNetvmItem (QTableWidgetItem):
         self.setTextAlignment(Qt.AlignVCenter)
 
     def __lt__(self, other):
-        if self.text() == other.text():
+        if self.vm.qid == 0:
+            return True
+        elif other.vm.qid == 0:
+            return False
+        elif self.text() == other.text():
             return self.vm.qid < other.vm.qid
         else:
             return super(VmNetvmItem, self).__lt__(other)
@@ -315,12 +343,21 @@ class VmInternalItem(QTableWidgetItem):
         super(VmInternalItem, self).__init__()
         self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
 
-        self.internal = vm.internal
+        self.vm = vm
+        self.internal = self.vm.internal
 
         if self.internal:
             self.setText("Yes")
         else:
             self.setText("")
+
+    def __lt__(self, other):
+        if self.vm.qid == 0:
+            return True
+        elif other.vm.qid == 0:
+            return False
+        return super(VmInternalItem, self).__lt__(other)
+
 
 class VmUsageBarWidget (QWidget):
 
@@ -334,7 +371,11 @@ class VmUsageBarWidget (QWidget):
             self.value = value
 
         def __lt__(self, other):
-            if self.value == other.value:
+            if self.vm.qid == 0:
+                return True
+            elif other.vm.qid == 0:
+                return False
+            elif self.value == other.value:
                 return self.vm.qid < other.vm.qid
             else:
                 return int(self.value) < int(other.value)
@@ -394,7 +435,11 @@ class ChartWidget (QWidget):
             self.value = value
 
         def __lt__(self, other):
-            if self.value == other.value:
+            if self.vm.qid == 0:
+                return True
+            elif other.vm.qid == 0:
+                return False
+            elif self.value == other.value:
                 return self.vm.qid < other.vm.qid
             else:
                 return self.value < other.value
@@ -467,7 +512,11 @@ class VmUpdateInfoWidget(QWidget):
                 self.value = 0
 
         def __lt__(self, other):
-            if self.value == other.value:
+            if self.vm.qid == 0:
+                return True
+            elif other.vm.qid == 0:
+                return False
+            elif self.value == other.value:
                 return self.vm.qid < other.vm.qid
             else:
                 return self.value < other.value
@@ -601,7 +650,11 @@ class VmSizeOnDiskItem (QTableWidgetItem):
             self.setText( str(self.value) + " MiB")
 
     def __lt__(self, other):
-        if self.value == other.value:
+        if self.vm.qid == 0:
+            return True
+        elif other.vm.qid == 0:
+            return False
+        elif self.value == other.value:
             return self.vm.qid < other.vm.qid
         else:
             return self.value < other.value
@@ -611,11 +664,19 @@ class VmIPItem(QTableWidgetItem):
         super(VmIPItem, self).__init__()
         self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
 
-        self.ip = vm.ip
+        self.vm = vm
+        self.ip = self.vm.ip
         if self.ip:
             self.setText(self.ip)
         else:
             self.setText("n/a")
+
+    def __lt__(self, other):
+        if self.vm.qid == 0:
+            return True
+        elif other.vm.qid == 0:
+            return False
+        return super(VmIPItem, self).__lt__(other)
 
 class VmIncludeInBackupsItem(QTableWidgetItem):
     def __init__(self, vm):
@@ -629,7 +690,11 @@ class VmIncludeInBackupsItem(QTableWidgetItem):
             self.setText("")
 
     def __lt__(self, other):
-        if self.vm.include_in_backups == other.vm.include_in_backups:
+        if self.vm.qid == 0:
+            return True
+        elif other.vm.qid == 0:
+            return False
+        elif self.vm.include_in_backups == other.vm.include_in_backups:
             return self.vm.qid < other.vm.qid
         else:
             return self.vm.include_in_backups < other.vm.include_in_backups
@@ -646,7 +711,11 @@ class VmLastBackupItem(QTableWidgetItem):
             self.setText("")
 
     def __lt__(self, other):
-        if self.vm.backup_timestamp == other.vm.backup_timestamp:
+        if self.vm.qid == 0:
+            return True
+        elif other.vm.qid == 0:
+            return False
+        elif self.vm.backup_timestamp == other.vm.backup_timestamp:
             return self.vm.qid < other.vm.qid
         elif not self.vm.backup_timestamp:
             return False
