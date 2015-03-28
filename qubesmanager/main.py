@@ -125,7 +125,6 @@ class QubesManagerFileWatcher(ProcessEvent):
 class VmRowInTable(object):
     cpu_graph_hue = 210
     mem_graph_hue = 120
-    prefmem_graph_hue = 70
 
     def __init__(self, vm, row_no, table, block_manager):
         self.vm = vm
@@ -173,28 +172,6 @@ class VmRowInTable(object):
         table.setCellWidget(row_no,  VmManagerWindow.columns_indices['MEM Graph'], self.mem_widget)
         table.setItem(row_no,  VmManagerWindow.columns_indices['MEM Graph'], self.mem_widget.tableItem)
 
-        self.prefmem_usage_widget = VmUsageBarWidget(0, qubes_host.memory_total/1024, "%v MB",
-                            lambda vm, val: vm.last_prefmem/1024, vm, 0,
-                            self.prefmem_graph_hue)
-        table.setCellWidget(row_no,
-                            VmManagerWindow.columns_indices['Req MEM'],
-                            self.prefmem_usage_widget)
-        table.setItem(row_no,
-                      VmManagerWindow.columns_indices['Req MEM'],
-                      self.prefmem_usage_widget.tableItem)
-
-        self.prefmem_widget = \
-            ChartWidget(vm,
-                        lambda vm, val: vm .last_prefmem*100/qubes_host\
-            .memory_total,  self.prefmem_graph_hue, 0)
-        table.setCellWidget(row_no,
-                            VmManagerWindow.columns_indices['Req MEM Graph'],
-                            self.prefmem_widget)
-        table.setItem(row_no,
-                      VmManagerWindow.columns_indices['Req MEM Graph'],
-                      self.prefmem_widget.tableItem)
-
-
         self.size_widget = VmSizeOnDiskItem(vm)
         table.setItem(row_no,  VmManagerWindow.columns_indices['Size'], self.size_widget)
 
@@ -219,8 +196,6 @@ class VmRowInTable(object):
             self.mem_usage_widget.update_load(self.vm, None)
             self.load_widget.update_load(self.vm, cpu_load)
             self.mem_widget.update_load(self.vm, None)
-            self.prefmem_widget.update_load(self.vm, None)
-            self.prefmem_usage_widget.update_load(self.vm, None)
         if update_size_on_disk == True:
             self.size_widget.update()
 
@@ -268,13 +243,11 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         "CPU Graph": 7,
                         "MEM": 8,
                         "MEM Graph": 9,
-                        "Req MEM": 10,
-                        "Req MEM Graph": 11,
-                        "Size": 12,
-                        "Internal": 13,
-                        "IP": 14,
-                        "Backups": 15,
-                        "Last backup": 16,
+                        "Size": 10,
+                        "Internal": 11,
+                        "IP": 12,
+                        "Backups": 13,
+                        "Last backup": 14,
     }
 
     def __init__(self, qvm_collection, blk_manager, parent=None):
@@ -286,11 +259,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         self.qubes_watch = qubesutils.QubesWatch()
         self.qvm_collection = qvm_collection
-        self.meminfo_changed = {}
         self.blk_manager = blk_manager
         self.blk_manager.tray_message_func = trayIcon.showMessage
         self.qubes_watch.setup_block_watch(self.blk_manager.block_devs_event)
-        #TODO self.qubes_watch.setup_meminfo_watch(self.meminfo_update_event)
         self.blk_watch_thread = threading.Thread(target=self.qubes_watch.watch_loop)
         self.blk_watch_thread.daemon = True
         self.blk_watch_thread.start()
@@ -327,10 +298,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.columns_actions[ self.columns_indices["CPU Graph"] ] = self.action_cpu_graph
         self.columns_actions[ self.columns_indices["MEM"] ] = self.action_mem
         self.columns_actions[ self.columns_indices["MEM Graph"] ] = self.action_mem_graph
-        self.columns_actions[ self.columns_indices["Req MEM"] ] = self\
-            .action_prefmem
-        self.columns_actions[ self.columns_indices["Req MEM Graph"] ] = self\
-            .action_prefmem_graph
         self.columns_actions[ self.columns_indices["Size"] ] = self.action_size_on_disk
         self.columns_actions[ self.columns_indices["Internal"] ] = self.action_internal
         self.columns_actions[ self.columns_indices["IP"] ] = self\
@@ -347,8 +314,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.action_cpu_graph.setChecked(False)
         self.table.setColumnHidden( self.columns_indices["MEM Graph"], True)
         self.action_mem_graph.setChecked(False)
-        self.action_prefmem.setChecked(False)
-        self.action_prefmem_graph.setChecked(False)
         self.table.setColumnHidden( self.columns_indices["Size"], True)
         self.action_size_on_disk.setChecked(False)
         self.table.setColumnHidden( self.columns_indices["Internal"], True)
@@ -557,7 +522,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         for vm in vms_list:
             vm.last_power_state = vm.get_power_state()
             vm.last_running = vm.last_power_state in ["Running", "Transient"]
-            vm.last_prefmem = vm.get_prefmem()
             if vm.last_running:
                 running_count += 1
             if vm.internal:
@@ -627,9 +591,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                     self.table.setRowHidden(row_no, False)
                 row_no += 1
 
-    def meminfo_update_event(self, domain_id):
-        self.meminfo_changed[int(domain_id)] = True
-
     def mark_table_for_update(self):
         self.reload_table = True
 
@@ -672,9 +633,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         "Error starting VM: Cannot execute qrexec-daemon!" \
                         and vm.is_qrexec_running():
                     self.clear_error(vm.qid)
-                if self.meminfo_changed.get(vm.xid, True):
-                    vm.last_prefmem = vm.get_prefmem()
-                    self.meminfo_changed[vm.xid] = False
 
             if self.screen_changed == True:
                 reload_table = True
@@ -1403,12 +1361,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
     def on_action_mem_graph_toggled(self, checked):
         self.showhide_column( self.columns_indices['MEM Graph'], checked)
-
-    def on_action_prefmem_toggled(self, checked):
-        self.showhide_column( self.columns_indices['Req MEM'], checked)
-
-    def on_action_prefmem_graph_toggled(self, checked):
-        self.showhide_column( self.columns_indices['Req MEM Graph'], checked)
 
     def on_action_size_on_disk_toggled(self, checked):
         self.showhide_column( self.columns_indices['Size'], checked)
