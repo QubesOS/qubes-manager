@@ -261,6 +261,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.qvm_collection = qvm_collection
         self.blk_manager = blk_manager
         self.blk_manager.tray_message_func = trayIcon.showMessage
+        self.qubes_watch.setup_domain_watch(self.domain_state_changed_callback)
         self.qubes_watch.setup_block_watch(self.blk_manager.block_devs_event)
         self.blk_watch_thread = threading.Thread(target=self.qubes_watch.watch_loop)
         self.blk_watch_thread.daemon = True
@@ -509,6 +510,12 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.manager_settings.setValue('position/x', self.x())
             self.manager_settings.setValue('position/y', self.y())
             # do not sync for performance reasons
+
+    def domain_state_changed_callback(self, name = None, uuid = None):
+        if name is not None:
+            vm = self.qvm_collection.get_vm_by_name(name)
+            if vm:
+                vm.refresh()
 
     def get_vms_list(self):
         self.qvm_collection.lock_db_for_reading()
