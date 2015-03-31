@@ -66,7 +66,6 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.blk_manager = blk_manager
         self.shutdown_vm_func = shutdown_vm_func
 
-        self.dev_mount_path = None
         self.func_output = []
         self.selected_vms = []
         self.tmpdir_to_remove = None
@@ -92,13 +91,8 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.connect(self.select_vms_widget, SIGNAL("items_added(PyQt_PyObject)"), self.vms_added)
         self.refresh_button.clicked.connect(self.check_running)
         self.shutdown_running_vms_button.clicked.connect(self.shutdown_all_running_selected)
-        self.connect(self.dev_combobox, SIGNAL("activated(int)"), self.dev_combobox_activated)
         self.connect(self, SIGNAL("backup_progress(int)"), self.progress_bar.setValue)
         self.dir_line_edit.connect(self.dir_line_edit, SIGNAL("textChanged(QString)"), self.backup_location_changed)
-        self.connect(self.dev_combobox, SIGNAL("activated(int)"),
-                self.update_device_appvm_enabled)
-        self.connect(self.appvm_combobox, SIGNAL("activated(int)"),
-                self.update_device_appvm_enabled)
 
         self.select_vms_page.isComplete = self.has_selected_vms
         self.select_dir_page.isComplete = self.has_selected_dir_and_pass
@@ -119,7 +113,6 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 
         self.total_size = 0
         self.__fill_vms_list__()
-        fill_devs_list(self)
 
         fill_appvms_list(self)
         self.load_settings()
@@ -130,12 +123,6 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         dest_vm_idx = self.appvm_combobox.findText(dest_vm_name.toString())
         if dest_vm_idx > -1:
             self.appvm_combobox.setCurrentIndex(dest_vm_idx)
-        else:
-            dest_blk_name = main.manager_window.manager_settings.value(
-                'backup/device', defaultValue="")
-            dest_blk_idx = self.dev_combobox.findText(dest_blk_name.toString())
-            if dest_blk_idx > -1:
-                self.dev_combobox.setCurrentIndex(dest_blk_idx)
 
         if main.manager_window.manager_settings.contains('backup/path'):
             dest_path = main.manager_window.manager_settings.value(
@@ -150,8 +137,6 @@ class BackupVMsWindow(Ui_Backup, QWizard):
     def save_settings(self):
         main.manager_window.manager_settings.setValue(
             'backup/vmname', self.appvm_combobox.currentText())
-        main.manager_window.manager_settings.setValue(
-            'backup/device', self.dev_combobox.currentText())
         main.manager_window.manager_settings.setValue(
             'backup/path', self.dir_line_edit.text())
         main.manager_window.manager_settings.setValue(
@@ -273,12 +258,6 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                 names.append(item.vm.name)
                 vms.append(item.vm)
         return (names, vms)
-
-    def dev_combobox_activated(self, idx):
-        dev_combobox_activated(self, idx)
-
-    def update_device_appvm_enabled(self, idx):
-        update_device_appvm_enabled(self, idx)
 
     @pyqtSlot(name='on_select_path_button_clicked')
     def select_path_button_clicked(self):
@@ -402,18 +381,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             else:
                 self.progress_bar.setValue(100)
                 self.progress_status.setText("Backup finished.")
-                if self.dev_mount_path is not None:
-                    self.progress_status.setText(
-                        "Backup finished. You can disconnect your backup "
-                        "device")
-                else:
-                    self.progress_status.setText("Backup finished.")
-            if self.dev_mount_path is not None:
-                umount_device(self.dev_mount_path)
-                detach_device(self, str(self.dev_combobox.itemData(
-                    self.dev_combobox.currentIndex()).toString()))
-                self.dev_mount_path = None
-            elif self.showFileDialog.isChecked():
+            if self.showFileDialog.isChecked():
                 orig_text = self.progress_status.text
                 self.progress_status.setText(
                     orig_text + " Please unmount your backup volume and cancel "

@@ -62,7 +62,6 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.qvm_collection = qvm_collection
         self.blk_manager = blk_manager
 
-        self.dev_mount_path = None
         self.restore_options = None
         self.vms_to_restore = None
         self.func_output = []
@@ -83,14 +82,9 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.select_vms_layout.insertWidget(1, self.select_vms_widget)
 
         self.connect(self, SIGNAL("currentIdChanged(int)"), self.current_page_changed)
-        self.connect(self.dev_combobox, SIGNAL("activated(int)"), self.dev_combobox_activated)
         self.connect(self, SIGNAL("restore_progress(QString)"), self.commit_text_edit.append)
         self.connect(self, SIGNAL("backup_progress(int)"), self.progress_bar.setValue)
         self.dir_line_edit.connect(self.dir_line_edit, SIGNAL("textChanged(QString)"), self.backup_location_changed)
-        self.connect(self.dev_combobox, SIGNAL("activated(int)"),
-                self.update_device_appvm_enabled)
-        self.connect(self.appvm_combobox, SIGNAL("activated(int)"),
-                self.update_device_appvm_enabled)
         self.connect(self.verify_only, SIGNAL("stateChanged(int)"),
                      self.on_verify_only_toogled)
 
@@ -101,16 +95,8 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         #this causes to run isComplete() twice, I don't know why
         self.select_vms_page.connect(self.select_vms_widget, SIGNAL("selected_changed()"), SIGNAL("completeChanged()"))
 
-        fill_devs_list(self)
         fill_appvms_list(self)
         self.__init_restore_options__()
-
-
-    def dev_combobox_activated(self, idx):
-        dev_combobox_activated(self, idx)
-
-    def update_device_appvm_enabled(self, idx):
-        update_device_appvm_enabled(self, idx)
 
     @pyqtSlot(name='on_select_path_button_clicked')
     def select_path_button_clicked(self):
@@ -288,12 +274,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                     QMessageBox.warning (None, "Backup error!", "ERROR: {1}"
                                       .format(self.vm.name, self.thread_monitor.error_msg))
 
-            if self.dev_mount_path != None:
-                umount_device(self.dev_mount_path)
-                self.dev_mount_path = None
-                detach_device(self, str(self.dev_combobox.itemData(
-                        self.dev_combobox.currentIndex()).toString()))
-            elif self.showFileDialog.isChecked():
+            if self.showFileDialog.isChecked():
                 self.emit(SIGNAL("restore_progress(QString)"),
                           '<b><font color="black">{0}</font></b>'.format(
                               "Please unmount your backup volume and cancel "
@@ -304,9 +285,9 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                 else:
                     file_dialog = QFileDialog()
                     file_dialog.setReadOnly(True)
-                    file_dialog.getExistingDirectory(self,
-                                                     "Detach backup device",
-                                                     self.dev_mount_path)
+                    file_dialog.getExistingDirectory(
+                        self, "Detach backup device",
+                        os.path.dirname(unicode(self.dir_line_edit.text())))
             self.progress_bar.setValue(100)
             self.button(self.FinishButton).setEnabled(True)
             self.button(self.CancelButton).setEnabled(False)
@@ -330,10 +311,6 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                           .format("Aborting the operation..."))
                 self.button(self.CancelButton).setDisabled(True)
         else:
-            if self.dev_mount_path != None:
-                umount_device(self.dev_mount_path)
-                detach_device(self, str(self.dev_combobox.itemData(
-                    self.dev_combobox.currentIndex()).toString()))
             self.done(0)
 
     def has_selected_dir(self):
