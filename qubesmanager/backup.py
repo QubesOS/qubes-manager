@@ -171,9 +171,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 
     def __fill_vms_list__(self):
         for vm in self.qvm_collection.values():
-            if vm.is_appvm() and vm.internal:
-                continue
-            if vm.is_template() and vm.installed_by_rpm:
+            if vm.internal:
                 continue
 
             item = BackupVMsWindow.VmListItem(vm)
