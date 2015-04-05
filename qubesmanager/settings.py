@@ -567,6 +567,36 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                 self.drive_path.setText(drv_path)
             self.drive_domain.setCurrentIndex(self.drive_domain_idx)
 
+        if not hasattr(self.vm, "dispvm_netvm"):
+            self.other_groupbox.setVisible(False)
+        else:
+            self.other_groupbox.setVisible(True)
+            netvm_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_netvm() and vm.qid != 0]
+            self.dispvm_netvm_idx = -1
+
+            text = "default (same as VM own NetVM)"
+            if self.vm.uses_default_dispvm_netvm:
+                text += " (current)"
+                self.dispvm_netvm_idx = 0
+            self.dispvm_netvm.insertItem(0, text)
+
+            for (i, vm) in enumerate(netvm_list):
+                text = vm.name
+                if self.vm.dispvm_netvm is not None and vm.qid == \
+                        self.vm.dispvm_netvm.qid and not \
+                        self.vm.uses_default_dispvm_netvm:
+                    self.dispvm_netvm_idx = i+1
+                    text += " (current)"
+                self.dispvm_netvm.insertItem(i+1, text)
+
+            none_text = "none"
+            if self.vm.dispvm_netvm is None:
+                none_text += " (current)"
+                self.dispvm_netvm_idx = len(netvm_list)+1
+            self.dispvm_netvm.insertItem(len(netvm_list)+1, none_text)
+
+            self.dispvm_netvm.setCurrentIndex(self.dispvm_netvm_idx)
+
     def __apply_advanced_tab__(self):
         msg = []
 
@@ -630,6 +660,35 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                         self.anything_changed = True
             except Exception as ex:
                 msg.append(str(ex))
+
+        #vm dispvm_netvm changed
+        try:
+            print self.dispvm_netvm.currentIndex()
+            if self.dispvm_netvm.currentIndex() != self.dispvm_netvm_idx:
+                new_dispvm_netvm_name = str(self.dispvm_netvm.currentText())
+                new_dispvm_netvm_name = new_dispvm_netvm_name.split(' ')[0]
+
+                uses_default_dispvm_netvm = False
+
+                if new_dispvm_netvm_name == "default":
+                    uses_default_dispvm_netvm = True
+
+                if new_dispvm_netvm_name == "none":
+                    dispvm_netvm = None
+                else:
+                    dispvm_netvm = self.qvm_collection.get_vm_by_name(
+                        new_dispvm_netvm_name)
+                assert (dispvm_netvm is None or (dispvm_netvm.qid in
+                        self.qvm_collection and dispvm_netvm.is_netvm()))
+
+                if uses_default_dispvm_netvm:
+                    self.vm.uses_default_dispvm_netvm = True
+                else:
+                    self.vm.uses_default_dispvm_netvm = False
+                    self.vm.dispvm_netvm = dispvm_netvm
+                self.anything_changed = True
+        except Exception as ex:
+            msg.append(str(ex))
 
         return msg
 
