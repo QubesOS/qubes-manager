@@ -250,6 +250,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                 self.template_name.insertItem(i, text)
                 i += 1
             self.template_name.setCurrentIndex(self.template_idx)
+            self.template_name.setEnabled(not self.vm.is_running())
         else:
             self.template_name.setEnabled(False)
             self.template_idx = -1
