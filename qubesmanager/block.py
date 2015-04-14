@@ -122,6 +122,7 @@ class QubesBlockDevicesManager():
     def __make_entry__(self, k, dev, att):
         size_str = qubesutils.bytes_to_kmg(dev['size'])
         entry = {   'dev': dev['device'],
+                    'dev_obj': dev,
                     'backend_name': dev['vm'],
                     'desc': dev['desc'],
                     'mode': dev['mode'],
@@ -130,14 +131,12 @@ class QubesBlockDevicesManager():
         return entry
 
     def attach_device(self, vm, dev):
-        backend_vm_name = self.free_devs[dev]['backend_name']
         mode = self.free_devs[dev]['mode']
-        backend_vm = self.qvm_collection.get_vm_by_name(backend_vm_name)
         if self.tray_message_func:
             self.tray_message_func("{0} - attaching {1}"
                                                  .format(vm.name, dev), msecs=3000)
-        qubesutils.block_attach(self.qvm_collection, vm, backend_vm,
-                                self.free_devs[dev], mode=mode)
+        qubesutils.block_attach(self.qvm_collection, vm,
+                                self.free_devs[dev]['dev_obj'], mode=mode)
 
     def detach_device(self, vm, dev_name):
         frontend = self.attached_devs[dev_name]['attached_to']['frontend']

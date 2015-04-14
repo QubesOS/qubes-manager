@@ -663,7 +663,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 rows_with_blk = []
                 self.blk_manager.blk_lock.acquire()
                 for d in self.blk_manager.attached_devs:
-                    rows_with_blk.append( self.blk_manager.attached_devs[d]['attached_to']['vm'])
+                    rows_with_blk.append(
+                        self.blk_manager.attached_devs[d]['attached_to'][
+                            'vm'].qid)
                 self.blk_manager.blk_lock.release()
 
             if (not self.table.isColumnHidden(self.columns_indices['Size']) ) and self.counter % 60 == 0 or out_of_schedule:
@@ -683,7 +685,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         cur_cpu_load = 0
 
                     if rows_with_blk != None:
-                        if vm_row.vm.name in rows_with_blk:
+                        if vm_row.vm.qid in rows_with_blk:
                             blk_visible = True
                         else:
                             blk_visible = False
@@ -1440,10 +1442,13 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.blk_menu.setEnabled(True)
 
             self.blk_manager.blk_lock.acquire()
-            if len(self.blk_manager.attached_devs) > 0 :
+            if len(self.blk_manager.attached_devs) > 0:
                 for d in self.blk_manager.attached_devs:
-                    if self.blk_manager.attached_devs[d]['attached_to']['vm'] == vm.name:
-                        text = "Detach " + d + " " + unicode(self.blk_manager.attached_devs[d]['size']) + " " + self.blk_manager.attached_devs[d]['desc']
+                    if self.blk_manager.attached_devs[d]['attached_to'][
+                            'vm'].qid == vm.qid:
+                        text = "Detach " + d + " " + unicode(
+                            self.blk_manager.attached_devs[d]['size']) + " " + \
+                            self.blk_manager.attached_devs[d]['desc']
                         action = self.blk_menu.addAction(QIcon(":/remove.png"), text)
                         action.setData(QVariant(d))
 
@@ -1564,9 +1569,7 @@ class QubesTrayIcon(QSystemTrayIcon):
         self.blk_manager.blk_lock.acquire()
         if len(self.blk_manager.attached_devs) > 0 :
             for d in self.blk_manager.attached_devs:
-                vm = self.blk_manager.qvm_collection.get_vm_by_name(
-                    self.blk_manager.attached_devs[d]['attached_to']['vm']
-                )
+                vm = self.blk_manager.attached_devs[d]['attached_to']['vm']
                 text = "Detach %s %s (%s) from %s" % (
                     d,
                     self.blk_manager.attached_devs[d]['desc'],
@@ -1611,10 +1614,7 @@ class QubesTrayIcon(QSystemTrayIcon):
     @pyqtSlot('QAction *')
     def dettach_device_triggered(self, action):
         dev = str(action.data().toString())
-        vm = self.blk_manager.qvm_collection.get_vm_by_name(
-            self.blk_manager.attached_devs[dev]['attached_to']['vm']
-        )
-
+        vm = self.blk_manager.attached_devs[dev]['attached_to']['vm']
 
         self.blk_manager.blk_lock.acquire()
         try:
