@@ -97,10 +97,10 @@ class NewFwRuleDlg (QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
             ]
         displayed_services = [
                 '',
-                'http', 'https', 'ftp', 'ftps',
-                'smtp', 'pop3', 'pop3s', 'imap', 'imaps', 'nntp', 'nntps',
-                'ssh', 'telnet', 'telnets', 'ntp', 'snmp',
-                'ldap', 'ldaps', 'irc', 'ircs', 'xmpp-client',
+                'http', 'https', 'ftp', 'ftps', 'smtp',
+                'smtps', 'pop3', 'pop3s', 'imap', 'imaps', 'odmr', 
+                'nntp', 'nntps', 'ssh', 'telnet', 'telnets', 'ntp', 
+                'snmp', 'ldap', 'ldaps', 'irc', 'ircs', 'xmpp-client',
                 'syslog', 'printer', 'nfs', 'x11',
                 '1024-1234'
             ]
