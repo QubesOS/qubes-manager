@@ -597,7 +597,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         vms_list = [vm for vm in self.qvm_collection.values()]
         for vm in vms_list:
             vm.last_power_state = vm.get_power_state()
-            vm.last_running = vm.last_power_state in ["Running", "Transient"]
+            vm.last_running = vm.is_running()
             if vm.last_running:
                 running_count += 1
             if vm.internal:
@@ -691,7 +691,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         self.clear_error(vm.qid)
                     prev_running = vm.last_running
                     vm.last_power_state = state
-                    vm.last_running = (state in ["Running", "Transient"])
+                    vm.last_running = vm.is_running()
                     self.update_audio_rec_info(vm)
                     if not prev_running and vm.last_running:
                         self.running_vms_count += 1
@@ -850,7 +850,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 not vm.installed_by_rpm and not vm.last_running)
             self.action_clonevm.setEnabled(
                 not vm.last_running and not vm.is_netvm())
-            self.action_resumevm.setEnabled(not vm.last_running)
+            self.action_resumevm.setEnabled(not vm.last_running or
+                                            vm.last_power_state == "Paused")
             try:
                 self.action_startvm_tools_install.setVisible(
                     isinstance(vm, QubesHVm))
@@ -858,12 +859,19 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 # ignore non existing QubesHVm
                 pass
             self.action_startvm_tools_install.setEnabled(not vm.last_running)
-            self.action_pausevm.setEnabled(vm.last_running and vm.qid != 0)
-            self.action_shutdownvm.setEnabled(vm.last_running and vm.qid != 0)
+            self.action_pausevm.setEnabled(
+                vm.last_running and
+                vm.last_power_state != "Paused" and
+                vm.qid != 0)
+            self.action_shutdownvm.setEnabled(
+                vm.last_running and
+                vm.last_power_state != "Paused" and
+                vm.qid != 0)
             self.action_killvm.setEnabled((vm.last_running or
                                            vm.last_power_state == "Paused") and
                                           vm.qid != 0)
-            self.action_appmenus.setEnabled(not vm.is_netvm())
+            self.action_appmenus.setEnabled(not vm.internal and
+                                            not vm.is_disposablevm())
             self.action_editfwrules.setEnabled(vm.is_networked() and not (
                 vm.is_netvm() and not vm.is_proxyvm()))
             self.action_updatevm.setEnabled(vm.is_updateable() or vm.qid == 0)
@@ -872,7 +880,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.action_run_command_in_vm.setEnabled(
                 not vm.last_power_state == "Paused" and vm.qid != 0)
             self.action_set_keyboard_layout.setEnabled(
-                vm.qid != 0 and vm.last_running)
+                vm.qid != 0 and
+                vm.last_running and
+                vm.last_power_state != "Paused")
         else:
             self.action_settings.setEnabled(False)
             self.action_removevm.setEnabled(False)
@@ -1097,16 +1107,16 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot(name='on_action_resumevm_triggered')
     def action_resumevm_triggered(self):
         vm = self.get_selected_vm()
-        assert not vm.is_running() or vm.is_paused()
 
-        if vm.is_paused():
+        if vm.get_power_state() in ["Paused", "Suspended"]:
             try:
-                vm.unpause()
+                vm.resume()
             except Exception as ex:
                 QMessageBox.warning(None, "Error unpausing VM!",
                                     "ERROR: {0}".format(ex))
             return
 
+        assert not vm.is_running()
         thread_monitor = ThreadMonitor()
         thread = threading.Thread(target=self.do_start_vm,
                                   args=(vm, thread_monitor))
