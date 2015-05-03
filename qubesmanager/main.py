@@ -64,14 +64,16 @@ from global_settings import GlobalSettingsWindow
 from log_dialog import LogDialog
 from thread_monitor import *
 
-from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
+from pyinotify import WatchManager, ThreadedNotifier, EventsCodes, \
+    ProcessEvent
 
 import subprocess
 import time
-from datetime import datetime,timedelta
+from datetime import datetime, timedelta
+
 qubes_clipboard_info_file = "/var/run/qubes/qubes-clipboard.bin.source"
 
-update_suggestion_interval = 14 # 14 days
+update_suggestion_interval = 14  # 14 days
 
 dbus_object_path = '/org/qubesos/QubesManager'
 dbus_interface = 'org.qubesos.QubesManager'
@@ -84,42 +86,46 @@ class QMVmState:
     AudioRecAvailable = 2
     AudioRecAllowed = 3
 
+
 class QubesManagerFileWatcher(ProcessEvent):
     def __init__ (self, update_func):
         self.update_func = update_func
 
-    def process_IN_MODIFY (self, event):
+    def process_IN_MODIFY(self, event):
         if event.path == system_path["qubes_store_filename"]:
             self.update_func()
 
-    def process_IN_MOVED_TO (self, event):
+    def process_IN_MOVED_TO(self, event):
         if event.pathname == system_path["qubes_store_filename"]:
             self.update_func()
 
-    def process_IN_CLOSE_WRITE (self, event):
+    def process_IN_CLOSE_WRITE(self, event):
         if event.path == qubes_clipboard_info_file:
-            src_info_file = open (qubes_clipboard_info_file, 'r')
+            src_info_file = open(qubes_clipboard_info_file, 'r')
             src_vmname = src_info_file.readline().strip('\n')
             if src_vmname == "":
                 trayIcon.showMessage(
                     "Qubes Clipboard has been copied to the VM and wiped.<i/>\n"
-                    "<small>Trigger a paste operation (e.g. Ctrl-v) to insert it into an application.</small>",
+                    "<small>Trigger a paste operation (e.g. Ctrl-v) to insert "
+                    "it into an application.</small>",
                     msecs=3000)
             else:
                 trayIcon.showMessage(
                     "Qubes Clipboard fetched from VM: <b>'{0}'</b>\n"
-                    "<small>Press Ctrl-Shift-v to copy this clipboard onto dest VM's clipboard.</small>".format(src_vmname),
-                    msecs=3000)
+                    "<small>Press Ctrl-Shift-v to copy this clipboard into dest"
+                    " VM's clipboard.</small>".format(
+                        src_vmname), msecs=3000)
             src_info_file.close()
+
     def process_IN_CREATE(self, event):
         if event.name == os.path.basename(qubes_clipboard_info_file):
             event.path = qubes_clipboard_info_file
             self.process_IN_CLOSE_WRITE(event)
-            wm.add_watch(qubes_clipboard_info_file, EventsCodes.OP_FLAGS.get('IN_CLOSE_WRITE'))
-        elif event.name == os.path.basename(table_widgets\
-                .qubes_dom0_updates_stat_file):
+            wm.add_watch(qubes_clipboard_info_file,
+                         EventsCodes.OP_FLAGS.get('IN_CLOSE_WRITE'))
+        elif event.name == os.path.basename(table_widgets
+                                            .qubes_dom0_updates_stat_file):
             trayIcon.showMessage("Qubes dom0 updates available.", msecs=0)
-
 
 
 class VmRowInTable(object):
@@ -131,55 +137,86 @@ class VmRowInTable(object):
         self.row_no = row_no
 
         table_widgets.row_height = VmManagerWindow.row_height
-        table.setRowHeight (row_no, VmManagerWindow.row_height)
+        table.setRowHeight(row_no, VmManagerWindow.row_height)
 
         self.type_widget = VmTypeWidget(vm)
-        table.setCellWidget(row_no, VmManagerWindow.columns_indices['Type'], self.type_widget)
-        table.setItem(row_no, VmManagerWindow.columns_indices['Type'], self.type_widget.tableItem)
+        table.setCellWidget(row_no, VmManagerWindow.columns_indices['Type'],
+                            self.type_widget)
+        table.setItem(row_no, VmManagerWindow.columns_indices['Type'],
+                      self.type_widget.tableItem)
 
         self.label_widget = VmLabelWidget(vm)
-        table.setCellWidget(row_no, VmManagerWindow.columns_indices['Label'], self.label_widget)
-        table.setItem(row_no, VmManagerWindow.columns_indices['Label'], self.label_widget.tableItem)
+        table.setCellWidget(row_no, VmManagerWindow.columns_indices['Label'],
+                            self.label_widget)
+        table.setItem(row_no, VmManagerWindow.columns_indices['Label'],
+                      self.label_widget.tableItem)
 
         self.name_widget = VmNameItem(vm)
-        table.setItem(row_no, VmManagerWindow.columns_indices['Name'], self.name_widget)
+        table.setItem(row_no, VmManagerWindow.columns_indices['Name'],
+                      self.name_widget)
 
         self.info_widget = VmInfoWidget(vm)
-        table.setCellWidget(row_no, VmManagerWindow.columns_indices['State'], self.info_widget)
-        table.setItem(row_no, VmManagerWindow.columns_indices['State'], self.info_widget.tableItem)
+        table.setCellWidget(row_no, VmManagerWindow.columns_indices['State'],
+                            self.info_widget)
+        table.setItem(row_no, VmManagerWindow.columns_indices['State'],
+                      self.info_widget.tableItem)
 
         self.template_widget = VmTemplateItem(vm)
-        table.setItem(row_no,  VmManagerWindow.columns_indices['Template'], self.template_widget)
+        table.setItem(row_no, VmManagerWindow.columns_indices['Template'],
+                      self.template_widget)
 
         self.netvm_widget = VmNetvmItem(vm)
-        table.setItem(row_no,  VmManagerWindow.columns_indices['NetVM'], self.netvm_widget)
+        table.setItem(row_no, VmManagerWindow.columns_indices['NetVM'],
+                      self.netvm_widget)
 
-        self.cpu_usage_widget = VmUsageBarWidget(0, 100, "%v %",
-                            lambda vm, val: val if vm.last_running else 0, vm, 0, self.cpu_graph_hue)
-        table.setCellWidget(row_no,  VmManagerWindow.columns_indices['CPU'], self.cpu_usage_widget)
-        table.setItem(row_no,  VmManagerWindow.columns_indices['CPU'], self.cpu_usage_widget.tableItem)
+        self.cpu_usage_widget = VmUsageBarWidget(
+            0, 100, "%v %",
+            lambda v, val: val if v.last_running else 0,
+            vm, 0, self.cpu_graph_hue)
+        table.setCellWidget(row_no, VmManagerWindow.columns_indices['CPU'],
+                            self.cpu_usage_widget)
+        table.setItem(row_no, VmManagerWindow.columns_indices['CPU'],
+                      self.cpu_usage_widget.tableItem)
 
-        self.load_widget = ChartWidget(vm, lambda vm, val: val if vm.last_running else 0, self.cpu_graph_hue, 0 )
-        table.setCellWidget(row_no,  VmManagerWindow.columns_indices['CPU Graph'], self.load_widget)
-        table.setItem(row_no,  VmManagerWindow.columns_indices['CPU Graph'], self.load_widget.tableItem)
+        self.load_widget = ChartWidget(
+            vm,
+            lambda v, val: val if v.last_running else 0,
+            self.cpu_graph_hue, 0)
+        table.setCellWidget(row_no,
+                            VmManagerWindow.columns_indices['CPU Graph'],
+                            self.load_widget)
+        table.setItem(row_no, VmManagerWindow.columns_indices['CPU Graph'],
+                      self.load_widget.tableItem)
 
-        self.mem_usage_widget = VmUsageBarWidget(0, qubes_host.memory_total/1024, "%v MB",
-                            lambda vm, val: vm.get_mem()/1024, vm, 0, self.mem_graph_hue)
-        table.setCellWidget(row_no,  VmManagerWindow.columns_indices['MEM'], self.mem_usage_widget)
-        table.setItem(row_no,  VmManagerWindow.columns_indices['MEM'], self.mem_usage_widget.tableItem)
+        self.mem_usage_widget = VmUsageBarWidget(
+            0, qubes_host.memory_total / 1024, "%v MB",
+            lambda v, val: v.get_mem() / 1024,
+            vm, 0, self.mem_graph_hue)
+        table.setCellWidget(row_no, VmManagerWindow.columns_indices['MEM'],
+                            self.mem_usage_widget)
+        table.setItem(row_no, VmManagerWindow.columns_indices['MEM'],
+                      self.mem_usage_widget.tableItem)
 
-        self.mem_widget = ChartWidget(vm, lambda vm, val: vm.get_mem()*100/qubes_host.memory_total, self.mem_graph_hue, 0)
-        table.setCellWidget(row_no,  VmManagerWindow.columns_indices['MEM Graph'], self.mem_widget)
-        table.setItem(row_no,  VmManagerWindow.columns_indices['MEM Graph'], self.mem_widget.tableItem)
+        self.mem_widget = ChartWidget(
+            vm, lambda v, val: v.get_mem() * 100 / qubes_host.memory_total,
+            self.mem_graph_hue, 0)
+        table.setCellWidget(row_no,
+                            VmManagerWindow.columns_indices['MEM Graph'],
+                            self.mem_widget)
+        table.setItem(row_no, VmManagerWindow.columns_indices['MEM Graph'],
+                      self.mem_widget.tableItem)
 
         self.size_widget = VmSizeOnDiskItem(vm)
-        table.setItem(row_no,  VmManagerWindow.columns_indices['Size'], self.size_widget)
+        table.setItem(row_no, VmManagerWindow.columns_indices['Size'],
+                      self.size_widget)
 
         self.internal_widget = VmInternalItem(vm)
-        table.setItem(row_no, VmManagerWindow.columns_indices['Internal'], self.internal_widget)
+        table.setItem(row_no, VmManagerWindow.columns_indices['Internal'],
+                      self.internal_widget)
 
         self.ip_widget = VmIPItem(vm)
-        table.setItem(row_no, VmManagerWindow.columns_indices['IP'], self.ip_widget)
+        table.setItem(row_no, VmManagerWindow.columns_indices['IP'],
+                      self.ip_widget)
 
         self.include_in_backups_widget = VmIncludeInBackupsItem(vm)
         table.setItem(row_no, VmManagerWindow.columns_indices[
@@ -189,66 +226,75 @@ class VmRowInTable(object):
         table.setItem(row_no, VmManagerWindow.columns_indices[
             'Last backup'], self.last_backup_widget)
 
-    def update(self, blk_visible = None, cpu_load = None, update_size_on_disk = False, rec_visible = None):
+    def update(self, blk_visible=None, cpu_load=None, update_size_on_disk=False,
+               rec_visible=None):
         self.info_widget.update_vm_state(self.vm, blk_visible, rec_visible)
         if cpu_load is not None:
             self.cpu_usage_widget.update_load(self.vm, cpu_load)
             self.mem_usage_widget.update_load(self.vm, None)
             self.load_widget.update_load(self.vm, cpu_load)
             self.mem_widget.update_load(self.vm, None)
-        if update_size_on_disk == True:
+        if update_size_on_disk:
             self.size_widget.update()
 
 
+vm_shutdown_timeout = 20000  # in msec
 
-
-vm_shutdown_timeout = 20000 # in msec
 
 class VmShutdownMonitor(QObject):
-    def __init__(self, vm, shutdown_time = vm_shutdown_timeout):
+    def __init__(self, vm, shutdown_time=vm_shutdown_timeout):
+        QObject.__init__(self)
         self.vm = vm
         self.shutdown_time = shutdown_time
 
     def check_if_vm_has_shutdown(self):
         vm = self.vm
         vm_start_time = vm.get_start_time()
-        if not vm.is_running() or (vm_start_time and vm_start_time >= datetime.now() - timedelta(0,self.shutdown_time/1000)):
+        if not vm.is_running() or (
+            vm_start_time and vm_start_time >= datetime.now() -
+                timedelta(0, self.shutdown_time / 1000)):
             return
 
-        reply = QMessageBox.question(None, "VM Shutdown",
-                                     "The VM <b>'{0}'</b> hasn't shutdown within the last {1} seconds, do you want to kill it?<br>".format(vm.name, self.shutdown_time/1000),
-                                     "Kill it!", "Wait another {0} seconds...".format(self.shutdown_time/1000))
+        reply = QMessageBox.question(
+            None, "VM Shutdown",
+            "The VM <b>'{0}'</b> hasn't shutdown within the last {1} seconds, "
+            "do you want to kill it?<br>".format(
+                vm.name, self.shutdown_time / 1000),
+            "Kill it!",
+            "Wait another {0} seconds...".format(
+                self.shutdown_time / 1000))
         if reply == 0:
             vm.force_shutdown()
         else:
-            QTimer.singleShot (self.shutdown_time, self.check_if_vm_has_shutdown)
+            # noinspection PyTypeChecker,PyCallByClass
+            QTimer.singleShot(self.shutdown_time, self.check_if_vm_has_shutdown)
 
 
 class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     row_height = 30
     column_width = 200
     min_visible_rows = 10
-    update_interval = 1000 # in msec
+    update_interval = 1000  # in msec
     show_inactive_vms = True
     show_internal_vms = False
     # suppress saving settings while initializing widgets
     settings_loaded = False
-    columns_indices = { "Type": 0,
-                        "Label": 1,
-                        "Name": 2,
-                        "State": 3,
-                        "Template": 4,
-                        "NetVM": 5,
-                        "CPU": 6,
-                        "CPU Graph": 7,
-                        "MEM": 8,
-                        "MEM Graph": 9,
-                        "Size": 10,
-                        "Internal": 11,
-                        "IP": 12,
-                        "Backups": 13,
-                        "Last backup": 14,
-    }
+    columns_indices = {"Type": 0,
+                       "Label": 1,
+                       "Name": 2,
+                       "State": 3,
+                       "Template": 4,
+                       "NetVM": 5,
+                       "CPU": 6,
+                       "CPU Graph": 7,
+                       "MEM": 8,
+                       "MEM Graph": 9,
+                       "Size": 10,
+                       "Internal": 11,
+                       "IP": 12,
+                       "Backups": 13,
+                       "Last backup": 14,
+                       }
 
     def __init__(self, qvm_collection, blk_manager, parent=None):
         super(VmManagerWindow, self).__init__()
@@ -263,11 +309,13 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.blk_manager.tray_message_func = trayIcon.showMessage
         self.qubes_watch.setup_domain_watch(self.domain_state_changed_callback)
         self.qubes_watch.setup_block_watch(self.blk_manager.block_devs_event)
-        self.blk_watch_thread = threading.Thread(target=self.qubes_watch.watch_loop)
+        self.blk_watch_thread = threading.Thread(
+            target=self.qubes_watch.watch_loop)
         self.blk_watch_thread.daemon = True
         self.blk_watch_thread.start()
 
-        self.connect(self.table, SIGNAL("itemSelectionChanged()"), self.table_selection_changed)
+        self.connect(self.table, SIGNAL("itemSelectionChanged()"),
+                     self.table_selection_changed)
 
         self.table.setColumnWidth(0, self.column_width)
 
@@ -309,21 +357,21 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             .action_last_backup
 
         self.visible_columns_count = len(self.columns_indices)
-        self.table.setColumnHidden( self.columns_indices["NetVM"], True)
+        self.table.setColumnHidden(self.columns_indices["NetVM"], True)
         self.action_netvm.setChecked(False)
-        self.table.setColumnHidden( self.columns_indices["CPU Graph"], True)
+        self.table.setColumnHidden(self.columns_indices["CPU Graph"], True)
         self.action_cpu_graph.setChecked(False)
-        self.table.setColumnHidden( self.columns_indices["MEM Graph"], True)
+        self.table.setColumnHidden(self.columns_indices["MEM Graph"], True)
         self.action_mem_graph.setChecked(False)
-        self.table.setColumnHidden( self.columns_indices["Size"], True)
+        self.table.setColumnHidden(self.columns_indices["Size"], True)
         self.action_size_on_disk.setChecked(False)
-        self.table.setColumnHidden( self.columns_indices["Internal"], True)
+        self.table.setColumnHidden(self.columns_indices["Internal"], True)
         self.action_internal.setChecked(False)
-        self.table.setColumnHidden( self.columns_indices["IP"], True)
+        self.table.setColumnHidden(self.columns_indices["IP"], True)
         self.action_ip.setChecked(False)
-        self.table.setColumnHidden( self.columns_indices["Backups"], True)
+        self.table.setColumnHidden(self.columns_indices["Backups"], True)
         self.action_backups.setChecked(False)
-        self.table.setColumnHidden( self.columns_indices["Last backup"], True)
+        self.table.setColumnHidden(self.columns_indices["Last backup"], True)
         self.action_last_backup.setChecked(False)
 
         self.table.setColumnWidth(self.columns_indices["State"], 80)
@@ -338,7 +386,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         self.table.horizontalHeader().setResizeMode(QHeaderView.Fixed)
 
-        self.table.sortItems(self.columns_indices[self.sort_by_column], self.sort_order)
+        self.table.sortItems(self.columns_indices[self.sort_by_column],
+                             self.sort_order)
 
         self.context_menu = QMenu(self)
 
@@ -372,21 +421,34 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         self.table_selection_changed()
 
-        self.connect(self.table.horizontalHeader(), SIGNAL("sortIndicatorChanged(int, Qt::SortOrder)"), self.sortIndicatorChanged)
-        self.connect(self.table, SIGNAL("customContextMenuRequested(const QPoint&)"), self.open_context_menu)
-        self.connect(self.menubar, SIGNAL("customContextMenuRequested(const QPoint&)"),
-            lambda pos: self.open_tools_context_menu(self.menubar, pos))
-        self.connect(self.toolBar, SIGNAL("customContextMenuRequested(const QPoint&)"),
-            lambda pos: self.open_tools_context_menu(self.toolBar, pos))
-        self.connect(self.blk_menu, SIGNAL("triggered(QAction *)"), self.attach_dettach_device_triggered)
-        self.connect(self.logs_menu, SIGNAL("triggered(QAction *)"), self.show_log)
+        self.connect(
+            self.table.horizontalHeader(),
+            SIGNAL("sortIndicatorChanged(int, Qt::SortOrder)"),
+            self.sortIndicatorChanged)
+        self.connect(self.table,
+                     SIGNAL("customContextMenuRequested(const QPoint&)"),
+                     self.open_context_menu)
+        self.connect(self.menubar,
+                     SIGNAL("customContextMenuRequested(const QPoint&)"),
+                     lambda pos: self.open_tools_context_menu(self.menubar,
+                                                              pos))
+        self.connect(self.toolBar,
+                     SIGNAL("customContextMenuRequested(const QPoint&)"),
+                     lambda pos: self.open_tools_context_menu(self.toolBar,
+                                                              pos))
+        self.connect(self.blk_menu, SIGNAL("triggered(QAction *)"),
+                     self.attach_dettach_device_triggered)
+        self.connect(self.logs_menu, SIGNAL("triggered(QAction *)"),
+                     self.show_log)
 
-        self.table.setContentsMargins(0,0,0,0)
-        self.centralwidget.layout().setContentsMargins(0,0,0,0)
-        self.layout().setContentsMargins(0,0,0,0)
+        self.table.setContentsMargins(0, 0, 0, 0)
+        self.centralwidget.layout().setContentsMargins(0, 0, 0, 0)
+        self.layout().setContentsMargins(0, 0, 0, 0)
 
-        self.connect(self.action_menubar, SIGNAL("toggled(bool)"), self.showhide_menubar)
-        self.connect(self.action_toolbar, SIGNAL("toggled(bool)"), self.showhide_toolbar)
+        self.connect(self.action_menubar, SIGNAL("toggled(bool)"),
+                     self.showhide_menubar)
+        self.connect(self.action_toolbar, SIGNAL("toggled(bool)"),
+                     self.showhide_toolbar)
 
         self.register_dbus_watches()
 
@@ -402,7 +464,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.shutdown_monitor = {}
         self.last_measure_results = {}
         self.last_measure_time = time.time()
-        QTimer.singleShot (self.update_interval, self.update_table)
+        # noinspection PyCallByClass,PyTypeChecker
+        QTimer.singleShot(self.update_interval, self.update_table)
 
         QubesDbusNotifyServerAdaptor(self)
 
@@ -411,20 +474,34 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.manager_settings.beginGroup("columns")
         for col in self.columns_indices.keys():
             col_no = self.columns_indices[col]
-            visible = self.manager_settings.value(col, defaultValue=not self.table.isColumnHidden(col_no)).toBool()
+            visible = self.manager_settings.value(
+                col,
+                defaultValue=not self.table.isColumnHidden(col_no)).toBool()
             self.columns_actions[col_no].setChecked(visible)
         self.manager_settings.endGroup()
-        self.show_inactive_vms = self.manager_settings.value("view/show_inactive_vms", defaultValue=False).toBool()
-        self.show_internal_vms = self.manager_settings.value("view/show_internal_vms", defaultValue=False).toBool()
-        self.sort_by_column = str(self.manager_settings.value("view/sort_column", defaultValue=self.sort_by_column).toString())
-        self.sort_order = Qt.SortOrder(self.manager_settings.value("view/sort_order", defaultValue=self.sort_order).toInt()[0])
-        self.table.sortItems(self.columns_indices[self.sort_by_column], self.sort_order)
-        if not self.manager_settings.value("view/menubar_visible", defaultValue=True).toBool():
+        self.show_inactive_vms = self.manager_settings.value(
+            "view/show_inactive_vms", defaultValue=False).toBool()
+        self.show_internal_vms = self.manager_settings.value(
+            "view/show_internal_vms", defaultValue=False).toBool()
+        self.sort_by_column = str(
+            self.manager_settings.value("view/sort_column",
+                                        defaultValue=self.sort_by_column).toString())
+        self.sort_order = Qt.SortOrder(
+            self.manager_settings.value("view/sort_order",
+                                        defaultValue=self.sort_order).toInt()[
+                0])
+        self.table.sortItems(self.columns_indices[self.sort_by_column],
+                             self.sort_order)
+        if not self.manager_settings.value("view/menubar_visible",
+                                           defaultValue=True).toBool():
             self.action_menubar.setChecked(False)
-        if not self.manager_settings.value("view/toolbar_visible", defaultValue=True).toBool():
+        if not self.manager_settings.value("view/toolbar_visible",
+                                           defaultValue=True).toBool():
             self.action_toolbar.setChecked(False)
-        x = self.manager_settings.value('position/x', defaultValue=-1).toInt()[0]
-        y = self.manager_settings.value('position/y', defaultValue=-1).toInt()[0]
+        x = self.manager_settings.value('position/x', defaultValue=-1).toInt()[
+            0]
+        y = self.manager_settings.value('position/y', defaultValue=-1).toInt()[
+            0]
         if x != -1 or y != -1:
             self.move(x, y)
         self.settings_loaded = True
@@ -435,9 +512,11 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
     def set_table_geom_size(self):
 
-        desktop_width = app.desktop().availableGeometry(self).width() - self.frame_width # might be wrong...
-        desktop_height = app.desktop().availableGeometry(self).height() - self.frame_height # might be wrong...
-        desktop_height -= self.row_height #UGLY! to somehow ommit taskbar...
+        desktop_width = app.desktop().availableGeometry(
+            self).width() - self.frame_width  # might be wrong...
+        desktop_height = app.desktop().availableGeometry(
+            self).height() - self.frame_height  # might be wrong...
+        desktop_height -= self.row_height  # UGLY! to somehow ommit taskbar...
 
         W = self.table.horizontalHeader().length() +\
             self.table.verticalScrollBar().width() +\
@@ -450,17 +529,21 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         available_space = desktop_height
         if self.menubar.isVisible():
-            menubar_height = self.menubar.sizeHint().height() + self.menubar.contentsMargins().top() + self.menubar.contentsMargins().bottom()
+            menubar_height = (self.menubar.sizeHint().height() +
+                              self.menubar.contentsMargins().top() +
+                              self.menubar.contentsMargins().bottom())
             available_space -= menubar_height
             mainwindow_to_add += menubar_height
         if self.toolbar.isVisible():
-            toolbar_height = self.toolbar.sizeHint().height() + self.toolbar.contentsMargins().top() + self.toolbar.contentsMargins().bottom()
+            toolbar_height = (self.toolbar.sizeHint().height() +
+                              self.toolbar.contentsMargins().top() +
+                              self.toolbar.contentsMargins().bottom())
             available_space -= toolbar_height
             mainwindow_to_add += toolbar_height
         if W >= desktop_width:
             available_space -= self.table.horizontalScrollBar().height()
             H += self.table.horizontalScrollBar().height()
-        default_rows = int(available_space/self.row_height)
+        default_rows = int(available_space / self.row_height)
 
         if self.show_inactive_vms:
             n = self.table.rowCount()
@@ -504,14 +587,14 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         super(VmManagerWindow, self).moveEvent(event)
         screen_number = app.desktop().screenNumber(self)
         if self.screen_number != screen_number:
-                self.screen_changed = True
-                self.screen_number = screen_number
+            self.screen_changed = True
+            self.screen_number = screen_number
         if self.settings_loaded:
             self.manager_settings.setValue('position/x', self.x())
             self.manager_settings.setValue('position/y', self.y())
             # do not sync for performance reasons
 
-    def domain_state_changed_callback(self, name = None, uuid = None):
+    def domain_state_changed_callback(self, name=None, uuid=None):
         if name is not None:
             vm = self.qvm_collection.get_vm_by_name(name)
             if vm:
@@ -535,7 +618,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 internal_count += 1
             vm.qubes_manager_state = {}
             self.update_audio_rec_info(vm)
-            vm.qubes_manager_state[QMVmState.ErrorMsg]= self.vm_errors[vm.qid] if vm.qid in self.vm_errors else None
+            vm.qubes_manager_state[QMVmState.ErrorMsg] = self.vm_errors[
+                vm.qid] if vm.qid in self.vm_errors else None
 
         self.running_vms_count = running_count
         self.internal_vms_count = internal_count
@@ -559,9 +643,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         row_no = 0
         for vm in vms_list:
-            #if vm.internal:
-            #    continue
-            vm_row = VmRowInTable (vm, row_no, self.table, self.blk_manager)
+            # if vm.internal:
+            #     continue
+            vm_row = VmRowInTable(vm, row_no, self.table, self.blk_manager)
             vms_in_table[vm.qid] = vm_row
 
             row_no += 1
@@ -571,7 +655,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.vms_in_table = vms_in_table
         self.reload_table = False
         if selected_qid in vms_in_table.keys():
-            self.table.setCurrentItem(self.vms_in_table[selected_qid].name_widget)
+            self.table.setCurrentItem(
+                self.vms_in_table[selected_qid].name_widget)
         self.table.setSortingEnabled(True)
 
         self.showhide_vms(True, True)
@@ -589,10 +674,12 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         else:
             row_no = 0
             while row_no < self.table.rowCount():
-                widget = self.table.cellWidget(row_no, self.columns_indices["State"])
+                widget = self.table.cellWidget(row_no,
+                                               self.columns_indices["State"])
                 running = widget.vm.last_running
                 internal = widget.vm.internal
-                if not (show_inactive or running) or not (show_internal or not internal):
+                if not (show_inactive or running) or not (
+                        show_internal or not internal):
                     self.table.setRowHidden(row_no, True)
                 else:
                     self.table.setRowHidden(row_no, False)
@@ -613,7 +700,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 state = vm.get_power_state()
                 if vm.last_power_state != state:
                     if state == "Running" and \
-                            self.vm_errors.get(vm.qid,  "")\
+                            self.vm_errors.get(vm.qid, "") \
                             .startswith("Error starting VM:"):
                         self.clear_error(vm.qid)
                     prev_running = vm.last_running
@@ -634,7 +721,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 else:
                     # pulseaudio agent register itself some time after VM
                     # startup
-                    if state == "Running" and not vm.qubes_manager_state[QMVmState.AudioRecAvailable]:
+                    if state == "Running" and not vm.qubes_manager_state[
+                            QMVmState.AudioRecAvailable]:
                         self.update_audio_rec_info(vm)
                 if self.vm_errors.get(vm.qid, "") == \
                         "Error starting VM: Cannot execute qrexec-daemon!" \
@@ -647,15 +735,18 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
             if reload_table:
                 self.fill_table()
-                update_devs=True
+                update_devs = True
 
-            if (not self.show_inactive_vms) and some_vms_have_changed_power_state:
+            if not self.show_inactive_vms and \
+                    some_vms_have_changed_power_state:
                 self.showhide_vms(True, True)
                 self.showhide_vms(False, self.show_internal_vms)
                 self.set_table_geom_size()
 
-            if self.sort_by_column == "State" and some_vms_have_changed_power_state:
-                self.table.sortItems(self.columns_indices[self.sort_by_column], self.sort_order)
+            if self.sort_by_column == \
+                    "State" and some_vms_have_changed_power_state:
+                self.table.sortItems(self.columns_indices[self.sort_by_column],
+                                     self.sort_order)
 
             blk_visible = None
             rows_with_blk = None
@@ -668,7 +759,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                             'vm'].qid)
                 self.blk_manager.blk_lock.release()
 
-            if (not self.table.isColumnHidden(self.columns_indices['Size']) ) and self.counter % 60 == 0 or out_of_schedule:
+            if (not self.table.isColumnHidden(self.columns_indices['Size'])) and \
+                    self.counter % 60 == 0 or out_of_schedule:
                 self.update_size_on_disk = True
 
             if self.counter % 3 == 0 or out_of_schedule:
@@ -680,7 +772,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 for vm_row in self.vms_in_table.values():
                     cur_cpu_load = None
                     if vm_row.vm.get_xid() in self.last_measure_results:
-                        cur_cpu_load = self.last_measure_results[vm_row.vm.xid]['cpu_usage']
+                        cur_cpu_load = self.last_measure_results[vm_row.vm.xid][
+                            'cpu_usage']
                     else:
                         cur_cpu_load = 0
 
@@ -690,7 +783,11 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         else:
                             blk_visible = False
 
-                    vm_row.update(blk_visible=blk_visible, cpu_load = cur_cpu_load, update_size_on_disk = self.update_size_on_disk, rec_visible = self.vm_rec.get(vm_row.vm.name, False))
+                    vm_row.update(blk_visible=blk_visible,
+                                  cpu_load=cur_cpu_load,
+                                  update_size_on_disk=self.update_size_on_disk,
+                                  rec_visible=self.vm_rec.get(vm_row.vm.name,
+                                                              False))
 
             else:
                 for vm_row in self.vms_in_table.values():
@@ -700,26 +797,34 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         else:
                             blk_visible = False
 
-                    vm_row.update(blk_visible=blk_visible, update_size_on_disk = self.update_size_on_disk, rec_visible = self.vm_rec.get(vm_row.vm.name, False))
+                    vm_row.update(blk_visible=blk_visible,
+                                  update_size_on_disk=self.update_size_on_disk,
+                                  rec_visible=self.vm_rec.get(vm_row.vm.name,
+                                                              False))
 
-            if self.sort_by_column in ["CPU", "CPU Graph", "MEM", "MEM Graph", "State", "Size", "Internal" ]:
-                # "State": needed to sort after reload (fill_table sorts items with setSortingEnabled, but by that time the widgets values are not correct yet).
-                self.table.sortItems(self.columns_indices[self.sort_by_column], self.sort_order)
+            if self.sort_by_column in ["CPU", "CPU Graph", "MEM", "MEM Graph",
+                                       "State", "Size", "Internal"]:
+                # "State": needed to sort after reload (fill_table sorts items
+                # with setSortingEnabled, but by that time the widgets values
+                # are not correct yet).
+                self.table.sortItems(self.columns_indices[self.sort_by_column],
+                                     self.sort_order)
 
             self.table_selection_changed()
 
         self.update_size_on_disk = False
         if not out_of_schedule:
             self.counter += 1
-            QTimer.singleShot (self.update_interval, self.update_table)
-
+            # noinspection PyCallByClass,PyTypeChecker
+            QTimer.singleShot(self.update_interval, self.update_table)
 
     def update_block_devices(self):
         res, msg = self.blk_manager.check_for_updates()
         if msg != None and len(msg) > 0:
-            trayIcon.showMessage ('\n'.join(msg), msecs=5000)
+            trayIcon.showMessage('\n'.join(msg), msecs=5000)
         return res
 
+    # noinspection PyPep8Naming
     @pyqtSlot(bool, str)
     def recAllowedChanged(self, state, vmname):
         self.vm_rec[str(vmname)] = bool(state)
@@ -730,47 +835,58 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         if not session_bus:
             session_bus = QDBusConnection.sessionBus()
 
-        if not session_bus.connect(QString(), # service
-                QString(), # path
-                QString("org.QubesOS.Audio"), # interface
-                QString("RecAllowedChanged"), # name
-                self.recAllowedChanged): # slot
+        if not session_bus.connect(QString(),  # service
+                                   QString(),  # path
+                                   QString("org.QubesOS.Audio"),  # interface
+                                   QString("RecAllowedChanged"),  # name
+                                   self.recAllowedChanged):  # slot
             print session_bus.lastError().message()
 
+    # noinspection PyPep8Naming
     def sortIndicatorChanged(self, column, order):
-        self.sort_by_column = [name for name in self.columns_indices.keys() if self.columns_indices[name] == column][0]
+        self.sort_by_column = [name for name in self.columns_indices.keys() if
+                               self.columns_indices[name] == column][0]
         self.sort_order = order
         if self.settings_loaded:
-            self.manager_settings.setValue('view/sort_column', self.sort_by_column)
+            self.manager_settings.setValue('view/sort_column',
+                                           self.sort_by_column)
             self.manager_settings.setValue('view/sort_order', self.sort_order)
             self.manager_settings.sync()
 
-    def table_selection_changed (self):
+    def table_selection_changed(self):
 
         vm = self.get_selected_vm()
 
         if vm != None:
             # Update available actions:
             self.action_settings.setEnabled(vm.qid != 0)
-            self.action_removevm.setEnabled(not vm.installed_by_rpm and not (vm.last_running))
-            self.action_clonevm.setEnabled(not (vm.last_running) and not vm.is_netvm())
+            self.action_removevm.setEnabled(
+                not vm.installed_by_rpm and not vm.last_running)
+            self.action_clonevm.setEnabled(
+                not vm.last_running and not vm.is_netvm())
             self.action_resumevm.setEnabled(not vm.last_running)
             try:
-                self.action_startvm_tools_install.setVisible(isinstance(vm,
-                                                                    QubesHVm))
+                self.action_startvm_tools_install.setVisible(
+                    isinstance(vm, QubesHVm))
             except NameError:
                 # ignore non existing QubesHVm
                 pass
             self.action_startvm_tools_install.setEnabled(not vm.last_running)
             self.action_pausevm.setEnabled(vm.last_running and vm.qid != 0)
             self.action_shutdownvm.setEnabled(vm.last_running and vm.qid != 0)
-            self.action_killvm.setEnabled((vm.last_running or vm.last_power_state == "Paused") and vm.qid != 0)
+            self.action_killvm.setEnabled((vm.last_running or
+                                           vm.last_power_state == "Paused") and
+                                          vm.qid != 0)
             self.action_appmenus.setEnabled(not vm.is_netvm())
-            self.action_editfwrules.setEnabled(vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
+            self.action_editfwrules.setEnabled(vm.is_networked() and not (
+                vm.is_netvm() and not vm.is_proxyvm()))
             self.action_updatevm.setEnabled(vm.is_updateable() or vm.qid == 0)
-            self.action_toggle_audio_input.setEnabled(vm.qubes_manager_state[QMVmState.AudioRecAvailable])
-            self.action_run_command_in_vm.setEnabled(not vm.last_power_state == "Paused" and vm.qid != 0)
-            self.action_set_keyboard_layout.setEnabled(vm.qid != 0 and vm.last_running)
+            self.action_toggle_audio_input.setEnabled(
+                vm.qubes_manager_state[QMVmState.AudioRecAvailable])
+            self.action_run_command_in_vm.setEnabled(
+                not vm.last_power_state == "Paused" and vm.qid != 0)
+            self.action_set_keyboard_layout.setEnabled(
+                vm.qid != 0 and vm.last_running)
         else:
             self.action_settings.setEnabled(False)
             self.action_removevm.setEnabled(False)
@@ -788,13 +904,12 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.action_run_command_in_vm.setEnabled(False)
             self.action_set_keyboard_layout.setEnabled(False)
 
-
-
-    def closeEvent (self, event):
-        if event.spontaneous(): # There is something borked in Qt, as the logic here is inverted on X11
+    def closeEvent(self, event):
+        # There is something borked in Qt,
+        # as the logic here is inverted on X11
+        if event.spontaneous():
             self.hide()
             event.ignore()
-
 
     def set_error(self, qid, message):
         for vm in self.vms_list:
@@ -821,13 +936,14 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         dialog = NewVmDlg(app, self.qvm_collection, trayIcon)
         dialog.exec_()
 
-
     def get_selected_vm(self):
-        #vm selection relies on the VmInfo widget's value used for sorting by VM name
+        # vm selection relies on the VmInfo widget's value used
+        # for sorting by VM name
         row_index = self.table.currentRow()
         if row_index != -1:
             vm_item = self.table.item(row_index, self.columns_indices["Name"])
-            # here is possible race with update_table timer so check if really got the item
+            # here is possible race with update_table timer so check
+            # if really got the item
             if vm_item is None:
                 return None
             qid = vm_item.qid
@@ -852,59 +968,72 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         if vm.is_template():
             dependent_vms = self.qvm_collection.get_vms_based_on(vm.qid)
             if len(dependent_vms) > 0:
-                QMessageBox.warning (None, "Warning!",
-                                     "This Template VM cannot be removed, because there is at least one AppVM that is based on it.<br>"
-                                     "<small>If you want to remove this Template VM and all the AppVMs based on it,"
-                                     "you should first remove each individual AppVM that uses this template.</small>")
+                QMessageBox.warning(
+                    None, "Warning!",
+                    "This Template VM cannot be removed, because there is at "
+                    "least one AppVM that is based on it.<br>"
+                    "<small>If you want to remove this Template VM and all "
+                    "the AppVMs based on it,"
+                    "you should first remove each individual AppVM that uses "
+                    "this template.</small>")
 
                 return
 
-        reply = QMessageBox.question(None, "VM Removal Confirmation",
-                                     "Are you sure you want to remove the VM <b>'{0}'</b>?<br>"
-                                     "<small>All data on this VM's private storage will be lost!</small>".format(vm.name),
-                                     QMessageBox.Yes | QMessageBox.Cancel)
-
+        reply = QMessageBox.question(
+            None, "VM Removal Confirmation",
+            "Are you sure you want to remove the VM <b>'{0}'</b>?<br>"
+            "<small>All data on this VM's private storage will be lost!</small>"
+            .format(vm.name),
+            QMessageBox.Yes | QMessageBox.Cancel)
 
         if reply == QMessageBox.Yes:
 
             thread_monitor = ThreadMonitor()
-            thread = threading.Thread (target=self.do_remove_vm, args=(vm, thread_monitor))
+            thread = threading.Thread(target=self.do_remove_vm,
+                                      args=(vm, thread_monitor))
             thread.daemon = True
             thread.start()
 
-            progress = QProgressDialog ("Removing VM: <b>{0}</b>...".format(vm.name), "", 0, 0)
+            progress = QProgressDialog(
+                "Removing VM: <b>{0}</b>...".format(vm.name), "", 0, 0)
             progress.setCancelButton(None)
             progress.setModal(True)
             progress.show()
 
             while not thread_monitor.is_finished():
                 app.processEvents()
-                time.sleep (0.1)
+                time.sleep(0.1)
 
             progress.hide()
 
             if thread_monitor.success:
-                trayIcon.showMessage ("VM '{0}' has been removed.".format(vm.name), msecs=3000)
+                trayIcon.showMessage(
+                    "VM '{0}' has been removed.".format(vm.name), msecs=3000)
             else:
-                QMessageBox.warning (None, "Error removing VM!", "ERROR: {0}".format(thread_monitor.error_msg))
+                QMessageBox.warning(None, "Error removing VM!",
+                                    "ERROR: {0}".format(
+                                        thread_monitor.error_msg))
 
-    def do_remove_vm (self, vm, thread_monitor):
+    def do_remove_vm(self, vm, thread_monitor):
         try:
             self.qvm_collection.lock_db_for_writing()
             self.qvm_collection.load()
             vm = self.qvm_collection[vm.qid]
 
-            #TODO: the following two conditions should really be checked by qvm_collection.pop() overload...
-            if vm.is_template() and self.qvm_collection.default_template_qid == vm.qid:
+            # TODO: the following two conditions should really be checked
+            # by qvm_collection.pop() overload...
+            if vm.is_template() and \
+                    self.qvm_collection.default_template_qid == vm.qid:
                 self.qvm_collection.default_template_qid = None
-            if vm.is_netvm() and self.qvm_collection.default_netvm_qid == vm.qid:
+            if vm.is_netvm() and \
+                    self.qvm_collection.default_netvm_qid == vm.qid:
                 self.qvm_collection.default_netvm_qid = None
 
             self.qvm_collection.pop(vm.qid)
             self.qvm_collection.save()
             vm.remove_from_disk()
         except Exception as ex:
-            thread_monitor.set_error_msg (str(ex))
+            thread_monitor.set_error_msg(str(ex))
         finally:
             self.qvm_collection.unlock_db()
 
@@ -919,30 +1048,37 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         while self.qvm_collection.get_vm_by_name(name_format % name_number):
             name_number += 1
 
-        (clone_name, ok) = QInputDialog.getText(self, 'Qubes clone VM',
-                'Enter name for VM <b>'+vm.name+'</b> clone:', text=name_format % name_number)
+        (clone_name, ok) = QInputDialog.getText(
+            self, 'Qubes clone VM',
+            'Enter name for VM <b>' + vm.name + '</b> clone:',
+            name_format % name_number)
         if not ok or clone_name == "":
             return
 
         thread_monitor = ThreadMonitor()
-        thread = threading.Thread (target=self.do_clone_vm, args=(vm, str(clone_name), thread_monitor))
+        thread = threading.Thread(target=self.do_clone_vm,
+                                  args=(vm, str(clone_name), thread_monitor))
         thread.daemon = True
         thread.start()
 
-        progress = QProgressDialog ("Cloning VM <b>{0}</b> to <b>{1}</b>...".format(vm.name, clone_name), "", 0, 0)
+        progress = QProgressDialog(
+            "Cloning VM <b>{0}</b> to <b>{1}</b>...".format(vm.name,
+                                                            clone_name), "", 0,
+            0)
         progress.setCancelButton(None)
         progress.setModal(True)
         progress.show()
 
         while not thread_monitor.is_finished():
             app.processEvents()
-            time.sleep (0.2)
+            time.sleep(0.2)
 
         progress.hide()
 
         if not thread_monitor.success:
-            QMessageBox.warning (None, "Error while cloning VM", "Exception while cloning:<br>{0}".format(thread_monitor.error_msg))
-
+            QMessageBox.warning(None, "Error while cloning VM",
+                                "Exception while cloning:<br>{0}".format(
+                                    thread_monitor.error_msg))
 
     def do_clone_vm(self, vm, dst_name, thread_monitor):
         dst_vm = None
@@ -952,11 +1088,12 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             src_vm = self.qvm_collection[vm.qid]
 
             dst_vm = self.qvm_collection.add_new_vm(src_vm.__class__.__name__,
-                    name=dst_name, template=src_vm.template,
-                    installed_by_rpm=False)
+                                                    name=dst_name,
+                                                    template=src_vm.template,
+                                                    installed_by_rpm=False)
 
             dst_vm.clone_attrs(src_vm)
-            dst_vm.clone_disk_files (src_vm=src_vm, verbose=False)
+            dst_vm.clone_disk_files(src_vm=src_vm, verbose=False)
             self.qvm_collection.save()
             self.qvm_collection.unlock_db()
         except Exception as ex:
@@ -976,26 +1113,34 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             try:
                 vm.unpause()
             except Exception as ex:
-                QMessageBox.warning (None, "Error unpausing VM!", "ERROR: {0}".format(ex))
+                QMessageBox.warning(None, "Error unpausing VM!",
+                                    "ERROR: {0}".format(ex))
             return
 
         thread_monitor = ThreadMonitor()
-        thread = threading.Thread (target=self.do_start_vm, args=(vm, thread_monitor))
+        thread = threading.Thread(target=self.do_start_vm,
+                                  args=(vm, thread_monitor))
         thread.daemon = True
         thread.start()
 
-        trayIcon.showMessage ("Starting '{0}'...".format(vm.name), msecs=3000)
+        trayIcon.showMessage("Starting '{0}'...".format(vm.name), msecs=3000)
 
         while not thread_monitor.is_finished():
             app.processEvents()
-            time.sleep (0.1)
+            time.sleep(0.1)
 
         if thread_monitor.success:
-            trayIcon.showMessage ("VM '{0}' has been started.".format(vm.name), msecs=3000)
+            trayIcon.showMessage("VM '{0}' has been started.".format(vm.name),
+                                 msecs=3000)
         else:
-            trayIcon.showMessage ("Error starting VM <b>'{0}'</b>: {1}".format(vm.name, thread_monitor.error_msg ), msecs=3000)
-            self.set_error(vm.qid, "Error starting VM: %s" % thread_monitor.error_msg)
+            trayIcon.showMessage(
+                "Error starting VM <b>'{0}'</b>: {1}".format(
+                    vm.name, thread_monitor.error_msg),
+                msecs=3000)
+            self.set_error(vm.qid,
+                           "Error starting VM: %s" % thread_monitor.error_msg)
 
+    # noinspection PyMethodMayBeStatic
     def do_start_vm(self, vm, thread_monitor):
         try:
             vm.verify_files()
@@ -1013,25 +1158,30 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         assert not vm.is_running()
 
         thread_monitor = ThreadMonitor()
-        thread = threading.Thread (target=self.do_start_vm_tools_install,
-                                   args=(vm, thread_monitor))
+        thread = threading.Thread(target=self.do_start_vm_tools_install,
+                                  args=(vm, thread_monitor))
         thread.daemon = True
         thread.start()
 
-        trayIcon.showMessage ("Starting '{0}'...".format(vm.name), msecs=3000)
+        trayIcon.showMessage("Starting '{0}'...".format(vm.name), msecs=3000)
 
         while not thread_monitor.is_finished():
             app.processEvents()
-            time.sleep (0.1)
+            time.sleep(0.1)
 
         if thread_monitor.success:
-            trayIcon.showMessage ("VM '{0}' has been started. Start Qubes "
-                                  "Tools installation from attached CD"
-                                  .format(vm.name), msecs=3000)
+            trayIcon.showMessage("VM '{0}' has been started. Start Qubes "
+                                 "Tools installation from attached CD"
+                                 .format(vm.name), msecs=3000)
         else:
-            trayIcon.showMessage ("Error starting VM <b>'{0}'</b>: {1}".format(vm.name, thread_monitor.error_msg ), msecs=3000)
-            self.set_error(vm.qid, "Error starting VM: %s" % thread_monitor.error_msg)
+            trayIcon.showMessage(
+                "Error starting VM <b>'{0}'</b>: {1}"
+                    .format(vm.name, thread_monitor.error_msg),
+                msecs=3000)
+            self.set_error(vm.qid,
+                           "Error starting VM: %s" % thread_monitor.error_msg)
 
+    # noinspection PyMethodMayBeStatic
     def do_start_vm_tools_install(self, vm, thread_monitor):
         prev_drive = vm.drive
         try:
@@ -1054,7 +1204,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         try:
             vm.pause()
         except Exception as ex:
-            QMessageBox.warning (None, "Error pausing VM!", "ERROR: {0}".format(ex))
+            QMessageBox.warning(None, "Error pausing VM!",
+                                "ERROR: {0}".format(ex))
             return
 
     @pyqtSlot(name='on_action_shutdownvm_triggered')
@@ -1064,39 +1215,46 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         self.blk_manager.check_if_serves_as_backend(vm)
 
-        reply = QMessageBox.question(None, "VM Shutdown Confirmation",
-                                     "Are you sure you want to power down the VM <b>'{0}'</b>?<br>"
-                                     "<small>This will shutdown all the running applications within this VM.</small>".format(vm.name),
-                                     QMessageBox.Yes | QMessageBox.Cancel)
+        reply = QMessageBox.question(
+            None, "VM Shutdown Confirmation",
+            "Are you sure you want to power down the VM <b>'{0}'</b>?<br>"
+            "<small>This will shutdown all the running applications "
+            "within this VM.</small>".format(vm.name),
+            QMessageBox.Yes | QMessageBox.Cancel)
 
         app.processEvents()
 
         if reply == QMessageBox.Yes:
             self.shutdown_vm(vm)
 
-
-    def shutdown_vm(self, vm, shutdown_time = vm_shutdown_timeout):
+    def shutdown_vm(self, vm, shutdown_time=vm_shutdown_timeout):
         try:
             vm.shutdown()
         except Exception as ex:
-            QMessageBox.warning (None, "Error shutting down VM!", "ERROR: {0}".format(ex))
+            QMessageBox.warning(None, "Error shutting down VM!",
+                                "ERROR: {0}".format(ex))
             return
 
-        trayIcon.showMessage ("VM '{0}' is shutting down...".format(vm.name), msecs=3000)
+        trayIcon.showMessage("VM '{0}' is shutting down...".format(vm.name),
+                             msecs=3000)
 
-        self.shutdown_monitor[vm.qid] = VmShutdownMonitor (vm, shutdown_time)
-        QTimer.singleShot (shutdown_time, self.shutdown_monitor[vm.qid].check_if_vm_has_shutdown)
-
+        self.shutdown_monitor[vm.qid] = VmShutdownMonitor(vm, shutdown_time)
+        # noinspection PyCallByClass,PyTypeChecker
+        QTimer.singleShot(shutdown_time, self.shutdown_monitor[
+            vm.qid].check_if_vm_has_shutdown)
 
     @pyqtSlot(name='on_action_killvm_triggered')
     def action_killvm_triggered(self):
         vm = self.get_selected_vm()
         assert vm.is_running() or vm.is_paused()
 
-        reply = QMessageBox.question(None, "VM Kill Confirmation",
-                                     "Are you sure you want to kill the VM <b>'{0}'</b>?<br>"
-                                     "<small>This will end <b>(not shutdown!)</b> all the running applications within this VM.</small>".format(vm.name),
-                                     QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
+        reply = QMessageBox.question(
+            None, "VM Kill Confirmation",
+            "Are you sure you want to kill the VM <b>'{0}'</b>?<br>"
+            "<small>This will end <b>(not shutdown!)</b> all the running "
+            "applications within this VM.</small>".format(vm.name),
+            QMessageBox.Yes | QMessageBox.Cancel,
+            QMessageBox.Cancel)
 
         app.processEvents()
 
@@ -1104,39 +1262,47 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             try:
                 vm.force_shutdown()
             except Exception as ex:
-                QMessageBox.critical (None, "Error while killing VM!", "<b>An exception ocurred while killing {0}.</b><br>ERROR: {1}".format(vm.name, ex))
+                QMessageBox.critical(
+                    None, "Error while killing VM!",
+                    "<b>An exception ocurred while killing {0}.</b><br>"
+                    "ERROR: {1}".format(vm.name, ex))
                 return
 
-            trayIcon.showMessage ("VM '{0}' killed!".format(vm.name), msecs=3000)
-
-
+            trayIcon.showMessage("VM '{0}' killed!".format(vm.name), msecs=3000)
 
     @pyqtSlot(name='on_action_settings_triggered')
     def action_settings_triggered(self):
         vm = self.get_selected_vm()
-        settings_window = VMSettingsWindow(vm, app, self.qvm_collection, "basic")
+        settings_window = VMSettingsWindow(vm, app, self.qvm_collection,
+                                           "basic")
         settings_window.exec_()
-
 
     @pyqtSlot(name='on_action_appmenus_triggered')
     def action_appmenus_triggered(self):
         vm = self.get_selected_vm()
-        settings_window = VMSettingsWindow(vm, app, self.qvm_collection, "applications")
+        settings_window = VMSettingsWindow(vm, app, self.qvm_collection,
+                                           "applications")
         settings_window.exec_()
 
     def update_audio_rec_info(self, vm):
         vm.qubes_manager_state[QMVmState.AudioRecAvailable] = (
-                session_bus.interface().isServiceRegistered('org.QubesOS.Audio.%s' % vm.name).value())
+            session_bus.interface().isServiceRegistered(
+                'org.QubesOS.Audio.%s' % vm.name).value())
         if vm.qubes_manager_state[QMVmState.AudioRecAvailable]:
-            vm.qubes_manager_state[QMVmState.AudioRecAllowed] = self.get_audio_rec_allowed(vm.name)
+            vm.qubes_manager_state[
+                QMVmState.AudioRecAllowed] = self.get_audio_rec_allowed(vm.name)
         else:
             vm.qubes_manager_state[QMVmState.AudioRecAllowed] = False
 
+    # noinspection PyMethodMayBeStatic
     def get_audio_rec_allowed(self, vmname):
         properties = QDBusInterface('org.QubesOS.Audio.%s' % vmname,
-                                '/org/qubesos/audio', 'org.freedesktop.DBus.Properties', session_bus)
+                                    '/org/qubesos/audio',
+                                    'org.freedesktop.DBus.Properties',
+                                    session_bus)
 
-        current_audio = properties.call('Get', 'org.QubesOS.Audio', 'RecAllowed')
+        current_audio = properties.call('Get', 'org.QubesOS.Audio',
+                                        'RecAllowed')
         if current_audio.type() == current_audio.ReplyMessage:
             value = current_audio.arguments()[0].toPyObject().toBool()
             return bool(value)
@@ -1146,9 +1312,11 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def action_toggle_audio_input_triggered(self):
         vm = self.get_selected_vm()
         properties = QDBusInterface('org.QubesOS.Audio.%s' % vm.name,
-                                '/org/qubesos/audio', 'org.freedesktop.DBus.Properties', session_bus)
+                                    '/org/qubesos/audio',
+                                    'org.freedesktop.DBus.Properties',
+                                    session_bus)
         properties.call('Set', 'org.QubesOS.Audio', 'RecAllowed',
-                QDBusVariant(not self.get_audio_rec_allowed(vm.name)))
+                        QDBusVariant(not self.get_audio_rec_allowed(vm.name)))
         # icon will be updated based on dbus signal
 
     @pyqtSlot(name='on_action_updatevm_triggered')
@@ -1156,45 +1324,54 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         vm = self.get_selected_vm()
 
         if not vm.is_running():
-            reply = QMessageBox.question(None, "VM Update Confirmation",
-                    "<b>{0}</b><br>The VM has to be running to be updated.<br>Do you want to start it?<br>".format(vm.name),
-                    QMessageBox.Yes | QMessageBox.Cancel)
+            reply = QMessageBox.question(
+                None, "VM Update Confirmation",
+                "<b>{0}</b><br>The VM has to be running to be updated.<br>"
+                "Do you want to start it?<br>".format(vm.name),
+                QMessageBox.Yes | QMessageBox.Cancel)
             if reply != QMessageBox.Yes:
                 return
-            trayIcon.showMessage ("Starting '{0}'...".format(vm.name), msecs=3000)
+            trayIcon.showMessage("Starting '{0}'...".format(vm.name),
+                                 msecs=3000)
 
         app.processEvents()
 
         thread_monitor = ThreadMonitor()
-        thread = threading.Thread (target=self.do_update_vm, args=(vm, thread_monitor))
+        thread = threading.Thread(target=self.do_update_vm,
+                                  args=(vm, thread_monitor))
         thread.daemon = True
         thread.start()
 
-        progress = QProgressDialog ("<b>{0}</b><br>Please wait for the updater to launch...".format(vm.name), "", 0, 0)
+        progress = QProgressDialog(
+            "<b>{0}</b><br>Please wait for the updater to launch...".format(
+                vm.name), "", 0, 0)
         progress.setCancelButton(None)
         progress.setModal(True)
         progress.show()
 
         while not thread_monitor.is_finished():
             app.processEvents()
-            time.sleep (0.2)
+            time.sleep(0.2)
 
         progress.hide()
 
         if vm.qid != 0:
             if not thread_monitor.success:
-                QMessageBox.warning (None, "Error VM update!", "ERROR: {0}".format(thread_monitor.error_msg))
+                QMessageBox.warning(None, "Error VM update!",
+                                    "ERROR: {0}".format(
+                                        thread_monitor.error_msg))
 
     def do_update_vm(self, vm, thread_monitor):
         try:
             if vm.qid == 0:
-                subprocess.check_call (["/usr/bin/qubes-dom0-update", "--clean", "--gui"])
+                subprocess.check_call(
+                    ["/usr/bin/qubes-dom0-update", "--clean", "--gui"])
             else:
                 vm_run_common_args = {
                     'verbose': False,
                     'autostart': True,
-                    'notify_function': lambda lvl, msg: trayIcon\
-                    .showMessage(msg, msecs=3000) }
+                    'notify_function': lambda lvl, msg: trayIcon
+                    .showMessage(msg, msecs=3000)}
                 vm.run("yum clean expire-cache", user='root', wait=True,
                        **vm_run_common_args)
                 vm.run("gpk-update-viewer;service qubes-update-check start -P",
@@ -1210,27 +1387,31 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def action_run_command_in_vm_triggered(self):
         vm = self.get_selected_vm()
 
-        (command_to_run, ok) = QInputDialog.getText(self, 'Qubes command entry',
-                'Run command in <b>'+vm.name+'</b>:')
+        (command_to_run, ok) = QInputDialog.getText(
+            self, 'Qubes command entry',
+            'Run command in <b>' + vm.name + '</b>:')
         if not ok or command_to_run == "":
             return
         thread_monitor = ThreadMonitor()
-        thread = threading.Thread (target=self.do_run_command_in_vm, args=(vm, str(command_to_run), thread_monitor))
+        thread = threading.Thread(target=self.do_run_command_in_vm, args=(
+            vm, str(command_to_run), thread_monitor))
         thread.daemon = True
         thread.start()
 
         while not thread_monitor.is_finished():
             app.processEvents()
-            time.sleep (0.2)
+            time.sleep(0.2)
 
         if not thread_monitor.success:
-            QMessageBox.warning (None, "Error while running command", "Exception while running command:<br>{0}".format(thread_monitor.error_msg))
-
+            QMessageBox.warning(None, "Error while running command",
+                                "Exception while running command:<br>{0}".format(
+                                    thread_monitor.error_msg))
 
     def do_run_command_in_vm(self, vm, command_to_run, thread_monitor):
         try:
             vm.run(command_to_run, verbose=False, autostart=True,
-                    notify_function=lambda lvl, msg: trayIcon.showMessage(msg, msecs=3000) )
+                   notify_function=lambda lvl, msg: trayIcon.showMessage(
+                       msg, msecs=3000))
         except Exception as ex:
             thread_monitor.set_error_msg(str(ex))
         thread_monitor.set_finished()
@@ -1238,7 +1419,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot(name='on_action_set_keyboard_layout_triggered')
     def action_set_keyboard_layout_triggered(self):
         vm = self.get_selected_vm()
-        vm.run('qubes-change-keyboard-layout', verbose = False)
+        vm.run('qubes-change-keyboard-layout', verbose=False)
 
     @pyqtSlot(name='on_action_showallvms_triggered')
     def action_showallvms_triggered(self):
@@ -1247,7 +1428,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.showhide_vms(self.show_inactive_vms, self.show_internal_vms)
         self.set_table_geom_size()
         if self.settings_loaded:
-            self.manager_settings.setValue('view/show_inactive_vms', self.show_inactive_vms)
+            self.manager_settings.setValue('view/show_inactive_vms',
+                                           self.show_inactive_vms)
             self.manager_settings.sync()
 
     @pyqtSlot(name='on_action_showinternalvms_triggered')
@@ -1257,13 +1439,15 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.showhide_vms(self.show_inactive_vms, self.show_internal_vms)
         self.set_table_geom_size()
         if self.settings_loaded:
-            self.manager_settings.setValue('view/show_internal_vms', self.show_internal_vms)
+            self.manager_settings.setValue('view/show_internal_vms',
+                                           self.show_internal_vms)
             self.manager_settings.sync()
 
     @pyqtSlot(name='on_action_editfwrules_triggered')
     def action_editfwrules_triggered(self):
         vm = self.get_selected_vm()
-        settings_window = VMSettingsWindow(vm, app, self.qvm_collection, "firewall")
+        settings_window = VMSettingsWindow(vm, app, self.qvm_collection,
+                                           "firewall")
         settings_window.exec_()
 
     @pyqtSlot(name='on_action_global_settings_triggered')
@@ -1271,17 +1455,17 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         global_settings_window = GlobalSettingsWindow(app, self.qvm_collection)
         global_settings_window.exec_()
 
-
     @pyqtSlot(name='on_action_restore_triggered')
     def action_restore_triggered(self):
-        restore_window = RestoreVMsWindow(app, self.qvm_collection, self.blk_manager)
+        restore_window = RestoreVMsWindow(app, self.qvm_collection,
+                                          self.blk_manager)
         restore_window.exec_()
 
     @pyqtSlot(name='on_action_backup_triggered')
     def action_backup_triggered(self):
-        backup_window = BackupVMsWindow(app, self.qvm_collection, self.blk_manager, self.shutdown_vm)
+        backup_window = BackupVMsWindow(app, self.qvm_collection,
+                                        self.blk_manager, self.shutdown_vm)
         backup_window.exec_()
-
 
     def showhide_menubar(self, checked):
         self.menubar.setVisible(checked)
@@ -1306,82 +1490,82 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.manager_settings.sync()
 
     def showhide_column(self, col_num, show):
-        self.table.setColumnHidden( col_num, not show)
+        self.table.setColumnHidden(col_num, not show)
         self.set_table_geom_size()
         val = 1 if show else -1
         self.visible_columns_count += val
 
         if self.visible_columns_count == 1:
-            #disable hiding the last one
+            # disable hiding the last one
             for c in self.columns_actions:
                 if self.columns_actions[c].isChecked():
                     self.columns_actions[c].setEnabled(False)
                     break
         elif self.visible_columns_count == 2 and val == 1:
-            #enable hiding previously disabled column
+            # enable hiding previously disabled column
             for c in self.columns_actions:
                 if not self.columns_actions[c].isEnabled():
                     self.columns_actions[c].setEnabled(True)
                     break
 
         if self.settings_loaded:
-            col_name = [name for name in self.columns_indices.keys() if self.columns_indices[name] == col_num][0]
+            col_name = [name for name in self.columns_indices.keys() if
+                        self.columns_indices[name] == col_num][0]
             self.manager_settings.setValue('columns/%s' % col_name, show)
             self.manager_settings.sync()
 
     def on_action_vm_type_toggled(self, checked):
-        self.showhide_column( self.columns_indices['Type'], checked)
+        self.showhide_column(self.columns_indices['Type'], checked)
 
     def on_action_label_toggled(self, checked):
-        self.showhide_column( self.columns_indices['Label'], checked)
+        self.showhide_column(self.columns_indices['Label'], checked)
 
     def on_action_name_toggled(self, checked):
-        self.showhide_column( self.columns_indices['Name'], checked)
+        self.showhide_column(self.columns_indices['Name'], checked)
 
     def on_action_state_toggled(self, checked):
-        self.showhide_column( self.columns_indices['State'], checked)
+        self.showhide_column(self.columns_indices['State'], checked)
 
     def on_action_internal_toggled(self, checked):
-        self.showhide_column( self.columns_indices['Internal'], checked)
+        self.showhide_column(self.columns_indices['Internal'], checked)
 
     def on_action_ip_toggled(self, checked):
-        self.showhide_column( self.columns_indices['IP'], checked)
+        self.showhide_column(self.columns_indices['IP'], checked)
 
     def on_action_backups_toggled(self, checked):
-        self.showhide_column( self.columns_indices['Backups'], checked)
+        self.showhide_column(self.columns_indices['Backups'], checked)
 
     def on_action_last_backup_toggled(self, checked):
-        self.showhide_column( self.columns_indices['Last backup'], checked)
+        self.showhide_column(self.columns_indices['Last backup'], checked)
 
     def on_action_template_toggled(self, checked):
-        self.showhide_column( self.columns_indices['Template'], checked)
+        self.showhide_column(self.columns_indices['Template'], checked)
 
     def on_action_netvm_toggled(self, checked):
-        self.showhide_column( self.columns_indices['NetVM'], checked)
+        self.showhide_column(self.columns_indices['NetVM'], checked)
 
     def on_action_cpu_toggled(self, checked):
-        self.showhide_column( self.columns_indices['CPU'], checked)
+        self.showhide_column(self.columns_indices['CPU'], checked)
 
     def on_action_cpu_graph_toggled(self, checked):
-        self.showhide_column( self.columns_indices['CPU Graph'], checked)
+        self.showhide_column(self.columns_indices['CPU Graph'], checked)
 
     def on_action_mem_toggled(self, checked):
-        self.showhide_column( self.columns_indices['MEM'], checked)
+        self.showhide_column(self.columns_indices['MEM'], checked)
 
     def on_action_mem_graph_toggled(self, checked):
-        self.showhide_column( self.columns_indices['MEM Graph'], checked)
+        self.showhide_column(self.columns_indices['MEM Graph'], checked)
 
     def on_action_size_on_disk_toggled(self, checked):
-        self.showhide_column( self.columns_indices['Size'], checked)
-
+        self.showhide_column(self.columns_indices['Size'], checked)
 
     @pyqtSlot(name='on_action_about_qubes_triggered')
     def action_about_qubes_triggered(self):
         release_file = open('/etc/qubes-release', 'r')
         release = release_file.read()
         release_file.close()
-        QMessageBox.about(self, "About...", "<b>Qubes OS</b><br><br>%s" % release)
-
+        QMessageBox.about(self, "About...",
+                          "<b>Qubes OS</b><br><br>%s" % release)
 
     def createPopupMenu(self):
         menu = QMenu()
@@ -1392,14 +1576,13 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def open_tools_context_menu(self, widget, point):
         self.tools_context_menu.exec_(widget.mapToGlobal(point))
 
-
     @pyqtSlot('const QPoint&')
     def open_context_menu(self, point):
         vm = self.get_selected_vm()
 
         running = vm.is_running()
 
-        #logs menu
+        # logs menu
         self.logs_menu.clear()
         if vm.qid == 0:
             text = "/var/log/xen/console/hypervisor.log"
@@ -1408,25 +1591,25 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.logs_menu.setEnabled(True)
         else:
             menu_empty = True
-            text = "/var/log/xen/console/guest-"+vm.name+".log"
+            text = "/var/log/xen/console/guest-" + vm.name + ".log"
             if os.path.exists(text):
                 action = self.logs_menu.addAction(QIcon(":/log.png"), text)
                 action.setData(QVariant(text))
                 menu_empty = False
 
-            text = "/var/log/xen/console/guest-"+vm.name+"-dm.log"
+            text = "/var/log/xen/console/guest-" + vm.name + "-dm.log"
             if os.path.exists(text):
                 action = self.logs_menu.addAction(QIcon(":/log.png"), text)
                 action.setData(QVariant(text))
                 menu_empty = False
 
-            text = "/var/log/qubes/guid."+vm.name+".log"
+            text = "/var/log/qubes/guid." + vm.name + ".log"
             if os.path.exists(text):
                 action = self.logs_menu.addAction(QIcon(":/log.png"), text)
                 action.setData(QVariant(text))
                 menu_empty = False
 
-            text = "/var/log/qubes/qrexec."+vm.name+".log"
+            text = "/var/log/qubes/qrexec." + vm.name + ".log"
             if os.path.exists(text):
                 action = self.logs_menu.addAction(QIcon(":/log.png"), text)
                 action.setData(QVariant(text))
@@ -1444,12 +1627,13 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.blk_manager.blk_lock.acquire()
             if len(self.blk_manager.attached_devs) > 0:
                 for d in self.blk_manager.attached_devs:
-                    if self.blk_manager.attached_devs[d]['attached_to'][
-                            'vm'].qid == vm.qid:
+                    if (self.blk_manager.attached_devs[d]
+                            ['attached_to']['vm'].qid == vm.qid):
                         text = "Detach " + d + " " + unicode(
                             self.blk_manager.attached_devs[d]['size']) + " " + \
                             self.blk_manager.attached_devs[d]['desc']
-                        action = self.blk_menu.addAction(QIcon(":/remove.png"), text)
+                        action = self.blk_menu.addAction(QIcon(":/remove.png"),
+                                                         text)
                         action.setData(QVariant(d))
 
             if len(self.blk_manager.free_devs) > 0:
@@ -1457,9 +1641,12 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                     if d.startswith(vm.name):
                         continue
                     # skip partitions heuristic
-                    if d[-1].isdigit() and d[0:-1] in self.blk_manager.current_blk:
+                    if d[-1].isdigit() and \
+                            d[0:-1] in self.blk_manager.current_blk:
                         continue
-                    text = "Attach  " + d + " " + unicode(self.blk_manager.free_devs[d]['size']) + " " + self.blk_manager.free_devs[d]['desc']
+                    text = "Attach  " + d + " " + unicode(
+                        self.blk_manager.free_devs[d]['size']) + " " + \
+                        self.blk_manager.free_devs[d]['desc']
                     action = self.blk_menu.addAction(QIcon(":/add.png"), text)
                     action.setData(QVariant(d))
 
@@ -1475,7 +1662,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         log = str(action.data().toString())
         log_dialog = LogDialog(app, log)
         log_dialog.exec_()
-
 
     @pyqtSlot('QAction *')
     def attach_dettach_device_triggered(self, action):
@@ -1499,12 +1685,14 @@ class QubesTrayIcon(QSystemTrayIcon):
         QSystemTrayIcon.__init__(self, icon)
         self.menu = QMenu()
 
-        action_showmanager = self.createAction ("Open VM Manager", slot=show_manager, icon="qubes")
-        action_backup = self.createAction ("Make backup")
-        action_preferences = self.createAction ("Preferences")
-        action_set_netvm = self.createAction ("Set default NetVM", icon="networking")
-        action_sys_info = self.createAction ("System Info", icon="dom0")
-        action_exit = self.createAction ("Exit", slot=exit_app)
+        action_showmanager = self.createAction("Open VM Manager",
+                                               slot=show_manager, icon="qubes")
+        action_backup = self.createAction("Make backup")
+        action_preferences = self.createAction("Preferences")
+        action_set_netvm = self.createAction("Set default NetVM",
+                                             icon="networking")
+        action_sys_info = self.createAction("System Info", icon="dom0")
+        action_exit = self.createAction("Exit", slot=exit_app)
 
         action_backup.setDisabled(True)
         action_preferences.setDisabled(True)
@@ -1518,32 +1706,34 @@ class QubesTrayIcon(QSystemTrayIcon):
         action_blk_menu = self.createAction("Block devices")
         action_blk_menu.setMenu(self.blk_menu)
 
-        self.addActions (self.menu, (action_showmanager,
-                                     action_blk_menu,
-                                     action_backup,
-                                     action_sys_info,
-                                     None,
-                                     action_preferences,
-                                     action_set_netvm,
-                                     None,
-                                     action_exit))
+        self.addActions(self.menu, (action_showmanager,
+                                    action_blk_menu,
+                                    action_backup,
+                                    action_sys_info,
+                                    None,
+                                    action_preferences,
+                                    action_set_netvm,
+                                    None,
+                                    action_exit))
 
         self.setContextMenu(self.menu)
 
-        self.connect (self, SIGNAL("activated (QSystemTrayIcon::ActivationReason)"), self.icon_clicked)
+        self.connect(self,
+                     SIGNAL("activated (QSystemTrayIcon::ActivationReason)"),
+                     self.icon_clicked)
 
         self.tray_notifier_type = None
         self.tray_notifier = QDBusInterface("org.freedesktop.Notifications",
-                "/org/freedesktop/Notifications",
-                "org.freedesktop.Notifications", session_bus)
+                                            "/org/freedesktop/Notifications",
+                                            "org.freedesktop.Notifications",
+                                            session_bus)
         srv_info = self.tray_notifier.call("GetServerInformation")
-        if srv_info.type() == QDBusMessage.ReplyMessage and len(srv_info
-                .arguments()) > 1:
+        if srv_info.type() == QDBusMessage.ReplyMessage and \
+                len(srv_info.arguments()) > 1:
             self.tray_notifier_type = srv_info.arguments()[1]
 
         if os.path.exists(table_widgets.qubes_dom0_updates_stat_file):
             self.showMessage("Qubes dom0 updates available.", msecs=0)
-
 
     def update_blk_menu(self):
         global manager_window
@@ -1553,7 +1743,7 @@ class QubesTrayIcon(QSystemTrayIcon):
             blk_vm_menu.triggered.connect(
                 lambda a, d=dev: self.attach_device_triggered(a, dev))
             for vm in sorted(manager_window.qvm_collection.values(),
-                             key=lambda x: x.name):
+                    key=lambda x: x.name):
                 if not vm.is_running():
                     continue
                 if vm.qid == 0:
@@ -1567,7 +1757,7 @@ class QubesTrayIcon(QSystemTrayIcon):
         self.blk_menu.setEnabled(True)
 
         self.blk_manager.blk_lock.acquire()
-        if len(self.blk_manager.attached_devs) > 0 :
+        if len(self.blk_manager.attached_devs) > 0:
             for d in self.blk_manager.attached_devs:
                 vm = self.blk_manager.attached_devs[d]['attached_to']['vm']
                 text = "Detach %s %s (%s) from %s" % (
@@ -1579,7 +1769,6 @@ class QubesTrayIcon(QSystemTrayIcon):
                 action.setData(QVariant(d))
                 action.triggered.connect(
                     lambda b, a=action: self.dettach_device_triggered(a))
-
 
         if len(self.blk_manager.free_devs) > 0:
             for d in self.blk_manager.free_devs:
@@ -1624,7 +1813,6 @@ class QubesTrayIcon(QSystemTrayIcon):
             self.blk_manager.blk_lock.release()
             QMessageBox.critical(None, "Block attach/detach error!", str(e))
 
-
     def icon_clicked(self, reason):
         if reason == QSystemTrayIcon.Context:
             self.update_blk_menu()
@@ -1650,8 +1838,8 @@ class QubesTrayIcon(QSystemTrayIcon):
         if self.tray_notifier_type == "KDE":
             message = message.replace('\n', '<br/>\n')
         self.tray_notifier.call("Notify", "Qubes", v_replace_id,
-                "qubes-manager", "Qubes VM Manager",
-                message, v_actions, QVariant.fromMap({}), msecs)
+                                "qubes-manager", "Qubes VM Manager",
+                                message, v_actions, QVariant.fromMap({}), msecs)
 
     def createAction(self, text, slot=None, shortcut=None, icon=None,
                      tip=None, checkable=False, signal="triggered()"):
@@ -1668,6 +1856,7 @@ class QubesTrayIcon(QSystemTrayIcon):
         if checkable:
             action.setCheckable(True)
         return action
+
 
 class QubesDbusNotifyServerAdaptor(QDBusAbstractAdaptor):
     """ This provides the DBus adaptor to the outside world"""
@@ -1705,21 +1894,23 @@ class QubesDbusNotifyServerAdaptor(QDBusAbstractAdaptor):
     def show_manager(self):
         bring_manager_to_front()
 
+
 def get_frame_size():
     w = 0
     h = 0
-    cmd = ['/usr/bin/xprop', '-name', 'Qubes VM Manager', '|', 'grep', '_NET_FRAME_EXTENTS']
-    xprop = subprocess.Popen(cmd, stdout = subprocess.PIPE)
+    cmd = ['/usr/bin/xprop', '-name', 'Qubes VM Manager', '|', 'grep',
+           '_NET_FRAME_EXTENTS']
+    xprop = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     for l in xprop.stdout:
         line = l.split('=')
         if len(line) == 2:
             line = line[1].strip().split(',')
             if len(line) == 4:
-                w = int(line[0].strip())+ int(line[1].strip())
-                h = int(line[2].strip())+ int(line[3].strip())
+                w = int(line[0].strip()) + int(line[1].strip())
+                h = int(line[2].strip()) + int(line[3].strip())
                 break
-    #in case of some weird window managers we have to assume sth...
-    if w<= 0:
+    # in case of some weird window managers we have to assume sth...
+    if w <= 0:
         w = 10
     if h <= 0:
         h = 30
@@ -1727,6 +1918,7 @@ def get_frame_size():
     manager_window.frame_width = w
     manager_window.frame_height = h
     return
+
 
 def show_manager():
     manager_window.show()
@@ -1736,16 +1928,18 @@ def show_manager():
     app.processEvents()
 
     get_frame_size()
-    #print manager_window.frame_width, " x ", manager_window.frame_height
+    # print manager_window.frame_width, " x ", manager_window.frame_height
     manager_window.set_table_geom_size()
 
-def bring_manager_to_front():
 
+def bring_manager_to_front():
     if manager_window.isVisible():
-        subprocess.check_call(['/usr/bin/wmctrl', '-R', str(manager_window.windowTitle())])
+        subprocess.check_call(
+            ['/usr/bin/wmctrl', '-R', str(manager_window.windowTitle())])
 
     else:
         show_manager()
+
 
 def show_running_manager_via_dbus():
     global system_bus
@@ -1753,62 +1947,68 @@ def show_running_manager_via_dbus():
         system_bus = QDBusConnection.systemBus()
 
     qubes_manager = QDBusInterface('org.qubesos.QubesManager',
-            '/org/qubesos/QubesManager', 'org.qubesos.QubesManager', system_bus)
+                                   '/org/qubesos/QubesManager',
+                                   'org.qubesos.QubesManager', system_bus)
     qubes_manager.call('show_manager')
+
 
 def exit_app():
     notifier.stop()
     app.exit()
 
+
 # Bases on the original code by:
 # Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
 
-def handle_exception( exc_type, exc_value, exc_traceback ):
-    import sys
+def handle_exception(exc_type, exc_value, exc_traceback):
     import os.path
     import traceback
 
-    filename, line, dummy, dummy = traceback.extract_tb( exc_traceback ).pop()
-    filename = os.path.basename( filename )
-    error    = "%s: %s" % ( exc_type.__name__, exc_value )
+    filename, line, dummy, dummy = traceback.extract_tb(exc_traceback).pop()
+    filename = os.path.basename(filename)
+    error = "%s: %s" % ( exc_type.__name__, exc_value )
 
     strace = ""
-    stacktrace = traceback.extract_tb( exc_traceback )
+    stacktrace = traceback.extract_tb(exc_traceback)
     while len(stacktrace) > 0:
         (filename, line, func, txt) = stacktrace.pop()
         strace += "----\n"
-        strace += "line: %s\n" %txt
-        strace += "func: %s\n" %func
-        strace += "line no.: %d\n" %line
-        strace += "file: %s\n" %filename
+        strace += "line: %s\n" % txt
+        strace += "func: %s\n" % func
+        strace += "line no.: %d\n" % line
+        strace += "file: %s\n" % filename
 
     msg_box = QMessageBox()
     msg_box.setDetailedText(strace)
     msg_box.setIcon(QMessageBox.Critical)
-    msg_box.setWindowTitle( "Houston, we have a problem...")
-    msg_box.setText("Whoops. A critical error has occured. This is most likely a bug "
-                    "in Qubes Manager.<br><br>"
-                    "<b><i>%s</i></b>" % error +
-                    "<br/>at line <b>%d</b><br/>of file %s.<br/><br/>"
-                    % ( line, filename ))
+    msg_box.setWindowTitle("Houston, we have a problem...")
+    msg_box.setText(
+        "Whoops. A critical error has occured. This is most likely a bug "
+        "in Qubes Manager.<br><br>"
+        "<b><i>%s</i></b>" % error +
+        "<br/>at line <b>%d</b><br/>of file %s.<br/><br/>"
+        % (line, filename))
 
     msg_box.exec_()
+
 
 def sighup_handler(signum, frame):
     os.execl("/usr/bin/qubes-manager", "qubes-manager")
 
+
 def main():
     # Avoid starting more than one instance of the app
-    lock = QubesDaemonPidfile ("qubes-manager")
+    lock = QubesDaemonPidfile("qubes-manager")
     if lock.pidfile_exists():
         if lock.read_pid() == os.getpid():
             pass
         elif lock.pidfile_is_stale():
             lock.remove_pidfile()
-            print "Removed stale pidfile (has the previous daemon instance crashed?)."
+            print "Removed stale pidfile " \
+                  "(has the previous daemon instance crashed?)."
         else:
             show_running_manager_via_dbus()
-            exit (0)
+            exit(0)
 
     lock.create_pidfile()
 
@@ -1846,12 +2046,17 @@ def main():
     global wm
     wm = WatchManager()
     global notifier
-    notifier = ThreadedNotifier(wm, QubesManagerFileWatcher(manager_window.mark_table_for_update))
+    notifier = ThreadedNotifier(wm, QubesManagerFileWatcher(
+        manager_window.mark_table_for_update))
     notifier.start()
-    wm.add_watch(system_path["qubes_store_filename"], EventsCodes.OP_FLAGS.get('IN_MODIFY'))
-    wm.add_watch(os.path.dirname(system_path["qubes_store_filename"]), EventsCodes.OP_FLAGS.get('IN_MOVED_TO'))
-    wm.add_watch(qubes_clipboard_info_file, EventsCodes.OP_FLAGS.get('IN_CLOSE_WRITE'))
-    wm.add_watch(os.path.dirname(qubes_clipboard_info_file), EventsCodes.OP_FLAGS.get('IN_CREATE'))
+    wm.add_watch(system_path["qubes_store_filename"],
+                 EventsCodes.OP_FLAGS.get('IN_MODIFY'))
+    wm.add_watch(os.path.dirname(system_path["qubes_store_filename"]),
+                 EventsCodes.OP_FLAGS.get('IN_MOVED_TO'))
+    wm.add_watch(qubes_clipboard_info_file,
+                 EventsCodes.OP_FLAGS.get('IN_CLOSE_WRITE'))
+    wm.add_watch(os.path.dirname(qubes_clipboard_info_file),
+                 EventsCodes.OP_FLAGS.get('IN_CREATE'))
     wm.add_watch(os.path.dirname(table_widgets.qubes_dom0_updates_stat_file),
                  EventsCodes.OP_FLAGS.get('IN_CREATE'))
 
@@ -1867,6 +2072,7 @@ def main():
 
     lock.remove_pidfile()
     trayIcon = None
+
 
 if __name__ == "__main__":
     main()
