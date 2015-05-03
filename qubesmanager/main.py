@@ -1002,7 +1002,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot(name='on_action_resumevm_triggered')
     def action_resumevm_triggered(self):
         vm = self.get_selected_vm()
-        assert not vm.is_running()
+        assert not vm.is_running() or vm.is_paused()
 
         if vm.is_paused():
             try:
