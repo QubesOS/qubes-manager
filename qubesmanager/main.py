@@ -88,7 +88,8 @@ class QMVmState:
 
 
 class QubesManagerFileWatcher(ProcessEvent):
-    def __init__ (self, update_func):
+    def __init__(self, update_func, **kargs):
+        super(QubesManagerFileWatcher, self).__init__(**kargs)
         self.update_func = update_func
 
     def process_IN_MODIFY(self, event):
@@ -99,6 +100,7 @@ class QubesManagerFileWatcher(ProcessEvent):
         if event.pathname == system_path["qubes_store_filename"]:
             self.update_func()
 
+    # noinspection PyMethodMayBeStatic
     def process_IN_CLOSE_WRITE(self, event):
         if event.path == qubes_clipboard_info_file:
             src_info_file = open(qubes_clipboard_info_file, 'r')
@@ -325,6 +327,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.screen_number = -1
         self.screen_changed = False
 
+        self.vms_list = []
+        self.vms_in_table = {}
+        self.reload_table = False
         self.running_vms_count = 0
         self.internal_vms_count = 0
 
@@ -336,25 +341,24 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         self.move(self.x(), 0)
 
-        self.columns_actions = {}
-        self.columns_actions[ self.columns_indices["Type"] ] = self.action_vm_type
-        self.columns_actions[ self.columns_indices["Label"] ] = self.action_label
-        self.columns_actions[ self.columns_indices["Name"] ] = self.action_name
-        self.columns_actions[ self.columns_indices["State"] ] = self.action_state
-        self.columns_actions[ self.columns_indices["Template"] ] = self.action_template
-        self.columns_actions[ self.columns_indices["NetVM"] ] = self.action_netvm
-        self.columns_actions[ self.columns_indices["CPU"] ] = self.action_cpu
-        self.columns_actions[ self.columns_indices["CPU Graph"] ] = self.action_cpu_graph
-        self.columns_actions[ self.columns_indices["MEM"] ] = self.action_mem
-        self.columns_actions[ self.columns_indices["MEM Graph"] ] = self.action_mem_graph
-        self.columns_actions[ self.columns_indices["Size"] ] = self.action_size_on_disk
-        self.columns_actions[ self.columns_indices["Internal"] ] = self.action_internal
-        self.columns_actions[ self.columns_indices["IP"] ] = self\
-            .action_ip
-        self.columns_actions[ self.columns_indices["Backups"] ] = self\
-            .action_backups
-        self.columns_actions[ self.columns_indices["Last backup"] ] = self\
+        self.columns_actions = {
+            self.columns_indices["Type"]: self.action_vm_type,
+            self.columns_indices["Label"]: self.action_label,
+            self.columns_indices["Name"]: self.action_name,
+            self.columns_indices["State"]: self.action_state,
+            self.columns_indices["Template"]: self.action_template,
+            self.columns_indices["NetVM"]: self.action_netvm,
+            self.columns_indices["CPU"]: self.action_cpu,
+            self.columns_indices["CPU Graph"]: self.action_cpu_graph,
+            self.columns_indices["MEM"]: self.action_mem,
+            self.columns_indices["MEM Graph"]: self.action_mem_graph,
+            self.columns_indices["Size"]: self.action_size_on_disk,
+            self.columns_indices["Internal"]: self.action_internal,
+            self.columns_indices["IP"]: self
+                .action_ip, self.columns_indices["Backups"]: self
+                .action_backups, self.columns_indices["Last backup"]: self
             .action_last_backup
+        }
 
         self.visible_columns_count = len(self.columns_indices)
         self.table.setColumnHidden(self.columns_indices["NetVM"], True)
@@ -518,12 +522,12 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self).height() - self.frame_height  # might be wrong...
         desktop_height -= self.row_height  # UGLY! to somehow ommit taskbar...
 
-        W = self.table.horizontalHeader().length() +\
-            self.table.verticalScrollBar().width() +\
-            2*self.table.frameWidth() +1
+        w = self.table.horizontalHeader().length() + \
+            self.table.verticalScrollBar().width() + \
+            2 * self.table.frameWidth() + 1
 
-        H = self.table.horizontalHeader().height() +\
-            2*self.table.frameWidth()
+        h = self.table.horizontalHeader().height() + \
+            2 * self.table.frameWidth()
 
         mainwindow_to_add = 0
 
@@ -540,15 +544,11 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                               self.toolbar.contentsMargins().bottom())
             available_space -= toolbar_height
             mainwindow_to_add += toolbar_height
-        if W >= desktop_width:
+        if w >= desktop_width:
             available_space -= self.table.horizontalScrollBar().height()
-            H += self.table.horizontalScrollBar().height()
+            h += self.table.horizontalScrollBar().height()
         default_rows = int(available_space / self.row_height)
 
-        if self.show_inactive_vms:
-            n = self.table.rowCount()
-        else:
-            n = self.running_vms_count
         if self.show_internal_vms:
             if self.show_inactive_vms:
                 n = self.table.rowCount()
@@ -560,28 +560,27 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             n = self.running_vms_count
 
         if n > default_rows:
-            H += default_rows*self.row_height
+            h += default_rows * self.row_height
             self.table.verticalScrollBar().show()
         else:
-            H += n*self.row_height
+            h += n * self.row_height
             self.table.verticalScrollBar().hide()
-            W -= self.table.verticalScrollBar().width()
+            w -= self.table.verticalScrollBar().width()
 
-        W = min(desktop_width, W)
+        w = min(desktop_width, w)
 
-        self.centralwidget.setFixedHeight(H)
+        self.centralwidget.setFixedHeight(h)
 
-        H += mainwindow_to_add
+        h += mainwindow_to_add
 
-        self.setMaximumHeight(H)
-        self.setMinimumHeight(H)
+        self.setMaximumHeight(h)
+        self.setMinimumHeight(h)
 
-        self.table.setFixedWidth(W)
-        self.centralwidget.setFixedWidth(W)
+        self.table.setFixedWidth(w)
+        self.centralwidget.setFixedWidth(w)
         # don't change the following two lines to setFixedWidth!
-        self.setMaximumWidth(W)
-        self.setMinimumWidth(W)
-
+        self.setMaximumWidth(w)
+        self.setMinimumWidth(w)
 
     def moveEvent(self, event):
         super(VmManagerWindow, self).moveEvent(event)
@@ -729,7 +728,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         and vm.is_qrexec_running():
                     self.clear_error(vm.qid)
 
-            if self.screen_changed == True:
+            if self.screen_changed:
                 reload_table = True
                 self.screen_changed = False
 
@@ -750,7 +749,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
             blk_visible = None
             rows_with_blk = None
-            if update_devs == True:
+            if update_devs:
                 rows_with_blk = []
                 self.blk_manager.blk_lock.acquire()
                 for d in self.blk_manager.attached_devs:
@@ -777,7 +776,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                     else:
                         cur_cpu_load = 0
 
-                    if rows_with_blk != None:
+                    if rows_with_blk is not None:
                         if vm_row.vm.qid in rows_with_blk:
                             blk_visible = True
                         else:
@@ -791,7 +790,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
             else:
                 for vm_row in self.vms_in_table.values():
-                    if rows_with_blk != None:
+                    if rows_with_blk is not None:
                         if vm_row.vm.name in rows_with_blk:
                             blk_visible = True
                         else:
@@ -820,7 +819,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
     def update_block_devices(self):
         res, msg = self.blk_manager.check_for_updates()
-        if msg != None and len(msg) > 0:
+        if msg is not None and len(msg) > 0:
             trayIcon.showMessage('\n'.join(msg), msecs=5000)
         return res
 
@@ -857,7 +856,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         vm = self.get_selected_vm()
 
-        if vm != None:
+        if vm is not None:
             # Update available actions:
             self.action_settings.setEnabled(vm.qid != 0)
             self.action_removevm.setEnabled(
@@ -1144,7 +1143,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def do_start_vm(self, vm, thread_monitor):
         try:
             vm.verify_files()
-            xid = vm.start()
+            vm.start()
         except Exception as ex:
             thread_monitor.set_error_msg(str(ex))
             thread_monitor.set_finished()
@@ -1187,7 +1186,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         try:
             vm.verify_files()
             vm.drive = 'cdrom:dom0:/usr/lib/qubes/qubes-windows-tools.iso'
-            xid = vm.start()
+            vm.start()
         except Exception as ex:
             thread_monitor.set_error_msg(str(ex))
             thread_monitor.set_finished()
@@ -1685,14 +1684,14 @@ class QubesTrayIcon(QSystemTrayIcon):
         QSystemTrayIcon.__init__(self, icon)
         self.menu = QMenu()
 
-        action_showmanager = self.createAction("Open VM Manager",
-                                               slot=show_manager, icon="qubes")
-        action_backup = self.createAction("Make backup")
-        action_preferences = self.createAction("Preferences")
-        action_set_netvm = self.createAction("Set default NetVM",
-                                             icon="networking")
-        action_sys_info = self.createAction("System Info", icon="dom0")
-        action_exit = self.createAction("Exit", slot=exit_app)
+        action_showmanager = self.create_action("Open VM Manager",
+                                                slot=show_manager, icon="qubes")
+        action_backup = self.create_action("Make backup")
+        action_preferences = self.create_action("Preferences")
+        action_set_netvm = self.create_action("Set default NetVM",
+                                              icon="networking")
+        action_sys_info = self.create_action("System Info", icon="dom0")
+        action_exit = self.create_action("Exit", slot=exit_app)
 
         action_backup.setDisabled(True)
         action_preferences.setDisabled(True)
@@ -1703,18 +1702,18 @@ class QubesTrayIcon(QSystemTrayIcon):
 
         self.blk_menu = QMenu(self.menu)
         self.blk_menu.setTitle("Block devices")
-        action_blk_menu = self.createAction("Block devices")
+        action_blk_menu = self.create_action("Block devices")
         action_blk_menu.setMenu(self.blk_menu)
 
-        self.addActions(self.menu, (action_showmanager,
-                                    action_blk_menu,
-                                    action_backup,
-                                    action_sys_info,
-                                    None,
-                                    action_preferences,
-                                    action_set_netvm,
-                                    None,
-                                    action_exit))
+        self.add_actions(self.menu, (action_showmanager,
+                                     action_blk_menu,
+                                     action_backup,
+                                     action_sys_info,
+                                     None,
+                                     action_preferences,
+                                     action_set_netvm,
+                                     None,
+                                     action_exit))
 
         self.setContextMenu(self.menu)
 
@@ -1741,16 +1740,18 @@ class QubesTrayIcon(QSystemTrayIcon):
         def create_vm_submenu(dev):
             blk_vm_menu = QMenu(self.blk_menu)
             blk_vm_menu.triggered.connect(
-                lambda a, d=dev: self.attach_device_triggered(a, dev))
-            for vm in sorted(manager_window.qvm_collection.values(),
-                    key=lambda x: x.name):
+                lambda a, trig_dev=dev: self.attach_device_triggered(a,
+                                                                     trig_dev))
+            for this_vm in sorted(manager_window.qvm_collection.values(),
+                                  key=lambda x: x.name):
                 if not vm.is_running():
                     continue
-                if vm.qid == 0:
+                if this_vm.qid == 0:
                     # skip dom0 to prevent (fatal) mistakes
                     continue
-                action = blk_vm_menu.addAction(QIcon(":/add.png"), vm.name)
-                action.setData(QVariant(vm))
+                this_action = blk_vm_menu.addAction(QIcon(":/add.png"),
+                                                    this_vm.name)
+                this_action.setData(QVariant(this_vm))
             return blk_vm_menu
 
         self.blk_menu.clear()
@@ -1821,14 +1822,15 @@ class QubesTrayIcon(QSystemTrayIcon):
         else:
             bring_manager_to_front()
 
-    def addActions(self, target, actions):
+    # noinspection PyMethodMayBeStatic
+    def add_actions(self, target, actions):
         for action in actions:
             if action is None:
                 target.addSeparator()
             else:
                 target.addAction(action)
 
-    def showMessage(self, message, msecs):
+    def showMessage(self, message, msecs, **kwargs):
         # QtDBus bindings doesn't use introspection to get proper method
         # parameters types, so must cast explicitly
         v_replace_id = QVariant(0)
@@ -1841,8 +1843,8 @@ class QubesTrayIcon(QSystemTrayIcon):
                                 "qubes-manager", "Qubes VM Manager",
                                 message, v_actions, QVariant.fromMap({}), msecs)
 
-    def createAction(self, text, slot=None, shortcut=None, icon=None,
-                     tip=None, checkable=False, signal="triggered()"):
+    def create_action(self, text, slot=None, shortcut=None, icon=None,
+                      tip=None, checkable=False, signal="triggered()"):
         action = QAction(text, self)
         if icon is not None:
             action.setIcon(QIcon(":/%s.png" % icon))
