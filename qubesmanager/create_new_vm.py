@@ -250,39 +250,40 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
 
         self.done(0)
 
-
-
-    def do_create_vm (self, vmclass, vmname, label, template_vm, netvm, standalone, allow_networking, thread_monitor):
+    @staticmethod
+    def do_create_vm(vmclass, vmname, label, template_vm, netvm,
+                     standalone, allow_networking, thread_monitor):
         vm = None
+        qc = QubesVmCollection()
+        qc.lock_db_for_writing()
+        qc.load()
         try:
-            self.qvm_collection.lock_db_for_writing()
-            self.qvm_collection.load()
-
             if not standalone:
-                vm = self.qvm_collection.add_new_vm(vmclass, name=vmname, template=template_vm, label=label)
+                vm = qc.add_new_vm(vmclass, name=vmname, template=template_vm,
+                                   label=label)
             else:
-                vm = self.qvm_collection.add_new_vm(vmclass, name=vmname, template=None, label=label)
-            vm.create_on_disk(verbose=False, source_template = template_vm)
+                vm = qc.add_new_vm(vmclass, name=vmname, template=None,
+                                   label=label)
+            vm.create_on_disk(verbose=False, source_template=template_vm)
 
-            if allow_networking == False:
+            if not allow_networking:
                 vm.uses_default_netvm = False
                 vm.netvm = None
             else:
                 vm.netvm = netvm
-                if vm.netvm == self.qvm_collection.get_default_netvm():
+                if vm.netvm.qid == qc.get_default_netvm().qid:
                     vm.uses_default_netvm = True
                 else:
                     vm.uses_default_netvm = False
 
-            self.qvm_collection.save()
-
+            qc.save()
         except Exception as ex:
-            thread_monitor.set_error_msg (str(ex))
+            thread_monitor.set_error_msg(str(ex))
             if vm:
                 vm.remove_from_disk()
-                self.qvm_collection.pop(vm.qid)
+                qc.pop(vm.qid)
         finally:
-            self.qvm_collection.unlock_db()
+            qc.unlock_db()
 
         thread_monitor.set_finished()
 

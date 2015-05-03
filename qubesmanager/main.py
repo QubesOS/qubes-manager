@@ -1000,28 +1000,30 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                                     "ERROR: {0}".format(
                                         thread_monitor.error_msg))
 
-    def do_remove_vm(self, vm, thread_monitor):
+    @staticmethod
+    def do_remove_vm(vm, thread_monitor):
+        qc = QubesVmCollection()
+        qc.lock_db_for_writing()
         try:
-            self.qvm_collection.lock_db_for_writing()
-            self.qvm_collection.load()
-            vm = self.qvm_collection[vm.qid]
+            qc.load()
+            vm = qc[vm.qid]
 
             # TODO: the following two conditions should really be checked
             # by qvm_collection.pop() overload...
             if vm.is_template() and \
-                    self.qvm_collection.default_template_qid == vm.qid:
-                self.qvm_collection.default_template_qid = None
+                    qc.default_template_qid == vm.qid:
+                qc.default_template_qid = None
             if vm.is_netvm() and \
-                    self.qvm_collection.default_netvm_qid == vm.qid:
-                self.qvm_collection.default_netvm_qid = None
+                    qc.default_netvm_qid == vm.qid:
+                qc.default_netvm_qid = None
 
-            self.qvm_collection.pop(vm.qid)
-            self.qvm_collection.save()
+            qc.pop(vm.qid)
+            qc.save()
             vm.remove_from_disk()
         except Exception as ex:
             thread_monitor.set_error_msg(str(ex))
         finally:
-            self.qvm_collection.unlock_db()
+            qc.unlock_db()
 
         thread_monitor.set_finished()
 
@@ -1066,28 +1068,30 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                                 "Exception while cloning:<br>{0}".format(
                                     thread_monitor.error_msg))
 
-    def do_clone_vm(self, vm, dst_name, thread_monitor):
+    @staticmethod
+    def do_clone_vm(vm, dst_name, thread_monitor):
         dst_vm = None
+        qc = QubesVmCollection()
+        qc.lock_db_for_writing()
+        qc.load()
         try:
-            self.qvm_collection.lock_db_for_writing()
-            self.qvm_collection.load()
-            src_vm = self.qvm_collection[vm.qid]
+            src_vm = qc[vm.qid]
 
-            dst_vm = self.qvm_collection.add_new_vm(src_vm.__class__.__name__,
-                                                    name=dst_name,
-                                                    template=src_vm.template,
-                                                    installed_by_rpm=False)
+            dst_vm = qc.add_new_vm(src_vm.__class__.__name__,
+                                   name=dst_name,
+                                   template=src_vm.template,
+                                   installed_by_rpm=False)
 
             dst_vm.clone_attrs(src_vm)
             dst_vm.clone_disk_files(src_vm=src_vm, verbose=False)
-            self.qvm_collection.save()
-            self.qvm_collection.unlock_db()
+            qc.save()
         except Exception as ex:
             if dst_vm:
-                self.qvm_collection.pop(dst_vm.qid)
+                qc.pop(dst_vm.qid)
                 dst_vm.remove_from_disk()
-            self.qvm_collection.unlock_db()
             thread_monitor.set_error_msg(str(ex))
+        finally:
+            qc.unlock_db()
         thread_monitor.set_finished()
 
     @pyqtSlot(name='on_action_resumevm_triggered')
@@ -1126,8 +1130,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.set_error(vm.qid,
                            "Error starting VM: %s" % thread_monitor.error_msg)
 
-    # noinspection PyMethodMayBeStatic
-    def do_start_vm(self, vm, thread_monitor):
+    @staticmethod
+    def do_start_vm(vm, thread_monitor):
         try:
             vm.verify_files()
             vm.start()
@@ -1347,7 +1351,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                                     "ERROR: {0}".format(
                                         thread_monitor.error_msg))
 
-    def do_update_vm(self, vm, thread_monitor):
+    @staticmethod
+    def do_update_vm(vm, thread_monitor):
         try:
             if vm.qid == 0:
                 subprocess.check_call(
@@ -1393,7 +1398,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                                 "Exception while running command:<br>{0}".format(
                                     thread_monitor.error_msg))
 
-    def do_run_command_in_vm(self, vm, command_to_run, thread_monitor):
+    @staticmethod
+    def do_run_command_in_vm(vm, command_to_run, thread_monitor):
         try:
             vm.run(command_to_run, verbose=False, autostart=True,
                    notify_function=lambda lvl, msg: trayIcon.showMessage(
