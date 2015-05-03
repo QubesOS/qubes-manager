@@ -24,19 +24,20 @@ import sys
 import os
 import os.path
 import signal
-import fcntl
-import errno
-from PyQt4.QtCore import *
+import subprocess
+import time
+from datetime import datetime, timedelta
+
 from PyQt4.QtGui import *
-from PyQt4.QtDBus import QDBus,QDBusVariant, QDBusMessage
+from PyQt4.QtDBus import QDBusVariant, QDBusMessage
 from PyQt4.QtDBus import QDBusConnection
-from PyQt4.QtDBus import QDBusInterface,QDBusAbstractAdaptor
+from PyQt4.QtDBus import QDBusInterface, QDBusAbstractAdaptor
+from pyinotify import WatchManager, ThreadedNotifier, EventsCodes, \
+    ProcessEvent
 
 from qubes.qubes import QubesVmCollection
 from qubes.qubes import QubesException
-from qubes.qubes import system_path,vm_files
-from qubes.qubes import QubesVmLabels
-from qubes.qubes import dry_run
+from qubes.qubes import system_path
 from qubes.qubes import QubesDaemonPidfile
 from qubes.qubes import QubesHost
 import table_widgets
@@ -45,16 +46,8 @@ from table_widgets import VmTypeWidget, VmLabelWidget, VmNameItem, \
     VmInfoWidget, VmTemplateItem, VmNetvmItem, VmUsageBarWidget, ChartWidget, \
     VmSizeOnDiskItem, VmInternalItem, VmIPItem, VmIncludeInBackupsItem, \
     VmLastBackupItem
-
-try:
-    from qubes.qubes import QubesHVm
-except ImportError:
-    pass
-from qubes import qubes
+from qubes.qubes import QubesHVm
 from qubes import qubesutils
-
-import qubesmanager.resources_rc
-import ui_newappvmdlg
 from ui_mainwindow import *
 from create_new_vm import NewVmDlg
 from settings import VMSettingsWindow
@@ -64,12 +57,6 @@ from global_settings import GlobalSettingsWindow
 from log_dialog import LogDialog
 from thread_monitor import *
 
-from pyinotify import WatchManager, ThreadedNotifier, EventsCodes, \
-    ProcessEvent
-
-import subprocess
-import time
-from datetime import datetime, timedelta
 
 qubes_clipboard_info_file = "/var/run/qubes/qubes-clipboard.bin.source"
 
