@@ -1049,7 +1049,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         (clone_name, ok) = QInputDialog.getText(
             self, 'Qubes clone VM',
             'Enter name for VM <b>' + vm.name + '</b> clone:',
-            name_format % name_number)
+            text=(name_format % name_number))
         if not ok or clone_name == "":
             return
 
