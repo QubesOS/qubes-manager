@@ -1747,7 +1747,7 @@ class QubesTrayIcon(QSystemTrayIcon):
                                                                      trig_dev))
             for this_vm in sorted(manager_window.qvm_collection.values(),
                                   key=lambda x: x.name):
-                if not vm.is_running():
+                if not this_vm.is_running():
                     continue
                 if this_vm.qid == 0:
                     # skip dom0 to prevent (fatal) mistakes
