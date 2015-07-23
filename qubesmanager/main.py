@@ -2002,22 +2002,14 @@ def sighup_handler(signum, frame):
 
 
 def main():
-    # Avoid starting more than one instance of the app
-    lock = QubesDaemonPidfile("qubes-manager")
-    if lock.pidfile_exists():
-        if lock.read_pid() == os.getpid():
-            pass
-        elif lock.pidfile_is_stale():
-            lock.remove_pidfile()
-            print "Removed stale pidfile " \
-                  "(has the previous daemon instance crashed?)."
-        else:
-            show_running_manager_via_dbus()
-            exit(0)
-
-    lock.create_pidfile()
-
     signal.signal(signal.SIGHUP, sighup_handler)
+
+    global system_bus
+    system_bus = QDBusConnection.systemBus()
+    # Avoid starting more than one instance of the app
+    if not system_bus.registerService('org.qubesos.QubesManager'):
+        show_running_manager_via_dbus()
+        return
 
     global qubes_host
     qubes_host = QubesHost()
@@ -2065,9 +2057,6 @@ def main():
     wm.add_watch(os.path.dirname(table_widgets.qubes_dom0_updates_stat_file),
                  EventsCodes.OP_FLAGS.get('IN_CREATE'))
 
-    global system_bus
-    system_bus = QDBusConnection.systemBus()
-    system_bus.registerService('org.qubesos.QubesManager')
     system_bus.registerObject(dbus_object_path, manager_window)
 
     trayIcon.show()
@@ -2075,7 +2064,6 @@ def main():
     show_manager()
     app.exec_()
 
-    lock.remove_pidfile()
     trayIcon = None
 
 
