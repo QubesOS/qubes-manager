@@ -21,30 +21,15 @@
 #
 #
 
-import sys
-import os
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-
 from qubes.qubes import QubesVmCollection
 from qubes.qubes import QubesVmLabels
-from qubes.qubes import QubesException
-from qubes.qubes import QubesDaemonPidfile
 from qubes.qubes import QubesHost
 from qubes.qubes import system_path
 
-import qubesmanager.resources_rc
-
-from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
-
 import subprocess
-import time
-import threading
-from operator import itemgetter
 from copy import copy
 
 from ui_settingsdlg import *
-from multiselectwidget import *
 from appmenu_select import *
 from firewall import *
 from backup_utils import get_path_for_vm
