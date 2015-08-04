@@ -45,7 +45,7 @@ from ui_globalsettingsdlg import *
 from ConfigParser import SafeConfigParser
 from qubes.qubesutils import parse_size
 from qubes.qubesutils import updates_dom0_toggle,updates_vms_toggle,\
-    updates_dom0_status
+    updates_dom0_status,updates_vms_status
 from qubes import qmemman_algo
 
 dont_keep_dvm_in_memory_path = '/var/lib/qubes/dvmdata/dont-use-shm'
@@ -284,12 +284,17 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
         self.updates_val = False
         self.updates_dom0_val = updates_dom0_status(self.qvm_collection)
         self.updates_dom0.setChecked(self.updates_dom0_val)
-        self.updates_vm.setCheckState(Qt.PartiallyChecked)
+        updates_vms = updates_vms_status(self.qvm_collection)
+        if updates_vms is None:
+            self.updates_vm.setCheckState(Qt.PartiallyChecked)
+        else:
+            self.updates_vm.setCheckState(updates_vms)
 
     def __apply_updates__(self):
         if self.updates_dom0.isChecked() != self.updates_dom0_val:
             updates_dom0_toggle(self.qvm_collection, self.updates_dom0.isChecked())
         if self.updates_vm.checkState() != Qt.PartiallyChecked:
+            self.anything_changed = True
             updates_vms_toggle(self.qvm_collection, self.updates_vm
                                .isChecked())
 
