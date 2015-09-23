@@ -1373,9 +1373,15 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                     'autostart': True,
                     'notify_function': lambda lvl, msg: trayIcon
                     .showMessage(msg, msecs=3000)}
-                vm.run("yum clean expire-cache", user='root', wait=True,
-                       **vm_run_common_args)
-                vm.run("gpk-update-viewer;service qubes-update-check start -P",
+                # workaround for broken packagekit (#982)
+                update_command = "if [ -f /etc/fedora-release ]; then " \
+                                 "yum update; " \
+                                 "else " \
+                                 "apt-get update && apt-get -V dist-upgrade;" \
+                                 "fi"
+                vm.run("xterm -e sudo sh -c '{}';"
+                       "sudo service qubes-update-check start".
+                       format(update_command),
                        **vm_run_common_args)
         except Exception as ex:
             thread_monitor.set_error_msg(str(ex))
