@@ -1378,8 +1378,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                                  "yum update; " \
                                  "else " \
                                  "apt-get update && apt-get -V dist-upgrade;" \
-                                 "fi"
-                vm.run("xterm -e sudo sh -c '{}';"
+                                 "fi;" \
+                                 "echo Done. Press Enter to exit.; read x"
+                vm.run("xterm -title update -e sudo sh -c '{}';"
                        "sudo service qubes-update-check start".
                        format(update_command),
                        **vm_run_common_args)
