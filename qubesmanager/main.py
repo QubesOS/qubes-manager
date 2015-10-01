@@ -40,6 +40,7 @@ from qubes.qubes import QubesException
 from qubes.qubes import system_path
 from qubes.qubes import QubesDaemonPidfile
 from qubes.qubes import QubesHost
+from qubesmanager.about import AboutDialog
 import table_widgets
 from block import QubesBlockDevicesManager
 from table_widgets import VmTypeWidget, VmLabelWidget, VmNameItem, \
@@ -1570,11 +1571,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
     @pyqtSlot(name='on_action_about_qubes_triggered')
     def action_about_qubes_triggered(self):
-        release_file = open('/etc/qubes-release', 'r')
-        release = release_file.read()
-        release_file.close()
-        QMessageBox.about(self, "About...",
-                          "<b>Qubes OS</b><br><br>%s" % release)
+        about = AboutDialog()
+        about.exec_()
 
     def createPopupMenu(self):
         menu = QMenu()
