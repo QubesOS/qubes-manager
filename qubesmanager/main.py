@@ -1144,7 +1144,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     @staticmethod
     def do_start_vm(vm, thread_monitor):
         try:
-            vm.verify_files()
             vm.start()
         except Exception as ex:
             thread_monitor.set_error_msg(str(ex))
@@ -1186,7 +1185,6 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def do_start_vm_tools_install(self, vm, thread_monitor):
         prev_drive = vm.drive
         try:
-            vm.verify_files()
             vm.drive = 'cdrom:dom0:/usr/lib/qubes/qubes-windows-tools.iso'
             vm.start()
         except Exception as ex:
