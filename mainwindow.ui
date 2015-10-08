@@ -389,10 +389,10 @@
      <normaloff>:/createvm.png</normaloff>:/createvm.png</iconset>
    </property>
    <property name="text">
-    <string>Create AppVM</string>
+    <string>Create VM</string>
    </property>
    <property name="toolTip">
-    <string>Create a new AppVM</string>
+    <string>Create a new VM</string>
    </property>
   </action>
   <action name="action_removevm">
@@ -404,10 +404,10 @@
      <normaloff>:/removevm.png</normaloff>:/removevm.png</iconset>
    </property>
    <property name="text">
-    <string>Remove AppVM</string>
+    <string>Remove VM</string>
    </property>
    <property name="toolTip">
-    <string>Remove an existing AppVM (must be stopped first)</string>
+    <string>Remove an existing VM (must be stopped first)</string>
    </property>
   </action>
   <action name="action_resumevm">
