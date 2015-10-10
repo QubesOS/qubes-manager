@@ -218,6 +218,17 @@ class VmRowInTable(object):
 
     def update(self, blk_visible=None, cpu_load=None, update_size_on_disk=False,
                rec_visible=None):
+        """
+        Update info in a single VM row
+        :param blk_visible: if not None, show/hide block icon, otherwise
+        don't change its visibility
+        :param cpu_load: current CPU load (if applicable), in percents
+        :param update_size_on_disk: should disk utilization be updated? the
+        widget will extract the data from VM object
+        :param rec_visible: if not None, show/hide mic icon, otherwise don't
+        change its visibility
+        :return: None
+        """
         self.info_widget.update_vm_state(self.vm, blk_visible, rec_visible)
         if cpu_load is not None:
             self.cpu_usage_widget.update_load(self.vm, cpu_load)
@@ -779,7 +790,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             else:
                 for vm_row in self.vms_in_table.values():
                     if rows_with_blk is not None:
-                        if vm_row.vm.name in rows_with_blk:
+                        if vm_row.vm.qid in rows_with_blk:
                             blk_visible = True
                         else:
                             blk_visible = False
