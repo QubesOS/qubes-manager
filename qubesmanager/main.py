@@ -1985,8 +1985,15 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 
     filename, line, dummy, dummy = traceback.extract_tb(exc_traceback).pop()
     filename = os.path.basename(filename)
-    error = "%s: %s" % ( exc_type.__name__, exc_value )
-
+    error = "%s: %s" % (exc_type.__name__, exc_value)
+    message = (
+        "Whoops. A critical error has occured. This is most likely a bug "
+        "in Qubes Manager.<br><br>"
+        "<b><i>%s</i></b>" % error +
+        "<br/>at line <b>%d</b><br/>of file %s.<br/><br/>"
+        % (line, filename)
+    )
+    is_gui_thread = threading.currentThread().getName() == "QtMainThread"
     strace = ""
     stacktrace = traceback.extract_tb(exc_traceback)
     while len(stacktrace) > 0:
@@ -1997,19 +2004,16 @@ def handle_exception(exc_type, exc_value, exc_traceback):
         strace += "line no.: %d\n" % line
         strace += "file: %s\n" % filename
 
-    msg_box = QMessageBox()
-    msg_box.setDetailedText(strace)
-    msg_box.setIcon(QMessageBox.Critical)
-    msg_box.setWindowTitle("Houston, we have a problem...")
-    msg_box.setText(
-        "Whoops. A critical error has occured. This is most likely a bug "
-        "in Qubes Manager.<br><br>"
-        "<b><i>%s</i></b>" % error +
-        "<br/>at line <b>%d</b><br/>of file %s.<br/><br/>"
-        % (line, filename))
+    if is_gui_thread:
+        msg_box = QMessageBox()
+        msg_box.setDetailedText(strace)
+        msg_box.setIcon(QMessageBox.Critical)
+        msg_box.setWindowTitle("Houston, we have a problem...")
+        msg_box.setText(message)
 
-    msg_box.exec_()
-
+        msg_box.exec_()
+    else:
+        print >>sys.stderr, message
 
 def sighup_handler(signum, frame):
     os.execl("/usr/bin/qubes-manager", "qubes-manager")
@@ -2073,6 +2077,7 @@ def main():
 
     system_bus.registerObject(dbus_object_path, manager_window)
 
+    threading.currentThread().setName("QtMainThread")
     trayIcon.show()
 
     show_manager()
