@@ -1985,13 +1985,9 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 
     filename, line, dummy, dummy = traceback.extract_tb(exc_traceback).pop()
     filename = os.path.basename(filename)
-    error = "%s: %s" % (exc_type.__name__, exc_value)
     message = (
-        "Whoops. A critical error has occured. This is most likely a bug "
-        "in Qubes Manager.<br><br>"
-        "<b><i>%s</i></b>" % error +
-        "<br/>at line <b>%d</b><br/>of file %s.<br/><br/>"
-        % (line, filename)
+        "<b>%s</b>" % exc_value +
+        "<br><br><i>This is most likely a bug in the Qubes Manager</i>"
     )
     is_gui_thread = threading.currentThread().getName() == "QtMainThread"
     strace = ""
