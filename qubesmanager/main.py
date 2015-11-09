@@ -1985,8 +1985,10 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 
     filename, line, dummy, dummy = traceback.extract_tb(exc_traceback).pop()
     filename = os.path.basename(filename)
+    error = "%s: %s" % (exc_type.__name__, exc_value)
+    error = error.replace('QubesException: ', '')
     message = (
-        "<b>%s</b>" % exc_value +
+        "<b>%s</b>" % error +
         "<br><br><i>This is most likely a bug in the Qubes Manager</i>"
     )
     is_gui_thread = threading.currentThread().getName() == "QtMainThread"
