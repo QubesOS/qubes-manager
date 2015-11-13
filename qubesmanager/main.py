@@ -1378,22 +1378,13 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 subprocess.check_call(
                     ["/usr/bin/qubes-dom0-update", "--clean", "--gui"])
             else:
-                vm_run_common_args = {
-                    'verbose': False,
-                    'autostart': True,
-                    'notify_function': lambda lvl, msg: trayIcon
-                    .showMessage(msg, msecs=3000)}
-                # workaround for broken packagekit (#982)
-                update_command = "if [ -f /etc/fedora-release ]; then " \
-                                 "yum update; " \
-                                 "else " \
-                                 "apt-get update && apt-get -V dist-upgrade;" \
-                                 "fi;" \
-                                 "echo Done. Press Enter to exit.; read x"
-                vm.run("xterm -title update -e sudo sh -c '{}';"
-                       "sudo service qubes-update-check start".
-                       format(update_command),
-                       **vm_run_common_args)
+                if not vm.is_running():
+                    trayIcon.showMessage(
+                        "Starting the '{0}' VM...".format(vm.name),
+                        msecs=3000)
+                    vm.start()
+                vm.run_service("qubes.InstallUpdatesGUI", gui=True,
+                               verbose=False, wait=False)
         except Exception as ex:
             thread_monitor.set_error_msg(str(ex))
             thread_monitor.set_finished()
