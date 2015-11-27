@@ -4,7 +4,7 @@
 
 Name:		qubes-manager
 Version:	%{version}
-Release:	1
+Release:	1%{?dist}
 Summary:	The Graphical Qubes VM Manager.
 
 Group:		Qubes
