@@ -882,7 +882,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.action_killvm.setEnabled((vm.last_running or
                                            vm.last_power_state == "Paused") and
                                           vm.qid != 0)
-            self.action_appmenus.setEnabled(not vm.internal and
+            self.action_appmenus.setEnabled(vm.qid != 0 and
+                                            not vm.internal and
                                             not vm.is_disposablevm())
             self.action_editfwrules.setEnabled(vm.is_networked() and not (
                 vm.is_netvm() and not vm.is_proxyvm()))
