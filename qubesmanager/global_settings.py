@@ -104,7 +104,7 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
         self.clock_vm_combo.setCurrentIndex(self.clockvm_idx)
 
         #default netvm
-        netvms = [vm for vm in all_vms if vm.is_netvm()]
+        netvms = [vm for vm in all_vms if vm.is_netvm() and vm.qid != 0]
         self.netvm_idx = -1
 
         current_netvm = self.qvm_collection.get_default_netvm()
