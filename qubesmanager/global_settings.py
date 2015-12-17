@@ -73,7 +73,8 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
 
     def __init_system_defaults__(self):
         #updatevm and clockvm
-        all_vms = [vm for vm in self.qvm_collection.values() if not vm.internal]
+        all_vms = [vm for vm in self.qvm_collection.values() if not
+        vm.internal and vm.qid != 0]
         self.updatevm_idx = -1
 
         current_update_vm = self.qvm_collection.get_updatevm_vm()
@@ -104,7 +105,7 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
         self.clock_vm_combo.setCurrentIndex(self.clockvm_idx)
 
         #default netvm
-        netvms = [vm for vm in all_vms if vm.is_netvm() and vm.qid != 0]
+        netvms = [vm for vm in all_vms if vm.is_netvm()]
         self.netvm_idx = -1
 
         current_netvm = self.qvm_collection.get_default_netvm()
