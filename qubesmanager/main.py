@@ -240,36 +240,48 @@ class VmRowInTable(object):
 
 
 vm_shutdown_timeout = 20000  # in msec
+vm_restart_check_timeout= 1000 # in msec
 
 
 class VmShutdownMonitor(QObject):
-    def __init__(self, vm, shutdown_time=vm_shutdown_timeout):
+    def __init__(self, vm, shutdown_time=vm_shutdown_timeout, check_time=vm_restart_check_timeout, and_restart=False, caller=None):
         QObject.__init__(self)
         self.vm = vm
         self.shutdown_time = shutdown_time
+        self.check_time = check_time
+        self.and_restart = and_restart
+        self.shutdown_started = datetime.now()
+        self.caller = caller
 
     def check_if_vm_has_shutdown(self):
         vm = self.vm
         vm_start_time = vm.get_start_time()
-        if not vm.is_running() or (
-            vm_start_time and vm_start_time >= datetime.now() -
-                timedelta(0, self.shutdown_time / 1000)):
-            return
-
-        reply = QMessageBox.question(
-            None, "VM Shutdown",
-            "The VM <b>'{0}'</b> hasn't shutdown within the last {1} seconds, "
-            "do you want to kill it?<br>".format(
-                vm.name, self.shutdown_time / 1000),
-            "Kill it!",
-            "Wait another {0} seconds...".format(
-                self.shutdown_time / 1000))
-        if reply == 0:
-            vm.force_shutdown()
+        if vm.is_running() and vm_start_time and vm_start_time < self.shutdown_started:
+	    if (datetime.now()-self.shutdown_started) > timedelta(milliseconds=self.shutdown_time):
+		reply = QMessageBox.question(
+		    None, "VM Shutdown",
+		    "The VM <b>'{0}'</b> hasn't shutdown within the last {1} seconds, "
+		    "do you want to kill it?<br>".format(
+			vm.name, self.shutdown_time / 1000),
+		    "Kill it!",
+		    "Wait another {0} seconds...".format(
+			self.shutdown_time / 1000))
+		if reply == 0:
+		    vm.force_shutdown()
+                    if self.and_restart:
+                        if self.caller:
+                            self.caller.start_vm(vm)
+		else:
+		    # noinspection PyTypeChecker,PyCallByClass
+                    self.shutdown_started=datetime.now()
+                    QTimer.singleShot(self.check_time, self.check_if_vm_has_shutdown)
+            else:
+                QTimer.singleShot(self.check_time, self.check_if_vm_has_shutdown)
         else:
-            # noinspection PyTypeChecker,PyCallByClass
-            QTimer.singleShot(self.shutdown_time, self.check_if_vm_has_shutdown)
 
+            if self.and_restart:
+                if self.caller:
+                    self.caller.start_vm(vm)
 
 class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     row_height = 30
@@ -408,6 +420,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.context_menu.addAction(self.action_startvm_tools_install)
         self.context_menu.addAction(self.action_pausevm)
         self.context_menu.addAction(self.action_shutdownvm)
+        self.context_menu.addAction(self.action_restartvm)
         self.context_menu.addAction(self.action_killvm)
         self.context_menu.addSeparator()
 
@@ -879,6 +892,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 vm.last_running and
                 vm.last_power_state != "Paused" and
                 vm.qid != 0)
+            self.action_restartvm.setEnabled(
+                vm.last_running and
+                vm.last_power_state != "Paused" and
+                vm.qid != 0)
             self.action_killvm.setEnabled((vm.last_running or
                                            vm.last_power_state == "Paused") and
                                           vm.qid != 0)
@@ -905,6 +922,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.action_resumevm.setEnabled(False)
             self.action_pausevm.setEnabled(False)
             self.action_shutdownvm.setEnabled(False)
+            self.action_restartvm.setEnabled(False)
             self.action_killvm.setEnabled(False)
             self.action_appmenus.setEnabled(False)
             self.action_editfwrules.setEnabled(False)
@@ -1129,6 +1147,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                                     "ERROR: {0}".format(ex))
             return
 
+
+	self.start_vm(vm)
+
+    def start_vm(self, vm):
         assert not vm.is_running()
         thread_monitor = ThreadMonitor()
         thread = threading.Thread(target=self.do_start_vm,
@@ -1238,7 +1260,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         if reply == QMessageBox.Yes:
             self.shutdown_vm(vm)
 
-    def shutdown_vm(self, vm, shutdown_time=vm_shutdown_timeout):
+    def shutdown_vm(self, vm, shutdown_time=vm_shutdown_timeout, check_time=vm_restart_check_timeout, and_restart=False):
         try:
             vm.shutdown()
         except Exception as ex:
@@ -1249,10 +1271,30 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         trayIcon.showMessage("VM '{0}' is shutting down...".format(vm.name),
                              msecs=3000)
 
-        self.shutdown_monitor[vm.qid] = VmShutdownMonitor(vm, shutdown_time)
+        self.shutdown_monitor[vm.qid] = VmShutdownMonitor(vm, shutdown_time, check_time, and_restart, self)
         # noinspection PyCallByClass,PyTypeChecker
-        QTimer.singleShot(shutdown_time, self.shutdown_monitor[
+        QTimer.singleShot(check_time, self.shutdown_monitor[
             vm.qid].check_if_vm_has_shutdown)
+
+
+    @pyqtSlot(name='on_action_restartvm_triggered')
+    def action_restartvm_triggered(self):
+        vm = self.get_selected_vm()
+        assert vm.is_running()
+
+        self.blk_manager.check_if_serves_as_backend(vm)
+
+        reply = QMessageBox.question(
+            None, "VM Restart Confirmation",
+            "Are you sure you want to restart the VM <b>'{0}'</b>?<br>"
+            "<small>This will shutdown all the running applications "
+            "within this VM.</small>".format(vm.name),
+            QMessageBox.Yes | QMessageBox.Cancel)
+
+        app.processEvents()
+
+        if reply == QMessageBox.Yes:
+            self.shutdown_vm(vm, and_restart=True)
 
     @pyqtSlot(name='on_action_killvm_triggered')
     def action_killvm_triggered(self):
