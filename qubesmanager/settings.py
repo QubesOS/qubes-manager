@@ -958,7 +958,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
             if port is not None:
                 if port2 is not None and port2 <= port:
-                    QMessageBox.warning(None, "Invalid service ports range", "Port {0} is lower than port {1}.".format(port2, port))
+                    QMessageBox.warning(None, "Invalid service ports range",
+                        "Port {0} is lower than port {1}.".format(port2, port))
                 else:
                     item = {"address": address,
                             "netmask": netmask,
@@ -971,7 +972,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                     else:
                         self.fw_model.appendChild(item)
             else:
-                QMessageBox.warning(None, "Invalid service name", "Service '{0} is unknown.".format(service))
+                QMessageBox.warning(None, "Invalid service name",
+                    "Service '{0}' is unknown.".format(service))
 
 
 # Bases on the original code by:
