@@ -1169,6 +1169,16 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         vm = self.get_selected_vm()
         assert not vm.is_running()
 
+        windows_tools_installed = \
+            os.path.exists('/usr/lib/qubes/qubes-windows-tools.iso')
+        if not windows_tools_installed:
+            msg = QMessageBox()
+            msg.warning(self, "Error starting VM!",
+                "You need to install 'qubes-windows-tools' "
+                "package to use this option")
+            return
+
+
         thread_monitor = ThreadMonitor()
         thread = threading.Thread(target=self.do_start_vm_tools_install,
                                   args=(vm, thread_monitor))
