@@ -88,6 +88,14 @@ class NewFwRuleDlg (QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
         self.populate_combos()
         self.serviceComboBox.setInsertPolicy(QComboBox.InsertAtTop)
 
+    def accept(self):
+        if self.tcp_radio.isChecked() or self.udp_radio.isChecked():
+            if len(self.serviceComboBox.currentText()) == 0:
+                msg = QMessageBox()
+                msg.warning(self, "Firewall rule",
+                    "You need to fill service name/port for TCP/UDP rule")
+                return
+        QDialog.accept(self)
 
     def populate_combos(self):
         example_addresses = [
