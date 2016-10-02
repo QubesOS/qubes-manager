@@ -1461,7 +1461,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             return
         thread_monitor = ThreadMonitor()
         thread = threading.Thread(target=self.do_run_command_in_vm, args=(
-            vm, str(command_to_run), thread_monitor))
+            vm, unicode(command_to_run), thread_monitor))
         thread.daemon = True
         thread.start()
 
