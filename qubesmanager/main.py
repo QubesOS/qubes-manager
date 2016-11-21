@@ -899,7 +899,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             self.action_restartvm.setEnabled(
                 vm.last_running and
                 vm.last_power_state != "Paused" and
-                vm.qid != 0)
+                vm.qid != 0 and
+                not vm.is_disposablevm())
             self.action_killvm.setEnabled((vm.last_running or
                                            vm.last_power_state == "Paused") and
                                           vm.qid != 0)
