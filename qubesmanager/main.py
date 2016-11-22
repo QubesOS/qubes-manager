@@ -1650,38 +1650,25 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         # logs menu
         self.logs_menu.clear()
+
         if vm.qid == 0:
-            text = "/var/log/xen/console/hypervisor.log"
-            action = self.logs_menu.addAction(QIcon(":/log.png"), text)
-            action.setData(QVariant(text))
-            self.logs_menu.setEnabled(True)
+            logfiles = ["/var/log/xen/console/hypervisor.log"]
         else:
-            menu_empty = True
-            text = "/var/log/xen/console/guest-" + vm.name + ".log"
-            if os.path.exists(text):
-                action = self.logs_menu.addAction(QIcon(":/log.png"), text)
-                action.setData(QVariant(text))
+            logfiles = [
+                "/var/log/xen/console/guest-" + vm.name + ".log",
+                "/var/log/xen/console/guest-" + vm.name + "-dm.log",
+                "/var/log/qubes/guid." + vm.name + ".log",
+                "/var/log/qubes/qrexec." + vm.name + ".log",
+            ]
+
+        menu_empty = True
+        for logfile in logfiles:
+            if os.path.exists(logfile):
+                action = self.logs_menu.addAction(QIcon(":/log.png"), logfile)
+                action.setData(QVariant(logfile))
                 menu_empty = False
 
-            text = "/var/log/xen/console/guest-" + vm.name + "-dm.log"
-            if os.path.exists(text):
-                action = self.logs_menu.addAction(QIcon(":/log.png"), text)
-                action.setData(QVariant(text))
-                menu_empty = False
-
-            text = "/var/log/qubes/guid." + vm.name + ".log"
-            if os.path.exists(text):
-                action = self.logs_menu.addAction(QIcon(":/log.png"), text)
-                action.setData(QVariant(text))
-                menu_empty = False
-
-            text = "/var/log/qubes/qrexec." + vm.name + ".log"
-            if os.path.exists(text):
-                action = self.logs_menu.addAction(QIcon(":/log.png"), text)
-                action.setData(QVariant(text))
-                menu_empty = False
-
-            self.logs_menu.setEnabled(not menu_empty)
+        self.logs_menu.setEnabled(not menu_empty)
 
         # blk menu
         if not running:
