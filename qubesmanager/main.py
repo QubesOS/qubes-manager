@@ -1011,15 +1011,25 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
                 return
 
-        reply = QMessageBox.question(
+        (requested_name, ok) = QInputDialog.getText(
             None, "VM Removal Confirmation",
             "Are you sure you want to remove the VM <b>'{0}'</b>?<br>"
-            "<small>All data on this VM's private storage will be lost!</small>"
-            .format(vm.name),
-            QMessageBox.Yes | QMessageBox.Cancel)
+            "All data on this VM's private storage will be lost!<br><br>"
+            "Type the name of the VM (<b>{1}</b>) below to confirm:"
+            .format(vm.name, vm.name))
 
-        if reply == QMessageBox.Yes:
+        if not ok:
+            # user clicked cancel
+            return
 
+        elif requested_name != vm.name:
+            # name did not match
+            QMessageBox.warning(None, "VM removal confirmation failed",
+                "Entered name did not match! Not removing {0}.".format(vm.name))
+            return
+
+        else:
+            # remove the VM
             thread_monitor = ThreadMonitor()
             thread = threading.Thread(target=self.do_remove_vm,
                                       args=(vm, thread_monitor))
