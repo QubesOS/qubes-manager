@@ -294,6 +294,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     update_interval = 1000  # in msec
     show_inactive_vms = True
     show_internal_vms = False
+    search = ""
     # suppress saving settings while initializing widgets
     settings_loaded = False
     columns_indices = {"Type": 0,
@@ -461,6 +462,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.connect(self.logs_menu, SIGNAL("triggered(QAction *)"),
                      self.show_log)
 
+        self.connect(self.searchbox, SIGNAL("textChanged(const QString&)"),
+                     self.do_search)
+
         self.table.setContentsMargins(0, 0, 0, 0)
         self.centralwidget.layout().setContentsMargins(0, 0, 0, 0)
         self.layout().setContentsMargins(0, 0, 0, 0)
@@ -563,17 +567,15 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         if w >= desktop_width:
             available_space -= self.table.horizontalScrollBar().height()
             h += self.table.horizontalScrollBar().height()
+
+        # account for search box height
+        available_space -= self.searchbox.height()
+        h += self.searchbox.height()
+
         default_rows = int(available_space / self.row_height)
 
-        if self.show_internal_vms:
-            if self.show_inactive_vms:
-                n = self.table.rowCount()
-            else:
-                n = self.running_vms_count
-        elif self.show_inactive_vms:
-            n = self.table.rowCount() - self.internal_vms_count
-        else:
-            n = self.running_vms_count
+        n = sum(not self.table.isRowHidden(row) for row in
+                xrange(self.table.rowCount()))
 
         if n > default_rows:
             h += default_rows * self.row_height
@@ -674,14 +676,11 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 self.vms_in_table[selected_qid].name_widget)
         self.table.setSortingEnabled(True)
 
-        self.showhide_vms(True, True)
+        self.showhide_vms()
         self.set_table_geom_size()
-        if (not self.show_inactive_vms) or (not self.show_internal_vms):
-            self.showhide_vms(self.show_inactive_vms, self.show_internal_vms)
-            self.set_table_geom_size()
 
-    def showhide_vms(self, show_inactive, show_internal):
-        if show_inactive and show_internal:
+    def showhide_vms(self):
+        if self.show_inactive_vms and self.show_internal_vms and not self.search:
             for row_no in xrange(self.table.rowCount()):
                 self.table.setRowHidden(row_no, False)
         else:
@@ -690,11 +689,18 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                                                self.columns_indices["State"])
                 running = widget.vm.last_running
                 internal = widget.vm.internal
-                if not (show_inactive or running) or not (
-                        show_internal or not internal):
-                    self.table.setRowHidden(row_no, True)
-                else:
-                    self.table.setRowHidden(row_no, False)
+                name = widget.vm.name
+
+                show = (running or self.show_inactive_vms) and \
+                       (not internal or self.show_internal_vms) and \
+                       (self.search in widget.vm.name or not self.search)
+                self.table.setRowHidden(row_no, not show)
+
+    @pyqtSlot(str)
+    def do_search(self, search):
+        self.search = str(search)
+        self.showhide_vms()
+        self.set_table_geom_size()
 
     def mark_table_for_update(self):
         self.reload_table = True
@@ -750,8 +756,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
             if not self.show_inactive_vms and \
                     some_vms_have_changed_power_state:
-                self.showhide_vms(True, True)
-                self.showhide_vms(False, self.show_internal_vms)
+                self.showhide_vms()
                 self.set_table_geom_size()
 
             if self.sort_by_column == \
@@ -1500,7 +1505,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def action_showallvms_triggered(self):
         self.show_inactive_vms = self.action_showallvms.isChecked()
 
-        self.showhide_vms(self.show_inactive_vms, self.show_internal_vms)
+        self.showhide_vms()
         self.set_table_geom_size()
         if self.settings_loaded:
             self.manager_settings.setValue('view/show_inactive_vms',
@@ -1511,7 +1516,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def action_showinternalvms_triggered(self):
         self.show_internal_vms = self.action_showinternalvms.isChecked()
 
-        self.showhide_vms(self.show_inactive_vms, self.show_internal_vms)
+        self.showhide_vms()
         self.set_table_geom_size()
         if self.settings_loaded:
             self.manager_settings.setValue('view/show_internal_vms',
