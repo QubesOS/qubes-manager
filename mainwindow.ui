@@ -279,7 +279,7 @@
    </property>
    <widget class="QMenu" name="menu_system">
     <property name="title">
-     <string>System</string>
+     <string>&amp;System</string>
     </property>
     <addaction name="action_global_settings"/>
     <addaction name="action_backup"/>
@@ -287,7 +287,7 @@
    </widget>
    <widget class="QMenu" name="menu_view">
     <property name="title">
-     <string>View</string>
+     <string>&amp;View</string>
     </property>
     <addaction name="action_vm_type"/>
     <addaction name="action_label"/>
@@ -313,11 +313,11 @@
    </widget>
    <widget class="QMenu" name="menu_vm">
     <property name="title">
-     <string>VM</string>
+     <string>V&amp;M</string>
     </property>
     <widget class="QMenu" name="logs_menu">
      <property name="title">
-      <string>Logs</string>
+      <string>&amp;Logs</string>
      </property>
      <property name="icon">
       <iconset resource="resources.qrc">
@@ -326,7 +326,7 @@
     </widget>
     <widget class="QMenu" name="blk_menu">
      <property name="title">
-      <string>Attach/detach block devices</string>
+      <string>Attach/detach &amp;block devices</string>
      </property>
      <property name="icon">
       <iconset resource="resources.qrc">
@@ -356,7 +356,7 @@
    </widget>
    <widget class="QMenu" name="menu_about">
     <property name="title">
-     <string>About</string>
+     <string>&amp;About</string>
     </property>
     <addaction name="action_about_qubes"/>
    </widget>
@@ -411,7 +411,7 @@
      <normaloff>:/createvm.png</normaloff>:/createvm.png</iconset>
    </property>
    <property name="text">
-    <string>Create VM</string>
+    <string>Create &amp;New VM</string>
    </property>
    <property name="toolTip">
     <string>Create a new VM</string>
@@ -426,7 +426,7 @@
      <normaloff>:/removevm.png</normaloff>:/removevm.png</iconset>
    </property>
    <property name="text">
-    <string>Remove VM</string>
+    <string>&amp;Delete VM</string>
    </property>
    <property name="toolTip">
     <string>Remove an existing VM (must be stopped first)</string>
@@ -441,7 +441,7 @@
      <normaloff>:/resumevm.png</normaloff>:/resumevm.png</iconset>
    </property>
    <property name="text">
-    <string>Start/Resume VM</string>
+    <string>Start/Resume V&amp;M</string>
    </property>
    <property name="toolTip">
     <string>Start/Resume selected VM</string>
@@ -456,7 +456,7 @@
      <normaloff>:/pausevm.png</normaloff>:/pausevm.png</iconset>
    </property>
    <property name="text">
-    <string>Pause VM</string>
+    <string>&amp;Pause VM</string>
    </property>
    <property name="toolTip">
     <string>Pause selected VM</string>
@@ -471,7 +471,7 @@
      <normaloff>:/shutdownvm.png</normaloff>:/shutdownvm.png</iconset>
    </property>
    <property name="text">
-    <string>Shutdown VM</string>
+    <string>&amp;Shutdown VM</string>
    </property>
    <property name="toolTip">
     <string>Shutdown selected VM</string>
@@ -486,7 +486,7 @@
      <normaloff>:/restartvm.png</normaloff>:/restartvm.png</iconset>
    </property>
    <property name="text">
-    <string>Restart VM</string>
+    <string>Restar&amp;t VM</string>
    </property>
    <property name="toolTip">
     <string>Restart selected VM</string>
@@ -501,7 +501,7 @@
      <normaloff>:/apps.png</normaloff>:/apps.png</iconset>
    </property>
    <property name="text">
-    <string>Add/remove app shortcuts</string>
+    <string>Add/remove app s&amp;hortcuts</string>
    </property>
    <property name="toolTip">
     <string>Add/remove app shortcuts for this VM</string>
@@ -516,7 +516,7 @@
      <normaloff>:/updateable.png</normaloff>:/updateable.png</iconset>
    </property>
    <property name="text">
-    <string>Update VM</string>
+    <string>&amp;Update VM</string>
    </property>
    <property name="toolTip">
     <string>Update VM system</string>
@@ -531,7 +531,7 @@
      <normaloff>:/mic.png</normaloff>:/mic.png</iconset>
    </property>
    <property name="text">
-    <string>Attach/detach audio-input to the VM</string>
+    <string>Attach/detach &amp;audio-input to the VM</string>
    </property>
    <property name="toolTip">
     <string>Attach/detach audio-input to the VM</string>
@@ -562,7 +562,7 @@
      <normaloff>:/firewall.png</normaloff>:/firewall.png</iconset>
    </property>
    <property name="text">
-    <string>Edit VM firewall rules</string>
+    <string>Edit VM &amp;firewall rules</string>
    </property>
    <property name="toolTip">
     <string>Edit VM firewall rules</string>
@@ -601,7 +601,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>CPU</string>
+    <string>&amp;CPU</string>
    </property>
   </action>
   <action name="action_cpu_graph">
@@ -612,7 +612,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>CPU Graph</string>
+    <string>CPU &amp;Graph</string>
    </property>
   </action>
   <action name="action_mem">
@@ -623,7 +623,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>MEM</string>
+    <string>&amp;MEM</string>
    </property>
   </action>
   <action name="action_mem_graph">
@@ -634,7 +634,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>MEM Graph</string>
+    <string>M&amp;EM Graph</string>
    </property>
   </action>
   <action name="action_template">
@@ -645,7 +645,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Template</string>
+    <string>&amp;Template</string>
    </property>
   </action>
   <action name="action_netvm">
@@ -656,7 +656,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>NetVM</string>
+    <string>&amp;NetVM</string>
    </property>
   </action>
   <action name="action_settings">
@@ -665,7 +665,7 @@
      <normaloff>:/settings.png</normaloff>:/settings.png</iconset>
    </property>
    <property name="text">
-    <string>VM settings</string>
+    <string>VM s&amp;ettings</string>
    </property>
    <property name="toolTip">
     <string>VM Settings</string>
@@ -677,7 +677,7 @@
      <normaloff>:/restore.png</normaloff>:/restore.png</iconset>
    </property>
    <property name="text">
-    <string>Restore VMs from backup</string>
+    <string>&amp;Restore VMs from backup</string>
    </property>
   </action>
   <action name="action_backup">
@@ -686,7 +686,7 @@
      <normaloff>:/backup.png</normaloff>:/backup.png</iconset>
    </property>
    <property name="text">
-    <string>Backup VMs</string>
+    <string>&amp;Backup VMs</string>
    </property>
   </action>
   <action name="action_global_settings">
@@ -695,7 +695,7 @@
      <normaloff>:/global-settings.png</normaloff>:/global-settings.png</iconset>
    </property>
    <property name="text">
-    <string>Global settings</string>
+    <string>&amp;Global settings</string>
    </property>
   </action>
   <action name="action_state">
@@ -706,7 +706,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>State</string>
+    <string>&amp;State</string>
    </property>
   </action>
   <action name="action_killvm">
@@ -715,7 +715,7 @@
      <normaloff>:/killvm.png</normaloff>:/killvm.png</iconset>
    </property>
    <property name="text">
-    <string>Kill VM</string>
+    <string>&amp;Kill VM</string>
    </property>
    <property name="toolTip">
     <string>Kill selected VM</string>
@@ -727,7 +727,7 @@
      <normaloff>:/kbd-layout.png</normaloff>:/kbd-layout.png</iconset>
    </property>
    <property name="text">
-    <string>Set keyboard layout</string>
+    <string>Set keyboard la&amp;yout</string>
    </property>
    <property name="toolTip">
     <string>Set keyboard layout per VM</string>
@@ -741,7 +741,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Type</string>
+    <string>T&amp;ype</string>
    </property>
    <property name="toolTip">
     <string>VM Type</string>
@@ -755,7 +755,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Label</string>
+    <string>&amp;Label</string>
    </property>
   </action>
   <action name="action_name">
@@ -766,7 +766,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Name</string>
+    <string>N&amp;ame</string>
    </property>
   </action>
   <action name="action_toolbar">
@@ -796,7 +796,7 @@
     <iconset theme="qubes-manager"/>
    </property>
    <property name="text">
-    <string>Qubes OS</string>
+    <string>&amp;Qubes OS</string>
    </property>
   </action>
   <action name="action_size_on_disk">
@@ -807,7 +807,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Size</string>
+    <string>Si&amp;ze</string>
    </property>
    <property name="toolTip">
     <string>Size on Disk</string>
@@ -819,7 +819,7 @@
      <normaloff>:/run-command.png</normaloff>:/run-command.png</iconset>
    </property>
    <property name="text">
-    <string>Run command in VM</string>
+    <string>&amp;Run command in VM</string>
    </property>
    <property name="toolTip">
     <string>Run command in the specified VM</string>
@@ -834,7 +834,7 @@
      <normaloff>:/templatevm.png</normaloff>:/templatevm.png</iconset>
    </property>
    <property name="text">
-    <string>Clone VM</string>
+    <string>&amp;Clone VM</string>
    </property>
   </action>
   <action name="action_internal">
@@ -845,7 +845,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Internal</string>
+    <string>Inte&amp;rnal</string>
    </property>
    <property name="toolTip">
     <string>Is an internal VM</string>
@@ -889,7 +889,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>IP</string>
+    <string>&amp;IP</string>
    </property>
   </action>
   <action name="action_backups">
@@ -900,7 +900,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Include in backups</string>
+    <string>Include in &amp;backups</string>
    </property>
   </action>
   <action name="action_last_backup">
@@ -911,7 +911,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Last backup</string>
+    <string>Last back&amp;up</string>
    </property>
   </action>
  </widget>
