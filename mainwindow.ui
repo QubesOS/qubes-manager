@@ -59,6 +59,12 @@
     </property>
     <item row="0" column="0">
      <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="spacing">
+       <number>6</number>
+      </property>
+      <property name="leftMargin">
+       <number>6</number>
+      </property>
       <item>
        <widget class="QLabel" name="label">
         <property name="text">
