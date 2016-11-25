@@ -58,7 +58,18 @@
      <number>0</number>
     </property>
     <item row="0" column="0">
-     <widget class="QLineEdit" name="searchbox"/>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Search:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="searchbox"/>
+      </item>
+     </layout>
     </item>
     <item row="1" column="0">
      <widget class="QTableWidget" name="table">
