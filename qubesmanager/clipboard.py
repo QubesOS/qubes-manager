@@ -27,6 +27,10 @@ import fcntl
 from qubes.qubes import QubesException
 from PyQt4.QtGui import QApplication
 
+APPVIEWER_LOCK = "/var/run/qubes/appviewer.lock"
+CLIPBOARD_CONTENTS = "/var/run/qubes/qubes-clipboard.bin"
+CLIPBOARD_SOURCE = CLIPBOARD_CONTENTS + ".source"
+
 def do_dom0_copy():
     copy_text_to_qubes_clipboard(QApplication.clipboard().text())
 
@@ -34,23 +38,20 @@ def copy_text_to_qubes_clipboard(text):
     #inter-appviewer lock
 
     try:
-        fd = os.open("/var/run/qubes/appviewer.lock", os.O_RDWR|os.O_CREAT, 0666)
+        fd = os.open(APPVIEWER_LOCK, os.O_RDWR|os.O_CREAT, 0666)
         fcntl.flock(fd, fcntl.LOCK_EX)
-    except IOError:
-        QMessageBox.warning (None, "Warning!", "Error while accessing Qubes clipboard!")
+    except:
+        QMessageBox.warning(None, "Warning!", "Error while accessing Qubes clipboard!")
         return
 
-    qubes_clipboard = open("/var/run/qubes/qubes-clipboard.bin", 'w')
-    qubes_clipboard.write(text)
-    qubes_clipboard.close()
-
-    qubes_clip_source = open("/var/run/qubes/qubes-clipboard.bin.source", 'w')
-    qubes_clip_source.write("dom0")
-    qubes_clip_source.close()
-
     try:
+        with open(CLIPBOARD_CONTENTS, "w") as contents:
+            contents.write(text)
+        with open(CLIPBOARD_SOURCE, "w") as source:
+            source.write("dom0")
+    except:
+        QMessageBox.warning(None, "Warning!", "Error while writing to Qubes clipboard!")
+    finally:
         fcntl.flock(fd, fcntl.LOCK_UN)
         os.close(fd)
-    except IOError:
-        QMessageBox.warning (None, "Warning!", "Error while writing to Qubes clipboard!")
         return
