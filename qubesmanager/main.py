@@ -57,6 +57,7 @@ from backup import BackupVMsWindow
 from global_settings import GlobalSettingsWindow
 from log_dialog import LogDialog
 from thread_monitor import *
+from clipboard import *
 
 
 qubes_clipboard_info_file = "/var/run/qubes/qubes-clipboard.bin.source"
@@ -1751,6 +1752,8 @@ class QubesTrayIcon(QSystemTrayIcon):
 
         action_showmanager = self.create_action("Open VM Manager",
                                                 slot=show_manager, icon="qubes")
+        action_copy = self.create_action("Copy Dom0 clipboard", icon="copy",
+                                         slot=do_dom0_copy)
         action_backup = self.create_action("Make backup")
         action_preferences = self.create_action("Preferences")
         action_set_netvm = self.create_action("Set default NetVM",
@@ -1771,6 +1774,7 @@ class QubesTrayIcon(QSystemTrayIcon):
         action_blk_menu.setMenu(self.blk_menu)
 
         self.add_actions(self.menu, (action_showmanager,
+                                     action_copy,
                                      action_blk_menu,
                                      action_backup,
                                      action_sys_info,

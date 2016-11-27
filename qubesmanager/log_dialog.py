@@ -23,7 +23,6 @@
 
 import sys
 import os
-import fcntl
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
@@ -32,6 +31,7 @@ from qubes.qubes import QubesException
 import qubesmanager.resources_rc
 
 from ui_logdlg import *
+from clipboard import *
 
 # Display only this size of log
 LOG_DISPLAY_SIZE = 1024*1024
@@ -67,31 +67,3 @@ class LogDialog(Ui_LogDialog, QDialog):
 
     def copy_to_qubes_clipboard_triggered(self):
         copy_text_to_qubes_clipboard(self.displayed_text)
-        
-########################COPY TEXT TO QUBES CLIPBOARD
-
-def copy_text_to_qubes_clipboard(text):
-    #inter-appviewer lock
-
-    try:
-        fd = os.open("/var/run/qubes/appviewer.lock", os.O_RDWR|os.O_CREAT, 0666)
-        fcntl.flock(fd, fcntl.LOCK_EX)
-    except IOError:
-        QMessageBox.warning (None, "Warning!", "Error while accessing Qubes clipboard!")
-        return
-
-    qubes_clipboard = open("/var/run/qubes/qubes-clipboard.bin", 'w')
-    qubes_clipboard.write(text)
-    qubes_clipboard.close()
-        
-    qubes_clip_source = open("/var/run/qubes/qubes-clipboard.bin.source", 'w')
-    qubes_clip_source.write("dom0")
-    qubes_clip_source.close()
-
-    try:
-        fcntl.flock(fd, fcntl.LOCK_UN)
-        os.close(fd)
-    except IOError:
-        QMessageBox.warning (None, "Warning!", "Error while writing to Qubes clipboard!")
-        return
-    
