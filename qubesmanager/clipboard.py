@@ -2,6 +2,7 @@
 #
 # The Qubes OS Project, http://www.qubes-os.org
 #
+# Copyright (C) 2016  Jean-Philippe Ouellet <jpo@vt.edu>
 # Copyright (C) 2012  Agnieszka Kostrzewa <agnieszka.kostrzewa@gmail.com>
 # Copyright (C) 2012  Marek Marczykowski <marmarek@mimuw.edu.pl>
 #
@@ -39,19 +40,20 @@ def copy_text_to_qubes_clipboard(text):
 
     try:
         fd = os.open(APPVIEWER_LOCK, os.O_RDWR|os.O_CREAT, 0666)
-        fcntl.flock(fd, fcntl.LOCK_EX)
     except:
         QMessageBox.warning(None, "Warning!", "Error while accessing Qubes clipboard!")
-        return
-
-    try:
-        with open(CLIPBOARD_CONTENTS, "w") as contents:
-            contents.write(text)
-        with open(CLIPBOARD_SOURCE, "w") as source:
-            source.write("dom0")
-    except:
-        QMessageBox.warning(None, "Warning!", "Error while writing to Qubes clipboard!")
-    finally:
-        fcntl.flock(fd, fcntl.LOCK_UN)
+    else:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX)
+        except:
+            QMessageBox.warning(None, "Warning!", "Error while locking Qubes clipboard!")
+        else:
+            try:
+                with open(CLIPBOARD_CONTENTS, "w") as contents:
+                    contents.write(text)
+                with open(CLIPBOARD_SOURCE, "w") as source:
+                    source.write("dom0")
+            except:
+                QMessageBox.warning(None, "Warning!", "Error while writing to Qubes clipboard!")
+            fcntl.flock(fd, fcntl.LOCK_UN)
         os.close(fd)
-        return
