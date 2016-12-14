@@ -703,6 +703,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.showhide_vms()
         self.set_table_geom_size()
 
+    @pyqtSlot(name='on_action_search_triggered')
+    def action_search_triggered(self):
+        self.searchbox.setFocus()
+
     def mark_table_for_update(self):
         self.reload_table = True
 
