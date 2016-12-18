@@ -416,6 +416,9 @@
    <property name="toolTip">
     <string>Create a new VM</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
   </action>
   <action name="action_removevm">
    <property name="enabled">
@@ -430,6 +433,9 @@
    </property>
    <property name="toolTip">
     <string>Remove an existing VM (must be stopped first)</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Backspace</string>
    </property>
   </action>
   <action name="action_resumevm">
@@ -446,6 +452,9 @@
    <property name="toolTip">
     <string>Start/Resume selected VM</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Space</string>
+   </property>
   </action>
   <action name="action_pausevm">
    <property name="enabled">
@@ -461,6 +470,9 @@
    <property name="toolTip">
     <string>Pause selected VM</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
+   </property>
   </action>
   <action name="action_shutdownvm">
    <property name="enabled">
@@ -475,6 +487,9 @@
    </property>
    <property name="toolTip">
     <string>Shutdown selected VM</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Space</string>
    </property>
   </action>
   <action name="action_restartvm">
@@ -521,6 +536,9 @@
    <property name="toolTip">
     <string>Update VM system</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+U</string>
+   </property>
   </action>
   <action name="action_toggle_audio_input">
    <property name="enabled">
@@ -554,6 +572,9 @@
    </property>
    <property name="toolTip">
     <string>Show/Hide inactive VMs</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+H</string>
    </property>
   </action>
   <action name="action_editfwrules">
@@ -670,6 +691,9 @@
    <property name="toolTip">
     <string>VM Settings</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+E</string>
+   </property>
   </action>
   <action name="action_restore">
    <property name="icon">
@@ -719,6 +743,9 @@
    </property>
    <property name="toolTip">
     <string>Kill selected VM</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+K</string>
    </property>
   </action>
   <action name="action_set_keyboard_layout">
@@ -824,6 +851,9 @@
    <property name="toolTip">
     <string>Run command in the specified VM</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
+   </property>
   </action>
   <action name="action_clonevm">
    <property name="enabled">
@@ -835,6 +865,9 @@
    </property>
    <property name="text">
     <string>&amp;Clone VM</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+C</string>
    </property>
   </action>
   <action name="action_internal">
@@ -864,6 +897,9 @@
    </property>
    <property name="text">
     <string>Show/Hide internal VMs</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+H</string>
    </property>
   </action>
   <action name="action_startvm_tools_install">
