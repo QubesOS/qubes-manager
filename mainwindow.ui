@@ -58,7 +58,7 @@
      <number>0</number>
     </property>
     <item row="0" column="0">
-     <layout class="QHBoxLayout" name="horizontalLayout">
+     <layout class="QHBoxLayout" name="searchContainer">
       <property name="spacing">
        <number>6</number>
       </property>
@@ -71,9 +71,6 @@
          <string>Search:</string>
         </property>
        </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="searchbox"/>
       </item>
      </layout>
     </item>
