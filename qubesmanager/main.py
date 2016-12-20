@@ -119,6 +119,23 @@ class QubesManagerFileWatcher(ProcessEvent):
             trayIcon.showMessage("Qubes dom0 updates available.", msecs=0)
 
 
+class SearchBox(QLineEdit):
+    def __init__(self, parent=None):
+        super(SearchBox, self).__init__(parent)
+        self.focusing = False
+
+    def focusInEvent(self, e):
+        super(SearchBox, self).focusInEvent(e)
+        self.selectAll()
+        self.focusing = True
+
+    def mousePressEvent(self, e):
+        super(SearchBox, self).mousePressEvent(e)
+        if self.focusing:
+            self.selectAll()
+            self.focusing = False
+
+
 class VmRowInTable(object):
     cpu_graph_hue = 210
     mem_graph_hue = 120
@@ -332,6 +349,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             target=self.qubes_watch.watch_loop)
         self.blk_watch_thread.daemon = True
         self.blk_watch_thread.start()
+
+        self.searchbox = SearchBox()
+        self.searchContainer.addWidget(self.searchbox)
 
         self.connect(self.table, SIGNAL("itemSelectionChanged()"),
                      self.table_selection_changed)
