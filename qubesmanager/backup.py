@@ -180,6 +180,8 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                 self.total_size += item.size
             else:
                 self.select_vms_widget.available_list.addItem(item)
+        self.select_vms_widget.available_list.sortItems()
+        self.select_vms_widget.selected_list.sortItems()
         self.check_running()
         self.total_size_label.setText(qubesutils.size_to_human(self.total_size))
 
