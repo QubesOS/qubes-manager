@@ -719,7 +719,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
     @pyqtSlot(str)
     def do_search(self, search):
-        self.search = str(search)
+        self.search = unicode(search)
         self.showhide_vms()
         self.set_table_geom_size()
 
