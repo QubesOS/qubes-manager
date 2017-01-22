@@ -40,7 +40,7 @@ SOURCES = \
           qubesmanager/ui_restoredlg.py \
           qubesmanager/ui_settingsdlg.py
 
-TRANSLATIONS = 
+TRANSLATIONS = i18n/qubesmanager_es.ts
 
 
 CODECFORTR = UTF-8
