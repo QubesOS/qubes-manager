@@ -30,6 +30,12 @@ res:
 	pyuic4 -o qubesmanager/ui_about.py about.ui
 	pyuic4 -o qubesmanager/ui_releasenotes.py releasenotes.ui
 
+translations:
+	lrelease-qt4 qubesmanager.pro
+
+update_ts: res
+	pylupdate4 qubesmanager.pro
+
 update-repo-current:
 	ln -f $(RPMS_DIR)/x86_64/qubes-manager-*$(VERSION)*.rpm ../yum/current-release/current/dom0/rpm/
 

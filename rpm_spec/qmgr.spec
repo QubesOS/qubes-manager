@@ -24,7 +24,7 @@ AutoReq:	0
 The Graphical Qubes VM Manager.
 
 %build
-make res
+make res translations
 python -m compileall qubesmanager
 python -O -m compileall qubesmanager
 
@@ -67,6 +67,9 @@ cp qubesmanager/ui_settingsdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesm
 cp qubesmanager/ui_logdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/ui_about.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/ui_releasenotes.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+
+mkdir -p $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager/i18n
+cp i18n/qubesmanager_*.qm $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager/i18n/
 
 mkdir -p $RPM_BUILD_ROOT/usr/share/applications
 cp qubes-manager.desktop $RPM_BUILD_ROOT/usr/share/applications
@@ -182,6 +185,7 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitearch}/qubesmanager/ui_releasenotes.py
 %{python_sitearch}/qubesmanager/ui_releasenotes.pyc
 %{python_sitearch}/qubesmanager/ui_releasenotes.pyo
+%{python_sitearch}/qubesmanager/i18n/qubesmanager_*.qm
 
 
 /usr/share/applications/qubes-manager.desktop

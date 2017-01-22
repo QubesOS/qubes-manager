@@ -2114,6 +2114,14 @@ def main():
     app.setWindowIcon(QIcon.fromTheme("qubes-manager"))
     app.setAttribute(Qt.AA_DontShowIconsInMenus, False)
 
+    qt_translator = QTranslator()
+    locale = QLocale.system().name()
+    i18n_dir = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        'i18n')
+    qt_translator.load("qubesmanager_{!s}.qm".format(locale), i18n_dir)
+    app.installTranslator(qt_translator)
+
     sys.excepthook = handle_exception
 
     global session_bus
