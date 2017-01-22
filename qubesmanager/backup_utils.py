@@ -90,9 +90,9 @@ def select_path_button_clicked(dialog, select_file = False):
             new_path = get_path_for_vm(vm, "qubes.SelectFile" if select_file
                     else "qubes.SelectDirectory")
     else:
-        new_path = file_dialog_function(dialog, "Select backup location.",
-                                        backup_location if backup_location
-                                        else '/')
+        new_path = file_dialog_function(dialog,
+            dialog.tr("Select backup location."),
+            backup_location if backup_location else '/')
 
     if new_path != None:
         new_path = unicode(new_path)

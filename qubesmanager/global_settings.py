@@ -82,7 +82,7 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
             text = vm.name
             if vm is current_update_vm:
                 self.updatevm_idx = i
-                text += " (current)"
+                text += self.tr(" (current)")
             self.update_vm_combo.insertItem(i, text)
         self.update_vm_combo.insertItem(len(all_vms), "none")
         if current_update_vm is None:
@@ -97,7 +97,7 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
             text = vm.name
             if vm is current_clock_vm:
                 self.clockvm_idx = i
-                text += " (current)"
+                text += self.tr(" (current)")
             self.clock_vm_combo.insertItem(i, text)
         self.clock_vm_combo.insertItem(len(all_vms), "none")
         if current_clock_vm is None:
@@ -113,7 +113,7 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
             text = vm.name
             if vm is current_netvm:
                 self.netvm_idx = i
-                text += " (current)"
+                text += self.tr(" (current)")
             self.default_netvm_combo.insertItem(i, text)
         if current_netvm is not None:
             self.default_netvm_combo.setCurrentIndex(self.netvm_idx)
@@ -127,7 +127,7 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
             text = vm.name
             if vm is current_template:
                 self.template_idx = i
-                text += " (current)"
+                text += self.tr(" (current)")
             self.default_template_combo.insertItem(i, text)
         if current_template is not None:
             self.default_template_combo.setCurrentIndex(self.template_idx)
@@ -180,9 +180,9 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
         for (i, k) in enumerate(kernel_list):
             text = k
             if k == self.qvm_collection.get_default_kernel():
-                text += " (current)"
+                text += self.tr(" (current)")
                 self.kernel_idx = i
-            self.default_kernel_combo.insertItem(i,text)
+            self.default_kernel_combo.insertItem(i, text)
         self.default_kernel_combo.setCurrentIndex(self.kernel_idx)
 
     def __apply_kernel_defaults__(self):
