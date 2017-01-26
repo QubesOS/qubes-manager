@@ -82,6 +82,20 @@
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="informationNotes">
+       <property name="text">
+        <string>Version Information</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="networkNotes">
+       <property name="text">
+        <string>Qubes Networking</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="ok">
        <property name="text">
         <string>OK</string>

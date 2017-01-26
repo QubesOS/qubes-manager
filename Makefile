@@ -29,6 +29,8 @@ res:
 	pyuic4 -o qubesmanager/ui_logdlg.py logdlg.ui
 	pyuic4 -o qubesmanager/ui_about.py about.ui
 	pyuic4 -o qubesmanager/ui_releasenotes.py releasenotes.ui
+	pyuic4 -o qubesmanager/ui_informationnotes.py informationnotes.ui
+	pyuic4 -o qubesmanager/ui_networknotes.py networknotes.ui
 
 update-repo-current:
 	ln -f $(RPMS_DIR)/x86_64/qubes-manager-*$(VERSION)*.rpm ../yum/current-release/current/dom0/rpm/

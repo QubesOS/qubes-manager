@@ -35,6 +35,10 @@ cp qubes-vm-settings $RPM_BUILD_ROOT/usr/bin
 
 mkdir -p $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 cp qubesmanager/mount_for_backup.sh $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
+cp qubesmanager/qvm_about.sh $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
+cp qubesmanager/qvm_net.py $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
+cp qubesmanager/qvm_net.pyo $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
+cp qubesmanager/qvm_net.pyc $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 
 mkdir -p $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager/
 cp qubesmanager/main.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
@@ -52,6 +56,8 @@ cp qubesmanager/settings.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/log_dialog.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/about.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/releasenotes.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/informationnotes.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/networknotes.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/create_new_vm.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/thread_monitor.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/resources_rc.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
@@ -67,6 +73,8 @@ cp qubesmanager/ui_settingsdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesm
 cp qubesmanager/ui_logdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/ui_about.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 cp qubesmanager/ui_releasenotes.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/ui_informationnotes.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+cp qubesmanager/ui_networknotes.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
 
 mkdir -p $RPM_BUILD_ROOT/usr/share/applications
 cp qubes-manager.desktop $RPM_BUILD_ROOT/usr/share/applications
@@ -91,6 +99,10 @@ rm -rf $RPM_BUILD_ROOT
 /usr/bin/qubes-manager
 /usr/bin/qubes-vm-settings
 /usr/libexec/qubes-manager/mount_for_backup.sh
+/usr/libexec/qubes-manager/qvm_about.sh
+/usr/libexec/qubes-manager/qvm_net.py
+/usr/libexec/qubes-manager/qvm_net.pyo
+/usr/libexec/qubes-manager/qvm_net.pyc
 %dir %{python_sitearch}/qubesmanager
 %{python_sitearch}/qubesmanager/__init__.py
 %{python_sitearch}/qubesmanager/__init__.pyo
@@ -140,6 +152,12 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitearch}/qubesmanager/releasenotes.py
 %{python_sitearch}/qubesmanager/releasenotes.pyc
 %{python_sitearch}/qubesmanager/releasenotes.pyo
+%{python_sitearch}/qubesmanager/informationnotes.py
+%{python_sitearch}/qubesmanager/informationnotes.pyc
+%{python_sitearch}/qubesmanager/informationnotes.pyo
+%{python_sitearch}/qubesmanager/networknotes.py
+%{python_sitearch}/qubesmanager/networknotes.pyc
+%{python_sitearch}/qubesmanager/networknotes.pyo
 %{python_sitearch}/qubesmanager/create_new_vm.py
 %{python_sitearch}/qubesmanager/create_new_vm.pyc
 %{python_sitearch}/qubesmanager/create_new_vm.pyo
@@ -182,8 +200,12 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitearch}/qubesmanager/ui_releasenotes.py
 %{python_sitearch}/qubesmanager/ui_releasenotes.pyc
 %{python_sitearch}/qubesmanager/ui_releasenotes.pyo
-
-
+%{python_sitearch}/qubesmanager/ui_informationnotes.py
+%{python_sitearch}/qubesmanager/ui_informationnotes.pyc
+%{python_sitearch}/qubesmanager/ui_informationnotes.pyo
+%{python_sitearch}/qubesmanager/ui_networknotes.py
+%{python_sitearch}/qubesmanager/ui_networknotes.pyc
+%{python_sitearch}/qubesmanager/ui_networknotes.pyo
 /usr/share/applications/qubes-manager.desktop
 /etc/xdg/autostart/qubes-manager.desktop
 /etc/dbus-1/system.d/org.qubesos.QubesManager.conf
