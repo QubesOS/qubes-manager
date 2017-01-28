@@ -55,6 +55,7 @@ from settings import VMSettingsWindow
 from restore import RestoreVMsWindow
 from backup import BackupVMsWindow
 from global_settings import GlobalSettingsWindow
+from networknotes import NetworkNotesDialog
 from log_dialog import LogDialog
 from thread_monitor import *
 from clipboard import *
@@ -1559,6 +1560,11 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     def action_global_settings_triggered(self):
         global_settings_window = GlobalSettingsWindow(app, self.qvm_collection)
         global_settings_window.exec_()
+
+    @pyqtSlot(name='on_action_show_network_triggered')
+    def action_show_network_triggered(self):
+        network_notes_dialog = NetworkNotesDialog()
+        network_notes_dialog.exec_()
 
     @pyqtSlot(name='on_action_restore_triggered')
     def action_restore_triggered(self):

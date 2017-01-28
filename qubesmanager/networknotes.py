@@ -35,3 +35,6 @@ class NetworkNotesDialog(Ui_NetworkNotesDialog, QDialog):
         self.setupUi(self)
         details = subprocess.check_output(['/usr/libexec/qubes-manager/qvm_net.py'])
         self.networkNotes.setText(details)
+
+    def accept(self):
+        QDialog.accept(self)

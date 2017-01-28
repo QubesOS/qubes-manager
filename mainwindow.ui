@@ -279,6 +279,7 @@
      <string>&amp;System</string>
     </property>
     <addaction name="action_global_settings"/>
+    <addaction name="action_show_network"/>
     <addaction name="action_backup"/>
     <addaction name="action_restore"/>
    </widget>
@@ -695,6 +696,15 @@
    </property>
    <property name="text">
     <string>&amp;Global settings</string>
+   </property>
+  </action>
+  <action name="action_show_network">
+   <property name="icon">
+    <iconset resource="resources.qrc">
+     <normaloff>:/networking.png</normaloff>:/networking.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Qubes Network</string>
    </property>
   </action>
   <action name="action_state">

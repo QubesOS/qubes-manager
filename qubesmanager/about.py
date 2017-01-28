@@ -25,7 +25,6 @@ from PyQt4.QtCore import SIGNAL, SLOT
 from PyQt4.QtGui import QDialog, QIcon
 from qubesmanager.releasenotes import ReleaseNotesDialog
 from qubesmanager.informationnotes import InformationNotesDialog
-from qubesmanager.networknotes import NetworkNotesDialog
 
 from ui_about import *
 
@@ -46,8 +45,6 @@ class AboutDialog(Ui_AboutDialog, QDialog):
                      self.on_release_notes_clicked)
         self.connect(self.informationNotes, SIGNAL("clicked()"),
                      self.on_information_notes_clicked)
-        self.connect(self.networkNotes, SIGNAL("clicked()"),
-                     self.on_network_notes_clicked)
 
     def on_release_notes_clicked(self):
         release_notes_dialog = ReleaseNotesDialog()
@@ -57,9 +54,4 @@ class AboutDialog(Ui_AboutDialog, QDialog):
     def on_information_notes_clicked(self):
         information_notes_dialog = InformationNotesDialog()
         information_notes_dialog.exec_()
-        self.accept()
-
-    def on_network_notes_clicked(self):
-        network_notes_dialog = NetworkNotesDialog()
-        network_notes_dialog.exec_()
         self.accept()
