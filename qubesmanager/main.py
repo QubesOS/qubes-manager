@@ -398,8 +398,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         }
 
         self.visible_columns_count = len(self.columns_indices)
-        self.table.setColumnHidden(self.columns_indices["NetVM"], True)
-        self.action_netvm.setChecked(False)
+        self.table.setColumnHidden(self.columns_indices["CPU"], True)
+        self.action_cpu.setChecked(False)
         self.table.setColumnHidden(self.columns_indices["CPU Graph"], True)
         self.action_cpu_graph.setChecked(False)
         self.table.setColumnHidden(self.columns_indices["MEM Graph"], True)
