@@ -1,0 +1,7 @@
+[main]
+host = https://www.transifex.com
+
+[qubes.qubes_manager]
+file_filter = i18n/qubesmanager_<lang>.ts
+source_lang = en
+type = QT
