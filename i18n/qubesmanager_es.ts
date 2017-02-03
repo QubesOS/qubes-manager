@@ -5,27 +5,27 @@
     <message>
         <location filename="../qubesmanager/ui_about.py" line="68"/>
         <source>About</source>
-        <translation type="unfinished"></translation>
+        <translation>Acerca de...</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_about.py" line="69"/>
         <source>Qubes OS</source>
-        <translation type="unfinished"></translation>
+        <translation>Qubes OS</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_about.py" line="70"/>
         <source>Qubes OS release</source>
-        <translation type="unfinished"></translation>
+        <translation>Versión de Qubes OS</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_about.py" line="71"/>
         <source>Release notes</source>
-        <translation type="unfinished"></translation>
+        <translation>Notas de esta versión</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_about.py" line="72"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>Ok</translation>
     </message>
 </context>
 <context>
@@ -33,62 +33,62 @@
     <message>
         <location filename="../qubesmanager/ui_backupdlg.py" line="210"/>
         <source>Qubes Backup VMs</source>
-        <translation type="unfinished"></translation>
+        <translation>Qubes - Respaldo de VMs</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_backupdlg.py" line="211"/>
         <source>Shutdown all running selected VMs</source>
-        <translation type="unfinished"></translation>
+        <translation>Apagar todas las VMs seleccionadas en funcionamiento</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_backupdlg.py" line="212"/>
         <source>Refresh running states.</source>
-        <translation type="unfinished"></translation>
+        <translation>Refrescar el estado de funcionamiento</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_backupdlg.py" line="213"/>
         <source>Some of the selected VMs are running (red). Running VMs cannot be backed up!</source>
-        <translation type="unfinished"></translation>
+        <translation>Algunas de las VMs seleccionadas estan funcionando (en rojo). Una VM en funcionamiento no puede ser respaldada.</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_backupdlg.py" line="214"/>
         <source>Select VMs to backup:</source>
-        <translation type="unfinished"></translation>
+        <translation>Selecciones VMs a respaldar</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_backupdlg.py" line="215"/>
         <source>Total size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Tamaño total:</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_backupdlg.py" line="216"/>
         <source>0</source>
-        <translation type="unfinished"></translation>
+        <translation>0</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_backupdlg.py" line="217"/>
         <source>Backup destination directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Directorio de destino para los respaldos</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_backupdlg.py" line="218"/>
         <source>...</source>
-        <translation type="unfinished"></translation>
+        <translation>...</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_backupdlg.py" line="219"/>
         <source>Target AppVM:</source>
-        <translation type="unfinished"></translation>
+        <translation>AppVM de destino:</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_backupdlg.py" line="220"/>
         <source>Backup directory or VM command:</source>
-        <translation type="unfinished"></translation>
+        <translation>Directorio o comando en la VM:</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_backupdlg.py" line="221"/>
         <source>Backup security</source>
-        <translation type="unfinished"></translation>
+        <translation>Seguridad del respaldo</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_backupdlg.py" line="222"/>
@@ -98,7 +98,7 @@
     <message>
         <location filename="../qubesmanager/ui_backupdlg.py" line="223"/>
         <source>Encrypt backup:</source>
-        <translation type="unfinished"></translation>
+        <translation>Cifrar el respaldo:</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_backupdlg.py" line="224"/>
@@ -108,7 +108,7 @@
     <message>
         <location filename="../qubesmanager/ui_backupdlg.py" line="225"/>
         <source>You&apos;re about to perform the following actions:</source>
-        <translation type="unfinished"></translation>
+        <translation>Se van a realizar las siguientes operaciones:</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_backupdlg.py" line="226"/>
@@ -122,17 +122,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../qubesmanager/ui_backupdlg.py" line="231"/>
         <source>To continue press Next. </source>
-        <translation type="unfinished"></translation>
+        <translation>Para continuar oprima Siguiente.</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_backupdlg.py" line="232"/>
         <source>Backup in progress...</source>
-        <translation type="unfinished"></translation>
+        <translation>Respaldo en proceso...</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_backupdlg.py" line="233"/>
         <source>When finished, open file selection dialog to allow me to unmount the disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Al terminar, abrir el diálogo de selección de archivos para permitir desmontar la unidad</translation>
     </message>
 </context>
 <context>
@@ -140,7 +140,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../qubesmanager/backup.py" line="81"/>
         <source>Backup in progress...</source>
-        <translation type="unfinished"></translation>
+        <translation>Respaldo en proceso...</translation>
     </message>
 </context>
 <context>
