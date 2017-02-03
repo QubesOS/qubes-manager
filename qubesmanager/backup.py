@@ -78,7 +78,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 
         self.setupUi(self)
 
-        self.progress_status.text = "Backup in progress..."
+        self.progress_status.text = self.tr("Backup in progress...")
         self.show_running_vms_warning(False)
         self.dir_line_edit.setReadOnly(False)
 
@@ -224,10 +224,12 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         for vm in vms:
             self.blk_manager.check_if_serves_as_backend(vm)
 
-        reply = QMessageBox.question(None, "VM Shutdown Confirmation",
-                                     "Are you sure you want to power down the following VMs: <b>{0}</b>?<br>"
-                                     "<small>This will shutdown all the running applications within them.</small>".format(', '.join(names)),
-                                     QMessageBox.Yes | QMessageBox.Cancel)
+        reply = QMessageBox.question(None, self.tr("VM Shutdown Confirmation"),
+             self.tr("Are you sure you want to power down the following VMs: "
+                     "<b>{0}</b>?<br/>"
+                     "<small>This will shutdown all the running applications "
+                     "within them.</small>").format(', '.join(names)),
+             QMessageBox.Yes | QMessageBox.Cancel)
 
         self.app.processEvents()
 
@@ -266,7 +268,11 @@ class BackupVMsWindow(Ui_Backup, QWizard):
     def validateCurrentPage(self):
         if self.currentPage() is self.select_vms_page:
             if self.check_running():
-                QMessageBox.information(None, "Wait!", "Some selected VMs are running. Running VMs can not be backuped. Please shut them down or remove them from the list.")
+                QMessageBox.information(None,
+                    self.tr("Wait!"),
+                    self.tr("Some selected VMs are running. "
+                        "Running VMs can not be backuped. "
+                        "Please shut them down or remove them from the list."))
                 return False
 
             self.selected_vms = []
@@ -276,18 +282,23 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         elif self.currentPage() is self.select_dir_page:
             backup_location = str(self.dir_line_edit.text())
             if not backup_location:
-                QMessageBox.information(None, "Wait!", "Enter backup target location first.")
+                QMessageBox.information(None, self.tr("Wait!"),
+                    self.tr("Enter backup target location first."))
                 return False
             if self.appvm_combobox.currentIndex() == 0 and \
                    not os.path.isdir(backup_location):
-                QMessageBox.information(None, "Wait!",
-                        "Selected directory do not exists or not a directory (%s)." % backup_location)
+                QMessageBox.information(None, self.tr("Wait!"),
+                    self.tr("Selected directory do not exists or "
+                            "not a directory (%s).") % backup_location)
                 return False
             if not len(self.passphrase_line_edit.text()):
-                QMessageBox.information(None, "Wait!", "Enter passphrase for backup encryption/verification first.")
+                QMessageBox.information(None, self.tr("Wait!"),
+                    self.tr("Enter passphrase for backup encryption/verification first."))
                 return False
             if self.passphrase_line_edit.text() != self.passphrase_line_edit_verify.text():
-                QMessageBox.information(None, "Wait!", "Enter the same passphrase in both fields.")
+                QMessageBox.information(None,
+                    self.tr("Wait!"),
+                    self.tr("Enter the same passphrase in both fields."))
                 return False
 
         return True
@@ -315,7 +326,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             if ex.tmpdir:
                 self.tmpdir_to_remove = ex.tmpdir
         except Exception as ex:
-            print "Exception:",ex
+            print "Exception:", ex
             msg.append(str(ex))
 
         if len(msg) > 0 :
@@ -340,8 +351,10 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                         print_callback = self.gather_output,
                         hide_vm_names=self.encryption_checkbox.isChecked())
             except Exception as ex:
-                print "Exception:",ex
-                QMessageBox.critical(None, "Error while preparing backup.", "ERROR: {0}".format(ex))
+                print "Exception:", ex
+                QMessageBox.critical(None,
+                    self.tr("Error while preparing backup."),
+                    self.tr("ERROR: {0}").format(ex))
 
             self.textEdit.setReadOnly(True)
             self.textEdit.setFontFamily("Monospace")
@@ -367,25 +380,27 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 
             if not self.thread_monitor.success:
                 if self.canceled:
-                    self.progress_status.setText("Backup aborted.")
+                    self.progress_status.setText(self.tr("Backup aborted."))
                     if self.tmpdir_to_remove:
-                        if QMessageBox.warning(None, "Backup aborted",
-                                "Do you want to remove temporary files from "
-                                "%s?" % self.tmpdir_to_remove,
+                        if QMessageBox.warning(None, self.tr("Backup aborted"),
+                                self.tr("Do you want to remove temporary files from "
+                                        "%s?") % self.tmpdir_to_remove,
                                 QMessageBox.Yes, QMessageBox.No) == QMessageBox.Yes:
                             shutil.rmtree(self.tmpdir_to_remove)
                 else:
-                    self.progress_status.setText("Backup error.")
-                    QMessageBox.warning (self, "Backup error!", "ERROR: {}".format(
+                    self.progress_status.setText(self.tr("Backup error."))
+                    QMessageBox.warning(self, self.tr("Backup error!"),
+                        self.tr("ERROR: {}").format(
                         self.thread_monitor.error_msg))
             else:
                 self.progress_bar.setValue(100)
-                self.progress_status.setText("Backup finished.")
+                self.progress_status.setText(self.tr("Backup finished."))
             if self.showFileDialog.isChecked():
                 orig_text = self.progress_status.text
                 self.progress_status.setText(
-                    orig_text + " Please unmount your backup volume and cancel "
-                              "the file selection dialog.")
+                    orig_text + self.tr(
+                        " Please unmount your backup volume and cancel "
+                        "the file selection dialog."))
                 if self.target_appvm:
                     self.target_appvm.run("QUBESRPC %s dom0" % "qubes"
                                                                ".SelectDirectory")
@@ -420,7 +435,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 # Bases on the original code by:
 # Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
 
-def handle_exception( exc_type, exc_value, exc_traceback ):
+def handle_exception(exc_type, exc_value, exc_traceback ):
     import sys
     import os.path
     import traceback

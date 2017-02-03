@@ -145,7 +145,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                     continue
                 self.select_vms_widget.available_list.addItem(vmname)
         except QubesException as ex:
-            QMessageBox.warning (None, "Restore error!", str(ex))
+            QMessageBox.warning (None, self.tr("Restore error!"), str(ex))
 
     def __init_restore_options__(self):
         if not self.restore_options:
@@ -192,24 +192,25 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         except Exception as ex:
             print "Exception:", ex
             err_msg.append(unicode(ex))
-            err_msg.append("Partially restored files left in "
-                           "/var/tmp/restore_*, investigate them and/or clean them up")
+            err_msg.append(
+                self.tr("Partially restored files left in "
+                   "/var/tmp/restore_*, investigate them and/or clean them up"))
 
         self.qvm_collection.unlock_db()
         if self.canceled:
             self.emit(SIGNAL("restore_progress(QString)"),
                       '<b><font color="red">{0}</font></b>'
-                      .format("Restore aborted!"))
+                      .format(self.tr("Restore aborted!")))
         elif len(err_msg) > 0 or self.error_detected.is_set():
             if len(err_msg) > 0:
                 thread_monitor.set_error_msg('\n'.join(err_msg))
             self.emit(SIGNAL("restore_progress(QString)"),
                       '<b><font color="red">{0}</font></b>'
-                      .format("Finished with errors!"))
+                      .format(self.tr("Finished with errors!")))
         else:
             self.emit(SIGNAL("restore_progress(QString)"),
                       '<font color="green">{0}</font>'
-                      .format("Finished successfully!"))
+                      .format(self.tr("Finished successfully!")))
 
         thread_monitor.set_finished()
 
@@ -263,30 +264,31 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
             if not self.thread_monitor.success:
                 if self.canceled:
                     if self.tmpdir_to_remove and \
-                        QMessageBox.warning(None, "Restore aborted",
-                                            "Do you want to remove temporary "
-                                            "files from %s?" % self
-                                                    .tmpdir_to_remove,
-                                            QMessageBox.Yes, QMessageBox.No) == \
+                        QMessageBox.warning(None, self.tr("Restore aborted"),
+                            self.tr("Do you want to remove temporary files "
+                                    "from %s?") % self.tmpdir_to_remove,
+                            QMessageBox.Yes, QMessageBox.No) == \
                             QMessageBox.Yes:
                         shutil.rmtree(self.tmpdir_to_remove)
                 else:
-                    QMessageBox.warning (None, "Backup error!", "ERROR: {1}"
-                                      .format(self.vm.name, self.thread_monitor.error_msg))
+                    QMessageBox.warning(None,
+                        self.tr("Backup error!"), self.tr("ERROR: {0}")
+                                      .format(self.thread_monitor.error_msg))
 
             if self.showFileDialog.isChecked():
                 self.emit(SIGNAL("restore_progress(QString)"),
                           '<b><font color="black">{0}</font></b>'.format(
-                              "Please unmount your backup volume and cancel "
-                              "the file selection dialog."))
+                              self.tr(
+                                  "Please unmount your backup volume and cancel"
+                                  " the file selection dialog.")))
                 if self.target_appvm:
-                    self.target_appvm.run("QUBESRPC %s dom0" % "qubes"
-                                                               ".SelectDirectory")
+                    self.target_appvm.run("QUBESRPC %s dom0" %
+                                          "qubes.SelectDirectory")
                 else:
                     file_dialog = QFileDialog()
                     file_dialog.setReadOnly(True)
                     file_dialog.getExistingDirectory(
-                        self, "Detach backup device",
+                        self, self.tr("Detach backup device"),
                         os.path.dirname(unicode(self.dir_line_edit.text())))
             self.progress_bar.setValue(100)
             self.button(self.FinishButton).setEnabled(True)
@@ -308,7 +310,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
             if backup.backup_cancel():
                 self.emit(SIGNAL("restore_progress(QString)"),
                           '<font color="red">{0}</font>'
-                          .format("Aborting the operation..."))
+                          .format(self.tr("Aborting the operation...")))
                 self.button(self.CancelButton).setDisabled(True)
         else:
             self.done(0)
