@@ -634,7 +634,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../qubesmanager/ui_restoredlg.py" line="171"/>
         <source>...</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">...</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_restoredlg.py" line="172"/>
@@ -669,7 +669,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../qubesmanager/ui_restoredlg.py" line="178"/>
         <source>You&apos;re about to perform the following actions:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Se van a realizar las siguientes operaciones:</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_restoredlg.py" line="179"/>
@@ -683,12 +683,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../qubesmanager/ui_restoredlg.py" line="184"/>
         <source>To continue press Next. </source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Para continuar oprima Siguiente.</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_restoredlg.py" line="185"/>
         <source>When finished, open file selection dialog to allow me to unmount the disk</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Al terminar, abrir el diálogo de selección de archivos para permitir desmontar la unidad</translation>
     </message>
 </context>
 <context>
@@ -1004,7 +1004,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../qubesmanager/ui_settingsdlg.py" line="673"/>
         <source>...</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">...</translation>
     </message>
     <message>
         <location filename="../qubesmanager/ui_settingsdlg.py" line="674"/>
