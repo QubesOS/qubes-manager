@@ -272,7 +272,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                         shutil.rmtree(self.tmpdir_to_remove)
                 else:
                     QMessageBox.warning(None,
-                        self.tr("Backup error!"), self.tr("ERROR: {0}")
+                        self.tr("Backup error!"), unicode(self.tr("ERROR: {0}"))
                                       .format(self.thread_monitor.error_msg))
 
             if self.showFileDialog.isChecked():

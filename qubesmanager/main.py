@@ -102,10 +102,10 @@ class QubesManagerFileWatcher(ProcessEvent):
                     "it into an application.</small>"),
                     msecs=3000)
             else:
-                trayIcon.showMessage(self.tr(
+                trayIcon.showMessage(unicode(self.tr(
                     "Qubes Clipboard fetched from VM: <b>'{0}'</b>\n"
                     "<small>Press Ctrl-Shift-v to copy this clipboard into dest"
-                    " VM's clipboard.</small>").format(
+                    " VM's clipboard.</small>")).format(
                         src_vmname), msecs=3000)
             src_info_file.close()
 
@@ -282,11 +282,11 @@ class VmShutdownMonitor(QObject):
                     timedelta(milliseconds=self.shutdown_time):
                 reply = QMessageBox.question(
                     None, self.tr("VM Shutdown"),
-                    self.tr("The VM <b>'{0}'</b> hasn't shutdown within the last "
-                    "{1} seconds, do you want to kill it?<br>").format(
+                    unicode(self.tr("The VM <b>'{0}'</b> hasn't shutdown within the last "
+                    "{1} seconds, do you want to kill it?<br>")).format(
                         vm.name, self.shutdown_time / 1000),
                     self.tr("Kill it!"),
-                    self.tr("Wait another {0} seconds...").format(
+                    unicode(self.tr("Wait another {0} seconds...")).format(
                         self.shutdown_time / 1000))
                 if reply == 0:
                     vm.force_shutdown()
@@ -1041,9 +1041,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         (requested_name, ok) = QInputDialog.getText(
             None, self.tr("VM Removal Confirmation"),
-            self.tr("Are you sure you want to remove the VM <b>'{0}'</b>?<br>"
+            unicode(self.tr("Are you sure you want to remove the VM <b>'{0}'</b>?<br>"
             "All data on this VM's private storage will be lost!<br><br>"
-            "Type the name of the VM (<b>{1}</b>) below to confirm:")
+            "Type the name of the VM (<b>{1}</b>) below to confirm:"))
             .format(vm.name, vm.name))
 
         if not ok:
@@ -1053,7 +1053,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         elif requested_name != vm.name:
             # name did not match
             QMessageBox.warning(None, self.tr("VM removal confirmation failed"),
-                self.tr("Entered name did not match! Not removing {0}.").format(vm.name))
+                unicode(self.tr("Entered name did not match! Not removing {0}.")).format(vm.name))
             return
 
         else:
@@ -1065,7 +1065,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             thread.start()
 
             progress = QProgressDialog(
-                self.tr("Removing VM: <b>{0}</b>...").format(vm.name), "", 0, 0)
+                unicode(self.tr("Removing VM: <b>{0}</b>...")).format(vm.name), "", 0, 0)
             progress.setCancelButton(None)
             progress.setModal(True)
             progress.show()
@@ -1078,10 +1078,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
             if thread_monitor.success:
                 trayIcon.showMessage(
-                    self.tr("VM '{0}' has been removed.").format(vm.name), msecs=3000)
+                    unicode(self.tr("VM '{0}' has been removed.")).format(vm.name), msecs=3000)
             else:
                 QMessageBox.warning(None, self.tr("Error removing VM!"),
-                                    self.tr("ERROR: {0}").format(
+                                    unicode(self.tr("ERROR: {0}")).format(
                                         thread_monitor.error_msg))
 
     @staticmethod
@@ -1122,7 +1122,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         (clone_name, ok) = QInputDialog.getText(
             self, self.tr('Qubes clone VM'),
-            self.tr('Enter name for VM <b>{}</b> clone:').format(vm.name),
+            unicode(self.tr('Enter name for VM <b>{}</b> clone:')).format(vm.name),
             text=(name_format % name_number))
         if not ok or clone_name == "":
             return
@@ -1134,7 +1134,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         thread.start()
 
         progress = QProgressDialog(
-            self.tr("Cloning VM <b>{0}</b> to <b>{1}</b>...").format(vm.name,
+            unicode(self.tr("Cloning VM <b>{0}</b> to <b>{1}</b>...")).format(vm.name,
                                                             clone_name), "", 0,
             0)
         progress.setCancelButton(None)
@@ -1149,7 +1149,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         if not thread_monitor.success:
             QMessageBox.warning(None, self.tr("Error while cloning VM"),
-                                self.tr("Exception while cloning:<br>{0}").format(
+                                unicode(self.tr("Exception while cloning:<br>{0}")).format(
                                     thread_monitor.error_msg))
 
     @staticmethod
@@ -1187,7 +1187,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 vm.resume()
             except Exception as ex:
                 QMessageBox.warning(None, self.tr("Error unpausing VM!"),
-                                    self.tr("ERROR: {0}").format(ex))
+                                    unicode(self.tr("ERROR: {0}")).format(ex))
             return
 
 
@@ -1201,18 +1201,18 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         thread.daemon = True
         thread.start()
 
-        trayIcon.showMessage(self.tr("Starting '{0}'...").format(vm.name), msecs=3000)
+        trayIcon.showMessage(unicode(self.tr("Starting '{0}'...")).format(vm.name), msecs=3000)
 
         while not thread_monitor.is_finished():
             app.processEvents()
             time.sleep(0.1)
 
         if thread_monitor.success:
-            trayIcon.showMessage(self.tr("VM '{0}' has been started.").format(vm.name),
+            trayIcon.showMessage(unicode(self.tr("VM '{0}' has been started.")).format(vm.name),
                                  msecs=3000)
         else:
             trayIcon.showMessage(
-                self.tr("Error starting VM <b>'{0}'</b>: {1}").format(
+                unicode(self.tr("Error starting VM <b>'{0}'</b>: {1}")).format(
                     vm.name, thread_monitor.error_msg),
                 msecs=3000)
             self.set_error(vm.qid,
@@ -1250,19 +1250,19 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         thread.daemon = True
         thread.start()
 
-        trayIcon.showMessage(self.tr("Starting '{0}'...").format(vm.name), msecs=3000)
+        trayIcon.showMessage(unicode(self.tr("Starting '{0}'...")).format(vm.name), msecs=3000)
 
         while not thread_monitor.is_finished():
             app.processEvents()
             time.sleep(0.1)
 
         if thread_monitor.success:
-            trayIcon.showMessage(self.tr("VM '{0}' has been started. Start Qubes "
-                                 "Tools installation from attached CD")
+            trayIcon.showMessage(unicode(self.tr("VM '{0}' has been started. Start Qubes "
+                                 "Tools installation from attached CD"))
                                  .format(vm.name), msecs=3000)
         else:
             trayIcon.showMessage(
-                self.tr("Error starting VM <b>'{0}'</b>: {1}")
+                unicode(self.tr("Error starting VM <b>'{0}'</b>: {1}"))
                     .format(vm.name, thread_monitor.error_msg),
                 msecs=3000)
             self.set_error(vm.qid,
@@ -1291,7 +1291,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             vm.pause()
         except Exception as ex:
             QMessageBox.warning(None, self.tr("Error pausing VM!"),
-                                self.tr("ERROR: {0}").format(ex))
+                                unicode(self.tr("ERROR: {0}")).format(ex))
             return
 
     @pyqtSlot(name='on_action_shutdownvm_triggered')
@@ -1303,9 +1303,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         reply = QMessageBox.question(
             None, self.tr("VM Shutdown Confirmation"),
-            self.tr("Are you sure you want to power down the VM <b>'{0}'</b>?<br>"
+            unicode(self.tr("Are you sure you want to power down the VM <b>'{0}'</b>?<br>"
             "<small>This will shutdown all the running applications "
-            "within this VM.</small>").format(vm.name),
+            "within this VM.</small>")).format(vm.name),
             QMessageBox.Yes | QMessageBox.Cancel)
 
         app.processEvents()
@@ -1319,10 +1319,10 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             vm.shutdown()
         except Exception as ex:
             QMessageBox.warning(None, self.tr("Error shutting down VM!"),
-                                self.tr("ERROR: {0}").format(ex))
+                                unicode(self.tr("ERROR: {0}")).format(ex))
             return
 
-        trayIcon.showMessage(self.tr("VM '{0}' is shutting down...").format(vm.name),
+        trayIcon.showMessage(unicode(self.tr("VM '{0}' is shutting down...")).format(vm.name),
                              msecs=3000)
 
         self.shutdown_monitor[vm.qid] = VmShutdownMonitor(vm, shutdown_time,
@@ -1340,9 +1340,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         reply = QMessageBox.question(
             None, self.tr("VM Restart Confirmation"),
-            self.tr("Are you sure you want to restart the VM <b>'{0}'</b>?<br>"
+            unicode(self.tr("Are you sure you want to restart the VM <b>'{0}'</b>?<br>"
             "<small>This will shutdown all the running applications "
-            "within this VM.</small>").format(vm.name),
+            "within this VM.</small>")).format(vm.name),
             QMessageBox.Yes | QMessageBox.Cancel)
 
         app.processEvents()
@@ -1357,9 +1357,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         reply = QMessageBox.question(
             None, self.tr("VM Kill Confirmation"),
-            self.tr("Are you sure you want to kill the VM <b>'{0}'</b>?<br>"
+            unicode(self.tr("Are you sure you want to kill the VM <b>'{0}'</b>?<br>"
             "<small>This will end <b>(not shutdown!)</b> all the running "
-            "applications within this VM.</small>").format(vm.name),
+            "applications within this VM.</small>")).format(vm.name),
             QMessageBox.Yes | QMessageBox.Cancel,
             QMessageBox.Cancel)
 
@@ -1371,11 +1371,12 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             except Exception as ex:
                 QMessageBox.critical(
                     None, self.tr("Error while killing VM!"),
-                    self.tr("<b>An exception ocurred while killing {0}.</b><br>"
-                    "ERROR: {1}").format(vm.name, ex))
+                    unicode(self.tr("<b>An exception ocurred while killing {0}.</b><br>"
+                    "ERROR: {1}")).format(vm.name, ex))
                 return
 
-            trayIcon.showMessage("VM '{0}' killed!".format(vm.name), msecs=3000)
+            trayIcon.showMessage(unicode(self.tr("VM '{0}' killed!"))
+                .format(vm.name), msecs=3000)
 
     @pyqtSlot(name='on_action_settings_triggered')
     def action_settings_triggered(self):
@@ -1433,12 +1434,12 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         if not vm.is_running():
             reply = QMessageBox.question(
                 None, self.tr("VM Update Confirmation"),
-                self.tr("<b>{0}</b><br>The VM has to be running to be updated.<br>"
-                "Do you want to start it?<br>").format(vm.name),
+                unicode(self.tr("<b>{0}</b><br>The VM has to be running to be updated.<br>"
+                "Do you want to start it?<br>")).format(vm.name),
                 QMessageBox.Yes | QMessageBox.Cancel)
             if reply != QMessageBox.Yes:
                 return
-            trayIcon.showMessage(self.tr("Starting '{0}'...").format(vm.name),
+            trayIcon.showMessage(unicode(self.tr("Starting '{0}'...")).format(vm.name),
                                  msecs=3000)
 
         app.processEvents()
@@ -1465,7 +1466,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         if vm.qid != 0:
             if not thread_monitor.success:
                 QMessageBox.warning(None, self.tr("Error VM update!"),
-                                    self.tr("ERROR: {0}").format(
+                                    unicode(self.tr("ERROR: {0}")).format(
                                         thread_monitor.error_msg))
 
     @staticmethod
@@ -1495,7 +1496,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         (command_to_run, ok) = QInputDialog.getText(
             self, self.tr('Qubes command entry'),
-            self.tr('Run command in <b>{}</b>:').format(vm.name))
+            unicode(self.tr('Run command in <b>{}</b>:')).format(vm.name))
         if not ok or command_to_run == "":
             return
         thread_monitor = ThreadMonitor()
@@ -1510,7 +1511,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         if not thread_monitor.success:
             QMessageBox.warning(None, self.tr("Error while running command"),
-                self.tr("Exception while running command:<br>{0}").format(
+                unicode(self.tr("Exception while running command:<br>{0}")).format(
                 thread_monitor.error_msg))
 
     @staticmethod
@@ -1725,7 +1726,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                 for d in self.blk_manager.attached_devs:
                     if (self.blk_manager.attached_devs[d]
                             ['attached_to']['vm'].qid == vm.qid):
-                        text = self.tr("Detach {dev} {size} {desc}").format(
+                        text = unicode(self.tr("Detach {dev} {size} {desc}")).format(
                             dev=d,
                             size=unicode(
                                 self.blk_manager.attached_devs[d]['size']),
@@ -1742,7 +1743,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                     if d[-1].isdigit() and \
                             d[0:-1] in self.blk_manager.current_blk:
                         continue
-                    text = self.tr("Attach {dev} {size} {desc}").format(
+                    text = unicode(self.tr("Attach {dev} {size} {desc}")).format(
                         dev=d,
                         size=unicode(
                             self.blk_manager.free_devs[d]['size']),
@@ -1868,7 +1869,7 @@ class QubesTrayIcon(QSystemTrayIcon):
         if len(self.blk_manager.attached_devs) > 0:
             for d in self.blk_manager.attached_devs:
                 vm = self.blk_manager.attached_devs[d]['attached_to']['vm']
-                text = self.tr("Detach {dev} {desc} ({size}) from {vm}").format(
+                text = unicode(self.tr("Detach {dev} {desc} ({size}) from {vm}")).format(
                     dev=d,
                     desc=self.blk_manager.attached_devs[d]['desc'],
                     size=unicode(self.blk_manager.attached_devs[d]['size']),
@@ -1883,7 +1884,7 @@ class QubesTrayIcon(QSystemTrayIcon):
                 # skip partitions heuristic
                 if d[-1].isdigit() and d[0:-1] in self.blk_manager.current_blk:
                     continue
-                text = self.tr("Attach  {dev} {size} {desc}").format(
+                text = unicode(self.tr("Attach  {dev} {size} {desc}")).format(
                     dev=d,
                     size=unicode(self.blk_manager.free_devs[d]['size']),
                     desc=self.blk_manager.free_devs[d]['desc']

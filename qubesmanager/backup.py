@@ -225,10 +225,11 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             self.blk_manager.check_if_serves_as_backend(vm)
 
         reply = QMessageBox.question(None, self.tr("VM Shutdown Confirmation"),
-             self.tr("Are you sure you want to power down the following VMs: "
-                     "<b>{0}</b>?<br/>"
-                     "<small>This will shutdown all the running applications "
-                     "within them.</small>").format(', '.join(names)),
+             unicode(self.tr(
+                 "Are you sure you want to power down the following VMs: "
+                 "<b>{0}</b>?<br/>"
+                 "<small>This will shutdown all the running applications "
+                 "within them.</small>")).format(', '.join(names)),
              QMessageBox.Yes | QMessageBox.Cancel)
 
         self.app.processEvents()
@@ -354,7 +355,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                 print "Exception:", ex
                 QMessageBox.critical(None,
                     self.tr("Error while preparing backup."),
-                    self.tr("ERROR: {0}").format(ex))
+                    unicode(self.tr("ERROR: {0}")).format(ex))
 
             self.textEdit.setReadOnly(True)
             self.textEdit.setFontFamily("Monospace")
@@ -390,7 +391,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                 else:
                     self.progress_status.setText(self.tr("Backup error."))
                     QMessageBox.warning(self, self.tr("Backup error!"),
-                        self.tr("ERROR: {}").format(
+                        unicode(self.tr("ERROR: {}")).format(
                         self.thread_monitor.error_msg))
             else:
                 self.progress_bar.setValue(100)

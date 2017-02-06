@@ -54,7 +54,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.source_vm = self.vm
 
         self.setupUi(self)
-        self.setWindowTitle(self.tr("Settings: {vm}").format(vm=self.vm.name))
+        self.setWindowTitle(unicode(self.tr("Settings: {vm}")).format(vm=self.vm.name))
         if init_page in self.tabs_indices:
             idx = self.tabs_indices[init_page]
             assert (idx in range(self.tabWidget.count()))
@@ -119,7 +119,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         thread.start()
 
         progress = QProgressDialog(
-            self.tr("Applying settings to <b>{0}</b>...").format(self.vm.name), "", 0, 0)
+            unicode(self.tr("Applying settings to <b>{0}</b>...")).format(self.vm.name), "", 0, 0)
         progress.setCancelButton(None)
         progress.setModal(True)
         progress.show()
@@ -132,8 +132,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         if not thread_monitor.success:
             QMessageBox.warning(None,
-                self.tr("Error while changing settings for {0}!").format(self.vm.name),
-                    self.tr("ERROR: {0}").format(thread_monitor.error_msg))
+                unicode(self.tr("Error while changing settings for {0}!")).format(self.vm.name),
+                    unicode(self.tr("ERROR: {0}")).format(thread_monitor.error_msg))
 
         self.done(0)
 
@@ -191,11 +191,11 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             if self.vm.netvm is not None and not self.vm.netvm.is_proxyvm():
                 QMessageBox.warning(None,
                     self.tr("VM configuration problem!"),
-                    self.tr("The '{vm}' AppVM is not network connected to a "
+                    unicode(self.tr("The '{vm}' AppVM is not network connected to a "
                     "FirewallVM!<p>"
                     "You may edit the '{vm}' VM firewall rules, but these "
                     "will not take any effect until you connect it to "
-                    "a working Firewall VM.").format(vm=self.vm.name))
+                    "a working Firewall VM.")).format(vm=self.vm.name))
 
 
 
@@ -336,8 +336,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                 msg.append(self.tr("Can't change name of a running VM."))
             elif self.qvm_collection.get_vm_by_name(vmname) is not None:
                 msg.append(
-                    self.tr("Can't change VM name - a VM named <b>{0}</b>"
-                            "already exists in the system!").format(vmname))
+                    unicode(self.tr("Can't change VM name - a VM named <b>{0}</b>"
+                            "already exists in the system!")).format(vmname))
             else:
                 oldname = self.vm.name
                 try:
@@ -978,7 +978,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             if port is not None:
                 if port2 is not None and port2 <= port:
                     QMessageBox.warning(None, self.tr("Invalid service ports range"),
-                        self.tr("Port {0} is lower than port {1}.").format(
+                        unicode(self.tr("Port {0} is lower than port {1}.")).format(
                             port2, port))
                 else:
                     item = {"address": address,
@@ -993,7 +993,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                         self.fw_model.appendChild(item)
             else:
                 QMessageBox.warning(None, self.tr("Invalid service name"),
-                    self.tr("Service '{0}' is unknown.").format(service))
+                    unicode(self.tr("Service '{0}' is unknown.")).format(service))
 
 
 # Bases on the original code by:
