@@ -353,6 +353,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.blk_watch_thread.start()
 
         self.searchbox = SearchBox()
+        self.searchbox.setValidator(QRegExpValidator(QRegExp("[a-zA-Z0-9-]*", Qt.CaseInsensitive), None))
         self.searchContainer.addWidget(self.searchbox)
 
         self.connect(self.table, SIGNAL("itemSelectionChanged()"),
@@ -721,7 +722,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
     @pyqtSlot(str)
     def do_search(self, search):
-        self.search = unicode(search)
+        self.search = str(search)
         self.showhide_vms()
         self.set_table_geom_size()
 
