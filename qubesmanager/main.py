@@ -96,13 +96,13 @@ class QubesManagerFileWatcher(ProcessEvent):
             src_info_file = open(qubes_clipboard_info_file, 'r')
             src_vmname = src_info_file.readline().strip('\n')
             if src_vmname == "":
-                trayIcon.showMessage(self.tr(
+                trayIcon.showMessage(app.tr(
                     "Qubes Clipboard has been copied to the VM and wiped.<i/>\n"
                     "<small>Trigger a paste operation (e.g. Ctrl-v) to insert "
                     "it into an application.</small>"),
                     msecs=3000)
             else:
-                trayIcon.showMessage(unicode(self.tr(
+                trayIcon.showMessage(unicode(app.tr(
                     "Qubes Clipboard fetched from VM: <b>'{0}'</b>\n"
                     "<small>Press Ctrl-Shift-v to copy this clipboard into dest"
                     " VM's clipboard.</small>")).format(
@@ -117,7 +117,7 @@ class QubesManagerFileWatcher(ProcessEvent):
                          EventsCodes.OP_FLAGS.get('IN_CLOSE_WRITE'))
         elif event.name == os.path.basename(table_widgets
                                             .qubes_dom0_updates_stat_file):
-            trayIcon.showMessage(self.tr("Qubes dom0 updates available."),
+            trayIcon.showMessage(app.tr("Qubes dom0 updates available."),
                 msecs=0)
 
 
