@@ -1452,8 +1452,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         thread.start()
 
         progress = QProgressDialog(
-            self.tr("<b>{0}</b><br>Please wait for the updater to launch...").
-                format(vm.name), "", 0, 0)
+            unicode(
+                self.tr("<b>{0}</b><br>Please wait for the updater to "
+                "launch...")).format(vm.name), "", 0, 0)
         progress.setCancelButton(None)
         progress.setModal(True)
         progress.show()
