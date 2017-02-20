@@ -1217,7 +1217,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                     vm.name, thread_monitor.error_msg),
                 msecs=3000)
             self.set_error(vm.qid,
-                           self.tr("Error starting VM: %s") % thread_monitor.error_msg)
+                           unicode(self.tr("Error starting VM: %s")) % thread_monitor.error_msg)
 
     @staticmethod
     def do_start_vm(vm, thread_monitor):
@@ -1267,7 +1267,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                     .format(vm.name, thread_monitor.error_msg),
                 msecs=3000)
             self.set_error(vm.qid,
-                           self.tr("Error starting VM: %s") % thread_monitor.error_msg)
+                           unicode(self.tr("Error starting VM: %s")) % thread_monitor.error_msg)
 
     # noinspection PyMethodMayBeStatic
     def do_start_vm_tools_install(self, vm, thread_monitor):
