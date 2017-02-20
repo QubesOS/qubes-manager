@@ -265,8 +265,8 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                 if self.canceled:
                     if self.tmpdir_to_remove and \
                         QMessageBox.warning(None, self.tr("Restore aborted"),
-                            self.tr("Do you want to remove temporary files "
-                                    "from %s?") % self.tmpdir_to_remove,
+                            unicode(self.tr("Do you want to remove temporary files "
+                                    "from %s?")) % self.tmpdir_to_remove,
                             QMessageBox.Yes, QMessageBox.No) == \
                             QMessageBox.Yes:
                         shutil.rmtree(self.tmpdir_to_remove)

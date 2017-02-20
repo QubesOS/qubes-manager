@@ -56,7 +56,7 @@ class LogDialog(Ui_LogDialog, QDialog):
         log = open(self.log_path)
         log.seek(0, os.SEEK_END)
         if log.tell() > LOG_DISPLAY_SIZE:
-            self.displayed_text = self.tr("(Showing only last %d bytes of file)\n") % LOG_DISPLAY_SIZE
+            self.displayed_text = unicode(self.tr("(Showing only last %d bytes of file)\n")) % LOG_DISPLAY_SIZE
             log.seek(-LOG_DISPLAY_SIZE, os.SEEK_END)
         else:
             log.seek(0, os.SEEK_SET)

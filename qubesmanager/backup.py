@@ -289,8 +289,8 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             if self.appvm_combobox.currentIndex() == 0 and \
                    not os.path.isdir(backup_location):
                 QMessageBox.information(None, self.tr("Wait!"),
-                    self.tr("Selected directory do not exists or "
-                            "not a directory (%s).") % backup_location)
+                    unicode(self.tr("Selected directory do not exists or "
+                            "not a directory (%s).")) % backup_location)
                 return False
             if not len(self.passphrase_line_edit.text()):
                 QMessageBox.information(None, self.tr("Wait!"),
@@ -384,8 +384,8 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                     self.progress_status.setText(self.tr("Backup aborted."))
                     if self.tmpdir_to_remove:
                         if QMessageBox.warning(None, self.tr("Backup aborted"),
-                                self.tr("Do you want to remove temporary files from "
-                                        "%s?") % self.tmpdir_to_remove,
+                                unicode(self.tr("Do you want to remove temporary files from "
+                                        "%s?")) % self.tmpdir_to_remove,
                                 QMessageBox.Yes, QMessageBox.No) == QMessageBox.Yes:
                             shutil.rmtree(self.tmpdir_to_remove)
                 else:
