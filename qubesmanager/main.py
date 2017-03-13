@@ -1484,7 +1484,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         msecs=3000)
                     vm.start()
                 vm.run_service("qubes.InstallUpdatesGUI", gui=True,
-                               wait=False)
+                               user="root", wait=False)
         except Exception as ex:
             thread_monitor.set_error_msg(str(ex))
             thread_monitor.set_finished()
