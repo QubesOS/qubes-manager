@@ -398,11 +398,11 @@ class VmUsageBarWidget (QWidget):
                                     "QProgressBar:horizontal{" +\
                                         "border: 1px solid hsv({0}, 100, 250);".format(hue) +\
                                         "border-radius: 4px;\
-                                        background: white;\
+                                        background: transparent;\
                                         text-align: center;\
                                     }\
                                     QProgressBar::chunk:horizontal {\
-                                        background: qlineargradient(x1: 0, y1: 0.5, x2: 1, y2: 0.5, " +\
+                                        background: qlineargradient(x1: 1, y1: 0.5, x2: 1, y2: 0.5, " +\
                                         "stop: 0 hsv({0}, 170, 207),".format(hue) +
                                         " stop: 1 white); \
                                     }"
