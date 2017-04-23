@@ -159,10 +159,6 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         except Exception as ex:
             ret.append(self.tr('Error while saving changes: ') + str(ex))
 
-        if self.anything_changed == True:
-            self.qvm_collection.save()
-        self.qvm_collection.unlock_db()
-
         try:
             if self.tabWidget.isTabEnabled(self.tabs_indices["firewall"]):
                 self.fw_model.apply_rules(self.policyAllowRadioButton.isChecked(),
@@ -171,6 +167,9 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                         self.yumproxyCheckBox.isChecked(),
                         self.tempFullAccess.isChecked(),
                         self.tempFullAccessTime.value())
+                if self.fw_model.fw_changed:
+                    # might modified vm.services
+                    self.anything_changed = True
         except Exception as ex:
             ret += [self.tr("Firewall tab:"), str(ex)]
 
@@ -179,6 +178,10 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                 self.AppListManager.save_appmenu_select_changes()
         except Exception as ex:
             ret += [self.tr("Applications tab:"), str(ex)]
+
+        if self.anything_changed == True:
+            self.qvm_collection.save()
+        self.qvm_collection.unlock_db()
 
         if len(ret) > 0 :
             thread_monitor.set_error_msg('\n'.join(ret))
