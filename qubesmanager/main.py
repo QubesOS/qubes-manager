@@ -273,13 +273,26 @@ class VmShutdownMonitor(QObject):
         self.shutdown_started = datetime.now()
         self.caller = caller
 
+    def restart_vm_if_needed(self):
+        if self.and_restart and self.caller:
+            self.caller.start_vm(self.vm)
+
+    def check_again_later(self):
+        # noinspection PyTypeChecker,PyCallByClass
+        QTimer.singleShot(self.check_time, self.check_if_vm_has_shutdown)
+
+    def timeout_reached(self):
+        actual = datetime.now() - self.shutdown_started
+        allowed = timedelta(milliseconds=self.shutdown_time)
+
+        return actual > allowed
+
     def check_if_vm_has_shutdown(self):
         vm = self.vm
+        vm_is_running = vm.is_running()
         vm_start_time = vm.get_start_time()
-        if vm.is_running() and vm_start_time and \
-                vm_start_time < self.shutdown_started:
-            if (datetime.now() - self.shutdown_started) > \
-                    timedelta(milliseconds=self.shutdown_time):
+        if vm_is_running and vm_start_time and vm_start_time < self.shutdown_started:
+            if self.timeout_reached():
                 reply = QMessageBox.question(
                     None, self.tr("VM Shutdown"),
                     unicode(self.tr("The VM <b>'{0}'</b> hasn't shutdown within the last "
@@ -290,22 +303,22 @@ class VmShutdownMonitor(QObject):
                         self.shutdown_time / 1000))
                 if reply == 0:
                     vm.force_shutdown()
-                    if self.and_restart:
-                        if self.caller:
-                            self.caller.start_vm(vm)
+                    self.restart_vm_if_needed()
                 else:
-                    # noinspection PyTypeChecker,PyCallByClass
                     self.shutdown_started = datetime.now()
-                    QTimer.singleShot(self.check_time,
-                        self.check_if_vm_has_shutdown)
+                    self.check_again_later()
             else:
-                QTimer.singleShot(self.check_time,
-                    self.check_if_vm_has_shutdown)
+                self.check_again_later()
         else:
+            if vm_is_running:
+                # Due to unknown reasons, Xen sometimes reports that a domain
+                # is running even though its start-up timestamp is not valid.
+                # Make sure that "restart_vm_if_needed" is not called until
+                # the domain has been completely shut down according to Xen.
+                self.check_again_later()
+                return
 
-            if self.and_restart:
-                if self.caller:
-                    self.caller.start_vm(vm)
+            self.restart_vm_if_needed()
 
 class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
     row_height = 30
