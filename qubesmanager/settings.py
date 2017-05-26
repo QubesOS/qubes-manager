@@ -673,7 +673,6 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         #vm dispvm_netvm changed
         try:
-            print self.dispvm_netvm.currentIndex()
             if self.dispvm_netvm.currentIndex() != self.dispvm_netvm_idx:
                 new_dispvm_netvm_name = str(self.dispvm_netvm.currentText())
                 new_dispvm_netvm_name = new_dispvm_netvm_name.split(' ')[0]
@@ -1067,7 +1066,6 @@ def main():
             sys.exit(1)
         if len(sys.argv) > 2:
             tab_arg = sys.argv[2]
-            print tab_arg
             if tab_arg in VMSettingsWindow.tabs_indices:
                 tab = tab_arg
             else: QMessageBox.warning(None, "Qubes VM Settings Error",
