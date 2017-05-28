@@ -109,6 +109,7 @@ class QubesManagerFileWatcher(ProcessEvent):
                     " VM's clipboard.</small>")).format(
                         src_vmname, get_qubes_clipboard_formatted_size()),
                         msecs=3000)
+            src_info_file.close()
 
     def process_IN_CREATE(self, event):
         if event.name == os.path.basename(qubes_clipboard_info_file):
