@@ -24,6 +24,7 @@
 
 import os
 import fcntl
+from math import log
 
 from qubes.qubes import QubesException
 from PyQt4.QtGui import QApplication
@@ -57,3 +58,20 @@ def copy_text_to_qubes_clipboard(text):
                 QMessageBox.warning(None, "Warning!", "Error while writing to Qubes clipboard!")
             fcntl.flock(fd, fcntl.LOCK_UN)
         os.close(fd)
+
+def get_qubes_clipboard_formatted_size():
+    units = ['B', 'KiB', 'MiB', 'GiB']
+
+    try:
+        file_size = os.path.getsize(CLIPBOARD_CONTENTS)
+    except:
+        QMessageBox.warning(None, "Warning!", "Error while accessing Qubes clipboard!")
+    else:
+        formatted_bytes = '1 byte' if file_size == 1 else str(file_size) + ' bytes'
+        if file_size > 0:
+            magnitude = min(int(log(file_size)/log(2)*0.1), len(units)-1)
+            if magnitude > 0:
+                return '%s (%.1f %s)' % (formatted_bytes, file_size/(2.0**(10*magnitude)), units[magnitude])
+        return '%s' % (formatted_bytes)
+
+    return '? bytes'

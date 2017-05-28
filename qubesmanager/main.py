@@ -104,10 +104,11 @@ class QubesManagerFileWatcher(ProcessEvent):
             else:
                 trayIcon.showMessage(unicode(app.tr(
                     "Qubes Clipboard fetched from VM: <b>'{0}'</b>\n"
+                    "Copied <b>{1}</b> to the clipboard.\n"
                     "<small>Press Ctrl-Shift-v to copy this clipboard into dest"
                     " VM's clipboard.</small>")).format(
-                        src_vmname), msecs=3000)
-            src_info_file.close()
+                        src_vmname, get_qubes_clipboard_formatted_size()),
+                        msecs=3000)
 
     def process_IN_CREATE(self, event):
         if event.name == os.path.basename(qubes_clipboard_info_file):
