@@ -1773,7 +1773,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             if self.blk_menu.isEmpty():
                 self.blk_menu.setEnabled(False)
 
-        self.context_menu.exec_(self.table.mapToGlobal(point))
+        self.context_menu.exec_(self.table.mapToGlobal(point+QPoint(10,0)))
 
     @pyqtSlot('QAction *')
     def show_log(self, action):
