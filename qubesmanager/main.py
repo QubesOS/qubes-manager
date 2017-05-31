@@ -26,6 +26,7 @@ import os.path
 import signal
 import subprocess
 import time
+import types
 from datetime import datetime, timedelta
 
 from PyQt4.QtGui import *
@@ -503,6 +504,9 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 
         self.connect(self.searchbox, SIGNAL("textChanged(const QString&)"),
                      self.do_search)
+        self.searchbox.focusInEvent = types.MethodType(
+            lambda w, e: QTimer.singleShot(0, self.searchbox.selectAll),
+            self.searchbox.focusInEvent)
 
         self.table.setContentsMargins(0, 0, 0, 0)
         self.centralwidget.layout().setContentsMargins(0, 0, 0, 0)
