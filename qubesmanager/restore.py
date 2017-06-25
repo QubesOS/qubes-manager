@@ -190,7 +190,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
             self.tmpdir_to_remove = ex.tmpdir
             err_msg.append(unicode(ex))
         except Exception as ex:
-            print "Exception:", ex
+            print ("Exception:", ex)
             err_msg.append(unicode(ex))
             err_msg.append(
                 self.tr("Partially restored files left in "

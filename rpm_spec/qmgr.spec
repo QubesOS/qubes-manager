@@ -1,5 +1,3 @@
-%global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)")
-
 %{!?version: %define version %(cat version)}
 
 Name:		qubes-manager
@@ -11,11 +9,13 @@ Group:		Qubes
 Vendor:		Invisible Things Lab
 License:	GPL
 URL:		http://fixme
-Requires:	python, PyQt4, qubes-core-dom0-linux >= 2.0.22, qubes-core-dom0 >= 3.0.18
+Requires:	python3, PyQt4, qubes-core-dom0-linux >= 2.0.22, qubes-core-dom0 >= 3.0.18
 Requires:	pmount, cryptsetup, wmctrl
 Requires:	dbus
 Requires:	qubes-artwork
-BuildRequires:	PyQt4-devel
+BuildRequires:	python3-PyQt4-devel
+BuildRequires:  python3-devel
+BuildRequires:  qt-devel
 AutoReq:	0
 
 %define _builddir %(pwd)
@@ -25,8 +25,8 @@ The Graphical Qubes VM Manager.
 
 %build
 make res translations
-python -m compileall qubesmanager
-python -O -m compileall qubesmanager
+python3 -m compileall qubesmanager
+python3 -O -m compileall qubesmanager
 
 %install
 mkdir -p $RPM_BUILD_ROOT/usr/bin/
@@ -37,47 +37,13 @@ mkdir -p $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 cp qubesmanager/mount_for_backup.sh $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 cp qubesmanager/qvm_about.sh $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 cp qubesmanager/qvm_net.py $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
-cp qubesmanager/qvm_net.pyo $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
-cp qubesmanager/qvm_net.pyc $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 
-mkdir -p $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager/
-cp qubesmanager/main.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/clipboard.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/block.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/table_widgets.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/appmenu_select.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/backup.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/backup_utils.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/firewall.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/global_settings.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/multiselectwidget.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/restore.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/settings.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/log_dialog.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/about.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/releasenotes.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/informationnotes.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/networknotes.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/create_new_vm.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/thread_monitor.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/resources_rc.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/__init__.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/ui_backupdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/ui_globalsettingsdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/ui_mainwindow.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/ui_multiselectwidget.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/ui_newappvmdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/ui_newfwruledlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/ui_restoredlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/ui_settingsdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/ui_logdlg.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/ui_about.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/ui_releasenotes.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/ui_informationnotes.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
-cp qubesmanager/ui_networknotes.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
+mkdir -p $RPM_BUILD_ROOT%{python3_sitelib}/qubesmanager/
+cp -r qubesmanager/__pycache__ $RPM_BUILD_ROOT%{python3_sitelib}/qubesmanager/
+cp qubesmanager/*.py $RPM_BUILD_ROOT%{python3_sitelib}/qubesmanager/
 
-mkdir -p $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager/i18n
-cp i18n/qubesmanager_*.qm $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager/i18n/
+mkdir -p $RPM_BUILD_ROOT%{python3_sitelib}/qubesmanager/i18n
+cp i18n/qubesmanager_*.qm $RPM_BUILD_ROOT%{python3_sitelib}/qubesmanager/i18n/
 
 mkdir -p $RPM_BUILD_ROOT/usr/share/applications
 cp qubes-manager.desktop $RPM_BUILD_ROOT/usr/share/applications
@@ -106,110 +72,44 @@ rm -rf $RPM_BUILD_ROOT
 /usr/libexec/qubes-manager/qvm_net.py
 /usr/libexec/qubes-manager/qvm_net.pyo
 /usr/libexec/qubes-manager/qvm_net.pyc
-%dir %{python_sitearch}/qubesmanager
-%{python_sitearch}/qubesmanager/__init__.py
-%{python_sitearch}/qubesmanager/__init__.pyo
-%{python_sitearch}/qubesmanager/__init__.pyc
-%{python_sitearch}/qubesmanager/main.py
-%{python_sitearch}/qubesmanager/main.pyc
-%{python_sitearch}/qubesmanager/main.pyo
-%{python_sitearch}/qubesmanager/clipboard.py
-%{python_sitearch}/qubesmanager/clipboard.pyc
-%{python_sitearch}/qubesmanager/clipboard.pyo
-%{python_sitearch}/qubesmanager/block.py
-%{python_sitearch}/qubesmanager/block.pyc
-%{python_sitearch}/qubesmanager/block.pyo
-%{python_sitearch}/qubesmanager/table_widgets.py
-%{python_sitearch}/qubesmanager/table_widgets.pyc
-%{python_sitearch}/qubesmanager/table_widgets.pyo
-%{python_sitearch}/qubesmanager/appmenu_select.py
-%{python_sitearch}/qubesmanager/appmenu_select.pyc
-%{python_sitearch}/qubesmanager/appmenu_select.pyo
-%{python_sitearch}/qubesmanager/backup.py
-%{python_sitearch}/qubesmanager/backup.pyc
-%{python_sitearch}/qubesmanager/backup.pyo
-%{python_sitearch}/qubesmanager/backup_utils.py
-%{python_sitearch}/qubesmanager/backup_utils.pyc
-%{python_sitearch}/qubesmanager/backup_utils.pyo
-%{python_sitearch}/qubesmanager/firewall.py
-%{python_sitearch}/qubesmanager/firewall.pyc
-%{python_sitearch}/qubesmanager/firewall.pyo
-%{python_sitearch}/qubesmanager/global_settings.py
-%{python_sitearch}/qubesmanager/global_settings.pyc
-%{python_sitearch}/qubesmanager/global_settings.pyo
-%{python_sitearch}/qubesmanager/multiselectwidget.py
-%{python_sitearch}/qubesmanager/multiselectwidget.pyc
-%{python_sitearch}/qubesmanager/multiselectwidget.pyo
-%{python_sitearch}/qubesmanager/restore.py
-%{python_sitearch}/qubesmanager/restore.pyc
-%{python_sitearch}/qubesmanager/restore.pyo
-%{python_sitearch}/qubesmanager/settings.py
-%{python_sitearch}/qubesmanager/settings.pyc
-%{python_sitearch}/qubesmanager/settings.pyo
-%{python_sitearch}/qubesmanager/log_dialog.py
-%{python_sitearch}/qubesmanager/log_dialog.pyc
-%{python_sitearch}/qubesmanager/log_dialog.pyo
-%{python_sitearch}/qubesmanager/about.py
-%{python_sitearch}/qubesmanager/about.pyc
-%{python_sitearch}/qubesmanager/about.pyo
-%{python_sitearch}/qubesmanager/releasenotes.py
-%{python_sitearch}/qubesmanager/releasenotes.pyc
-%{python_sitearch}/qubesmanager/releasenotes.pyo
-%{python_sitearch}/qubesmanager/informationnotes.py
-%{python_sitearch}/qubesmanager/informationnotes.pyc
-%{python_sitearch}/qubesmanager/informationnotes.pyo
-%{python_sitearch}/qubesmanager/networknotes.py
-%{python_sitearch}/qubesmanager/networknotes.pyc
-%{python_sitearch}/qubesmanager/networknotes.pyo
-%{python_sitearch}/qubesmanager/create_new_vm.py
-%{python_sitearch}/qubesmanager/create_new_vm.pyc
-%{python_sitearch}/qubesmanager/create_new_vm.pyo
-%{python_sitearch}/qubesmanager/thread_monitor.py
-%{python_sitearch}/qubesmanager/thread_monitor.pyc
-%{python_sitearch}/qubesmanager/thread_monitor.pyo
-%{python_sitearch}/qubesmanager/resources_rc.py
-%{python_sitearch}/qubesmanager/resources_rc.pyc
-%{python_sitearch}/qubesmanager/resources_rc.pyo
-%{python_sitearch}/qubesmanager/ui_backupdlg.py
-%{python_sitearch}/qubesmanager/ui_backupdlg.pyc
-%{python_sitearch}/qubesmanager/ui_backupdlg.pyo
-%{python_sitearch}/qubesmanager/ui_globalsettingsdlg.py
-%{python_sitearch}/qubesmanager/ui_globalsettingsdlg.pyc
-%{python_sitearch}/qubesmanager/ui_globalsettingsdlg.pyo
-%{python_sitearch}/qubesmanager/ui_mainwindow.py
-%{python_sitearch}/qubesmanager/ui_mainwindow.pyc
-%{python_sitearch}/qubesmanager/ui_mainwindow.pyo
-%{python_sitearch}/qubesmanager/ui_multiselectwidget.py
-%{python_sitearch}/qubesmanager/ui_multiselectwidget.pyc
-%{python_sitearch}/qubesmanager/ui_multiselectwidget.pyo
-%{python_sitearch}/qubesmanager/ui_newappvmdlg.py
-%{python_sitearch}/qubesmanager/ui_newappvmdlg.pyc
-%{python_sitearch}/qubesmanager/ui_newappvmdlg.pyo
-%{python_sitearch}/qubesmanager/ui_newfwruledlg.py
-%{python_sitearch}/qubesmanager/ui_newfwruledlg.pyc
-%{python_sitearch}/qubesmanager/ui_newfwruledlg.pyo
-%{python_sitearch}/qubesmanager/ui_restoredlg.py
-%{python_sitearch}/qubesmanager/ui_restoredlg.pyc
-%{python_sitearch}/qubesmanager/ui_restoredlg.pyo
-%{python_sitearch}/qubesmanager/ui_settingsdlg.py
-%{python_sitearch}/qubesmanager/ui_settingsdlg.pyc
-%{python_sitearch}/qubesmanager/ui_settingsdlg.pyo
-%{python_sitearch}/qubesmanager/ui_logdlg.py
-%{python_sitearch}/qubesmanager/ui_logdlg.pyc
-%{python_sitearch}/qubesmanager/ui_logdlg.pyo
-%{python_sitearch}/qubesmanager/ui_about.py
-%{python_sitearch}/qubesmanager/ui_about.pyc
-%{python_sitearch}/qubesmanager/ui_about.pyo
-%{python_sitearch}/qubesmanager/ui_releasenotes.py
-%{python_sitearch}/qubesmanager/ui_releasenotes.pyc
-%{python_sitearch}/qubesmanager/ui_releasenotes.pyo
-%{python_sitearch}/qubesmanager/ui_informationnotes.py
-%{python_sitearch}/qubesmanager/ui_informationnotes.pyc
-%{python_sitearch}/qubesmanager/ui_informationnotes.pyo
-%{python_sitearch}/qubesmanager/ui_networknotes.py
-%{python_sitearch}/qubesmanager/ui_networknotes.pyc
-%{python_sitearch}/qubesmanager/ui_networknotes.pyo
-%{python_sitearch}/qubesmanager/i18n/qubesmanager_*.qm
+%dir %{python3_sitelib}/qubesmanager
+%{python3_sitelib}/qubesmanager/__pycache__
+%{python3_sitelib}/qubesmanager/__init__.py
+%{python3_sitelib}/qubesmanager/main.py
+%{python3_sitelib}/qubesmanager/clipboard.py
+%{python3_sitelib}/qubesmanager/block.py
+%{python3_sitelib}/qubesmanager/table_widgets.py
+%{python3_sitelib}/qubesmanager/appmenu_select.py
+%{python3_sitelib}/qubesmanager/backup.py
+%{python3_sitelib}/qubesmanager/backup_utils.py
+%{python3_sitelib}/qubesmanager/firewall.py
+%{python3_sitelib}/qubesmanager/global_settings.py
+%{python3_sitelib}/qubesmanager/multiselectwidget.py
+%{python3_sitelib}/qubesmanager/restore.py
+%{python3_sitelib}/qubesmanager/settings.py
+%{python3_sitelib}/qubesmanager/log_dialog.py
+%{python3_sitelib}/qubesmanager/about.py
+%{python3_sitelib}/qubesmanager/releasenotes.py
+%{python3_sitelib}/qubesmanager/informationnotes.py
+%{python3_sitelib}/qubesmanager/networknotes.py
+%{python3_sitelib}/qubesmanager/create_new_vm.py
+%{python3_sitelib}/qubesmanager/thread_monitor.py
+%{python3_sitelib}/qubesmanager/resources_rc.py
+%{python3_sitelib}/qubesmanager/qvm_net.py
+%{python3_sitelib}/qubesmanager/ui_backupdlg.py
+%{python3_sitelib}/qubesmanager/ui_globalsettingsdlg.py
+%{python3_sitelib}/qubesmanager/ui_mainwindow.py
+%{python3_sitelib}/qubesmanager/ui_multiselectwidget.py
+%{python3_sitelib}/qubesmanager/ui_newappvmdlg.py
+%{python3_sitelib}/qubesmanager/ui_newfwruledlg.py
+%{python3_sitelib}/qubesmanager/ui_restoredlg.py
+%{python3_sitelib}/qubesmanager/ui_settingsdlg.py
+%{python3_sitelib}/qubesmanager/ui_logdlg.py
+%{python3_sitelib}/qubesmanager/ui_about.py
+%{python3_sitelib}/qubesmanager/ui_releasenotes.py
+%{python3_sitelib}/qubesmanager/ui_informationnotes.py
+%{python3_sitelib}/qubesmanager/ui_networknotes.py
+%{python3_sitelib}/qubesmanager/i18n/qubesmanager_*.qm
 /usr/share/applications/qubes-manager.desktop
 /etc/xdg/autostart/qubes-manager.desktop
 /etc/dbus-1/system.d/org.qubesos.QubesManager.conf

@@ -327,7 +327,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             if ex.tmpdir:
                 self.tmpdir_to_remove = ex.tmpdir
         except Exception as ex:
-            print "Exception:", ex
+            print("Exception:", ex)
             msg.append(str(ex))
 
         if len(msg) > 0 :
@@ -352,7 +352,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                         print_callback = self.gather_output,
                         hide_vm_names=self.encryption_checkbox.isChecked())
             except Exception as ex:
-                print "Exception:", ex
+                print("Exception:", ex)
                 QMessageBox.critical(None,
                     self.tr("Error while preparing backup."),
                     unicode(self.tr("ERROR: {0}")).format(ex))

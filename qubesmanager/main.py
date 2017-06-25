@@ -899,7 +899,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                                    QString("org.QubesOS.Audio"),  # interface
                                    QString("RecAllowedChanged"),  # name
                                    self.recAllowedChanged):  # slot
-            print session_bus.lastError().message()
+            print(session_bus.lastError().message())
 
     # noinspection PyPep8Naming
     def sortIndicatorChanged(self, column, order):
@@ -1207,7 +1207,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
             return
 
 
-	self.start_vm(vm)
+    self.start_vm(vm)
 
     def start_vm(self, vm):
         assert not vm.is_running()
@@ -2121,7 +2121,7 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 
         msg_box.exec_()
     else:
-        print >>sys.stderr, message
+        print(message, file=sys.stderr)
 
 def sighup_handler(signum, frame):
     os.execl("/usr/bin/qubes-manager", "qubes-manager")

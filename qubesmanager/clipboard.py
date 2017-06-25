@@ -40,7 +40,7 @@ def copy_text_to_qubes_clipboard(text):
     #inter-appviewer lock
 
     try:
-        fd = os.open(APPVIEWER_LOCK, os.O_RDWR|os.O_CREAT, 0666)
+        fd = os.open(APPVIEWER_LOCK, os.O_RDWR|os.O_CREAT, 0o0666)
     except:
         QMessageBox.warning(None, "Warning!", "Error while accessing Qubes clipboard!")
     else:
