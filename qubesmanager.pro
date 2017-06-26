@@ -41,8 +41,8 @@ SOURCES = \
           qubesmanager/ui_settingsdlg.py
 
 TRANSLATIONS = \
-               i18n/qubesmanager_en.ts \
-               i18n/qubesmanager_es.ts
+               qubesmanager/i18n/qubesmanager_en.ts \
+               qubesmanager/i18n/qubesmanager_es.ts
 
 
 CODECFORTR = UTF-8

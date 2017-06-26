@@ -25,25 +25,16 @@ The Graphical Qubes VM Manager.
 
 %build
 make ui res translations
-python3 -m compileall qubesmanager
-python3 -O -m compileall qubesmanager
+make python
 
 %install
-mkdir -p $RPM_BUILD_ROOT/usr/bin/
-cp qubes-manager $RPM_BUILD_ROOT/usr/bin
-cp qubes-vm-settings $RPM_BUILD_ROOT/usr/bin
+make python_install \
+    DESTDIR=$RPM_BUILD_ROOT
 
 mkdir -p $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 cp qubesmanager/mount_for_backup.sh $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 cp qubesmanager/qvm_about.sh $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 cp qubesmanager/qvm_net.py $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
-
-mkdir -p $RPM_BUILD_ROOT%{python3_sitelib}/qubesmanager/
-cp -r qubesmanager/__pycache__ $RPM_BUILD_ROOT%{python3_sitelib}/qubesmanager/
-cp qubesmanager/*.py $RPM_BUILD_ROOT%{python3_sitelib}/qubesmanager/
-
-mkdir -p $RPM_BUILD_ROOT%{python3_sitelib}/qubesmanager/i18n
-cp i18n/qubesmanager_*.qm $RPM_BUILD_ROOT%{python3_sitelib}/qubesmanager/i18n/
 
 mkdir -p $RPM_BUILD_ROOT/usr/share/applications
 cp qubes-manager.desktop $RPM_BUILD_ROOT/usr/share/applications
@@ -65,13 +56,11 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-/usr/bin/qubes-manager
 /usr/bin/qubes-vm-settings
 /usr/libexec/qubes-manager/mount_for_backup.sh
 /usr/libexec/qubes-manager/qvm_about.sh
 /usr/libexec/qubes-manager/qvm_net.py
-/usr/libexec/qubes-manager/qvm_net.pyo
-/usr/libexec/qubes-manager/qvm_net.pyc
+
 %dir %{python3_sitelib}/qubesmanager
 %{python3_sitelib}/qubesmanager/__pycache__
 %{python3_sitelib}/qubesmanager/__init__.py
@@ -110,6 +99,11 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/ui_informationnotes.py
 %{python3_sitelib}/qubesmanager/ui_networknotes.py
 %{python3_sitelib}/qubesmanager/i18n/qubesmanager_*.qm
+%{python3_sitelib}/qubesmanager/i18n/qubesmanager_*.ts
+
+%dir %{python3_sitelib}/qubesmanager-*.egg-info
+%{python3_sitelib}/qubesmanager-*.egg-info/*
+
 /usr/share/applications/qubes-manager.desktop
 /etc/xdg/autostart/qubes-manager.desktop
 /etc/dbus-1/system.d/org.qubesos.QubesManager.conf

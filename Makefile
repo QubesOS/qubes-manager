@@ -1,5 +1,8 @@
 RPMS_DIR=rpm/
 VERSION := $(shell cat version)
+
+PYTHON ?= python3
+
 help:
 	@echo "make rpms                  -- generate binary rpm packages"
 	@echo "make res                   -- compile resources"
@@ -26,6 +29,12 @@ res:
 
 translations:
 	lrelease-qt4 qubesmanager.pro
+
+python:
+	$(PYTHON) ./setup.py build
+
+python_install:
+	$(PYTHON) ./setup.py install -O1 --skip-build --root $(DESTDIR)
 
 update_ts: res
 	pylupdate4 qubesmanager.pro
