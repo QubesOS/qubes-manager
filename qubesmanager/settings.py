@@ -3,7 +3,9 @@
 # The Qubes OS Project, http://www.qubes-os.org
 #
 # Copyright (C) 2012  Agnieszka Kostrzewa <agnieszka.kostrzewa@gmail.com>
-# Copyright (C) 2012  Marek Marczykowski <marmarek@mimuw.edu.pl>
+# Copyright (C) 2012  Marek Marczykowski-Górecki
+#                       <marmarek@invisiblethingslab.com>
+# Copyright (C) 2017  Wojtek Porczyk <woju@invisiblethingslab.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -21,13 +23,14 @@
 #
 #
 
-from qubes.qubes import QubesVmCollection
-from qubes.qubes import QubesVmLabels
-from qubes.qubes import QubesHost
-from qubes.qubes import system_path
 
+import collections
+import copy
 import subprocess
-from copy import copy
+
+import qubesadmin
+import qubesadmin.tools
+
 
 from .ui_settingsdlg import *
 from .appmenu_select import *
@@ -35,19 +38,20 @@ from .firewall import *
 from .backup_utils import get_path_for_vm
 
 class VMSettingsWindow(Ui_SettingsDialog, QDialog):
-    tabs_indices = {"basic": 0,
-                    "advanced": 1,
-                    "firewall": 2,
-                    "devices": 3,
-                    "applications": 4,
-                    "services": 5,}
+    tabs_indices = collections.OrderedDict((
+            ('basic', 0),
+            ('advanced', 1),
+            ('firewall', 2),
+            ('devices', 3),
+            ('applications', 4),
+            ('services', 5),
+        ))
 
-    def __init__(self, vm, app, qvm_collection, init_page="basic", parent=None):
+    def __init__(self, vm, qapp, init_page="basic", parent=None):
         super(VMSettingsWindow, self).__init__(parent)
 
-        self.app = app
-        self.qvm_collection = qvm_collection
         self.vm = vm
+        self.qapp = qapp
         if self.vm.template:
             self.source_vm = self.vm.template
         else:
@@ -125,7 +129,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         progress.show()
 
         while not thread_monitor.is_finished():
-            self.app.processEvents()
+            self.qapp.processEvents()
             time.sleep (0.1)
 
         progress.hide()
@@ -139,7 +143,6 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
     def __save_changes__(self, thread_monitor):
 
-        self.qvm_collection.lock_db_for_writing()
         self.anything_changed = False
 
         ret = []
@@ -179,10 +182,6 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         except Exception as ex:
             ret += [self.tr("Applications tab:"), str(ex)]
 
-        if self.anything_changed == True:
-            self.qvm_collection.save()
-        self.qvm_collection.unlock_db()
-
         if len(ret) > 0 :
             thread_monitor.set_error_msg('\n'.join(ret))
 
@@ -204,112 +203,112 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
     ######### basic tab
 
+    # TODO LISTENERS
+    # - vm start/shutdown -> setEnabled on fields: template
+    # - vm create/delete -> choices lists, whole window deactiv (if self.vm)
+    # - property-set -> individual fields
+
+    # TODO INTERACTIONS
+    # netvm -> networking_groupbox
+    # hvm -> include_in_balancing
+
+    def setup_vm_choice(self, widget, propname, default, filter_function,
+            allow_internal=False, allow_none=False):
+        # some basic information
+        oldvalue = getattr(self.vm, propname)
+        is_default = self.vm.property_is_default(propname)
+        idx = -1
+
+        vmlist = filter(filter_function, self.app.domains)
+        if not allow_internal:
+            vmlist = filter((lambda vm: not vm.features.get('internal', False)),
+                vmlist)
+        vmlist = list(vmlist)
+        vmlist.insert(0, qubesadmin.DEFAULT)
+        if allow_none:
+            vmlist.append(None)
+
+        for i, vm in enumerate(vmlist):
+            # 0: default (unset)
+            if vm is qubesadmin.DEFAULT:
+                text = 'default ({})'.format(
+                    default.name if default else 'none')
+            # N+1: explicit None
+            elif vm is None:
+                text = 'none'
+            # 1..N: choices
+            else:
+                text = vm.name
+
+            if vm is qubesadmin.DEFAULT and is_default \
+            or vm is oldvalue:
+                text += self.tr(' (current)')
+                idx = i
+
+            widget.insertItem(i, text)
+
+        setattr(self, propname + '_idx', idx)
+        setattr(self, propname + '_list', list)
+        widget.setCurrentIndex(idx)
+
+
     def __init_basic_tab__(self):
         self.vmname.setText(self.vm.name)
         self.vmname.setValidator(QRegExpValidator(QRegExp("[a-zA-Z0-9-]*", Qt.CaseInsensitive), None))
-        self.vmname.setEnabled(not self.vm.is_running())
-
-        #self.qvm_collection.lock_db_for_reading()
-        #self.qvm_collection.load()
-        #self.qvm_collection.unlock_db()
+        self.vmname.setEnabled(False)
 
         if self.vm.qid == 0:
             self.vmlabel.setVisible(False)
         else:
             self.vmlabel.setVisible(True)
-            self.label_list = QubesVmLabels.values()
+            self.label_list = list(self.vm.app.labels)
             self.label_list.sort(key=lambda l: l.index)
             self.label_idx = 0
-            for (i, label) in enumerate(self.label_list):
+            for i, label in enumerate(self.label_list):
                 if label == self.vm.label:
                     self.label_idx = i
                 self.vmlabel.insertItem(i, label.name)
-                self.vmlabel.setItemIcon (i, QIcon(label.icon_path))
+                self.vmlabel.setItemIcon(i, QIcon.fromTheme(label.icon))
             self.vmlabel.setCurrentIndex(self.label_idx)
         self.vmlabel.setEnabled(not self.vm.is_running())
 
-        if not self.vm.is_template() and self.vm.template is not None:
-            template_vm_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_template()]
-            self.template_idx = -1
-
-            i = 0
-            for vm in template_vm_list:
-                if not self.vm.is_template_compatible(vm):
-                    continue
-                text = vm.name
-                if vm is self.qvm_collection.get_default_template():
-                    text += self.tr(" (default)")
-                if vm.qid == self.vm.template.qid:
-                    self.template_idx = i
-                    text += self.tr(" (current)")
-                self.template_name.insertItem(i, text)
-                i += 1
-            self.template_name.setCurrentIndex(self.template_idx)
-            self.template_name.setEnabled(not self.vm.is_running())
+        if isinstance(self.vm, qubesadmin.vm.AppVM):
+            self.setup_vm_choice(self.template_name, 'template',
+                (lambda vm: isinstance(vm, qubesadmin.vm.TemplateVM)))
         else:
             self.template_name.setEnabled(False)
             self.template_idx = -1
 
-
-        if (not self.vm.is_netvm() or self.vm.is_proxyvm()):
-            netvm_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_netvm() and vm.qid != 0]
-            self.netvm_idx = -1
-
-            default_netvm = self.qvm_collection.get_default_netvm()
-            if default_netvm is not None:
-                text = "default (%s)" % default_netvm.name
-                if self.vm.uses_default_netvm:
-                    text += self.tr(" (current)")
-                    self.netvm_idx = 0
-                self.netVM.insertItem(0, text)
-
-            for (i, vm) in enumerate(netvm_list):
-                text = vm.name
-                if self.vm.netvm is not None and vm.qid == self.vm.netvm.qid and not self.vm.uses_default_netvm:
-                    self.netvm_idx = i+1
-                    text += self.tr(" (current)")
-                self.netVM.insertItem(i+1, text)
-
-            none_text = "none"
-            if self.vm.netvm is None:
-                none_text += self.tr(" (current)")
-                self.netvm_idx = len(netvm_list)+1
-            self.netVM.insertItem(len(netvm_list)+1, none_text)
-
-            self.netVM.setCurrentIndex(self.netvm_idx)
-        else:
-            self.netVM.setEnabled(False)
-            self.netvm_idx = -1
+        self.setup_vm_choice(self.netVM, 'netvm',
+            (lambda vm: vm.provides_network))
 
         self.include_in_backups.setChecked(self.vm.include_in_backups)
 
-        if hasattr(self.vm, 'debug'):
-            self.run_in_debug_mode.setVisible(True)
+        try:
             self.run_in_debug_mode.setChecked(self.vm.debug)
-        else:
+            self.run_in_debug_mode.setVisible(True)
+        except AttributeError:
             self.run_in_debug_mode.setVisible(False)
 
-        if hasattr(self.vm, 'autostart'):
-            self.autostart_vm.setVisible(True)
+        try:
             self.autostart_vm.setChecked(self.vm.autostart)
-        else:
+            self.autostart_vm.setVisible(True)
+        except AttributeError:
             self.autostart_vm.setVisible(False)
 
-        if hasattr(self.vm, 'seamless_gui_mode'):
-            self.seamless_gui.setVisible(True)
-            self.seamless_gui.setChecked(self.vm.seamless_gui_mode)
-        else:
-            self.seamless_gui.setVisible(False)
+        # XXX - False?
+        self.seamless_gui.setVisible(True)
+        self.seamless_gui.setChecked(
+            self.vm.features.get('seamless-gui', False))
 
         #type
-        self.type_label.setText(self.vm.type)
+        self.type_label.setText(type(self.vm).__name__)
 
         #installed by rpm
-        text = "Yes" if self.vm.installed_by_rpm == True else "No"
-        self.rpm_label.setText(text)
+        self.rpm_label.setText('Yes' if self.vm.installed_by_rpm else 'No')
 
         #networking info
-        if self.vm.is_networked():
+        if self.vm.netvm:
             self.networking_groupbox.setEnabled(True)
             self.ip_label.setText(self.vm.ip if self.vm.ip is not None else "none")
             self.netmask_label.setText(self.vm.netmask if self.vm.netmask is not None else "none")
@@ -318,36 +317,19 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.networking_groupbox.setEnabled(False)
 
         #max priv storage
-        self.priv_img_size = self.vm.get_private_img_sz()/1024/1024
-        self.max_priv_storage.setMinimum(self.priv_img_size)
-        self.max_priv_storage.setValue(self.priv_img_size)
+#       self.priv_img_size = self.vm.get_private_img_sz()/1024/1024
+#       self.max_priv_storage.setMinimum(self.priv_img_size)
+#       self.max_priv_storage.setValue(self.priv_img_size)
 
-        self.root_img_size = self.vm.get_root_img_sz()/1024/1024
-        self.root_resize.setValue(self.root_img_size)
-        self.root_resize.setMinimum(self.root_img_size)
-        self.root_resize.setEnabled(hasattr(self.vm, 'resize_root_img') and
-            not self.vm.template)
-        self.root_resize_label.setEnabled(self.root_resize.isEnabled())
+#       self.root_img_size = self.vm.get_root_img_sz()/1024/1024
+#       self.root_resize.setValue(self.root_img_size)
+#       self.root_resize.setMinimum(self.root_img_size)
+#       self.root_resize.setEnabled(hasattr(self.vm, 'resize_root_img') and
+#           not self.vm.template)
+#       self.root_resize_label.setEnabled(self.root_resize.isEnabled())
 
     def __apply_basic_tab__(self):
         msg = []
-
-        # vmname changed
-        vmname = str(self.vmname.text())
-        if self.vm.name != vmname:
-            if self.vm.is_running():
-                msg.append(self.tr("Can't change name of a running VM."))
-            elif self.qvm_collection.get_vm_by_name(vmname) is not None:
-                msg.append(
-                    unicode(self.tr("Can't change VM name - a VM named <b>{0}</b>"
-                            "already exists in the system!")).format(vmname))
-            else:
-                oldname = self.vm.name
-                try:
-                    self.vm.set_name(vmname)
-                    self.anything_changed = True
-                except Exception as ex:
-                    msg.append(str(ex))
 
         #vm label changed
         try:
@@ -362,12 +344,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         #vm template changed
         try:
             if self.template_name.currentIndex() != self.template_idx:
-                new_template_name = str(self.template_name.currentText())
-                new_template_name = new_template_name.split(' ')[0]
-                template_vm = self.qvm_collection.get_vm_by_name(new_template_name)
-                assert (template_vm is not None and template_vm.qid in self.qvm_collection)
-                assert template_vm.is_template()
-                self.vm.template = template_vm
+                self.vm.template = \
+                    self.template_list[self.template_name.currentIndex()]
                 self.anything_changed = True
         except Exception as ex:
             msg.append(str(ex))
@@ -375,23 +353,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         #vm netvm changed
         try:
             if self.netVM.currentIndex() != self.netvm_idx:
-                new_netvm_name = str(self.netVM.currentText())
-                new_netvm_name = new_netvm_name.split(' ')[0]
-
-                uses_default_netvm = False
-
-                if new_netvm_name == "default":
-                    new_netvm_name = self.qvm_collection.get_default_netvm().name
-                    uses_default_netvm = True
-
-                if new_netvm_name == "none":
-                    netvm = None
-                else:
-                    netvm = self.qvm_collection.get_vm_by_name(new_netvm_name)
-                assert (netvm is None or (netvm is not None and netvm.qid in self.qvm_collection and netvm.is_netvm()))
-
-                self.vm.netvm = netvm
-                self.vm.uses_default_netvm = uses_default_netvm
+                self.vm.netvm = self.netvm_list[self.netVM.currentIndex()]
                 self.anything_changed = True
         except Exception as ex:
             msg.append(str(ex))
@@ -475,39 +437,39 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
     def __init_advanced_tab__(self):
 
         #mem/cpu
-        qubes_memory = QubesHost().memory_total/1024
+#       qubes_memory = QubesHost().memory_total/1024
 
         self.init_mem.setValue(int(self.vm.memory))
-        self.init_mem.setMaximum(qubes_memory)
+#       self.init_mem.setMaximum(qubes_memory)
 
         self.max_mem_size.setValue(int(self.vm.maxmem))
-        self.max_mem_size.setMaximum(qubes_memory)
+#       self.max_mem_size.setMaximum(qubes_memory)
 
         self.vcpus.setMinimum(1)
-        self.vcpus.setMaximum(QubesHost().no_cpus)
+#       self.vcpus.setMaximum(QubesHost().no_cpus)
         self.vcpus.setValue(int(self.vm.vcpus))
 
-        self.include_in_balancing.setEnabled(True)
-        self.include_in_balancing.setChecked(self.vm.services['meminfo-writer']==True)
-        if self.vm.type == "HVM":
-            self.include_in_balancing.setChecked(False)
-            self.include_in_balancing.setEnabled(False)
+        self.include_in_balancing.setEnabled(not self.vm.hvm)
+        self.include_in_balancing.setChecked(not self.vm.hvm
+            and self.vm.features.get('services/meminfo-writer', True))
         self.max_mem_size.setEnabled(self.include_in_balancing.isChecked())
 
         #paths
         self.dir_path.setText(self.vm.dir_path)
         self.config_path.setText(self.vm.conf_file)
-        if self.vm.template is not None:
+        try:
             self.root_img_path.setText(self.vm.template.root_img)
-        elif self.vm.root_img is not None:
-            self.root_img_path.setText(self.vm.root_img)
-        else:
+        except AttributeError:
+            pass
+        try:
+            self.root_img_path.setText(self.vm.storage.root_img)
+        except AttributeError:
             self.root_img_path.setText("n/a")
-        if self.vm.volatile_img is not None:
-            self.volatile_img_path.setText(self.vm.volatile_img)
-        else:
+        try:
+            self.volatile_img_path.setText(self.vm.storage.volatile_img)
+        except AttributeError:
             self.volatile_img_path.setText('n/a')
-        self.private_img_path.setText(self.vm.private_img)
+        self.private_img_path.setText(self.vm.storage.private_img)
 
 
         #kernel
@@ -518,7 +480,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         else:
             self.kernel_groupbox.setVisible(True)
             # construct available kernels list
-            text = "default (" + self.qvm_collection.get_default_kernel() +")"
+            text = "default (" + self.app.get_default_kernel() +")"
             kernel_list = [text]
             for k in os.listdir(system_path["qubes_kernels_base_dir"]):
                 kernel_list.append(k)
@@ -550,7 +512,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.drive_running_warning.setVisible(self.vm.is_running())
             self.drive_type.addItems(["hd", "cdrom"])
             self.drive_type.setCurrentIndex(0)
-            vm_list = [vm for vm in self.qvm_collection.values() if not vm
+            vm_list = [vm for vm in self.app.values() if not vm
                     .internal and vm.qid != self.vm.qid]
             # default to dom0 (in case of nonexisting vm already set...)
             self.drive_domain_idx = 0
@@ -577,7 +539,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.other_groupbox.setVisible(False)
         else:
             self.other_groupbox.setVisible(True)
-            netvm_list = [vm for vm in self.qvm_collection.values() if not vm.internal and vm.is_netvm() and vm.qid != 0]
+            netvm_list = [vm for vm in self.app.values() if not vm.internal and vm.is_netvm() and vm.qid != 0]
             self.dispvm_netvm_idx = -1
 
             text = "default (same as VM own NetVM)"
@@ -633,7 +595,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                     uses_default_kernel = False
 
                     if new_kernel == "default":
-                        kernel = self.qvm_collection.get_default_kernel()
+                        kernel = self.app.get_default_kernel()
                         uses_default_kernel = True
                     elif new_kernel == "none":
                         kernel = None
@@ -685,10 +647,10 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                 if new_dispvm_netvm_name == "none":
                     dispvm_netvm = None
                 else:
-                    dispvm_netvm = self.qvm_collection.get_vm_by_name(
+                    dispvm_netvm = self.app.get_vm_by_name(
                         new_dispvm_netvm_name)
                 assert (dispvm_netvm is None or (dispvm_netvm.qid in
-                        self.qvm_collection and dispvm_netvm.is_netvm()))
+                        self.app and dispvm_netvm.is_netvm()))
 
                 if uses_default_dispvm_netvm:
                     self.vm.uses_default_dispvm_netvm = True
@@ -711,7 +673,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             drv_domain = str(self.drive_domain.currentText())
             if drv_domain.count("(current)") > 0:
                 drv_domain = drv_domain.split(' ')[0]
-            backend_vm = self.qvm_collection.get_vm_by_name(drv_domain)
+            backend_vm = self.app.get_vm_by_name(drv_domain)
             if backend_vm:
                 new_path = get_path_for_vm(backend_vm, "qubes.SelectFile")
         if new_path:
@@ -820,7 +782,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.services_list.addItem(item)
 
         self.connect(self.services_list, SIGNAL("itemClicked(QListWidgetItem *)"), self.services_item_clicked)
-        self.new_srv_dict = copy(self.vm.services)
+        self.new_srv_dict = copy.copy(self.vm.services)
 
     def __add_service__(self):
         srv = str(self.service_line_edit.text()).strip()
@@ -1005,17 +967,17 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 # Bases on the original code by:
 # Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
 
-def handle_exception( exc_type, exc_value, exc_traceback ):
+def handle_exception(exc_type, exc_value, exc_traceback):
     import sys
     import os.path
     import traceback
 
-    filename, line, dummy, dummy = traceback.extract_tb( exc_traceback ).pop()
-    filename = os.path.basename( filename )
-    error    = "%s: %s" % ( exc_type.__name__, exc_value )
+    filename, line, dummy, dummy = traceback.extract_tb(exc_traceback).pop()
+    filename = os.path.basename(filename)
+    error = "%s: %s" % (exc_type.__name__, exc_value)
 
     strace = ""
-    stacktrace = traceback.extract_tb( exc_traceback )
+    stacktrace = traceback.extract_tb(exc_traceback)
     while len(stacktrace) > 0:
         (filename, line, func, txt) = stacktrace.pop()
         strace += "----\n"
@@ -1027,7 +989,7 @@ def handle_exception( exc_type, exc_value, exc_traceback ):
     msg_box = QMessageBox()
     msg_box.setDetailedText(strace)
     msg_box.setIcon(QMessageBox.Critical)
-    msg_box.setWindowTitle( "Houston, we have a problem...")
+    msg_box.setWindowTitle("Houston, we have a problem...")
     msg_box.setText("Whoops. A critical error has occured. This is most likely a bug "
                     "in Qubes Manager.<br><br>"
                     "<b><i>%s</i></b>" % error +
@@ -1037,55 +999,30 @@ def handle_exception( exc_type, exc_value, exc_traceback ):
     msg_box.exec_()
 
 
-def main():
+parser = qubesadmin.tools.QubesArgumentParser(vmname_nargs=1)
+parser.add_argument('--tab', metavar='TAB',
+    action='store',
+    choices=VMSettingsWindow.tabs_indices.keys())
+parser.set_defaults(tab='basic')
 
-    global qubes_host
-    qubes_host = QubesHost()
+def main(args=None):
+    global settings_window
 
-    global app
-    app = QApplication(sys.argv)
-    app.setOrganizationName("The Qubes Project")
-    app.setOrganizationDomain("http://qubes-os.org")
-    app.setApplicationName("Qubes VM Settings")
+    args = parser.parse_args(args)
+    vm = args.domains.pop()
+
+    qapp = QApplication(sys.argv)
+    qapp.setOrganizationName('Invisible Things Lab')
+    qapp.setOrganizationDomain("https://www.qubes-os.org/")
+    qapp.setApplicationName("Qubes VM Settings")
 
     sys.excepthook = handle_exception
 
-    qvm_collection = QubesVmCollection()
-    qvm_collection.lock_db_for_reading()
-    qvm_collection.load()
-    qvm_collection.unlock_db()
-
-    vm = None
-    tab = "basic"
-
-    if len(sys.argv) > 1:
-        vm = qvm_collection.get_vm_by_name(sys.argv[1])
-        if vm is None or vm.qid not in qvm_collection:
-            QMessageBox.critical(None, "Qubes VM Settings Error",
-                    "A VM with the name '{0}' does not exist in the system.".format(sys.argv[1]))
-            sys.exit(1)
-        if len(sys.argv) > 2:
-            tab_arg = sys.argv[2]
-            if tab_arg in VMSettingsWindow.tabs_indices:
-                tab = tab_arg
-            else: QMessageBox.warning(None, "Qubes VM Settings Error",
-                    "There is no such tab as '{0}'. Opening default tab instead.".format(tab_arg))
-
-    else:
-        vms_list = [vm.name for vm in qvm_collection.values() if (vm.is_appvm() or vm.is_template())]
-        vmname = QInputDialog.getItem(None, "Select VM", "Select VM:", vms_list, editable = False)
-        if not vmname[1]:
-            sys.exit(1)
-        vm = qvm_collection.get_vm_by_name(vmname[0])
-
-
-    global settings_window
-    settings_window = VMSettingsWindow(vm, app, qvm_collection, tab)
-
+    settings_window = VMSettingsWindow(vm, qapp, args.tab)
     settings_window.show()
 
-    app.exec_()
-    app.exit()
+    qapp.exec_()
+    qapp.exit()
 
 
 if __name__ == "__main__":
