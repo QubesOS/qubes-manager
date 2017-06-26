@@ -34,7 +34,6 @@ make python_install \
 mkdir -p $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 cp qubesmanager/mount_for_backup.sh $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 cp qubesmanager/qvm_about.sh $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
-cp qubesmanager/qvm_net.py $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 
 mkdir -p $RPM_BUILD_ROOT/usr/share/applications
 cp qubes-manager.desktop $RPM_BUILD_ROOT/usr/share/applications
@@ -59,12 +58,10 @@ rm -rf $RPM_BUILD_ROOT
 /usr/bin/qubes-vm-settings
 /usr/libexec/qubes-manager/mount_for_backup.sh
 /usr/libexec/qubes-manager/qvm_about.sh
-/usr/libexec/qubes-manager/qvm_net.py
 
 %dir %{python3_sitelib}/qubesmanager
 %{python3_sitelib}/qubesmanager/__pycache__
 %{python3_sitelib}/qubesmanager/__init__.py
-%{python3_sitelib}/qubesmanager/main.py
 %{python3_sitelib}/qubesmanager/clipboard.py
 %{python3_sitelib}/qubesmanager/block.py
 %{python3_sitelib}/qubesmanager/table_widgets.py
@@ -80,14 +77,11 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/about.py
 %{python3_sitelib}/qubesmanager/releasenotes.py
 %{python3_sitelib}/qubesmanager/informationnotes.py
-%{python3_sitelib}/qubesmanager/networknotes.py
 %{python3_sitelib}/qubesmanager/create_new_vm.py
 %{python3_sitelib}/qubesmanager/thread_monitor.py
 %{python3_sitelib}/qubesmanager/resources_rc.py
-%{python3_sitelib}/qubesmanager/qvm_net.py
 %{python3_sitelib}/qubesmanager/ui_backupdlg.py
 %{python3_sitelib}/qubesmanager/ui_globalsettingsdlg.py
-%{python3_sitelib}/qubesmanager/ui_mainwindow.py
 %{python3_sitelib}/qubesmanager/ui_multiselectwidget.py
 %{python3_sitelib}/qubesmanager/ui_newappvmdlg.py
 %{python3_sitelib}/qubesmanager/ui_newfwruledlg.py
@@ -97,7 +91,6 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/ui_about.py
 %{python3_sitelib}/qubesmanager/ui_releasenotes.py
 %{python3_sitelib}/qubesmanager/ui_informationnotes.py
-%{python3_sitelib}/qubesmanager/ui_networknotes.py
 %{python3_sitelib}/qubesmanager/i18n/qubesmanager_*.qm
 %{python3_sitelib}/qubesmanager/i18n/qubesmanager_*.ts
 
