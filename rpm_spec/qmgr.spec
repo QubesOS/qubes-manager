@@ -9,13 +9,19 @@ Group:		Qubes
 Vendor:		Invisible Things Lab
 License:	GPL
 URL:		http://fixme
-Requires:	python3, PyQt4, qubes-core-dom0-linux >= 2.0.22, qubes-core-dom0 >= 3.0.18
-Requires:	pmount, cryptsetup, wmctrl
-Requires:	dbus
+Requires:	python3
+Requires:	python3-PyQt4
+Requires:	python3-inotify
+Requires:	qubes-core-dom0-linux >= 2.0.22
+Requires:	qubes-core-dom0 >= 3.0.18
 Requires:	qubes-artwork
+Requires:	pmount
+Requires:	cryptsetup
+Requires:	wmctrl
+Requires:	dbus
 BuildRequires:	python3-PyQt4-devel
-BuildRequires:  python3-devel
-BuildRequires:  qt-devel
+BuildRequires:	python3-devel
+BuildRequires:	qt-devel
 AutoReq:	0
 
 %define _builddir %(pwd)
