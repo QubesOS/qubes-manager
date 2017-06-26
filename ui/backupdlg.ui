@@ -35,7 +35,7 @@
          <string>Shutdown all running selected VMs</string>
         </property>
         <property name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/shutdownvm.png</normaloff>:/shutdownvm.png</iconset>
         </property>
        </widget>
@@ -346,7 +346,7 @@ p, li { white-space: pre-wrap; }
   </widget>
  </widget>
  <resources>
-  <include location="resources.qrc"/>
+  <include location="../resources.qrc"/>
  </resources>
  <connections/>
 </ui>

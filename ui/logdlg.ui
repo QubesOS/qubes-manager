@@ -56,7 +56,7 @@
         <string>Copy to Qubes clipboard</string>
        </property>
        <property name="icon">
-        <iconset resource="resources.qrc">
+        <iconset resource="../resources.qrc">
          <normaloff>:/copy.png</normaloff>:/copy.png</iconset>
        </property>
        <property name="iconSize">
@@ -88,7 +88,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="resources.qrc"/>
+  <include location="../resources.qrc"/>
  </resources>
  <connections>
   <connection>

@@ -1,15 +1,15 @@
 SOURCES = \
-          about.ui \
-          backupdlg.ui \
-          globalsettingsdlg.ui \
-          logdlg.ui \
-          mainwindow.ui \
-          multiselectwidget.ui \
-          newappvmdlg.ui \
-          newfwruledlg.ui \
-          releasenotes.ui \
-          restoredlg.ui \
-          settingsdlg.ui \
+          ui/about.ui \
+          ui/backupdlg.ui \
+          ui/globalsettingsdlg.ui \
+          ui/logdlg.ui \
+          ui/mainwindow.ui \
+          ui/multiselectwidget.ui \
+          ui/newappvmdlg.ui \
+          ui/newfwruledlg.ui \
+          ui/releasenotes.ui \
+          ui/restoredlg.ui \
+          ui/settingsdlg.ui \
           qubesmanager/about.py \
           qubesmanager/appmenu_select.py \
           qubesmanager/backup.py \

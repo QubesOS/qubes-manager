@@ -24,7 +24,7 @@ AutoReq:	0
 The Graphical Qubes VM Manager.
 
 %build
-make res translations
+make ui res translations
 python3 -m compileall qubesmanager
 python3 -O -m compileall qubesmanager
 

@@ -14,7 +14,7 @@
    <string>Settings</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="resources.qrc">
+   <iconset resource="../resources.qrc">
     <normaloff>:/root.png</normaloff>:/root.png</iconset>
   </property>
   <layout class="QGridLayout" name="gridLayout">
@@ -808,7 +808,7 @@
        </widget>
        <widget class="QWidget" name="firewall_tab">
         <attribute name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/firewall.png</normaloff>:/firewall.png</iconset>
         </attribute>
         <attribute name="title">
@@ -903,7 +903,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="resources.qrc">
+                <iconset resource="../resources.qrc">
                  <normaloff>:/add.png</normaloff>:/add.png</iconset>
                </property>
                <property name="iconSize">
@@ -920,7 +920,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="resources.qrc">
+                <iconset resource="../resources.qrc">
                  <normaloff>:/pencil.png</normaloff>:/pencil.png</iconset>
                </property>
                <property name="iconSize">
@@ -937,7 +937,7 @@
                 <string/>
                </property>
                <property name="icon">
-                <iconset resource="resources.qrc">
+                <iconset resource="../resources.qrc">
                  <normaloff>:/remove.png</normaloff>:/remove.png</iconset>
                </property>
                <property name="iconSize">
@@ -1014,7 +1014,7 @@
          <bool>true</bool>
         </property>
         <attribute name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/storagevm.png</normaloff>:/storagevm.png</iconset>
         </attribute>
         <attribute name="title">
@@ -1060,7 +1060,7 @@
        </widget>
        <widget class="QWidget" name="apps_tab">
         <attribute name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/apps.png</normaloff>:/apps.png</iconset>
         </attribute>
         <attribute name="title">
@@ -1089,7 +1089,7 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset resource="resources.qrc">
+            <iconset resource="../resources.qrc">
              <normaloff>:/add.png</normaloff>:/add.png</iconset>
            </property>
            <property name="iconSize">
@@ -1130,7 +1130,7 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset resource="resources.qrc">
+            <iconset resource="../resources.qrc">
              <normaloff>:/remove.png</normaloff>:/remove.png</iconset>
            </property>
            <property name="iconSize">
@@ -1209,7 +1209,7 @@
   <tabstop>buttonBox</tabstop>
  </tabstops>
  <resources>
-  <include location="resources.qrc"/>
+  <include location="../resources.qrc"/>
  </resources>
  <connections>
   <connection>
