@@ -27,7 +27,6 @@ from PyQt4.QtGui import *
 
 import subprocess
 import time
-from qubes.qubes import QubesException
 
 from thread_monitor import *
 

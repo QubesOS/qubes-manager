@@ -26,7 +26,6 @@ import os
 import fcntl
 from math import log
 
-from qubes.qubes import QubesException
 from PyQt4.QtGui import QApplication
 
 APPVIEWER_LOCK = "/var/run/qubes/appviewer.lock"

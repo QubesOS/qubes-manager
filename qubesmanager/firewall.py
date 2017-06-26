@@ -28,10 +28,6 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import datetime
 
-from qubes.qubes import QubesVmCollection
-from qubes.qubes import QubesException
-from qubes.qubes import dry_run
-
 import ui_newfwruledlg
 
 

@@ -25,11 +25,6 @@ import os
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from qubes.qubes import QubesVmCollection
-from qubes.qubes import QubesException
-from qubes.qubes import QubesDaemonPidfile
-from qubes.qubes import QubesHost
-
 import qubesmanager.resources_rc
 
 from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
@@ -55,7 +50,7 @@ class AppmenuSelectManager:
     def __init__(self, vm, apps_multiselect, parent=None):
 
         self.app_list = apps_multiselect # this is a multiselect wiget
-        
+
         self.vm = vm
         if self.vm.template:
             self.source_vm = self.vm.template
