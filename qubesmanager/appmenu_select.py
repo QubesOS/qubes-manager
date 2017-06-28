@@ -33,8 +33,8 @@ import time
 
 from operator import itemgetter
 
-from thread_monitor import *
-from multiselectwidget import *
+from .thread_monitor import *
+from .multiselectwidget import *
 
 whitelisted_filename = 'whitelisted-appmenus.list'
 

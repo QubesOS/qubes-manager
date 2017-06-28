@@ -24,7 +24,7 @@
 from PyQt4.QtCore import SIGNAL
 from PyQt4.QtGui import QDialog, QIcon
 
-from ui_releasenotes import *
+from .ui_releasenotes import *
 
 
 class ReleaseNotesDialog(Ui_ReleaseNotesDialog, QDialog):

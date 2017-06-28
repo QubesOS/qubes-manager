@@ -28,7 +28,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import datetime
 
-import ui_newfwruledlg
+from . import ui_newfwruledlg
 
 
 class QIPAddressValidator(QValidator):

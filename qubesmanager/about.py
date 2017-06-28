@@ -26,7 +26,7 @@ from PyQt4.QtGui import QDialog, QIcon
 from qubesmanager.releasenotes import ReleaseNotesDialog
 from qubesmanager.informationnotes import InformationNotesDialog
 
-from ui_about import *
+from .ui_about import *
 
 
 

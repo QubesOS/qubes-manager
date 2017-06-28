@@ -20,12 +20,12 @@ rpms-dom0:
 	rpm --addsign $(RPMS_DIR)/x86_64/qubes-manager*$(VERSION)*.rpm
 
 qubesmanager/ui_%.py: ui/%.ui
-	pyuic4 -o $@ $<
+	pyuic4 --from-imports -o $@ $<
 
 ui: $(patsubst ui/%.ui,qubesmanager/ui_%.py,$(wildcard ui/*.ui))
 
 res:
-	pyrcc4 -o qubesmanager/resources_rc.py resources.qrc
+	pyrcc4 -py3 -o qubesmanager/resources_rc.py resources.qrc
 
 translations:
 	lrelease-qt4 qubesmanager.pro

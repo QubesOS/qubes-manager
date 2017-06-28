@@ -36,8 +36,8 @@ import qubesmanager.resources_rc
 import time
 import threading
 
-from ui_newappvmdlg import *
-from thread_monitor import *
+from .ui_newappvmdlg import *
+from .thread_monitor import *
 
 
 class NewVmDlg (QDialog, Ui_NewVMDlg):
@@ -189,8 +189,8 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
         if self.qvm_collection.get_vm_by_name(vmname) is not None:
             QMessageBox.warning(None,
                 self.tr("Incorrect AppVM Name!"),
-                unicode(self.tr("A VM with the name <b>{0}</b> already exists in the "
-                        "system!")).format(vmname))
+                self.tr("A VM with the name <b>{0}</b> already exists in the "
+                        "system!").format(vmname))
             return
 
         label = self.label_list[self.vmlabel.currentIndex()]
@@ -240,7 +240,7 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
         thread.start()
 
         progress = QProgressDialog(
-            unicode(self.tr("Creating new {0} <b>{1}</b>...")).format(vmtype, vmname), "", 0, 0)
+            self.tr("Creating new {0} <b>{1}</b>...").format(vmtype, vmname), "", 0, 0)
         progress.setCancelButton(None)
         progress.setModal(True)
         progress.show()
@@ -253,11 +253,11 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
 
         if thread_monitor.success:
             self.trayIcon.showMessage(
-                unicode(self.tr("VM '{0}' has been created.")).format(vmname), msecs=3000)
+                self.tr("VM '{0}' has been created.").format(vmname), msecs=3000)
         else:
             QMessageBox.warning(None,
                 self.tr("Error creating AppVM!"),
-                unicode(self.tr("ERROR: {0}")).format(thread_monitor.error_msg))
+                self.tr("ERROR: {0}").format(thread_monitor.error_msg))
 
         self.done(0)
 

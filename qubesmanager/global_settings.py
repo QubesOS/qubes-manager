@@ -28,7 +28,7 @@ from PyQt4.QtGui import *
 
 from qubesadmin import Qubes
 
-from qubesmanager.ui_globalsettingsdlg import *
+from .ui_globalsettingsdlg import *
 
 from configparser import ConfigParser
 from qubesadmin.utils import parse_size, updates_vms_status

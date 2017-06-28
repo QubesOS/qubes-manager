@@ -39,15 +39,15 @@ from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, Pro
 
 import time
 from operator import itemgetter
-from thread_monitor import *
+from .thread_monitor import *
 
 from qubes import backup
 from qubes import qubesutils
 
-from ui_restoredlg import *
-from multiselectwidget import *
+from .ui_restoredlg import *
+from .multiselectwidget import *
 
-from backup_utils import *
+from .backup_utils import *
 from multiprocessing import Queue, Event
 from multiprocessing.queues import Empty
 
@@ -132,8 +132,8 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
         try:
             self.vms_to_restore = backup.backup_restore_prepare(
-                    unicode(self.dir_line_edit.text()),
-                    unicode(self.passphrase_line_edit.text()),
+                    self.dir_line_edit.text(),
+                    self.passphrase_line_edit.text(),
                     options=self.restore_options,
                     host_collection=self.qvm_collection,
                     encrypted=self.encryption_checkbox.isChecked(),
@@ -188,10 +188,10 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         except backup.BackupCanceledError as ex:
             self.canceled = True
             self.tmpdir_to_remove = ex.tmpdir
-            err_msg.append(unicode(ex))
+            err_msg.append(str(ex))
         except Exception as ex:
             print ("Exception:", ex)
-            err_msg.append(unicode(ex))
+            err_msg.append(str(ex))
             err_msg.append(
                 self.tr("Partially restored files left in "
                    "/var/tmp/restore_*, investigate them and/or clean them up"))
@@ -265,14 +265,14 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                 if self.canceled:
                     if self.tmpdir_to_remove and \
                         QMessageBox.warning(None, self.tr("Restore aborted"),
-                            unicode(self.tr("Do you want to remove temporary files "
-                                    "from %s?")) % self.tmpdir_to_remove,
+                            self.tr("Do you want to remove temporary files "
+                                    "from %s?") % self.tmpdir_to_remove,
                             QMessageBox.Yes, QMessageBox.No) == \
                             QMessageBox.Yes:
                         shutil.rmtree(self.tmpdir_to_remove)
                 else:
                     QMessageBox.warning(None,
-                        self.tr("Backup error!"), unicode(self.tr("ERROR: {0}"))
+                        self.tr("Backup error!"), self.tr("ERROR: {0}")
                                       .format(self.thread_monitor.error_msg))
 
             if self.showFileDialog.isChecked():
@@ -289,7 +289,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                     file_dialog.setReadOnly(True)
                     file_dialog.getExistingDirectory(
                         self, self.tr("Detach backup device"),
-                        os.path.dirname(unicode(self.dir_line_edit.text())))
+                        os.path.dirname(self.dir_line_edit.text()))
             self.progress_bar.setValue(100)
             self.button(self.FinishButton).setEnabled(True)
             self.button(self.CancelButton).setEnabled(False)
@@ -316,7 +316,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
             self.done(0)
 
     def has_selected_dir(self):
-        backup_location = unicode(self.dir_line_edit.text())
+        backup_location = self.dir_line_edit.text()
         if not backup_location:
             return False
         if self.appvm_combobox.currentIndex() == 0:

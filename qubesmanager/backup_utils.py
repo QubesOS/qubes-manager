@@ -28,10 +28,7 @@ from PyQt4.QtGui import *
 import subprocess
 import time
 
-from thread_monitor import *
-
-from datetime import datetime
-from string import replace
+from .thread_monitor import *
 
 path_re = re.compile(r"[a-zA-Z0-9/:.,_+=() -]*")
 path_max_len = 512
@@ -94,7 +91,6 @@ def select_path_button_clicked(dialog, select_file = False):
             backup_location if backup_location else '/')
 
     if new_path != None:
-        new_path = unicode(new_path)
         if os.path.basename(new_path) == 'qubes.xml':
             backup_location = os.path.dirname(new_path)
         else:

@@ -1,7 +1,7 @@
 import sys
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-from ui_multiselectwidget import *
+from .ui_multiselectwidget import *
 
 class MultiSelectWidget(Ui_MultiSelectWidget, QWidget):
 
