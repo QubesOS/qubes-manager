@@ -26,6 +26,7 @@
 
 import collections
 import copy
+import os
 import subprocess
 
 import qubesadmin
@@ -1000,10 +1001,18 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 
 
 parser = qubesadmin.tools.QubesArgumentParser(vmname_nargs=1)
+
 parser.add_argument('--tab', metavar='TAB',
     action='store',
     choices=VMSettingsWindow.tabs_indices.keys())
-parser.set_defaults(tab='basic')
+parser.add_argument('--debug',
+    action='store_true',
+    help='debug mode')
+
+parser.set_defaults(
+    tab='basic',
+    debug=os.getenv('QUBES_MANAGER_DEBUG', '0') != '0',
+)
 
 def main(args=None):
     global settings_window
@@ -1016,7 +1025,8 @@ def main(args=None):
     qapp.setOrganizationDomain("https://www.qubes-os.org/")
     qapp.setApplicationName("Qubes VM Settings")
 
-    sys.excepthook = handle_exception
+    if not args.debug:
+        sys.excepthook = handle_exception
 
     settings_window = VMSettingsWindow(vm, qapp, args.tab)
     settings_window.show()
