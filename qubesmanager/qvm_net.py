@@ -26,14 +26,14 @@ def tree(netvm, padding):
         else:
             vm_name  = qvm_collection[vm].name
         if qvm_collection[vm].is_template():
-            print padding,'|->',vm_name,'(Tpl)'
+            print(padding,'|->',vm_name,'(Tpl)')
         else:
-            print padding,'|->',vm_name
+            print(padding,'|->',vm_name)
         if qvm_collection[vm].is_netvm() :
             tree(qvm_collection[vm], padding)         
           
 padding=''
 for vm in qvm_collection:
     if qvm_collection[vm].is_netvm() and not qvm_collection[vm].netvm :
-        print qvm_collection[vm].name
+        print(qvm_collection[vm].name)
         tree(qvm_collection[vm], padding)
