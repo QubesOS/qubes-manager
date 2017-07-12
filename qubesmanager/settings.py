@@ -433,8 +433,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.max_mem_size.setEnabled(self.include_in_balancing.isChecked())
 
         #paths
-        self.dir_path.setText(self.vm.dir_path)
-        self.config_path.setText(self.vm.conf_file)
+        self.dir_path.setText('REMOVE ME')  # TODO
+        self.config_path.setText('REMOVE ME')  # TODO
         try:
             self.root_img_path.setText(self.vm.template.root_img)
         except AttributeError:
