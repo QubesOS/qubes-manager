@@ -41,9 +41,9 @@ from . import utils
 from . import multiselectwidget
 from . import thread_monitor
 
-from .firewall import *
 from .appmenu_select import AppmenuSelectManager
 from .backup_utils import get_path_for_vm
+from .firewall import *
 
 from .ui_settingsdlg import *
 
@@ -79,7 +79,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         self.tabWidget.currentChanged.connect(self.current_tab_changed)
 
-        self.tabWidget.setTabEnabled(self.tabs_indices["firewall"], vm.is_networked() and not (vm.is_netvm() and not vm.is_proxyvm()))
+#       self.tabWidget.setTabEnabled(self.tabs_indices["firewall"], vm.is_networked() and not vm.provides_network)
 
         ###### basic tab
         self.__init_basic_tab__()
@@ -92,8 +92,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.drive_path_button.clicked.connect(self.drive_path_button_pressed)
 
         ###### firewall tab
-        if self.tabWidget.isTabEnabled(self.tabs_indices["firewall"]):
-
+        if self.tabWidget.isTabEnabled(self.tabs_indices['firewall']):
             model = QubesFirewallRulesModel()
             model.set_vm(vm)
             self.set_fw_model(model)
@@ -288,9 +287,9 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         #networking info
         if self.vm.netvm:
             self.networking_groupbox.setEnabled(True)
-            self.ip_label.setText(self.vm.ip if self.vm.ip is not None else "none")
-            self.netmask_label.setText(self.vm.netmask if self.vm.netmask is not None else "none")
-            self.gateway_label.setText(self.vm.netvm.gateway if self.vm.netvm is not None else "none")
+            self.ip_label.setText(self.vm.ip or "none")
+            self.netmask_label.setText(self.vm.visible_netmask or "none")
+            self.gateway_label.setText(self.vm.visible_gateway or "none")
         else:
             self.networking_groupbox.setEnabled(False)
 
@@ -496,35 +495,37 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                 self.drive_path.setText(drv_path)
             self.drive_domain.setCurrentIndex(self.drive_domain_idx)
 
-        if not hasattr(self.vm, "dispvm_netvm"):
-            self.other_groupbox.setVisible(False)
-        else:
-            self.other_groupbox.setVisible(True)
-            netvm_list = [vm for vm in self.app.values() if not vm.internal and vm.is_netvm() and vm.qid != 0]
-            self.dispvm_netvm_idx = -1
+        self.other_groupbox.setVisible(False)
 
-            text = "default (same as VM own NetVM)"
-            if self.vm.uses_default_dispvm_netvm:
-                text += self.tr(" (current)")
-                self.dispvm_netvm_idx = 0
-            self.dispvm_netvm.insertItem(0, text)
+#       if not hasattr(self.vm, "dispvm_netvm"):
+#           self.other_groupbox.setVisible(False)
+#       else:
+#           self.other_groupbox.setVisible(True)
+#           netvm_list = [vm for vm in self.app.values() if not vm.internal and vm.is_netvm() and vm.qid != 0]
+#           self.dispvm_netvm_idx = -1
 
-            for (i, vm) in enumerate(netvm_list):
-                text = vm.name
-                if self.vm.dispvm_netvm is not None and vm.qid == \
-                        self.vm.dispvm_netvm.qid and not \
-                        self.vm.uses_default_dispvm_netvm:
-                    self.dispvm_netvm_idx = i+1
-                    text += self.tr(" (current)")
-                self.dispvm_netvm.insertItem(i+1, text)
+#           text = "default (same as VM own NetVM)"
+#           if self.vm.uses_default_dispvm_netvm:
+#               text += self.tr(" (current)")
+#               self.dispvm_netvm_idx = 0
+#           self.dispvm_netvm.insertItem(0, text)
 
-            none_text = "none"
-            if self.vm.dispvm_netvm is None:
-                none_text += self.tr(" (current)")
-                self.dispvm_netvm_idx = len(netvm_list)+1
-            self.dispvm_netvm.insertItem(len(netvm_list)+1, none_text)
+#           for (i, vm) in enumerate(netvm_list):
+#               text = vm.name
+#               if self.vm.dispvm_netvm is not None and vm.qid == \
+#                       self.vm.dispvm_netvm.qid and not \
+#                       self.vm.uses_default_dispvm_netvm:
+#                   self.dispvm_netvm_idx = i+1
+#                   text += self.tr(" (current)")
+#               self.dispvm_netvm.insertItem(i+1, text)
 
-            self.dispvm_netvm.setCurrentIndex(self.dispvm_netvm_idx)
+#           none_text = "none"
+#           if self.vm.dispvm_netvm is None:
+#               none_text += self.tr(" (current)")
+#               self.dispvm_netvm_idx = len(netvm_list)+1
+#           self.dispvm_netvm.insertItem(len(netvm_list)+1, none_text)
+
+#           self.dispvm_netvm.setCurrentIndex(self.dispvm_netvm_idx)
 
     def __apply_advanced_tab__(self):
         msg = []
@@ -593,36 +594,6 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                         self.anything_changed = True
             except Exception as ex:
                 msg.append(str(ex))
-
-        #vm dispvm_netvm changed
-        try:
-            if self.dispvm_netvm.currentIndex() != self.dispvm_netvm_idx:
-                new_dispvm_netvm_name = str(self.dispvm_netvm.currentText())
-                new_dispvm_netvm_name = new_dispvm_netvm_name.split(' ')[0]
-
-                uses_default_dispvm_netvm = False
-
-                if new_dispvm_netvm_name == "default":
-                    uses_default_dispvm_netvm = True
-
-                if new_dispvm_netvm_name == "none":
-                    dispvm_netvm = None
-                else:
-                    dispvm_netvm = self.app.get_vm_by_name(
-                        new_dispvm_netvm_name)
-                assert (dispvm_netvm is None or (dispvm_netvm.qid in
-                        self.app and dispvm_netvm.is_netvm()))
-
-                if uses_default_dispvm_netvm:
-                    self.vm.uses_default_dispvm_netvm = True
-                else:
-                    self.vm.uses_default_dispvm_netvm = False
-                    self.vm.dispvm_netvm = dispvm_netvm
-                self.anything_changed = True
-        except Exception as ex:
-            if utils.is_debug():
-                traceback.print_exc()
-            msg.append(str(ex))
 
         return msg
 
