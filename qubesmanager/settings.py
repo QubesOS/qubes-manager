@@ -32,6 +32,7 @@ import subprocess
 import qubesadmin
 import qubesadmin.tools
 
+from . import utils
 
 from .ui_settingsdlg import *
 from .appmenu_select import *
@@ -186,7 +187,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         if len(ret) > 0 :
             thread_monitor.set_error_msg('\n'.join(ret))
 
-        thread_monitor.set_finished()
+        utils.debug('\n'.join(ret))
 
 
     def current_tab_changed(self, idx):
@@ -201,11 +202,10 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                     "a working Firewall VM.").format(vm=self.vm.name))
 
 
-
     ######### basic tab
 
     # TODO LISTENERS
-    # - vm start/shutdown -> setEnabled on fields: template
+    # - vm start/shutdown -> setEnabled on fields: template labels
     # - vm create/delete -> choices lists, whole window deactiv (if self.vm)
     # - property-set -> individual fields
 
@@ -213,45 +213,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
     # netvm -> networking_groupbox
     # hvm -> include_in_balancing
 
-    def setup_vm_choice(self, widget, propname, default, filter_function,
-            allow_internal=False, allow_none=False):
-        # some basic information
-        oldvalue = getattr(self.vm, propname)
-        is_default = self.vm.property_is_default(propname)
-        idx = -1
-
-        vmlist = filter(filter_function, self.app.domains)
-        if not allow_internal:
-            vmlist = filter((lambda vm: not vm.features.get('internal', False)),
-                vmlist)
-        vmlist = list(vmlist)
-        vmlist.insert(0, qubesadmin.DEFAULT)
-        if allow_none:
-            vmlist.append(None)
-
-        for i, vm in enumerate(vmlist):
-            # 0: default (unset)
-            if vm is qubesadmin.DEFAULT:
-                text = 'default ({})'.format(
-                    default.name if default else 'none')
-            # N+1: explicit None
-            elif vm is None:
-                text = 'none'
-            # 1..N: choices
-            else:
-                text = vm.name
-
-            if vm is qubesadmin.DEFAULT and is_default \
-            or vm is oldvalue:
-                text += self.tr(' (current)')
-                idx = i
-
-            widget.insertItem(i, text)
-
-        setattr(self, propname + '_idx', idx)
-        setattr(self, propname + '_list', list)
-        widget.setCurrentIndex(idx)
-
+    # TODO REMOVE
+    # other_groupbox
 
     def __init_basic_tab__(self):
         self.vmname.setText(self.vm.name)
@@ -261,27 +224,32 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         if self.vm.qid == 0:
             self.vmlabel.setVisible(False)
         else:
+            self.label_list, self.label_idx = utils.prepare_label_choice(
+                self.vmlabel,
+                self.vm, 'label',
+                None,
+                allow_default=False
+                )
             self.vmlabel.setVisible(True)
-            self.label_list = list(self.vm.app.labels)
-            self.label_list.sort(key=lambda l: l.index)
-            self.label_idx = 0
-            for i, label in enumerate(self.label_list):
-                if label == self.vm.label:
-                    self.label_idx = i
-                self.vmlabel.insertItem(i, label.name)
-                self.vmlabel.setItemIcon(i, QIcon.fromTheme(label.icon))
-            self.vmlabel.setCurrentIndex(self.label_idx)
-        self.vmlabel.setEnabled(not self.vm.is_running())
+            self.vmlabel.setEnabled(not self.vm.is_running())
 
         if isinstance(self.vm, qubesadmin.vm.AppVM):
-            self.setup_vm_choice(self.template_name, 'template',
-                (lambda vm: isinstance(vm, qubesadmin.vm.TemplateVM)))
+            self.template_list, self.template_idx = utils.prepare_vm_choice(
+                self.template_name,
+                self.vm, 'template',
+                self.vm.app.default_template,
+                (lambda vm: isinstance(vm, qubesadmin.vm.TemplateVM)),
+                allow_default=True, allow_none=False)
         else:
             self.template_name.setEnabled(False)
             self.template_idx = -1
 
-        self.setup_vm_choice(self.netVM, 'netvm',
-            (lambda vm: vm.provides_network))
+        self.netvm_list, self.netvm_idx = utils.prepare_vm_choice(
+            self.netVM,
+            self.vm, 'netvm',
+            self.vm.app.default_netvm,
+            (lambda vm: vm.provides_network),
+            allow_default=True, allow_none=True)
 
         self.include_in_backups.setChecked(self.vm.include_in_backups)
 
@@ -463,47 +431,30 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         except AttributeError:
             pass
         try:
-            self.root_img_path.setText(self.vm.storage.root_img)
+            self.root_img_path.setText('{volume.pool}:{volume.vid}'.format(
+                volume=self.vm.volumes['root']))
         except AttributeError:
             self.root_img_path.setText("n/a")
         try:
-            self.volatile_img_path.setText(self.vm.storage.volatile_img)
+            self.volatile_img_path.setText('{volume.pool}:{volume.vid}'.format(
+                volume=self.vm.volumes['volatile']))
         except AttributeError:
             self.volatile_img_path.setText('n/a')
-        self.private_img_path.setText(self.vm.storage.private_img)
+        self.private_img_path.setText('{volume.pool}:{volume.vid}'.format(
+            volume=self.vm.volumes['private']))
 
 
         #kernel
 
         #in case VM is HVM
-        if not hasattr(self.vm, "kernel"):
-            self.kernel_groupbox.setVisible(False)
-        else:
+        if hasattr(self.vm, "kernel"):
             self.kernel_groupbox.setVisible(True)
-            # construct available kernels list
-            text = "default (" + self.app.get_default_kernel() +")"
-            kernel_list = [text]
-            for k in os.listdir(system_path["qubes_kernels_base_dir"]):
-                kernel_list.append(k)
-            kernel_list.append("none")
-
-            self.kernel_idx = 0
-
-            # put available kernels to a combobox
-            for (i, k) in enumerate(kernel_list):
-                text = k
-                # and mark the current choice
-                if (text.startswith("default") and self.vm.uses_default_kernel) or ( self.vm.kernel == k and not self.vm.uses_default_kernel) or (k=="none" and self.vm.kernel==None):
-                    text += " (current)"
-                    self.kernel_idx = i
-                self.kernel.insertItem(i,text)
-            self.kernel.setCurrentIndex(self.kernel_idx)
-
-            #kernel opts
-            if self.vm.uses_default_kernelopts:
-                self.kernel_opts.setText(self.vm.kernelopts + " (default)")
-            else:
-                self.kernel_opts.setText(self.vm.kernelopts)
+            self.kernel_list, self.kernel_idx = utils.prepare_kernel_choice(
+                self.kernel, self.vm, 'kernel',
+                self.vm.app.default_kernel,
+                allow_default=True, allow_none=True)
+        else:
+            self.kernel_groupbox.setVisible(False)
 
         if not hasattr(self.vm, "drive"):
             self.drive_groupbox.setVisible(False)
@@ -660,6 +611,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                     self.vm.dispvm_netvm = dispvm_netvm
                 self.anything_changed = True
         except Exception as ex:
+            if utils.is_debug():
+                traceback.print_exc()
             msg.append(str(ex))
 
         return msg
@@ -742,6 +695,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                 self.vm.pcidevs = pcidevs
                 self.anything_changed = True
         except Exception as ex:
+            if utils.is_debug():
+                traceback.print_exc()
             msg.append(str(ex))
 
         return msg
@@ -1005,13 +960,9 @@ parser = qubesadmin.tools.QubesArgumentParser(vmname_nargs=1)
 parser.add_argument('--tab', metavar='TAB',
     action='store',
     choices=VMSettingsWindow.tabs_indices.keys())
-parser.add_argument('--debug',
-    action='store_true',
-    help='debug mode')
 
 parser.set_defaults(
     tab='basic',
-    debug=os.getenv('QUBES_MANAGER_DEBUG', '0') != '0',
 )
 
 def main(args=None):
@@ -1025,7 +976,7 @@ def main(args=None):
     qapp.setOrganizationDomain("https://www.qubes-os.org/")
     qapp.setApplicationName("Qubes VM Settings")
 
-    if not args.debug:
+    if not utils.is_debug():
         sys.excepthook = handle_exception
 
     settings_window = VMSettingsWindow(vm, qapp, args.tab)

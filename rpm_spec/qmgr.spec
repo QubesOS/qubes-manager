@@ -85,7 +85,10 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/informationnotes.py
 %{python3_sitelib}/qubesmanager/create_new_vm.py
 %{python3_sitelib}/qubesmanager/thread_monitor.py
+%{python3_sitelib}/qubesmanager/utils.py
+
 %{python3_sitelib}/qubesmanager/resources_rc.py
+
 %{python3_sitelib}/qubesmanager/ui_backupdlg.py
 %{python3_sitelib}/qubesmanager/ui_globalsettingsdlg.py
 %{python3_sitelib}/qubesmanager/ui_multiselectwidget.py
