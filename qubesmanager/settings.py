@@ -289,16 +289,16 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.networking_groupbox.setEnabled(False)
 
         #max priv storage
-#       self.priv_img_size = self.vm.get_private_img_sz()/1024/1024
-#       self.max_priv_storage.setMinimum(self.priv_img_size)
-#       self.max_priv_storage.setValue(self.priv_img_size)
+        self.priv_img_size = self.vm.volumes['private'].size / 10**6
+        self.max_priv_storage.setMinimum(self.priv_img_size)
+        self.max_priv_storage.setValue(self.priv_img_size)
 
-#       self.root_img_size = self.vm.get_root_img_sz()/1024/1024
-#       self.root_resize.setValue(self.root_img_size)
-#       self.root_resize.setMinimum(self.root_img_size)
+        self.root_img_size = self.vm.volumes['root'].size / 10**6
+        self.root_resize.setValue(self.root_img_size)
+        self.root_resize.setMinimum(self.root_img_size)
 #       self.root_resize.setEnabled(hasattr(self.vm, 'resize_root_img') and
 #           not self.vm.template)
-#       self.root_resize_label.setEnabled(self.root_resize.isEnabled())
+        self.root_resize_label.setEnabled(self.root_resize.isEnabled())
 
     def __apply_basic_tab__(self):
         msg = []
@@ -360,7 +360,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         priv_size = self.max_priv_storage.value()
         if self.priv_img_size != priv_size:
             try:
-                self.vm.resize_private_img(priv_size*1024*1024)
+                self.vm.volumes['private'].resize(priv_size * 10**6)
                 self.anything_changed = True
             except Exception as ex:
                 msg.append(str(ex))
@@ -369,7 +369,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         sys_size = self.root_resize.value()
         if self.root_img_size != sys_size:
             try:
-                self.vm.resize_root_img(sys_size*1024*1024)
+                self.vm.volumes['root'].resize(priv_size * 10**6)
                 self.anything_changed = True
             except Exception as ex:
                 msg.append(str(ex))
@@ -417,10 +417,6 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             and self.vm.features.get('services/meminfo-writer', True))
         self.max_mem_size.setEnabled(self.include_in_balancing.isChecked())
 
-        try:
-            self.root_img_path.setText(self.vm.template.root_img)
-        except AttributeError:
-            pass
         try:
             self.root_img_path.setText('{volume.pool}:{volume.vid}'.format(
                 volume=self.vm.volumes['root']))
