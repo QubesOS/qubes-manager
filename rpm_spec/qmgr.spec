@@ -61,6 +61,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
+/usr/bin/qubes-global-settings
 /usr/bin/qubes-vm-settings
 /usr/bin/qubes-vm-create
 /usr/libexec/qubes-manager/mount_for_backup.sh
