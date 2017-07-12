@@ -19,17 +19,23 @@
 #
 #
 
-import sys
+import datetime
+import ipaddress
 import os
 import re
+import sys
 import xml.etree.ElementTree
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-import datetime
+
+import qubesadmin.firewall
 
 from . import ui_newfwruledlg
 
+
+class FirewallModifiedOutsideError(ValueError):
+    pass
 
 class QIPAddressValidator(QValidator):
     def __init__(self, parent = None):
@@ -39,10 +45,10 @@ class QIPAddressValidator(QValidator):
         hostname = str(input)
 
         if len(hostname) > 255 or len(hostname) == 0:
-            return (QValidator.Intermediate, pos)
+            return (QValidator.Intermediate, input, pos)
 
         if hostname == "*":
-            return (QValidator.Acceptable, pos)
+            return (QValidator.Acceptable, input, pos)
 
         unmask = hostname.split("/", 1)
         if len(unmask) == 2:
@@ -50,25 +56,25 @@ class QIPAddressValidator(QValidator):
             mask = unmask[1]
             if mask.isdigit() or mask == "":
                 if re.match("^([0-9]{1,3}\.){3}[0-9]{1,3}$", hostname) is None:
-                    return (QValidator.Invalid, pos)
+                    return (QValidator.Invalid, input, pos)
                 if mask != "":
                     mask = int(unmask[1])
                     if mask < 0 or mask > 32:
-                        return (QValidator.Invalid, pos)
+                        return (QValidator.Invalid, input, pos)
             else:
-                return (QValidator.Invalid, pos)
+                return (QValidator.Invalid, input, pos)
 
         if hostname[-1:] == ".":
             hostname = hostname[:-1]
 
         if hostname[-1:] == "-":
-            return (QValidator.Intermediate, pos)
+            return (QValidator.Intermediate, input, pos)
 
         allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
         if all(allowed.match(x) for x in hostname.split(".")):
-            return (QValidator.Acceptable, pos)
+            return (QValidator.Acceptable, input, pos)
 
-        return (QValidator.Invalid, pos)
+        return (QValidator.Invalid, input, pos)
 
 class NewFwRuleDlg (QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
     def __init__(self, parent = None):
@@ -194,12 +200,135 @@ class QubesFirewallRulesModel(QAbstractItemModel):
     def get_column_string(self, col, row):
         return self.__columnValues[col](row)
 
+
+    def rule_to_dict(self, rule):
+        if rule.dsthost is None:
+            raise FirewallModifiedOutsideError('no dsthost')
+
+        d = {}
+
+        if not rule.proto:
+            d['proto'] = 'any'
+            d['portBegin'] = 'any'
+            d['portEnd'] = None
+
+        else:
+            d['proto'] = rule.proto
+            if rule.dstports is None:
+                raise FirewallModifiedOutsideError('no dstport')
+            d['portBegin'] = rule.dstports.range[0]
+            d['portEnd'] = rule.dstports.range[1] \
+                if rule.dstports.range[0] != rule.dstports.range[1] \
+                else None
+
+        if rule.dsthost.type == 'dsthost':
+            d['address'] = str(rule.dsthost)
+            d['netmask'] = 32
+        elif rule.dsthost.type == 'dst4':
+            network = ipaddress.IPv4Network(rule.dsthost)
+            d['address'] = str(network.network_address)
+            d['netmask'] = int(network.prefixlen)
+        else:
+            raise FirewallModifiedOutsideError(
+                'cannot map dsthost.type={!s}'.format(rule.dsthost))
+
+        if rule.expire is not None:
+            d['expire'] = int(rule.expire)
+
+        return d
+
+    def get_firewall_conf(self, vm):
+        conf = {
+            'allow': None,
+            'allowDns': False,
+            'allowIcmp': False,
+            'allowYumProxy': False,
+            'rules': [],
+        }
+
+        common_action = None
+        tentative_action = None
+
+        reversed_rules = list(reversed(vm.firewall.rules))
+
+        while reversed_rules:
+            rule = reversed_rules[0]
+            if rule.dsthost is not None or rule.proto is not None:
+                break
+            tentative_action = reversed_rules.pop(0).action
+
+        if not reversed_rules:
+            conf['allow'] = tentative_action == 'accept'
+            return conf
+
+        for rule in reversed_rules:
+            if rule.specialtarget == 'dns':
+                conf['allowDns'] = (rule.action == 'accept')
+                continue
+
+            if rule.proto == 'icmp':
+                if rule.icmptype is not None:
+                    raise FirewallModifiedOutsideError(
+                        'cannot map icmptype != None')
+                conf['allowIcmp'] = (rule.action == 'accept')
+                continue
+
+            if common_action is None:
+                common_action = rule.action
+            elif common_action != rule.action:
+                raise FirewallModifiedOutsideError('incoherent action')
+
+            conf['rules'].insert(0, self.rule_to_dict(rule))
+
+        if common_action is None or common_action != tentative_action:
+            # we've got only specialtarget and/or icmp
+            conf['allow'] = tentative_action == 'accept'
+            return conf
+
+        raise FirewallModifiedOutsideError('it does not add up')
+
+    def write_firewall_conf(self, vm, conf):
+        common_action = qubesadmin.firewall.Action(
+            'drop' if conf['allow'] else 'accept')
+
+        rules = []
+
+        for rule in conf['rules']:
+            kwargs = {}
+            if rule['proto'] != 'any':
+                kwargs['proto'] = rule['proto']
+                if rule['portBegin'] != 'any':
+                    kwargs['dstports'] = '-'.join(map(str, filter((lambda x: x),
+                        (rule['portBegin'], rule['portEnd']))))
+
+            netmask = str(rule['netmask']) if rule['netmask'] != 32 else None
+
+            rules.append(qubesadmin.firewall.Rule(None,
+                action=common_action,
+                dsthost='/'.join(map(str, filter((lambda x: x),
+                    (rule['address'], netmask)))),
+                **kwargs))
+
+        if conf['allowDns']:
+            rules.append(qubesadmin.firewall.Rule(None,
+                action='accept', specialtarget='dns'))
+
+        if conf['allowIcmp']:
+            rules.append(qubesadmin.firewall.Rule(None,
+                action='accept', proto='icmp'))
+
+        if common_action == 'drop':
+            rules.append(qubesadmin.firewall.Rule(None,
+                action='accept'))
+
+        vm.firewall.rules = rules
+
     def set_vm(self, vm):
         self.__vm = vm
 
         self.clearChildren()
 
-        conf = vm.get_firewall_conf()
+        conf = self.get_firewall_conf(vm)
 
         self.allow = conf["allow"]
         self.allowDns = conf["allowDns"]
@@ -252,7 +381,7 @@ class QubesFirewallRulesModel(QAbstractItemModel):
                                   })
 
         if self.fw_changed:
-            self.__vm.write_firewall_conf(conf)
+            self.write_firewall_conf(self.__vm, conf)
 
             if self.__vm.is_running():
                 vm = self.__vm.netvm
@@ -287,14 +416,10 @@ class QubesFirewallRulesModel(QAbstractItemModel):
         if index.isValid() and role == Qt.DisplayRole:
             return self.__columnValues[index.column()](index.row())
 
-        return QVariant()
-
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if section < len(self.__columnNames) \
                 and orientation == Qt.Horizontal and role == Qt.DisplayRole:
                     return self.__columnNames[section]
-
-        return QVariant()
 
     @property
     def children(self):
