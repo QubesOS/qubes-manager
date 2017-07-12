@@ -4,6 +4,7 @@
 #
 # Copyright (C) 2012  Agnieszka Kostrzewa <agnieszka.kostrzewa@gmail.com>
 # Copyright (C) 2012  Marek Marczykowski <marmarek@mimuw.edu.pl>
+# Copyright (C) 2017  Wojtek Porczyk <woju@invisiblethingslab.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -21,281 +22,142 @@
 #
 #
 
-import sys
 import os
+import sys
+import threading
+import time
+
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from qubes.qubes import QubesVmCollection
-from qubes.qubes import QubesVmLabels
-from qubes.qubes import QubesException
-from qubes.qubes import QubesVm,QubesHVm
+import qubesadmin
+import qubesadmin.tools
 
 import qubesmanager.resources_rc
 
-import time
-import threading
+from . import utils
 
-from .ui_newappvmdlg import *
-from .thread_monitor import *
+from .ui_newappvmdlg import Ui_NewVMDlg
+from .thread_monitor import ThreadMonitor
 
 
-class NewVmDlg (QDialog, Ui_NewVMDlg):
-    def __init__(self, app, qvm_collection, trayIcon, parent = None):
-        super (NewVmDlg, self).__init__(parent)
+class NewVmDlg(QDialog, Ui_NewVMDlg):
+    def __init__(self, qtapp, app, parent = None):
+        super(NewVmDlg, self).__init__(parent)
         self.setupUi(self)
 
+        self.qtapp = qtapp
         self.app = app
-        self.trayIcon = trayIcon
-        self.qvm_collection = qvm_collection
 
         # Theoretically we should be locking for writing here and unlock
         # only after the VM creation finished. But the code would be more messy...
         # Instead we lock for writing in the actual worker thread
 
-        try:
-            from qubes.qubes import QubesHVm
-        except ImportError:
-            pass
-        else: 
-            self.hvm_radio.setEnabled(True)
-            self.hvmtpl_radio.setEnabled(True)
+        self.label_list, self.label_idx = utils.prepare_label_choice(
+            self.label,
+            self.app, None,
+            None,
+            allow_default=False)
 
-        self.qvm_collection.lock_db_for_reading()
-        self.qvm_collection.load()
-        self.qvm_collection.unlock_db()
+        self.template_list, self.template_idx = utils.prepare_vm_choice(
+            self.template_vm,
+            self.app, None,
+            self.app.default_template,
+            (lambda vm: isinstance(vm, qubesadmin.vm.TemplateVM)),
+            allow_internal=False, allow_default=True, allow_none=False)
 
-        self.label_list = QubesVmLabels.values()
-        self.label_list.sort(key=lambda l: l.index)
-        for (i, label) in enumerate(self.label_list):
-            self.vmlabel.insertItem(i, label.name)
-            self.vmlabel.setItemIcon (i, QIcon(label.icon_path))
+        self.netvm_list, self.netvm_idx = utils.prepare_vm_choice(
+            self.netvm,
+            self.app, None,
+            self.app.default_netvm,
+            (lambda vm: vm.provides_network),
+            allow_internal=False, allow_default=True, allow_none=True)
 
-        self.fill_template_list()
-        self.fill_netvm_list()
+        self.name.setValidator(QRegExpValidator(
+            QRegExp("[a-zA-Z0-9-]*", Qt.CaseInsensitive), None))
+        self.name.selectAll()
+        self.name.setFocus()
 
-        self.vmname.setValidator(QRegExpValidator(QRegExp("[a-zA-Z0-9-]*", Qt.CaseInsensitive), None))
-        self.vmname.selectAll()
-        self.vmname.setFocus()
-
-        self.hvmtemplatewarningbox.hide()
-
-    def fill_template_list(self):
-        def filter_template(vm):
-            if vm.internal:
-                return False
-            if not vm.is_template():
-                return False
-            if self.hvm_radio.isChecked():
-                return QubesHVm.is_template_compatible(vm)
-            elif self.hvmtpl_radio.isChecked():
-                return False
-            else:
-                return QubesVm.is_template_compatible(vm)
-        self.template_vm_list = filter(filter_template, self.qvm_collection.values())
-
-        self.template_name.clear()
-        default_index = 0
-        for (i, vm) in enumerate(self.template_vm_list):
-            if vm is self.qvm_collection.get_default_template():
-                default_index = i
-                self.template_name.insertItem(i, vm.name + self.tr(" (default)"))
-            else:
-                self.template_name.insertItem(i, vm.name)
-        self.template_name.setCurrentIndex(default_index)
-
-    def fill_netvm_list(self):
-        def filter_netvm(vm):
-            if vm.internal:
-                return False
-            if vm.qid == 0:
-                return False
-            if vm.is_netvm():
-                return True
-            if vm.is_proxyvm():
-                return True
-            else:
-                return False
-        self.netvm_list = filter(filter_netvm, self.qvm_collection.values())
-
-        self.netvm_name.clear()
-        default_index = 0
-        for (i, vm) in enumerate(self.netvm_list):
-            if vm is self.qvm_collection.get_default_netvm():
-                default_index = i
-                self.netvm_name.insertItem(i, vm.name + self.tr(" (default)"))
-            else:
-                self.netvm_name.insertItem(i, vm.name)
-        self.netvm_name.setCurrentIndex(default_index)
-
-    def on_allow_networking_toggled(self, checked):
-        if checked:
-            self.fill_netvm_list()
-            self.netvm_name.setEnabled(True)
-        else:    
-            self.netvm_name.clear()
-            self.netvm_name.setEnabled(False)
-
-    def on_appvm_radio_toggled(self, checked):
-        if checked:
-            self.template_name.setEnabled(True)
-            self.allow_networking.setEnabled(True)
-            self.netvm_name.setEnabled(self.allow_networking.isChecked())
-
-    def on_netvm_radio_toggled(self, checked):
-        if checked:
-            self.template_name.setEnabled(True)
-            self.allow_networking.setChecked(True)
-            self.allow_networking.setEnabled(False)
-            self.netvm_name.setEnabled(False)
-
-    def on_proxyvm_radio_toggled(self, checked):
-        if checked:
-            self.template_name.setEnabled(True)
-            self.allow_networking.setEnabled(True)
-            self.netvm_name.setEnabled(self.allow_networking.isChecked())
-
-    def on_hvm_radio_toggled(self, checked):
-        if self.hvm_radio.isChecked() or self.hvmtpl_radio.isChecked():
-            self.standalone.setChecked(True)
-            self.allow_networking.setEnabled(True)
-            self.netvm_name.setEnabled(self.allow_networking.isChecked())
-            self.standalone.setEnabled(self.hvm_radio.isChecked())
-        else:
-            self.standalone.setChecked(False)
-            self.standalone.setEnabled(True)
-        self.fill_template_list()
-
-    def on_hvmtpl_radio_toggled(self, checked):
-        return self.on_hvm_radio_toggled(checked)
-
-    def on_standalone_toggled(self, checked):
-        if checked and (self.hvm_radio.isChecked() or
-                        self.hvmtpl_radio.isChecked()):
-            self.template_name.setEnabled(False)
-        else:
-            self.template_name.setEnabled(True)
-
-        if not checked and self.hvm_radio.isChecked():
-            self.hvmtemplatewarningbox.show()
-        else:
-            self.hvmtemplatewarningbox.hide()
+        if len(self.template_list) == 0:
+            QMessageBox.warning(None,
+                self.tr('No template available!'),
+                self.tr('Cannot create a qube when no template exists.'))
 
     def reject(self):
         self.done(0)
 
     def accept(self):
-        vmname = str(self.vmname.text())
-        if self.qvm_collection.get_vm_by_name(vmname) is not None:
+        vmclass = ('StandaloneVM' if self.standalone.isChecked() else 'AppVM')
+
+        name = str(self.name.text())
+        try:
+            self.app.domains[name]
+        except LookupError:
+            pass
+        else:
             QMessageBox.warning(None,
-                self.tr("Incorrect AppVM Name!"),
-                self.tr("A VM with the name <b>{0}</b> already exists in the "
-                        "system!").format(vmname))
+                self.tr('Incorrect qube name!'),
+                self.tr('A qube with the name <b>{}</b> already exists in the '
+                        'system!').format(name))
             return
 
-        label = self.label_list[self.vmlabel.currentIndex()]
-        
-        template_vm = None
-        if self.template_name.isEnabled():
-            if len(self.template_vm_list) == 0:
-                QMessageBox.warning(None,
-                    self.tr("No template available!"),
-                    self.tr("Cannot create non-standalone VM when no "
-                            "compatible template exists. Create template VM "
-                            "first or choose to create standalone VM."))
-                return
-            template_vm = self.template_vm_list[self.template_name.currentIndex()]
+        label = self.label_list[self.label.currentIndex()]
+        template = self.template_list[self.template_vm.currentIndex()]
 
-        netvm = None
-        if self.netvm_name.isEnabled():
-            netvm = self.netvm_list[self.netvm_name.currentIndex()]
+        properties = {}
+        properties['provides_network'] = self.provides_network.isChecked()
+        properties['hvm'] = self.hvm.isChecked()
+        properties['netvm'] = self.netvm_list[self.netvm.currentIndex()]
 
-        standalone = self.standalone.isChecked()
-
-        allow_networking = None
-        if self.allow_networking.isEnabled():
-            allow_networking = self.allow_networking.isChecked()
-
-        if self.appvm_radio.isChecked():
-            vmtype = "AppVM"
-        elif self.netvm_radio.isChecked():
-            vmtype = "NetVM"
-        elif self.proxyvm_radio.isChecked():
-            vmtype = "ProxyVM"
-        elif self.hvm_radio.isChecked():
-            vmtype = "HVM"
-        elif self.hvmtpl_radio.isChecked():
-            vmtype = "TemplateHVM"
-        else:
-            QErrorMessage.showMessage(None,
-                self.tr("Error creating AppVM!"),
-                self.tr("Unknown VM type, this is error in Qubes Manager"))
-            self.done(0)
-
-
-        vmclass = "Qubes" + vmtype.replace("VM", "Vm")
         thread_monitor = ThreadMonitor()
-        thread = threading.Thread (target=self.do_create_vm, args=(vmclass, vmname, label, template_vm, netvm, standalone, allow_networking, thread_monitor))
+        thread = threading.Thread(target=self.do_create_vm,
+            args=(self.app, vmclass, name, label, template, properties,
+                 thread_monitor))
         thread.daemon = True
         thread.start()
 
         progress = QProgressDialog(
-            self.tr("Creating new {0} <b>{1}</b>...").format(vmtype, vmname), "", 0, 0)
+            self.tr("Creating new qube <b>{}</b>...").format(name), "", 0, 0)
         progress.setCancelButton(None)
         progress.setModal(True)
         progress.show()
 
         while not thread_monitor.is_finished():
-            self.app.processEvents()
+            self.qtapp.processEvents()
             time.sleep (0.1)
 
         progress.hide()
 
-        if thread_monitor.success:
-            self.trayIcon.showMessage(
-                self.tr("VM '{0}' has been created.").format(vmname), msecs=3000)
-        else:
+        if not thread_monitor.success:
             QMessageBox.warning(None,
-                self.tr("Error creating AppVM!"),
-                self.tr("ERROR: {0}").format(thread_monitor.error_msg))
+                self.tr("Error creating the qube!"),
+                self.tr("ERROR: {}").format(thread_monitor.error_msg))
 
         self.done(0)
 
     @staticmethod
-    def do_create_vm(vmclass, vmname, label, template_vm, netvm,
-                     standalone, allow_networking, thread_monitor):
-        vm = None
-        qc = QubesVmCollection()
-        qc.lock_db_for_writing()
-        qc.load()
+    def do_create_vm(app, vmclass, name, label, template, properties,
+            thread_monitor):
         try:
-            if not standalone:
-                vm = qc.add_new_vm(vmclass, name=vmname, template=template_vm,
-                                   label=label)
-            else:
-                vm = qc.add_new_vm(vmclass, name=vmname, template=None,
-                                   label=label)
-            vm.create_on_disk(verbose=False, source_template=template_vm)
+            vm = app.add_new_vm(vmclass,
+                name=name, label=label, template=template)
+            for k, v in properties.items():
+                setattr(vm, k, v)
 
-            if not allow_networking:
-                vm.uses_default_netvm = False
-                vm.netvm = None
-            else:
-                vm.netvm = netvm
-                if vm.netvm.qid == qc.get_default_netvm().qid:
-                    vm.uses_default_netvm = True
-                else:
-                    vm.uses_default_netvm = False
-
-            qc.save()
         except Exception as ex:
             thread_monitor.set_error_msg(str(ex))
-            if vm:
-                vm.remove_from_disk()
-                qc.pop(vm.qid)
-        finally:
-            qc.unlock_db()
 
         thread_monitor.set_finished()
 
+parser = qubesadmin.tools.QubesArgumentParser()
 
+def main(args=None):
+    args = parser.parse_args(args)
+
+    qtapp = QApplication(sys.argv)
+    qtapp.setOrganizationName('Invisible Things Lab')
+    qtapp.setOrganizationDomain('https://www.qubes-os.org/')
+    qtapp.setApplicationName('Create qube')
+
+    dialog = NewVmDlg(qtapp, args.app)
+    dialog.exec_()

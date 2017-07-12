@@ -19,5 +19,6 @@ if __name__ == '__main__':
         entry_points={
             'console_scripts': [
                 'qubes-vm-settings = qubesmanager.settings:main',
+                'qubes-vm-create = qubesmanager.create_new_vm:main',
             ],
         })

@@ -6,54 +6,18 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>496</width>
-    <height>215</height>
+    <width>618</width>
+    <height>214</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Create New VM</string>
+   <string>Create new qube</string>
   </property>
   <property name="windowIcon">
-   <iconset theme="qubes-manager"/>
+   <iconset theme="qubes-manager">
+    <normaloff/>
+   </iconset>
   </property>
-  <widget class="QFrame" name="hvmtemplatewarningbox">
-   <property name="geometry">
-    <rect>
-     <x>9</x>
-     <y>117</y>
-     <width>481</width>
-     <height>56</height>
-    </rect>
-   </property>
-   <property name="frameShape">
-    <enum>QFrame::NoFrame</enum>
-   </property>
-   <property name="frameShadow">
-    <enum>QFrame::Raised</enum>
-   </property>
-   <widget class="QLabel" name="hvmtemplatewarning">
-    <property name="enabled">
-     <bool>true</bool>
-    </property>
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>0</y>
-      <width>471</width>
-      <height>61</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600; color:#ff0000;&quot;&gt;Make sure that the license of the OS installed in a template VM grants you permission to run multiple instances of an installed system.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-    </property>
-    <property name="wordWrap">
-     <bool>true</bool>
-    </property>
-   </widget>
-  </widget>
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
     <rect>
@@ -70,131 +34,96 @@
     <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
    </property>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>14</x>
-     <y>14</y>
-     <width>471</width>
-     <height>103</height>
+     <x>0</x>
+     <y>10</y>
+     <width>596</width>
+     <height>175</height>
     </rect>
    </property>
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0" colspan="2">
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>Name and label:</string>
-      </property>
-      <property name="buddy">
-       <cstring>vmname</cstring>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="2" colspan="3">
-     <widget class="QLineEdit" name="vmname">
-      <property name="text">
-       <string>my-new-vm</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="5">
-     <widget class="QComboBox" name="vmlabel">
+    <item row="0" column="3">
+     <widget class="QComboBox" name="label">
       <property name="frame">
        <bool>true</bool>
       </property>
      </widget>
     </item>
-    <item row="1" column="0" colspan="2">
-     <widget class="QLabel" name="label_2">
+    <item row="0" column="1" colspan="2">
+     <widget class="QLineEdit" name="name">
+      <property name="text">
+       <string>my-new-vm</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="0">
+     <widget class="QLabel" name="name_label">
+      <property name="text">
+       <string>Name and label:</string>
+      </property>
+      <property name="buddy">
+       <cstring>name</cstring>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="1" colspan="3">
+     <widget class="QComboBox" name="netvm"/>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="template_label">
       <property name="text">
        <string>Use this template:</string>
       </property>
       <property name="buddy">
-       <cstring>template_name</cstring>
+       <cstring>template_vm</cstring>
       </property>
      </widget>
     </item>
-    <item row="1" column="2" colspan="3">
-     <widget class="QComboBox" name="template_name"/>
+    <item row="1" column="1" colspan="3">
+     <widget class="QComboBox" name="template_vm"/>
     </item>
-    <item row="1" column="5">
+    <item row="2" column="0">
+     <widget class="QLabel" name="netvm_label">
+      <property name="text">
+       <string>Network:</string>
+      </property>
+      <property name="buddy">
+       <cstring>template_vm</cstring>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="2">
+     <widget class="QCheckBox" name="hvm">
+      <property name="text">
+       <string>HVM</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="1">
+     <widget class="QCheckBox" name="provides_network">
+      <property name="text">
+       <string>Provides network</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="3">
      <widget class="QCheckBox" name="standalone">
       <property name="text">
        <string>Standalone</string>
       </property>
      </widget>
     </item>
-    <item row="2" column="0">
-     <widget class="QRadioButton" name="appvm_radio">
-      <property name="text">
-       <string>AppVM</string>
-      </property>
-      <property name="checked">
-       <bool>true</bool>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="1" colspan="2">
-     <widget class="QRadioButton" name="netvm_radio">
-      <property name="text">
-       <string>NetVM</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="3">
-     <widget class="QRadioButton" name="proxyvm_radio">
-      <property name="text">
-       <string>ProxyVM</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="4">
-     <widget class="QRadioButton" name="hvm_radio">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
-      <property name="text">
-       <string>HVM</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="5">
-     <widget class="QRadioButton" name="hvmtpl_radio">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
-      <property name="text">
-       <string>HVM template</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="0" colspan="2">
-     <widget class="QCheckBox" name="allow_networking">
-      <property name="text">
-       <string>Allow networking:</string>
-      </property>
-      <property name="checked">
-       <bool>true</bool>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="2" colspan="3">
-     <widget class="QComboBox" name="netvm_name"/>
-    </item>
    </layout>
   </widget>
  </widget>
  <tabstops>
-  <tabstop>vmname</tabstop>
-  <tabstop>vmlabel</tabstop>
-  <tabstop>template_name</tabstop>
-  <tabstop>standalone</tabstop>
-  <tabstop>appvm_radio</tabstop>
-  <tabstop>netvm_radio</tabstop>
-  <tabstop>proxyvm_radio</tabstop>
-  <tabstop>hvm_radio</tabstop>
-  <tabstop>hvmtpl_radio</tabstop>
-  <tabstop>allow_networking</tabstop>
+  <tabstop>name</tabstop>
+  <tabstop>template_vm</tabstop>
   <tabstop>buttonBox</tabstop>
  </tabstops>
  <resources/>
