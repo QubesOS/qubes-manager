@@ -33,10 +33,11 @@ import qubesadmin
 import qubesadmin.tools
 
 from . import utils
+from . import multiselectwidget
 
 from .ui_settingsdlg import *
-from .appmenu_select import *
 from .firewall import *
+from .appmenu_select import AppmenuSelectManager
 from .backup_utils import get_path_for_vm
 
 class VMSettingsWindow(Ui_SettingsDialog, QDialog):
@@ -107,7 +108,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         ####### apps tab
         if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
-            self.app_list = MultiSelectWidget(self)
+            self.app_list = multiselectwidget.MultiSelectWidget(self)
             self.apps_layout.addWidget(self.app_list)
             self.AppListManager = AppmenuSelectManager(self.vm, self.app_list)
 

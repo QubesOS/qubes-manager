@@ -20,115 +20,76 @@
 #
 #
 
-import sys
 import os
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-
-import qubesmanager.resources_rc
-
-from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
-
+import subprocess
+import sys
 import time
 
 from operator import itemgetter
 
-from .thread_monitor import *
-from .multiselectwidget import *
+from PyQt4.QtCore import *
+from PyQt4.QtGui import *
+from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
 
-whitelisted_filename = 'whitelisted-appmenus.list'
+import qubesmanager.resources_rc
 
+# TODO description in tooltip
+# TODO icon
 class AppListWidgetItem(QListWidgetItem):
-    def __init__(self, name, filename, command, parent = None):
+    def __init__(self, name, ident, parent=None):
         super(AppListWidgetItem, self).__init__(name, parent)
-        self.setToolTip(command)
-        self.filename = filename
+#       self.setToolTip(command)
+        self.ident = ident
 
+    @classmethod
+    def from_line(cls, line):
+        ident, name = line.strip().split(maxsplit=2)
+        return cls(name=name, ident=ident)
 
 
 class AppmenuSelectManager:
     def __init__(self, vm, apps_multiselect, parent=None):
-
-        self.app_list = apps_multiselect # this is a multiselect wiget
-
         self.vm = vm
-        if self.vm.template:
-            self.source_vm = self.vm.template
-        else:
-            self.source_vm = self.vm
-
+        self.app_list = apps_multiselect # this is a multiselect wiget
         self.fill_apps_list()
 
     def fill_apps_list(self):
-
-        template_dir = self.source_vm.appmenus_templates_dir
-
-        template_file_list = os.listdir(template_dir)
-
-        whitelisted = []
-        if os.path.exists(self.vm.dir_path + '/' + whitelisted_filename):
-            f = open(self.vm.dir_path + '/' + whitelisted_filename, 'r')
-            whitelisted = [item.strip() for item in f]
-            f.close()
+        whitelisted = [line for line in subprocess.check_output(
+                ['qvm-appmenus', '--get-whitelist', self.vm.name]
+            ).decode().strip().split('\n') if line]
 
         # Check if appmenu entry is really installed
-        whitelisted = [a for a in whitelisted if os.path.exists('%s/apps/%s-%s' % (self.vm.dir_path, self.vm.name, a))]
+#       whitelisted = [a for a in whitelisted if os.path.exists('%s/apps/%s-%s' % (self.vm.dir_path, self.vm.name, a))]
 
         self.app_list.clear()
 
-        available_appmenus = []
-        for template_file in template_file_list:
-            desktop_template = open(template_dir + '/' + template_file, 'r')
-            desktop_name = None
-            desktop_command = None
-            for line in desktop_template:
-                if line.startswith("Name=%VMNAME%: "):
-                    desktop_name = line.partition('Name=%VMNAME%: ')[2].strip()
-                if line.startswith("Exec=qvm-run"):
-                    desktop_command = line[line.find("'"):].strip("'\n")
-            if not desktop_command:
-                desktop_command = ""
-            if desktop_name:
-                available_appmenus.append( (template_file, desktop_name, desktop_command) )
-            desktop_template.close()
+        available_appmenus = [AppListWidgetItem.from_line(line)
+            for line in subprocess.check_output(['qvm-appmenus',
+                    '--get-available', '--i-understand-format-is-unstable',
+                    self.vm.name]).decode().split()]
 
-        self.whitelisted_appmenus = [a for a in available_appmenus if a[0] in whitelisted]
-        available_appmenus = [a for a in available_appmenus if a[0] not in whitelisted]
-                
         for a in available_appmenus:
-            self.app_list.available_list.addItem( AppListWidgetItem(a[1], a[0], a[2]))
+            if a.ident in whitelisted:
+                self.app_list.selected_list.addItem(a)
+            else:
+                self.app_list.available_list.addItem(a)
 
-        for a in self.whitelisted_appmenus:
-            self.app_list.selected_list.addItem( AppListWidgetItem(a[1], a[0], a[2]))
-   
         self.app_list.available_list.sortItems()
         self.app_list.selected_list.sortItems()
 
     def save_list_of_selected(self):
-        sth_changed = False
         added = []
 
-        for i in range(self.app_list.selected_list.count()):
-            item = self.app_list.selected_list.item(i)
-            if item.filename not in [ w[0] for w in self.whitelisted_appmenus]:
-                added.append(item)
-        
-        if self.app_list.selected_list.count() - len(added) < len(self.whitelisted_appmenus): #sth removed
-            sth_changed = True
-        elif len(added) > 0:
-            sth_changed = True
-        
-        if sth_changed == True:
-            whitelisted = open(self.vm.dir_path + '/' + whitelisted_filename, 'w')
-            for i in range(self.app_list.selected_list.count()):
-                item = self.app_list.selected_list.item(i)
-                whitelisted.write(item.filename + '\n')
-            whitelisted.close() 
-            return True
-        else:
-            return False
-               
- 
+        new_whitelisted = [self.app_list.selected_list.item(i).ident
+            for i in range(self.app_list.selected_list.count())]
+
+        subprocess.check_call(
+            'qvm-appmenus', '--set-whitelist', '-', self.vm.name,
+            input='\n'.join(new_whitelisted))
+
+        return True
+
+
     def save_appmenu_select_changes(self):
         if self.save_list_of_selected():
             self.vm.appmenus_recreate()
