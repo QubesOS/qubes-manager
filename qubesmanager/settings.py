@@ -414,7 +414,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         self.include_in_balancing.setEnabled(not self.vm.hvm)
         self.include_in_balancing.setChecked(not self.vm.hvm
-            and self.vm.features.get('services/meminfo-writer', True))
+            and self.vm.features.get('services.meminfo-writer', True))
         self.max_mem_size.setEnabled(self.include_in_balancing.isChecked())
 
         try:
@@ -666,23 +666,25 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
     ######## services tab
 
     def __init_services_tab__(self):
-        for srv in self.vm.services:
-            item = QListWidgetItem(srv)
-            if self.vm.services[srv] == True:
-                item.setCheckState(QtCore.Qt.Checked)
-            else:
-                item.setCheckState(QtCore.Qt.Unchecked)
+        self.new_srv_dict = {}
+        for feature in self.vm.features:
+            if not feature.startswith('service.'):
+                continue
+            service = feature[len('service.'):]
+            item = QListWidgetItem(service)
+            item.setCheckState(QtCore.Qt.Checked
+                if self.vm.features[feature] else QtCore.Qt.Unchecked)
             self.services_list.addItem(item)
+            self.new_srv_dict[service] = self.vm.features[feature]
 
         self.connect(self.services_list, SIGNAL("itemClicked(QListWidgetItem *)"), self.services_item_clicked)
-        self.new_srv_dict = copy.copy(self.vm.services)
 
     def __add_service__(self):
         srv = str(self.service_line_edit.text()).strip()
         if srv != "":
             if srv in self.new_srv_dict:
-                QMessageBox.information(None, "",
-                    self.tr("Service already on the list!"))
+                QMessageBox.information(None, '',
+                    self.tr('Service already on the list!'))
             else:
                 item = QListWidgetItem(srv)
                 item.setCheckState(QtCore.Qt.Checked)
@@ -696,8 +698,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             return
         if str(item.text()) == 'meminfo-writer':
             QMessageBox.information(None,
-                self.tr("Service can not be removed"),
-                self.tr("Service meminfo-writer can not be removed from the list."))
+                self.tr('Service can not be removed'),
+                self.tr('Service meminfo-writer can not be removed from the list.'))
             return
 
         row = self.services_list.currentRow()
@@ -719,21 +721,30 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         msg = []
 
         try:
-            for r in range (self.services_list.count()):
+            for r in range(self.services_list.count()):
                 item = self.services_list.item(r)
                 self.new_srv_dict[str(item.text())] = (item.checkState() == QtCore.Qt.Checked)
 
-            balancing_was_checked = (self.vm.services['meminfo-writer']==True)
-            balancing_is_checked =  self.include_in_balancing.isChecked()
-            meminfo_writer_checked = (self.new_srv_dict['meminfo-writer'] == True)
+            balancing_was_checked = self.vm.features.get('service.meminfo-writer', True)
+            balancing_is_checked = self.include_in_balancing.isChecked()
+            meminfo_writer_checked = self.new_srv_dict.get('meminfo-writer', True)
 
             if balancing_is_checked != meminfo_writer_checked:
                 if balancing_is_checked != balancing_was_checked:
                     self.new_srv_dict['meminfo-writer'] = balancing_is_checked
 
-            if self.new_srv_dict != self.vm.services:
-                self.vm.services = self.new_srv_dict
-                self.anything_changed = True
+            for service, v in self.new_srv_dict.items():
+                feature = 'service.' + service
+                if v != self.vm.features.get(feature, object()):
+                    self.vm.features[feature] = v
+                    self.anything_changed = True
+
+            for feature in self.vm.features:
+                if not feature.startswith('service.'):
+                    continue
+                service = feature[len('service.'):]
+                if service not in self.new_srv_dict:
+                    del self.vm.features[feature]
         except Exception as ex:
             msg.append(str(ex))
 
