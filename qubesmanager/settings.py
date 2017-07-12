@@ -27,18 +27,25 @@
 import collections
 import copy
 import os
+import os.path
 import subprocess
+import sys
+import threading
+import time
+import traceback
 
 import qubesadmin
 import qubesadmin.tools
 
 from . import utils
 from . import multiselectwidget
+from . import thread_monitor
 
-from .ui_settingsdlg import *
 from .firewall import *
 from .appmenu_select import AppmenuSelectManager
 from .backup_utils import get_path_for_vm
+
+from .ui_settingsdlg import *
 
 class VMSettingsWindow(Ui_SettingsDialog, QDialog):
     tabs_indices = collections.OrderedDict((
@@ -120,8 +127,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         pass
 
     def save_and_apply(self):
-        thread_monitor = ThreadMonitor()
-        thread = threading.Thread (target=self.__save_changes__, args=(thread_monitor,))
+        t_monitor = thread_monitor.ThreadMonitor()
+        thread = threading.Thread(target=self.__save_changes__, args=(t_monitor,))
         thread.daemon = True
         thread.start()
 
@@ -131,20 +138,20 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         progress.setModal(True)
         progress.show()
 
-        while not thread_monitor.is_finished():
+        while not t_monitor.is_finished():
             self.qapp.processEvents()
             time.sleep (0.1)
 
         progress.hide()
 
-        if not thread_monitor.success:
+        if not t_monitor.success:
             QMessageBox.warning(None,
                 self.tr("Error while changing settings for {0}!").format(self.vm.name),
-                    self.tr("ERROR: {0}").format(thread_monitor.error_msg))
+                    self.tr("ERROR: {0}").format(t_monitor.error_msg))
 
         self.done(0)
 
-    def __save_changes__(self, thread_monitor):
+    def __save_changes__(self, t_monitor):
 
         self.anything_changed = False
 
@@ -186,10 +193,11 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             ret += [self.tr("Applications tab:"), str(ex)]
 
         if len(ret) > 0 :
-            thread_monitor.set_error_msg('\n'.join(ret))
+            t_monitor.set_error_msg('\n'.join(ret))
 
         utils.debug('\n'.join(ret))
 
+        t_monitor.set_finished()
 
     def current_tab_changed(self, idx):
         if idx == self.tabs_indices["firewall"]:
@@ -925,9 +933,6 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 # Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
 
 def handle_exception(exc_type, exc_value, exc_traceback):
-    import sys
-    import os.path
-    import traceback
 
     filename, line, dummy, dummy = traceback.extract_tb(exc_traceback).pop()
     filename = os.path.basename(filename)
