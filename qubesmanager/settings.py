@@ -572,26 +572,31 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
     ######## devices tab
     def __init_devices_tab__(self):
-        self.dev_list = MultiSelectWidget(self)
+        self.dev_list = multiselectwidget.MultiSelectWidget(self)
         self.dev_list.add_all_button.setVisible(False)
         self.devices_layout.addWidget(self.dev_list)
 
         devs = []
-        lspci = subprocess.Popen(["/usr/sbin/lspci",], stdout = subprocess.PIPE)
-        for dev in lspci.stdout:
-            devs.append( (dev.rstrip(), dev.split(' ')[0]) )
+        lspci = subprocess.check_output(['/usr/sbin/lspci']).decode()
+        for dev in lspci.splitlines():
+            devs.append((dev.rstrip(), dev.split(' ')[0]))
 
         class DevListWidgetItem(QListWidgetItem):
-            def __init__(self, name, slot, parent = None):
+            def __init__(self, name, ident, parent = None):
                 super(DevListWidgetItem, self).__init__(name, parent)
-                self.slot = slot
+                self.ident = ident
                 self.Type
 
-        for d in devs:
-            if d[1] in self.vm.pcidevs:
-                self.dev_list.selected_list.addItem( DevListWidgetItem(d[0], d[1]))
+        persistent = [ass.ident.replace('_', ':')
+            for ass in self.vm.devices['pci'].persistent()]
+
+        for name, ident in devs:
+            if ident in persistent:
+                self.dev_list.selected_list.addItem(
+                    DevListWidgetItem(name, ident))
             else:
-                self.dev_list.available_list.addItem( DevListWidgetItem(d[0], d[1]))
+                self.dev_list.available_list.addItem(
+                    DevListWidgetItem(name, ident))
 
         if self.dev_list.selected_list.count() > 0 and self.include_in_balancing.isChecked():
             self.dmm_warning_adv.show()
@@ -610,27 +615,26 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
     def __apply_devices_tab__(self):
         msg = []
-        sth_changed = False
-        added = []
 
         try:
-            for i in range(self.dev_list.selected_list.count()):
-                item = self.dev_list.selected_list.item(i)
-                if item.slot not in self.vm.pcidevs:
-                    added.append(item)
+            old = [ass.ident.replace('_', ':')
+                for ass in self.vm.devices['pci'].persistent()]
 
-            if self.dev_list.selected_list.count() - len(added) < len(self.vm.pcidevs): #sth removed
-                sth_changed = True
-            elif len(added) > 0:
-                sth_changed = True
+            new = [self.dev_list.selected_list.item(i).ident
+                    for i in range(self.dev_list.selected_list.count())]
+            for ident in new:
+                if ident not in old:
+                    ass = qubesadmin.devices.DeviceAssignment(
+                        self.vm.app.domains['dom0'],
+                        ident.replace(':', '_'),
+                        persistent=True)
+                    self.vm.devices['pci'].attach(ass)
+            for ass in self.vm.devices['pci'].assignments(persistent=True):
+                if ass.ident.replace('_', ':') not in new:
+                    self.vm.devices['pci'].detach(ass)
 
-            if sth_changed == True:
-                pcidevs = []
-                for i in range(self.dev_list.selected_list.count()):
-                    slot = self.dev_list.selected_list.item(i).slot
-                    pcidevs.append(slot)
-                self.vm.pcidevs = pcidevs
-                self.anything_changed = True
+            self.anything_changed = True
+
         except Exception as ex:
             if utils.is_debug():
                 traceback.print_exc()
