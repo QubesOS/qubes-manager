@@ -43,7 +43,7 @@ class AppListWidgetItem(QListWidgetItem):
 
     @classmethod
     def from_line(cls, line):
-        ident, name = line.strip().split(maxsplit=2)
+        ident, icon_name, name = line.strip().split(maxsplit=2)
         return cls(name=name, ident=ident)
 
 

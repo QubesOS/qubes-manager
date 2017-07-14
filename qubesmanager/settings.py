@@ -412,9 +412,9 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 #       self.vcpus.setMaximum(QubesHost().no_cpus)
         self.vcpus.setValue(int(self.vm.vcpus))
 
-        self.include_in_balancing.setEnabled(not self.vm.hvm)
-        self.include_in_balancing.setChecked(not self.vm.hvm
-            and self.vm.features.get('services.meminfo-writer', True))
+        self.include_in_balancing.setEnabled(True)
+        self.include_in_balancing.setChecked(
+            self.vm.features.get('services.meminfo-writer', True))
         self.max_mem_size.setEnabled(self.include_in_balancing.isChecked())
 
         try:
@@ -476,35 +476,17 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         self.other_groupbox.setVisible(False)
 
-#       if not hasattr(self.vm, "dispvm_netvm"):
-#           self.other_groupbox.setVisible(False)
-#       else:
-#           self.other_groupbox.setVisible(True)
-#           netvm_list = [vm for vm in self.app.values() if not vm.internal and vm.is_netvm() and vm.qid != 0]
-#           self.dispvm_netvm_idx = -1
-
-#           text = "default (same as VM own NetVM)"
-#           if self.vm.uses_default_dispvm_netvm:
-#               text += self.tr(" (current)")
-#               self.dispvm_netvm_idx = 0
-#           self.dispvm_netvm.insertItem(0, text)
-
-#           for (i, vm) in enumerate(netvm_list):
-#               text = vm.name
-#               if self.vm.dispvm_netvm is not None and vm.qid == \
-#                       self.vm.dispvm_netvm.qid and not \
-#                       self.vm.uses_default_dispvm_netvm:
-#                   self.dispvm_netvm_idx = i+1
-#                   text += self.tr(" (current)")
-#               self.dispvm_netvm.insertItem(i+1, text)
-
-#           none_text = "none"
-#           if self.vm.dispvm_netvm is None:
-#               none_text += self.tr(" (current)")
-#               self.dispvm_netvm_idx = len(netvm_list)+1
-#           self.dispvm_netvm.insertItem(len(netvm_list)+1, none_text)
-
-#           self.dispvm_netvm.setCurrentIndex(self.dispvm_netvm_idx)
+        if not hasattr(self.vm, 'default_dispvm'):
+            self.other_groupbox.setVisible(False)
+        else:
+            self.other_groupbox.setVisible(True)
+            self.default_dispvm_list, self.default_dispvm_idx = \
+                utils.prepare_vm_choice(
+                    self.default_dispvm,
+                    self.vm, 'default_dispvm',
+                    self.vm.app.default_dispvm,
+                    (lambda vm: isinstance(vm, qubesadmin.vm.DispVM)),
+                    allow_default=True, allow_none=True)
 
     def __apply_advanced_tab__(self):
         msg = []
@@ -551,6 +533,15 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                     self.anything_changed = True
             except Exception as ex:
                 msg.append(str(ex))
+
+        #vm default_dispvm changed
+        try:
+            if self.default_dispvm.currentIndex() != self.default_dispvm_idx:
+                self.vm.default_dispvm = \
+                    self.default_dispvm_list[self.default_dispvm.currentIndex()]
+                self.anything_changed = True
+        except Exception as ex:
+            msg.append(str(ex))
 
         return msg
 
