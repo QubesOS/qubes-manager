@@ -383,13 +383,6 @@ class QubesFirewallRulesModel(QAbstractItemModel):
         if self.fw_changed:
             self.write_firewall_conf(self.__vm, conf)
 
-            if self.__vm.is_running():
-                vm = self.__vm.netvm
-                while vm is not None:
-                    if vm.is_proxyvm() and vm.is_running():
-                        vm.write_iptables_qubesdb_entry()
-                    vm = vm.netvm
-
     def index(self, row, column, parent=QModelIndex()):
         if not self.hasIndex(row, column, parent):
             return QModelIndex()

@@ -200,14 +200,17 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
     def current_tab_changed(self, idx):
         if idx == self.tabs_indices["firewall"]:
-            if self.vm.netvm is not None and not self.vm.netvm.is_proxyvm():
+            netvm = self.vm.netvm
+            if netvm is not None and \
+                    not netvm.features.check_with_template('qubes-firewall', False):
                 QMessageBox.warning(None,
                     self.tr("VM configuration problem!"),
-                    self.tr("The '{vm}' AppVM is not network connected to a "
-                    "FirewallVM!<p>"
-                    "You may edit the '{vm}' VM firewall rules, but these "
-                    "will not take any effect until you connect it to "
-                    "a working Firewall VM.").format(vm=self.vm.name))
+                    self.tr("The '{vm}' AppVM is network connected to "
+                        "'{netvm}', which does not support firewall!<br/>"
+                        "You may edit the '{vm}' VM firewall rules, but these "
+                        "will not take any effect until you connect it to "
+                        "a working Firewall VM.").format(
+                            vm=self.vm.name, netvm=netvm.name))
 
 
     ######### basic tab
