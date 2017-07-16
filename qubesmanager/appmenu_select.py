@@ -66,7 +66,7 @@ class AppmenuSelectManager:
         available_appmenus = [AppListWidgetItem.from_line(line)
             for line in subprocess.check_output(['qvm-appmenus',
                     '--get-available', '--i-understand-format-is-unstable',
-                    self.vm.name]).decode().split()]
+                    self.vm.name]).decode().splitlines()]
 
         for a in available_appmenus:
             if a.ident in whitelisted:
