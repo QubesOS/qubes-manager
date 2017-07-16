@@ -42,12 +42,9 @@ cp qubesmanager/mount_for_backup.sh $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 cp qubesmanager/qvm_about.sh $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 
 mkdir -p $RPM_BUILD_ROOT/usr/share/applications
-cp qubes-manager.desktop $RPM_BUILD_ROOT/usr/share/applications
-mkdir -p $RPM_BUILD_ROOT/etc/xdg/autostart/
-cp qubes-manager.desktop $RPM_BUILD_ROOT/etc/xdg/autostart/
+cp qubes-global-settings.desktop $RPM_BUILD_ROOT/usr/share/applications/
+cp qubes-vm-create.desktop $RPM_BUILD_ROOT/usr/share/applications/
 
-install -D org.qubesos.QubesManager.conf $RPM_BUILD_ROOT/etc/dbus-1/system.d/org.qubesos.QubesManager.conf
-install -D org.qubesos.QubesManager.xml $RPM_BUILD_ROOT/usr/share/dbus-1/interfaces/org.qubesos.QubesManager.xml
 
 %post
 update-desktop-database &> /dev/null || :
@@ -108,7 +105,5 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{python3_sitelib}/qubesmanager-*.egg-info
 %{python3_sitelib}/qubesmanager-*.egg-info/*
 
-/usr/share/applications/qubes-manager.desktop
-/etc/xdg/autostart/qubes-manager.desktop
-/etc/dbus-1/system.d/org.qubesos.QubesManager.conf
-/usr/share/dbus-1/interfaces/org.qubesos.QubesManager.xml
+/usr/share/applications/qubes-global-settings.desktop
+/usr/share/applications/qubes-vm-create.desktop

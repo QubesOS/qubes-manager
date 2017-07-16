@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
-Exec=qubes-manager
-Path=/var/lib/qubes
+Exec=qubes-vm-create
+Path=/usr/bin
 Icon=qubes-manager
 Terminal=false
-Name=Qubes VM Manager
-GenericName=Qubes VM Manager
+Name=Create Qubes VM
+GenericName=Create Qubes VM
 StartupNotify=false
 Categories=System;X-Xfce-Toplevel;
