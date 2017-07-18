@@ -106,7 +106,7 @@ class NewVmDlg(QDialog, Ui_NewVMDlg):
 
         properties = {}
         properties['provides_network'] = self.provides_network.isChecked()
-        properties['hvm'] = self.hvm.isChecked()
+        properties['virt_mode'] = 'hvm' if self.hvm.isChecked() else 'pv'
         properties['netvm'] = self.netvm_list[self.netvm.currentIndex()]
 
         thread_monitor = ThreadMonitor()
