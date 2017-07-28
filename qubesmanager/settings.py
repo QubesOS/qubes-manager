@@ -62,9 +62,9 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         self.vm = vm
         self.qapp = qapp
-        if self.vm.template:
+        try:
             self.source_vm = self.vm.template
-        else:
+        except AttributeError:
             self.source_vm = self.vm
 
         self.setupUi(self)
@@ -117,6 +117,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.app_list = multiselectwidget.MultiSelectWidget(self)
             self.apps_layout.addWidget(self.app_list)
             self.AppListManager = AppmenuSelectManager(self.vm, self.app_list)
+            self.refresh_apps_button.clicked.connect(self.refresh_apps_button_pressed)
 
     def reject(self):
         self.done(0)
@@ -446,7 +447,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         else:
             self.kernel_groupbox.setVisible(False)
 
-        if not hasattr(self.vm, "drive"):
+        if True or not hasattr(self.vm, "drive"):
             self.drive_groupbox.setVisible(False)
         else:
             self.drive_groupbox.setVisible(True)
@@ -660,6 +661,46 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             else:
                 self.dmm_warning_adv.hide()
                 self.dmm_warning_dev.hide()
+
+    ######## applications tab
+
+    def refresh_apps_in_vm(self, t_monitor):
+        try:
+            target_vm = self.vm.template
+        except AttributeError:
+            target_vm = self.vm
+
+        if not target_vm.is_running():
+            not_running = True
+            target_vm.start()
+        else:
+            not_running = False
+
+        subprocess.check_call(['qvm-sync-appmenus', target_vm.name])
+
+        if not_running:
+            target_vm.shutdown()
+
+        t_monitor.set_finished()
+
+    def refresh_apps_button_pressed(self):
+
+        self.refresh_apps_button.setEnabled(False)
+        self.refresh_apps_button.setText(self.tr('Refresh in progress...'))
+
+        t_monitor = thread_monitor.ThreadMonitor()
+        thread = threading.Thread(target=self.refresh_apps_in_vm, args=(t_monitor,))
+        thread.daemon = True
+        thread.start()
+
+        while not t_monitor.is_finished():
+            self.qapp.processEvents()
+            time.sleep (0.1)
+
+        self.AppListManager = AppmenuSelectManager(self.vm, self.app_list)
+
+        self.refresh_apps_button.setEnabled(True)
+        self.refresh_apps_button.setText(self.tr('Refresh Applications'))
 
     ######## services tab
 

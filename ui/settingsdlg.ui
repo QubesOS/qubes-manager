@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>708</width>
-    <height>529</height>
+    <width>773</width>
+    <height>573</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>4</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -1027,8 +1027,15 @@
          <string>Applications</string>
         </attribute>
         <layout class="QGridLayout" name="gridLayout_7">
-         <item row="0" column="0">
+         <item row="1" column="0">
           <layout class="QVBoxLayout" name="apps_layout"/>
+         </item>
+         <item row="0" column="0">
+          <widget class="QPushButton" name="refresh_apps_button">
+           <property name="text">
+            <string>Refresh Applications</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>
