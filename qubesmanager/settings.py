@@ -83,6 +83,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         ###### basic tab
         self.__init_basic_tab__()
+        self.rename_vm_button.clicked.connect(self.rename_vm)
 
         ###### advanced tab
         self.__init_advanced_tab__()
@@ -232,6 +233,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.vmname.setText(self.vm.name)
         self.vmname.setValidator(QRegExpValidator(QRegExp("[a-zA-Z0-9-]*", Qt.CaseInsensitive), None))
         self.vmname.setEnabled(False)
+        self.rename_vm_button.setEnabled(not self.vm.is_running())
 
         if self.vm.qid == 0:
             self.vmlabel.setVisible(False)
@@ -397,7 +399,39 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                         "allowed value."))
             self.init_mem.setValue(self.max_mem_size.value() / 10)
 
+    def _rename_vm(self, t_monitor, name):
+        try:
+            self.vm.app.clone_vm(self.vm, name)
+            del self.vm.app.domains[self.vm.name]
 
+        except Exception as ex:
+            t_monitor.set_error_msg(str(ex))
+
+        t_monitor.set_finished()
+
+
+    def rename_vm(self):
+
+        new_vm_name, ok = QInputDialog.getText(self, self.tr('Rename VM'), self.tr('New name: (WARNING: all other changes will be discarded)'))
+
+        if ok:
+
+            t_monitor = thread_monitor.ThreadMonitor()
+            thread = threading.Thread(target=self._rename_vm, args=(t_monitor, new_vm_name,))
+            thread.daemon = True
+            thread.start()
+
+            while not t_monitor.is_finished():
+                self.qapp.processEvents()
+                time.sleep (0.1)
+
+            if not t_monitor.success:
+                QMessageBox.warning(None,
+                    self.tr("Error renaming the VM!"),
+                    self.tr("ERROR: {}").format(
+                        t_monitor.error_msg))
+
+            self.done(0)
 
     ######### advanced tab
 
