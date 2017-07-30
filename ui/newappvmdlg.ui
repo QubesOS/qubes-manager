@@ -113,6 +113,9 @@
     </item>
     <item row="3" column="3">
      <widget class="QCheckBox" name="standalone">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <property name="text">
        <string>Standalone</string>
       </property>
