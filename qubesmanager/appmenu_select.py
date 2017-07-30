@@ -51,10 +51,11 @@ class AppmenuSelectManager:
     def __init__(self, vm, apps_multiselect, parent=None):
         self.vm = vm
         self.app_list = apps_multiselect # this is a multiselect wiget
+        self.whitelisted = None
         self.fill_apps_list()
 
     def fill_apps_list(self):
-        whitelisted = [line for line in subprocess.check_output(
+        self.whitelisted = [line for line in subprocess.check_output(
                 ['qvm-appmenus', '--get-whitelist', self.vm.name]
             ).decode().strip().split('\n') if line]
 
@@ -69,7 +70,7 @@ class AppmenuSelectManager:
                     self.vm.name]).decode().splitlines()]
 
         for a in available_appmenus:
-            if a.ident in whitelisted:
+            if a.ident in self.whitelisted:
                 self.app_list.selected_list.addItem(a)
             else:
                 self.app_list.available_list.addItem(a)
@@ -77,19 +78,18 @@ class AppmenuSelectManager:
         self.app_list.available_list.sortItems()
         self.app_list.selected_list.sortItems()
 
-    def save_list_of_selected(self):
-        added = []
-
+    def save_appmenu_select_changes(self):
         new_whitelisted = [self.app_list.selected_list.item(i).ident
             for i in range(self.app_list.selected_list.count())]
 
-        subprocess.check_call(
-            'qvm-appmenus', '--set-whitelist', '-', self.vm.name,
-            input='\n'.join(new_whitelisted))
+        if set(new_whitelisted) == set(self.whitelisted):
+            return False
+
+        p = subprocess.Popen([
+            'qvm-appmenus', '--set-whitelist', '-', '--update', self.vm.name],
+            stdin=subprocess.PIPE)
+        p.communicate('\n'.join(new_whitelisted).encode())
+        if p.returncode != 0:
+            raise RuntimeError('qvm-appmenus --set-whitelist failed')
 
         return True
-
-
-    def save_appmenu_select_changes(self):
-        if self.save_list_of_selected():
-            self.vm.appmenus_recreate()
