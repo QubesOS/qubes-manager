@@ -295,15 +295,14 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.networking_groupbox.setEnabled(False)
 
         #max priv storage
-        self.priv_img_size = self.vm.volumes['private'].size / 10**6
+        self.priv_img_size = self.vm.volumes['private'].size // 1024**2
         self.max_priv_storage.setMinimum(self.priv_img_size)
         self.max_priv_storage.setValue(self.priv_img_size)
 
-        self.root_img_size = self.vm.volumes['root'].size / 10**6
+        self.root_img_size = self.vm.volumes['root'].size // 1024**2
         self.root_resize.setValue(self.root_img_size)
         self.root_resize.setMinimum(self.root_img_size)
-#       self.root_resize.setEnabled(hasattr(self.vm, 'resize_root_img') and
-#           not self.vm.template)
+        self.root_resize.setEnabled(self.vm.volumes['root'].save_on_stop)
         self.root_resize_label.setEnabled(self.root_resize.isEnabled())
 
     def __apply_basic_tab__(self):
@@ -366,7 +365,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         priv_size = self.max_priv_storage.value()
         if self.priv_img_size != priv_size:
             try:
-                self.vm.volumes['private'].resize(priv_size * 10**6)
+                self.vm.volumes['private'].resize(priv_size * 1024**2)
                 self.anything_changed = True
             except Exception as ex:
                 msg.append(str(ex))
@@ -375,7 +374,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         sys_size = self.root_resize.value()
         if self.root_img_size != sys_size:
             try:
-                self.vm.volumes['root'].resize(priv_size * 10**6)
+                self.vm.volumes['root'].resize(priv_size * 1024**2)
                 self.anything_changed = True
             except Exception as ex:
                 msg.append(str(ex))

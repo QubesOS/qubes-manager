@@ -112,7 +112,7 @@
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
               </property>
               <property name="suffix">
-               <string>MB</string>
+               <string>MiB</string>
               </property>
               <property name="maximum">
                <number>1048576</number>
@@ -131,7 +131,7 @@
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
               </property>
               <property name="suffix">
-               <string>MB</string>
+               <string>MiB</string>
               </property>
               <property name="minimum">
                <number>0</number>
