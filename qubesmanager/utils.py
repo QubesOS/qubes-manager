@@ -81,7 +81,7 @@ def prepare_choice(widget, holder, propname, choice, default,
                 str(default) if default is not None else 'none')
         # N+1: explicit None
         elif item is None:
-            text = 'none'
+            text = '(none)'
         # 1..N: choices
         else:
             text = str(item)
