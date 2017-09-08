@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -383,6 +383,99 @@
          <string>Advanced</string>
         </attribute>
         <layout class="QGridLayout" name="gridLayout_9">
+         <item row="0" column="1" rowspan="2" colspan="2">
+          <layout class="QVBoxLayout" name="verticalLayout_4">
+           <property name="sizeConstraint">
+            <enum>QLayout::SetDefaultConstraint</enum>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QGroupBox" name="kernel_groupbox">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="title">
+              <string>Kernel</string>
+             </property>
+             <layout class="QFormLayout" name="formLayout_9">
+              <property name="fieldGrowthPolicy">
+               <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+              </property>
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_19">
+                <property name="text">
+                 <string>Kernel:</string>
+                </property>
+                <property name="buddy">
+                 <cstring>kernel</cstring>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QComboBox" name="kernel"/>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_20">
+                <property name="text">
+                 <string>Kernel opts:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLabel" name="kernel_opts">
+                <property name="font">
+                 <font>
+                  <weight>50</weight>
+                  <bold>false</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>[]</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item row="2" column="0">
+          <widget class="QGroupBox" name="other_groupbox">
+           <property name="title">
+            <string>Other</string>
+           </property>
+           <layout class="QFormLayout" name="formLayout_2">
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_26">
+              <property name="text">
+               <string>Default DispVM:</string>
+              </property>
+              <property name="buddy">
+               <cstring>default_dispvm</cstring>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QComboBox" name="default_dispvm"/>
+            </item>
+            <item row="2" column="0" colspan="2">
+             <widget class="QPushButton" name="bootFromDeviceButton">
+              <property name="text">
+               <string>Boot qube from CDROM</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
          <item row="0" column="0" rowspan="2">
           <widget class="QGroupBox" name="groupBox_2">
            <property name="enabled">
@@ -942,11 +1035,6 @@
   <tabstop>vcpus</tabstop>
   <tabstop>include_in_balancing</tabstop>
   <tabstop>kernel</tabstop>
-  <tabstop>drive_groupbox</tabstop>
-  <tabstop>drive_type</tabstop>
-  <tabstop>drive_domain</tabstop>
-  <tabstop>drive_path</tabstop>
-  <tabstop>drive_path_button</tabstop>
   <tabstop>policyAllowRadioButton</tabstop>
   <tabstop>policyDenyRadioButton</tabstop>
   <tabstop>icmpCheckBox</tabstop>

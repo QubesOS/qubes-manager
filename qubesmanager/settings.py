@@ -46,6 +46,7 @@ from .backup_utils import get_path_for_vm
 from .firewall import *
 
 from .ui_settingsdlg import *
+from .bootfromdevice import main as bootfromdevice
 
 class VMSettingsWindow(Ui_SettingsDialog, QDialog):
     tabs_indices = collections.OrderedDict((
@@ -91,6 +92,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.connect(self.init_mem, SIGNAL("editingFinished()"), self.check_mem_changes)
         self.connect(self.max_mem_size, SIGNAL("editingFinished()"), self.check_mem_changes)
         self.drive_path_button.clicked.connect(self.drive_path_button_pressed)
+        self.bootFromDeviceButton.clicked.connect(self.boot_from_cdrom_button_pressed)
 
         ###### firewall tab
         if self.tabWidget.isTabEnabled(self.tabs_indices['firewall']):
@@ -454,22 +456,6 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.vm.features.get('services.meminfo-writer', True))
         self.max_mem_size.setEnabled(self.include_in_balancing.isChecked())
 
-#        try:
-#            self.root_img_path.setText('{volume.pool}:{volume.vid}'.format(
-#                volume=self.vm.volumes['root']))
-#        except AttributeError:
-#            self.root_img_path.setText("n/a")
-#        try:
-#            self.volatile_img_path.setText('{volume.pool}:{volume.vid}'.format(
-#                volume=self.vm.volumes['volatile']))
-#        except AttributeError:
-#            self.volatile_img_path.setText('n/a')
-#        self.private_img_path.setText('{volume.pool}:{volume.vid}'.format(
-#            volume=self.vm.volumes['private']))
-
-
-        #kernel
-
         #in case VM is HVM
         if hasattr(self.vm, "kernel"):
             self.kernel_groupbox.setVisible(True)
@@ -581,6 +567,10 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             msg.append(str(ex))
 
         return msg
+
+    def boot_from_cdrom_button_pressed(self):
+        self.save_and_apply()
+        subprocess.check_call(['qubes-vm-boot-from-device', self.vm.name])
 
     def drive_path_button_pressed(self):
         if str(self.drive_domain.currentText()) in ["dom0", "dom0 (current)"]:
