@@ -454,18 +454,18 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.vm.features.get('services.meminfo-writer', True))
         self.max_mem_size.setEnabled(self.include_in_balancing.isChecked())
 
-        try:
-            self.root_img_path.setText('{volume.pool}:{volume.vid}'.format(
-                volume=self.vm.volumes['root']))
-        except AttributeError:
-            self.root_img_path.setText("n/a")
-        try:
-            self.volatile_img_path.setText('{volume.pool}:{volume.vid}'.format(
-                volume=self.vm.volumes['volatile']))
-        except AttributeError:
-            self.volatile_img_path.setText('n/a')
-        self.private_img_path.setText('{volume.pool}:{volume.vid}'.format(
-            volume=self.vm.volumes['private']))
+#        try:
+#            self.root_img_path.setText('{volume.pool}:{volume.vid}'.format(
+#                volume=self.vm.volumes['root']))
+#        except AttributeError:
+#            self.root_img_path.setText("n/a")
+#        try:
+#            self.volatile_img_path.setText('{volume.pool}:{volume.vid}'.format(
+#                volume=self.vm.volumes['volatile']))
+#        except AttributeError:
+#            self.volatile_img_path.setText('n/a')
+#        self.private_img_path.setText('{volume.pool}:{volume.vid}'.format(
+#            volume=self.vm.volumes['private']))
 
 
         #kernel
