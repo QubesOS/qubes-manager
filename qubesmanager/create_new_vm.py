@@ -26,6 +26,7 @@ import os
 import sys
 import threading
 import time
+import subprocess
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -52,7 +53,6 @@ class NewVmDlg(QDialog, Ui_NewVMDlg):
         # Theoretically we should be locking for writing here and unlock
         # only after the VM creation finished. But the code would be more messy...
         # Instead we lock for writing in the actual worker thread
-
         self.label_list, self.label_idx = utils.prepare_label_choice(
             self.label,
             self.app, None,
@@ -83,11 +83,23 @@ class NewVmDlg(QDialog, Ui_NewVMDlg):
                 self.tr('No template available!'),
                 self.tr('Cannot create a qube when no template exists.'))
 
+        # Order of types is important and used elsewhere; if it's changed
+        # check for changes needed in self.type_change and TODO
+        type_list = [self.tr("AppVM"),
+                     self.tr("Standalone VM based on a template"),
+                     self.tr("Standalone VM not based on a template")]
+        self.vm_type.addItems(type_list)
+
+        self.vm_type.currentIndexChanged.connect(self.type_change)
+
+        self.launch_settings.stateChanged.connect(self.settings_change)
+        self.install_system.stateChanged.connect(self.install_change)
+
     def reject(self):
         self.done(0)
 
     def accept(self):
-        vmclass = ('StandaloneVM' if self.standalone.isChecked() else 'AppVM')
+        vmclass = ('AppVM' if self.vm_type.currentIndex() == 0 else 'StandaloneVM')
 
         name = str(self.name.text())
         try:
@@ -102,11 +114,15 @@ class NewVmDlg(QDialog, Ui_NewVMDlg):
             return
 
         label = self.label_list[self.label.currentIndex()]
-        template = self.template_list[self.template_vm.currentIndex()]
+
+        if self.template_vm.currentIndex() == -1:
+            template = None
+        else:
+            template = self.template_list[self.template_vm.currentIndex()]
 
         properties = {}
         properties['provides_network'] = self.provides_network.isChecked()
-        properties['virt_mode'] = 'hvm' if self.hvm.isChecked() else 'pv'
+        properties['virt_mode'] = 'hvm'
         properties['netvm'] = self.netvm_list[self.netvm.currentIndex()]
 
         thread_monitor = ThreadMonitor()
@@ -135,19 +151,67 @@ class NewVmDlg(QDialog, Ui_NewVMDlg):
 
         self.done(0)
 
+        if thread_monitor.success:
+            if self.launch_settings.isChecked():
+                subprocess.check_call(['qubes-vm-settings', name])
+            if self.install_system.isChecked():
+                subprocess.check_call(
+                    ['qubes-vm-boot-from-device', name])
+
     @staticmethod
     def do_create_vm(app, vmclass, name, label, template, properties,
             thread_monitor):
         try:
-            vm = app.add_new_vm(vmclass,
-                name=name, label=label, template=template)
-            for k, v in properties.items():
-                setattr(vm, k, v)
+            if vmclass == 'StandaloneVM' and template is not None:
+                if template is qubesadmin.DEFAULT:
+                    src_vm = app.default_template
+                else:
+                    src_vm = template
+                vm = app.clone_vm(src_vm, name, vmclass)
+                vm.label = label
+                for k, v in properties.items():
+                    setattr(vm, k, v)
+            else:
+                vm = app.add_new_vm(vmclass,
+                    name=name, label=label, template=template)
+                for k, v in properties.items():
+                    setattr(vm, k, v)
 
         except Exception as ex:
             thread_monitor.set_error_msg(str(ex))
 
         thread_monitor.set_finished()
+
+    def type_change(self):
+
+        # AppVM
+        if self.vm_type.currentIndex() == 0:
+            self.template_vm.setEnabled(True)
+            self.template_vm.setCurrentIndex(0)
+            self.install_system.setEnabled(False)
+            self.install_system.setChecked(False)
+
+        # Standalone - based on a template
+        if self.vm_type.currentIndex() == 1:
+            self.template_vm.setEnabled(True)
+            self.template_vm.setCurrentIndex(0)
+            self.install_system.setEnabled(False)
+            self.install_system.setChecked(False)
+
+        # Standalone - not based on a template
+        if self.vm_type.currentIndex() == 2:
+            self.template_vm.setEnabled(False)
+            self.template_vm.setCurrentIndex(-1)
+            self.install_system.setEnabled(True)
+            self.install_system.setChecked(True)
+
+    def install_change(self):
+        if self.install_system.isChecked():
+            self.launch_settings.setChecked(False)
+
+    def settings_change(self):
+        if self.launch_settings.isChecked() and self.install_system.isEnabled():
+            self.install_system.setChecked(False)
 
 parser = qubesadmin.tools.QubesArgumentParser()
 
