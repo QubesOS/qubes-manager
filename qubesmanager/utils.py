@@ -22,7 +22,7 @@
 
 import functools
 import os
-
+import re
 import qubesadmin
 
 from PyQt4.QtGui import QIcon
@@ -135,3 +135,31 @@ def debug(*args, **kwargs):
     if not is_debug():
         return
     print(*args, **kwargs)
+
+
+def get_path_from_vm(vm, service_name):
+    """
+    Displays a file/directory selection window for the given VM.
+
+    :param vm: vm from which to select path
+    :param service_name: qubes.SelectFile or qubes.SelectDirectory
+    :return: path to file, checked for validity
+    """
+
+    path_re = re.compile(r"[a-zA-Z0-9/:.,_+=() -]*")
+    path_max_len = 512
+
+    if not vm:
+        return None
+    stdout, stderr = vm.run_service_for_stdio(service_name)
+
+    untrusted_path = stdout.decode(encoding='ascii')[:path_max_len]
+
+    if len(untrusted_path) == 0:
+        return None
+    if path_re.match(untrusted_path):
+        assert '../' not in untrusted_path
+        assert '\0' not in untrusted_path
+        return untrusted_path.strip()
+    else:
+        raise ValueError('Unexpected characters in path.')
