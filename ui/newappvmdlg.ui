@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>618</width>
-    <height>214</height>
+    <width>616</width>
+    <height>300</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -21,8 +21,8 @@
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
     <rect>
-     <x>330</x>
-     <y>180</y>
+     <x>450</x>
+     <y>260</y>
      <width>160</width>
      <height>27</height>
     </rect>
@@ -39,22 +39,55 @@
     <rect>
      <x>0</x>
      <y>10</y>
-     <width>596</width>
-     <height>175</height>
+     <width>611</width>
+     <height>241</height>
     </rect>
    </property>
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="3">
-     <widget class="QComboBox" name="label">
-      <property name="frame">
-       <bool>true</bool>
+    <item row="2" column="0">
+     <widget class="QLabel" name="template_label">
+      <property name="text">
+       <string>Template:</string>
+      </property>
+      <property name="buddy">
+       <cstring>template_vm</cstring>
       </property>
      </widget>
     </item>
-    <item row="0" column="1" colspan="2">
-     <widget class="QLineEdit" name="name">
+    <item row="6" column="0">
+     <widget class="QLabel" name="netvm_label">
       <property name="text">
-       <string>my-new-vm</string>
+       <string>Networking:</string>
+      </property>
+      <property name="buddy">
+       <cstring>template_vm</cstring>
+      </property>
+     </widget>
+    </item>
+    <item row="9" column="1" colspan="3">
+     <widget class="QCheckBox" name="install_system">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="text">
+       <string>install system from device (also available from settings)</string>
+      </property>
+     </widget>
+    </item>
+    <item row="8" column="1" colspan="3">
+     <widget class="QCheckBox" name="launch_settings">
+      <property name="text">
+       <string>launch settings after creation</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="1" colspan="3">
+     <widget class="QComboBox" name="template_vm"/>
+    </item>
+    <item row="7" column="1" colspan="3">
+     <widget class="QCheckBox" name="provides_network">
+      <property name="text">
+       <string>provides network</string>
       </property>
      </widget>
     </item>
@@ -68,56 +101,37 @@
       </property>
      </widget>
     </item>
-    <item row="2" column="1" colspan="3">
-     <widget class="QComboBox" name="netvm"/>
-    </item>
-    <item row="1" column="0">
-     <widget class="QLabel" name="template_label">
-      <property name="text">
-       <string>Use this template:</string>
-      </property>
-      <property name="buddy">
-       <cstring>template_vm</cstring>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="1" colspan="3">
-     <widget class="QComboBox" name="template_vm"/>
-    </item>
-    <item row="2" column="0">
-     <widget class="QLabel" name="netvm_label">
-      <property name="text">
-       <string>Network:</string>
-      </property>
-      <property name="buddy">
-       <cstring>template_vm</cstring>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="2">
-     <widget class="QCheckBox" name="hvm">
-      <property name="text">
-       <string>HVM</string>
-      </property>
-      <property name="checked">
+    <item row="0" column="3">
+     <widget class="QComboBox" name="label">
+      <property name="frame">
        <bool>true</bool>
       </property>
      </widget>
     </item>
-    <item row="3" column="1">
-     <widget class="QCheckBox" name="provides_network">
+    <item row="7" column="0">
+     <widget class="QLabel" name="label_3">
       <property name="text">
-       <string>Provides network</string>
+       <string>Advanced</string>
       </property>
      </widget>
     </item>
-    <item row="3" column="3">
-     <widget class="QCheckBox" name="standalone">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
+    <item row="6" column="1" colspan="3">
+     <widget class="QComboBox" name="netvm"/>
+    </item>
+    <item row="0" column="1" colspan="2">
+     <widget class="QLineEdit" name="name">
       <property name="text">
-       <string>Standalone</string>
+       <string>my-new-vm</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1" colspan="3">
+     <widget class="QComboBox" name="vm_type"/>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="label_2">
+      <property name="text">
+       <string>Type:</string>
       </property>
      </widget>
     </item>
