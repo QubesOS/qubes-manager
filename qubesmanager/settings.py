@@ -91,7 +91,6 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.include_in_balancing.stateChanged.connect(self.include_in_balancing_state_changed)
         self.connect(self.init_mem, SIGNAL("editingFinished()"), self.check_mem_changes)
         self.connect(self.max_mem_size, SIGNAL("editingFinished()"), self.check_mem_changes)
-        self.drive_path_button.clicked.connect(self.drive_path_button_pressed)
         self.bootFromDeviceButton.clicked.connect(self.boot_from_cdrom_button_pressed)
 
         ###### firewall tab
@@ -466,37 +465,6 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         else:
             self.kernel_groupbox.setVisible(False)
 
-        if True or not hasattr(self.vm, "drive"):
-            self.drive_groupbox.setVisible(False)
-        else:
-            self.drive_groupbox.setVisible(True)
-            self.drive_groupbox.setChecked(self.vm.drive is not None)
-            self.drive_running_warning.setVisible(self.vm.is_running())
-            self.drive_type.addItems(["hd", "cdrom"])
-            self.drive_type.setCurrentIndex(0)
-            vm_list = [vm for vm in self.app.values() if not vm
-                    .internal and vm.qid != self.vm.qid]
-            # default to dom0 (in case of nonexisting vm already set...)
-            self.drive_domain_idx = 0
-            for (i, vm) in enumerate(sorted(vm_list, key=lambda v: v.name)):
-                if vm.qid == 0:
-                    self.drive_domain_idx = i
-                self.drive_domain.insertItem(i, vm.name)
-
-            if self.vm.drive is not None:
-                (drv_type, drv_domain, drv_path) = self.vm.drive.split(":")
-                if drv_type == "cdrom":
-                    self.drive_type.setCurrentIndex(1)
-                else:
-                    self.drive_type.setCurrentIndex(0)
-
-                for i in xrange(self.drive_domain.count()):
-                    if drv_domain == self.drive_domain.itemText(i):
-                        self.drive_domain_idx = i
-
-                self.drive_path.setText(drv_path)
-            self.drive_domain.setCurrentIndex(self.drive_domain_idx)
-
         self.other_groupbox.setVisible(False)
 
         if not hasattr(self.vm, 'default_dispvm'):
@@ -571,22 +539,6 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
     def boot_from_cdrom_button_pressed(self):
         self.save_and_apply()
         subprocess.check_call(['qubes-vm-boot-from-device', self.vm.name])
-
-    def drive_path_button_pressed(self):
-        if str(self.drive_domain.currentText()) in ["dom0", "dom0 (current)"]:
-            file_dialog = QFileDialog()
-            file_dialog.setReadOnly(True)
-            new_path = file_dialog.getOpenFileName(self, "Select drive image",
-                                                   str(self.drive_path.text()))
-        else:
-            drv_domain = str(self.drive_domain.currentText())
-            if drv_domain.count("(current)") > 0:
-                drv_domain = drv_domain.split(' ')[0]
-            backend_vm = self.app.get_vm_by_name(drv_domain)
-            if backend_vm:
-                new_path = get_path_for_vm(backend_vm, "qubes.SelectFile")
-        if new_path:
-            self.drive_path.setText(new_path)
 
     ######## devices tab
     def __init_devices_tab__(self):
