@@ -49,14 +49,13 @@ class VMBootFromDeviceWindow(Ui_BootDialog, QDialog):
         if self.blockDeviceRadioButton.isChecked():
             cdrom_location = self.blockDeviceComboBox.currentText()
         elif self.fileRadioButton.isChecked():
-            cdrom_location = self.vm_list[self.fileVM.currentIndex()] + ":" + self.pathText.text()
+            cdrom_location = str(self.vm_list[self.fileVM.currentIndex()]) + ":" + self.pathText.text()
         else:
             QMessageBox.warning(None,
                                 self.tr(
                                     "ERROR!"),
                                 self.tr("No file or block device selected; please select one."))
             return
-
         qvm_start.main(['--cdrom', cdrom_location, self.vm.name])
 
     def __init_buttons__(self):
