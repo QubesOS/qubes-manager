@@ -504,23 +504,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         if hasattr(self.vm, "kernel") and self.kernel_groupbox.isVisible():
             try:
                 if self.kernel.currentIndex() != self.kernel_idx:
-                    new_kernel = str(self.kernel.currentText())
-                    new_kernel = new_kernel.split(' ')[0]
-                    uses_default_kernel = False
-
-                    if new_kernel == "default":
-                        kernel = self.app.get_default_kernel()
-                        uses_default_kernel = True
-                    elif new_kernel == "none":
-                        kernel = None
-                    else:
-                        kernel = new_kernel
-
-                    self.vm.kernel = kernel
-                    # Set self.vm.uses_default_kernel after self.vm.kernel to ensure that
-                    # the correct value persists after QubesVm.kernel resets self.vm.uses_default_kernel
-                    # to False.
-                    self.vm.uses_default_kernel = uses_default_kernel
+                    self.vm.kernel = self.kernel_list[self.kernel.currentIndex()]
                     self.anything_changed = True
             except Exception as ex:
                 msg.append(str(ex))

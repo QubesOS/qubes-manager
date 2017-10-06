@@ -87,7 +87,7 @@ def prepare_choice(widget, holder, propname, choice, default,
             text = str(item)
 
         if item is qubesadmin.DEFAULT and is_default \
-        or item is not qubesadmin.DEFAULT and item is oldvalue:
+        or item is not qubesadmin.DEFAULT and item == oldvalue:
             text += ' (current)'
             idx = i
 
