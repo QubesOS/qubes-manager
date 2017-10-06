@@ -248,12 +248,12 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.vmlabel.setVisible(True)
             self.vmlabel.setEnabled(not self.vm.is_running())
 
-        if isinstance(self.vm, qubesadmin.vm.AppVM):
+        if self.vm.klass == 'AppVM':
             self.template_list, self.template_idx = utils.prepare_vm_choice(
                 self.template_name,
                 self.vm, 'template',
                 self.vm.app.default_template,
-                (lambda vm: isinstance(vm, qubesadmin.vm.TemplateVM)),
+                (lambda vm: vm.klass == 'TemplateVM'),
                 allow_default=True, allow_none=False)
         else:
             self.template_name.setEnabled(False)
@@ -476,7 +476,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                     self.default_dispvm,
                     self.vm, 'default_dispvm',
                     self.vm.app.default_dispvm,
-                    (lambda vm: isinstance(vm, qubesadmin.vm.DispVM)),
+                    (lambda vm: vm.klass == 'DispVM'),
                     allow_default=True, allow_none=True)
 
     def __apply_advanced_tab__(self):

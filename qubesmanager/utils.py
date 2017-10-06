@@ -28,7 +28,7 @@ import qubesadmin
 from PyQt4.QtGui import QIcon
 
 def _filter_internal(vm):
-    return (not isinstance(vm, qubesadmin.vm.AdminVM)
+    return (not vm.klass == 'AdminVM'
         and not vm.features.get('internal', False))
 
 def prepare_choice(widget, holder, propname, choice, default,
