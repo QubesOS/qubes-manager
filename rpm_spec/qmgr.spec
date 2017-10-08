@@ -47,7 +47,6 @@ cp qubes-vm-create.desktop $RPM_BUILD_ROOT/usr/share/applications/
 
 %post
 update-desktop-database &> /dev/null || :
-killall -1 qubes-manager || :
 
 %postun
 update-desktop-database &> /dev/null || :
