@@ -28,7 +28,7 @@ import qubesadmin
 from PyQt4.QtGui import QIcon
 
 def _filter_internal(vm):
-    return (not isinstance(vm, qubesadmin.vm.AdminVM)
+    return (not vm.klass == 'AdminVM'
         and not vm.features.get('internal', False))
 
 def prepare_choice(widget, holder, propname, choice, default,
@@ -87,7 +87,7 @@ def prepare_choice(widget, holder, propname, choice, default,
             text = str(item)
 
         if item is qubesadmin.DEFAULT and is_default \
-        or item is not qubesadmin.DEFAULT and item is oldvalue:
+        or item is not qubesadmin.DEFAULT and item == oldvalue:
             text += ' (current)'
             idx = i
 

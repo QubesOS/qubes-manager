@@ -32,7 +32,6 @@ from .ui_globalsettingsdlg import *
 
 from configparser import ConfigParser
 from qubesadmin.utils import parse_size, updates_vms_status
-from qubesadmin.vm import TemplateVM
 
 qmemman_config_path = '/etc/qubes/qmemman.conf'
 
@@ -104,7 +103,7 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
             self.default_netvm_combo.setCurrentIndex(self.netvm_idx)
 
         #default template
-        templates = [vm for vm in all_vms if isinstance(vm, TemplateVM)]
+        templates = [vm for vm in all_vms if vm.klass == 'TemplateVM']
         self.template_idx = -1
 
         current_template = self.qvm_collection.default_template

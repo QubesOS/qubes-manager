@@ -63,7 +63,7 @@ class NewVmDlg(QDialog, Ui_NewVMDlg):
             self.template_vm,
             self.app, None,
             self.app.default_template,
-            (lambda vm: isinstance(vm, qubesadmin.vm.TemplateVM)),
+            (lambda vm: vm.klass == 'TemplateVM'),
             allow_internal=False, allow_default=True, allow_none=False)
 
         self.netvm_list, self.netvm_idx = utils.prepare_vm_choice(
