@@ -375,7 +375,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         sys_size = self.root_resize.value()
         if self.root_img_size != sys_size:
             try:
-                self.vm.volumes['root'].resize(priv_size * 1024**2)
+                self.vm.volumes['root'].resize(sys_size * 1024**2)
                 self.anything_changed = True
             except Exception as ex:
                 msg.append(str(ex))
