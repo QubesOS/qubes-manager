@@ -80,7 +80,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         self.tabWidget.currentChanged.connect(self.current_tab_changed)
 
-#       self.tabWidget.setTabEnabled(self.tabs_indices["firewall"], vm.is_networked() and not vm.provides_network)
+        self.tabWidget.setTabEnabled(self.tabs_indices["firewall"],
+                            vm.netvm is not None and not vm.provides_network)
 
         ###### basic tab
         self.__init_basic_tab__()
@@ -96,8 +97,12 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         ###### firewall tab
         if self.tabWidget.isTabEnabled(self.tabs_indices['firewall']):
             model = QubesFirewallRulesModel()
-            model.set_vm(vm)
-            self.set_fw_model(model)
+            try:
+                model.set_vm(vm)
+                self.set_fw_model(model)
+                self.firewallModifiedOutsidelabel.setVisible(False)
+            except FirewallModifiedOutsideError as ex:
+                self.disable_all_fw_conf()
 
             self.newRuleButton.clicked.connect(self.new_rule_button_pressed)
             self.editRuleButton.clicked.connect(self.edit_rule_button_pressed)
@@ -175,11 +180,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             ret.append(self.tr('Error while saving changes: ') + str(ex))
 
         try:
-            if self.tabWidget.isTabEnabled(self.tabs_indices["firewall"]):
+            if self.policyAllowRadioButton.isEnabled():
                 self.fw_model.apply_rules(self.policyAllowRadioButton.isChecked(),
-                        self.dnsCheckBox.isChecked(),
-                        self.icmpCheckBox.isChecked(),
-                        self.yumproxyCheckBox.isChecked(),
                         self.tempFullAccess.isChecked(),
                         self.tempFullAccessTime.value())
                 if self.fw_model.fw_changed:
@@ -773,14 +775,22 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.rulesTreeView.header().setResizeMode(QHeaderView.ResizeToContents)
         self.rulesTreeView.header().setResizeMode(0, QHeaderView.Stretch)
         self.set_allow(model.allow)
-        self.dnsCheckBox.setChecked(model.allowDns)
-        self.icmpCheckBox.setChecked(model.allowIcmp)
-        self.yumproxyCheckBox.setChecked(model.allowYumProxy)
         if model.tempFullAccessExpireTime:
             self.tempFullAccess.setChecked(True)
             self.tempFullAccessTime.setValue(
                 (model.tempFullAccessExpireTime -
                 int(datetime.datetime.now().strftime("%s")))/60)
+
+    def disable_all_fw_conf(self):
+        self.firewallModifiedOutsidelabel.setVisible(True)
+        self.policyAllowRadioButton.setEnabled(False)
+        self.policyDenyRadioButton.setEnabled(False)
+        self.rulesTreeView.setEnabled(False)
+        self.newRuleButton.setEnabled(False)
+        self.editRuleButton.setEnabled(False)
+        self.deleteRuleButton.setEnabled(False)
+        self.firewalRulesLabel.setEnabled(False)
+        self.tempFullAccessWidget.setEnabled(False)
 
     def set_allow(self, allow):
         self.policyAllowRadioButton.setChecked(allow)
@@ -788,98 +798,34 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.policy_changed(allow)
 
     def policy_changed(self, checked):
-        self.tempFullAccessWidget.setEnabled(self.policyDenyRadioButton.isChecked())
+        self.rulesTreeView.setEnabled(self.policyDenyRadioButton.isChecked())
+        self.newRuleButton.setEnabled(self.policyDenyRadioButton.isChecked())
+        self.editRuleButton.setEnabled(self.policyDenyRadioButton.isChecked())
+        self.deleteRuleButton.setEnabled(self.policyDenyRadioButton.isChecked())
+        self.firewalRulesLabel.setEnabled(
+            self.policyDenyRadioButton.isChecked())
+        self.tempFullAccessWidget.setEnabled(
+            self.policyDenyRadioButton.isChecked())
 
     def new_rule_button_pressed(self):
         dialog = NewFwRuleDlg()
-        self.run_rule_dialog(dialog)
+        self.fw_model.run_rule_dialog(dialog)
 
     def edit_rule_button_pressed(self):
-        dialog = NewFwRuleDlg()
-        dialog.set_ok_enabled(True)
-        selected = self.rulesTreeView.selectedIndexes()
-        if len(selected) > 0:
-            row = self.rulesTreeView.selectedIndexes().pop().row()
-            address = self.fw_model.get_column_string(0, row).replace(' ', '')
-            dialog.addressComboBox.setItemText(0, address)
-            dialog.addressComboBox.setCurrentIndex(0)
-            service = self.fw_model.get_column_string(1, row)
-            if service == "any":
-                service = ""
-            dialog.serviceComboBox.setItemText(0, service)
-            dialog.serviceComboBox.setCurrentIndex(0)
-            protocol = self.fw_model.get_column_string(2, row)
-            if protocol == "tcp":
-                dialog.tcp_radio.setChecked(True)
-            elif protocol == "udp":
-                dialog.udp_radio.setChecked(True)
-            else:
-                dialog.any_radio.setChecked(True)
 
-            self.run_rule_dialog(dialog, row)
+        selected = self.rulesTreeView.selectedIndexes()
+
+        if len(selected) > 0:
+            dialog = NewFwRuleDlg()
+            dialog.set_ok_enabled(True)
+            row = self.rulesTreeView.selectedIndexes().pop().row()
+            self.fw_model.populate_edit_dialog(dialog, row)
+            self.fw_model.run_rule_dialog(dialog, row)
 
     def delete_rule_button_pressed(self):
-        for i in set([index.row() for index in self.rulesTreeView.selectedIndexes()]):
+        for i in set([index.row() for index
+                      in self.rulesTreeView.selectedIndexes()]):
             self.fw_model.removeChild(i)
-
-    def run_rule_dialog(self, dialog, row = None):
-        if dialog.exec_():
-            address = str(dialog.addressComboBox.currentText())
-            service = str(dialog.serviceComboBox.currentText())
-            port = None
-            port2 = None
-
-            unmask = address.split("/", 1)
-            if len(unmask) == 2:
-                address = unmask[0]
-                netmask = int(unmask[1])
-            else:
-                netmask = 32
-
-            if address == "*":
-                address = "0.0.0.0"
-                netmask = 0
-
-            if dialog.any_radio.isChecked():
-                protocol = "any"
-                port = 0
-            else:
-                if dialog.tcp_radio.isChecked():
-                    protocol = "tcp"
-                elif dialog.udp_radio.isChecked():
-                    protocol = "udp"
-                else:
-                    protocol = "any"
-
-                try:
-                    range = service.split("-", 1)
-                    if len(range) == 2:
-                        port = int(range[0])
-                        port2 = int(range[1])
-                    else:
-                        port = int(service)
-                except (TypeError, ValueError) as ex:
-                    port = self.fw_model.get_service_port(service)
-
-            if port is not None:
-                if port2 is not None and port2 <= port:
-                    QMessageBox.warning(None, self.tr("Invalid service ports range"),
-                        self.tr("Port {0} is lower than port {1}.").format(
-                            port2, port))
-                else:
-                    item = {"address": address,
-                            "netmask": netmask,
-                            "portBegin": port,
-                            "portEnd": port2,
-                            "proto": protocol,
-                    }
-                    if row is not None:
-                        self.fw_model.setChild(row, item)
-                    else:
-                        self.fw_model.appendChild(item)
-            else:
-                QMessageBox.warning(None, self.tr("Invalid service name"),
-                    self.tr("Service '{0}' is unknown.").format(service))
 
 
 # Bases on the original code by:
