@@ -452,7 +452,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         self.include_in_balancing.setEnabled(True)
         self.include_in_balancing.setChecked(
-            self.vm.features.get('services.meminfo-writer', True))
+            bool(self.vm.features.get('service.meminfo-writer', True)))
         self.max_mem_size.setEnabled(self.include_in_balancing.isChecked())
 
         #in case VM is HVM
