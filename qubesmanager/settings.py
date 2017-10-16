@@ -281,7 +281,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self.autostart_vm.setVisible(False)
 
         #type
-        self.type_label.setText(type(self.vm).__name__)
+        self.type_label.setText(self.vm.klass)
 
         #installed by rpm
         self.rpm_label.setText('Yes' if self.vm.installed_by_rpm else 'No')
