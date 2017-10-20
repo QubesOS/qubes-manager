@@ -143,17 +143,6 @@ class QubesFirewallRulesModel(QAbstractItemModel):
     def __init__(self, parent=None):
         QAbstractItemModel.__init__(self, parent)
 
-        self.__columnValues = {
-            0: lambda x: "*" if self.children[x]["address"] == "0.0.0.0" and
-                                self.children[x]["netmask"] == 0  else
-            self.children[x]["address"] + ("" if self.children[x][ "netmask"] == 32  else
-                                           " /{0}".format(self.children[x][
-                                               "netmask"])),
-            1: lambda x: "any" if self.children[x]["portBegin"] == 0  else
-            "{0}-{1}".format(self.children[x]["portBegin"], self.children[x][
-                "portEnd"]) if self.children[x]["portEnd"] is not None  else \
-                self.get_service_name(self.children[x]["portBegin"]),
-            2: lambda x: self.children[x]["proto"], }
         self.__columnNames = {0: "Address", 1: "Service", 2: "Protocol", }
         self.__services = list()
         pattern = re.compile("(?P<name>[a-z][a-z0-9-]+)\s+(?P<port>[0-9]+)/(?P<protocol>[a-z]+)", re.IGNORECASE)
@@ -171,23 +160,17 @@ class QubesFirewallRulesModel(QAbstractItemModel):
         from operator import attrgetter
 
         rev = (order == Qt.AscendingOrder)
-        if idx==0:
-            self.children.sort(key=lambda x: x['address'], reverse = rev)
-        if idx==1:
-            self.children.sort(key=lambda x: self.get_service_name(x[
-                "portBegin"]) if x["portEnd"] == None else x["portBegin"],
-                               reverse = rev)
-        if idx==2:
-            self.children.sort(key=lambda x: x['proto'], reverse
-            = rev)
+        self.children.sort(key = lambda x: self.get_column_string(idx, x)
+                           , reverse = rev)
+
         index1 = self.createIndex(0, 0)
-        index2 = self.createIndex(len(self)-1, len(self.__columnValues)-1)
+        index2 = self.createIndex(len(self)-1, len(self.__columnNames)-1)
         self.dataChanged.emit(index1, index2)
 
 
     def get_service_name(self, port):
         for service in self.__services:
-            if service[1] == port:
+            if str(service[1]) == str(port):
                 return service[0]
         return str(port)
 
@@ -197,129 +180,122 @@ class QubesFirewallRulesModel(QAbstractItemModel):
                 return service[1]
         return None
 
-    def get_column_string(self, col, row):
-        return self.__columnValues[col](row)
+    def get_column_string(self, col, rule):
+        # Address
+        if col == 0:
+            if rule.dsthost is None:
+                return "*"
+            else:
+                if rule.dsthost.type == 'dst4'\
+                        and rule.dsthost.prefixlen == '32':
+                    return str(rule.dsthost)[:-3]
+                elif rule.dsthost.type == 'dst6'\
+                        and rule.dsthost.prefixlen == '128':
+                    return str(rule.dsthost)[:-4]
+                else:
+                    return str(rule.dsthost)
 
-
-    def rule_to_dict(self, rule):
-        if rule.dsthost is None:
-            raise FirewallModifiedOutsideError('no dsthost')
-
-        d = {}
-
-        if not rule.proto:
-            d['proto'] = 'any'
-            d['portBegin'] = 'any'
-            d['portEnd'] = None
-
-        else:
-            d['proto'] = rule.proto
+        # Service
+        if col == 1:
             if rule.dstports is None:
-                raise FirewallModifiedOutsideError('no dstport')
-            d['portBegin'] = rule.dstports.range[0]
-            d['portEnd'] = rule.dstports.range[1] \
-                if rule.dstports.range[0] != rule.dstports.range[1] \
-                else None
+                return "any"
+            elif rule.dstports.range[0] != rule.dstports.range[1]:
+                return str(rule.dstports)
+            else:
+                return self.get_service_name(rule.dstports)
 
-        if rule.dsthost.type == 'dsthost':
-            d['address'] = str(rule.dsthost)
-            d['netmask'] = 32
-        elif rule.dsthost.type == 'dst4':
-            network = ipaddress.IPv4Network(rule.dsthost)
-            d['address'] = str(network.network_address)
-            d['netmask'] = int(network.prefixlen)
-        else:
-            raise FirewallModifiedOutsideError(
-                'cannot map dsthost.type={!s}'.format(rule.dsthost))
-
-        if rule.expire is not None:
-            d['expire'] = int(rule.expire)
-
-        return d
+        # Protocol
+        if col == 2:
+            if rule.proto is None:
+                return "any"
+            else:
+                return str(rule.proto)
+        return "unknown"
 
     def get_firewall_conf(self, vm):
         conf = {
             'allow': None,
-            'allowDns': False,
-            'allowIcmp': False,
-            'allowYumProxy': False,
+            'expire': 0,
             'rules': [],
         }
 
+        allowDns = False
+        allowIcmp = False
         common_action = None
-        tentative_action = None
 
         reversed_rules = list(reversed(vm.firewall.rules))
+        last_rule = reversed_rules.pop(0)
 
+        if last_rule == qubesadmin.firewall.Rule('action=accept') \
+                or last_rule == qubesadmin.firewall.Rule('action=drop'):
+            common_action = last_rule.action
+        else:
+            FirewallModifiedOutsideError('Last rule must be either '
+                                         'drop all or accept all.')
+
+        dns_rule = qubesadmin.firewall.Rule(None,
+                                        action='accept', specialtarget='dns')
+        icmp_rule = qubesadmin.firewall.Rule(None,
+                                        action='accept', proto='icmp')
         while reversed_rules:
-            rule = reversed_rules[0]
-            if rule.dsthost is not None or rule.proto is not None:
-                break
-            tentative_action = reversed_rules.pop(0).action
+            rule = reversed_rules.pop(0)
 
-        if not reversed_rules:
-            conf['allow'] = tentative_action == 'accept'
-            return conf
-
-        for rule in reversed_rules:
-            if rule.specialtarget == 'dns':
-                conf['allowDns'] = (rule.action == 'accept')
+            if rule == dns_rule:
+                allowDns = True
                 continue
 
-            if rule.proto == 'icmp':
-                if rule.icmptype is not None:
-                    raise FirewallModifiedOutsideError(
-                        'cannot map icmptype != None')
-                conf['allowIcmp'] = (rule.action == 'accept')
+            if rule.proto == icmp_rule:
+                allowIcmp = True
                 continue
 
-            if common_action is None:
-                common_action = rule.action
-            elif common_action != rule.action:
-                raise FirewallModifiedOutsideError('incoherent action')
+            if rule.specialtarget is not None or rule.icmptype is not None:
+                raise FirewallModifiedOutsideError("Rule type unknown!")
 
-            conf['rules'].insert(0, self.rule_to_dict(rule))
+            if (rule.dsthost is not None or rule.proto is not None) \
+                    and rule.expire is None:
+                if rule.action == 'accept':
+                    conf['rules'].insert(0, rule)
+                    continue
+                else:
+                    raise FirewallModifiedOutsideError('No blacklist support.')
 
-        if common_action is None or common_action != tentative_action:
-            # we've got only specialtarget and/or icmp
-            conf['allow'] = tentative_action == 'accept'
-            return conf
+            if rule.expire is not None and rule.dsthost is None \
+                    and rule.proto is None:
+                conf['expire'] = int(str(rule.expire))
+                continue
 
-        raise FirewallModifiedOutsideError('it does not add up')
+            raise FirewallModifiedOutsideError('it does not add up.')
+
+        conf['allow'] = (common_action == 'accept')
+
+        if not allowIcmp and not conf['allow']:
+            raise FirewallModifiedOutsideError('ICMP must be allowed.')
+
+        if not allowDns and not conf['allow']:
+            raise FirewallModifiedOutsideError('DNS must be allowed')
+
+        return conf
 
     def write_firewall_conf(self, vm, conf):
-        common_action = qubesadmin.firewall.Action(
-            'drop' if conf['allow'] else 'accept')
-
         rules = []
 
         for rule in conf['rules']:
-            kwargs = {}
-            if rule['proto'] != 'any':
-                kwargs['proto'] = rule['proto']
-                if rule['portBegin'] != 'any':
-                    kwargs['dstports'] = '-'.join(map(str, filter((lambda x: x),
-                        (rule['portBegin'], rule['portEnd']))))
+            rules.append(rule)
 
-            netmask = str(rule['netmask']) if rule['netmask'] != 32 else None
-
-            rules.append(qubesadmin.firewall.Rule(None,
-                action=common_action,
-                dsthost='/'.join(map(str, filter((lambda x: x),
-                    (rule['address'], netmask)))),
-                **kwargs))
-
-        if conf['allowDns']:
+        if not conf['allow']:
             rules.append(qubesadmin.firewall.Rule(None,
                 action='accept', specialtarget='dns'))
 
-        if conf['allowIcmp']:
+        if not conf['allow']:
             rules.append(qubesadmin.firewall.Rule(None,
                 action='accept', proto='icmp'))
 
-        if common_action == 'drop':
+        if conf['allow']:
             rules.append(qubesadmin.firewall.Rule(None,
                 action='accept'))
+        else:
+            rules.append(qubesadmin.firewall.Rule(None,
+                action = 'drop'))
 
         vm.firewall.rules = rules
 
@@ -331,57 +307,97 @@ class QubesFirewallRulesModel(QAbstractItemModel):
         conf = self.get_firewall_conf(vm)
 
         self.allow = conf["allow"]
-        self.allowDns = conf["allowDns"]
-        self.allowIcmp = conf["allowIcmp"]
-        self.allowYumProxy = conf["allowYumProxy"]
-        self.tempFullAccessExpireTime = 0
+
+        self.tempFullAccessExpireTime = conf['expire']
 
         for rule in conf["rules"]:
             self.appendChild(rule)
-            if "expire" in rule and rule["address"] == "0.0.0.0":
-                self.tempFullAccessExpireTime = rule["expire"]
 
     def get_vm_name(self):
         return self.__vm.name
 
-    def apply_rules(self, allow, dns, icmp, yumproxy, tempFullAccess=False,
+    def apply_rules(self, allow, tempFullAccess=False,
                     tempFullAccessTime=None):
         assert self.__vm is not None
 
-        if self.allow != allow or self.allowDns != dns or \
-                self.allowIcmp != icmp or self.allowYumProxy != yumproxy or \
+        if self.allow != allow or \
                 (self.tempFullAccessExpireTime != 0) != tempFullAccess:
             self.fw_changed = True
 
         conf = { "allow": allow,
-                "allowDns": dns,
-                "allowIcmp": icmp,
-                "allowYumProxy": yumproxy,
                 "rules": list()
             }
 
-        for rule in self.children:
-            if "expire" in rule and rule["address"] == "0.0.0.0" and \
-                    rule["netmask"] == 0 and rule["proto"] == "any":
-                # rule already present, update its time
-                if tempFullAccess:
-                    rule["expire"] = \
-                        int(datetime.datetime.now().strftime("%s")) + \
-                        tempFullAccessTime*60
-                tempFullAccess = False
-            conf["rules"].append(rule)
+        conf['rules'].extend(self.children)
 
         if tempFullAccess and not allow:
-            conf["rules"].append({"address": "0.0.0.0",
-                                  "netmask": 0,
-                                  "proto": "any",
-                                  "expire": int(
-                                      datetime.datetime.now().strftime("%s"))+\
-                                        tempFullAccessTime*60
-                                  })
+            conf["rules"].append(qubesadmin.firewall.Rule(None,action='accept'
+                        , expire=int(datetime.datetime.now().strftime("%s"))+\
+                                        tempFullAccessTime*60))
 
         if self.fw_changed:
             self.write_firewall_conf(self.__vm, conf)
+
+    def populate_edit_dialog(self, dialog, row):
+        address = self.get_column_string(0, self.children[row])
+        dialog.addressComboBox.setItemText(0, address)
+        dialog.addressComboBox.setCurrentIndex(0)
+        service = self.get_column_string(1, self.children[row])
+        if service == "any":
+            service = ""
+        dialog.serviceComboBox.setItemText(0, service)
+        dialog.serviceComboBox.setCurrentIndex(0)
+        protocol = self.get_column_string(2, self.children[row])
+        if protocol == "tcp":
+            dialog.tcp_radio.setChecked(True)
+        elif protocol == "udp":
+            dialog.udp_radio.setChecked(True)
+        else:
+            dialog.any_radio.setChecked(True)
+
+    def run_rule_dialog(self, dialog, row = None):
+        if dialog.exec_():
+
+            address = str(dialog.addressComboBox.currentText())
+            service = str(dialog.serviceComboBox.currentText())
+
+            rule = qubesadmin.firewall.Rule(None,action='accept')
+
+            if address is not None and address != "*":
+                try:
+                    rule.dsthost = address
+                except ValueError:
+                    QMessageBox.warning(None, self.tr("Invalid address"),
+                        self.tr("Address '{0}' is invalid.").format(address))
+
+            if dialog.tcp_radio.isChecked():
+                rule.proto = 'tcp'
+            elif dialog.udp_radio.isChecked():
+                rule.proto = 'udp'
+
+            if '-' in service:
+                try:
+                    rule.dstports = service
+                except ValueError:
+                    QMessageBox.warning(None, self.tr("Invalid port or service"),
+                        self.tr("Port number or service '{0}' is invalid.")
+                                        .format(service))
+            elif service is not None:
+                try:
+                    rule.dstports = service
+                except (TypeError, ValueError) as ex:
+                    if self.get_service_port(service) is not None:
+                        rule.dstports = self.get_service_port(service)
+                    else:
+                        QMessageBox.warning(None,
+                            self.tr("Invalid port or service"),
+                            self.tr("Port number or service '{0}' is invalid.")
+                                            .format(service))
+
+            if row is not None:
+                self.setChild(row, rule)
+            else:
+                self.appendChild(rule)
 
     def index(self, row, column, parent=QModelIndex()):
         if not self.hasIndex(row, column, parent):
@@ -396,7 +412,7 @@ class QubesFirewallRulesModel(QAbstractItemModel):
         return len(self)
 
     def columnCount(self, parent=QModelIndex()):
-        return len(self.__columnValues)
+        return len(self.__columnNames)
 
     def hasChildren(self, index=QModelIndex()):
         parentItem = index.internalPointer()
@@ -407,7 +423,8 @@ class QubesFirewallRulesModel(QAbstractItemModel):
 
     def data(self, index, role=Qt.DisplayRole):
         if index.isValid() and role == Qt.DisplayRole:
-            return self.__columnValues[index.column()](index.row())
+            return self.get_column_string(index.column()
+                                          ,self.children[index.row()])
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if section < len(self.__columnNames) \
