@@ -386,6 +386,13 @@ border-width: 1px;</string>
            </property>
           </widget>
          </item>
+         <item row="5" column="1">
+          <widget class="QPushButton" name="clone_vm_button">
+           <property name="text">
+            <string>Clone VM</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
        <widget class="QWidget" name="advanced_tab">

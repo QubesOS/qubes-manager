@@ -87,6 +87,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.__init_basic_tab__()
         self.rename_vm_button.clicked.connect(self.rename_vm)
         self.delete_vm_button.clicked.connect(self.remove_vm)
+        self.clone_vm_button.clicked.connect(self.clone_vm)
 
         ###### advanced tab
         self.__init_advanced_tab__()
@@ -407,6 +408,23 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                         "allowed value."))
             self.init_mem.setValue(self.max_mem_size.value() / 10)
 
+    def _run_in_thread(self, func, *args):
+        t_monitor = thread_monitor.ThreadMonitor()
+        thread = threading.Thread(target=func, args=(t_monitor, *args,))
+        thread.daemon = True
+        thread.start()
+
+        while not t_monitor.is_finished():
+            self.qapp.processEvents()
+            time.sleep(0.1)
+
+        if not t_monitor.success:
+            QMessageBox.warning(None,
+                                self.tr("Error!"),
+                                self.tr("ERROR: {}").format(
+                                    t_monitor.error_msg))
+
+
     def _rename_vm(self, t_monitor, name):
         try:
             self.vm.app.clone_vm(self.vm, name)
@@ -420,25 +438,13 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
     def rename_vm(self):
 
-        new_vm_name, ok = QInputDialog.getText(self, self.tr('Rename VM'), self.tr('New name: (WARNING: all other changes will be discarded)'))
+        new_vm_name, ok = QInputDialog.getText(self
+            , self.tr('Rename VM')
+            , self.tr('New name: (WARNING: '
+                      'all other changes will be discarded)'))
 
         if ok:
-
-            t_monitor = thread_monitor.ThreadMonitor()
-            thread = threading.Thread(target=self._rename_vm, args=(t_monitor, new_vm_name,))
-            thread.daemon = True
-            thread.start()
-
-            while not t_monitor.is_finished():
-                self.qapp.processEvents()
-                time.sleep (0.1)
-
-            if not t_monitor.success:
-                QMessageBox.warning(None,
-                    self.tr("Error renaming the VM!"),
-                    self.tr("ERROR: {}").format(
-                        t_monitor.error_msg))
-
+            self._run_in_thread(self._rename_vm, new_vm_name)
             self.done(0)
 
     def _remove_vm(self, t_monitor):
@@ -460,27 +466,31 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
 
         if ok and answer == self.vm.name:
-            t_monitor = thread_monitor.ThreadMonitor()
-            thread = threading.Thread(target=self._remove_vm,
-                                      args=(t_monitor,))
-            thread.daemon = True
-            thread.start()
-
-            while not t_monitor.is_finished():
-                self.qapp.processEvents()
-                time.sleep(0.1)
-
-            if not t_monitor.success:
-                QMessageBox.warning(None,
-                                    self.tr("Error deleting the VM!"),
-                                    self.tr("ERROR: {}").format(
-                                        t_monitor.error_msg))
-
+            self._run_in_thread(self._remove_vm)
             self.done(0)
 
         else:
             QMessageBox.warning(None, self.tr("Removal cancelled")
                                 , self.tr("The VM will not be removed."))
+
+    def _clone_vm(self, t_monitor, name):
+        try:
+            self.vm.app.clone_vm(self.vm, name)
+
+        except Exception as ex:
+            t_monitor.set_error_msg(str(ex))
+
+        t_monitor.set_finished()
+
+    def clone_vm(self):
+
+        cloned_vm_name, ok = QInputDialog.getText(self, self.tr('Clone VM')
+                                        , self.tr('Name for the cloned VM:'))
+
+        if ok:
+            self._run_in_thread(self._clone_vm, cloned_vm_name)
+            QMessageBox.warning(None, self.tr("Success")
+                            , self.tr("The VM was cloned successfully."))
 
     ######### advanced tab
 
