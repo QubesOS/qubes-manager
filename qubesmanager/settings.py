@@ -86,6 +86,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         ###### basic tab
         self.__init_basic_tab__()
         self.rename_vm_button.clicked.connect(self.rename_vm)
+        self.delete_vm_button.clicked.connect(self.remove_vm)
 
         ###### advanced tab
         self.__init_advanced_tab__()
@@ -237,6 +238,11 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.vmname.setValidator(QRegExpValidator(QRegExp("[a-zA-Z0-9-]*", Qt.CaseInsensitive), None))
         self.vmname.setEnabled(False)
         self.rename_vm_button.setEnabled(not self.vm.is_running())
+        self.delete_vm_button.setEnabled(not self.vm.is_running())
+
+        if self.vm.is_running():
+            self.delete_vm_button.setText(self.tr('Delete VM '
+                                            '(cannot delete a running VM)'))
 
         if self.vm.qid == 0:
             self.vmlabel.setVisible(False)
@@ -434,6 +440,47 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
                         t_monitor.error_msg))
 
             self.done(0)
+
+    def _remove_vm(self, t_monitor):
+        try:
+            del self.vm.app.domains[self.vm.name]
+
+        except Exception as ex:
+            t_monitor.set_error_msg(str(ex))
+
+        t_monitor.set_finished()
+
+    def remove_vm(self):
+
+        answer, ok = QInputDialog.getText(self, self.tr('Delete VM')
+            , self.tr('Are you absolutely sure you want to delete this VM? '
+                      '<br \> All VM settings and data will be irrevocably'
+                      ' deleted. <br \> If you are sure, please enter this '
+                      'VM\'s name below.'))
+
+
+        if ok and answer == self.vm.name:
+            t_monitor = thread_monitor.ThreadMonitor()
+            thread = threading.Thread(target=self._remove_vm,
+                                      args=(t_monitor,))
+            thread.daemon = True
+            thread.start()
+
+            while not t_monitor.is_finished():
+                self.qapp.processEvents()
+                time.sleep(0.1)
+
+            if not t_monitor.success:
+                QMessageBox.warning(None,
+                                    self.tr("Error deleting the VM!"),
+                                    self.tr("ERROR: {}").format(
+                                        t_monitor.error_msg))
+
+            self.done(0)
+
+        else:
+            QMessageBox.warning(None, self.tr("Removal cancelled")
+                                , self.tr("The VM will not be removed."))
 
     ######### advanced tab
 
