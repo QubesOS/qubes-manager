@@ -76,8 +76,11 @@ class NewFwRuleDlg (QtGui.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
 
         self.set_ok_enabled(False)
         self.addressComboBox.setValidator(QIPAddressValidator())
-        self.addressComboBox.editTextChanged.connect(self.address_editing_finished)
-        self.serviceComboBox.setValidator(QtGui.QRegExpValidator(QtCore.QRegExp("[a-z][a-z0-9-]+|[0-9]+(-[0-9]+)?", QtCore.Qt.CaseInsensitive), None))
+        self.addressComboBox.editTextChanged.connect(
+            self.address_editing_finished)
+        self.serviceComboBox.setValidator(QtGui.QRegExpValidator(
+            QtCore.QRegExp("[a-z][a-z0-9-]+|[0-9]+(-[0-9]+)?",
+                           QtCore.Qt.CaseInsensitive), None))
         self.serviceComboBox.setEnabled(False)
         self.serviceComboBox.setInsertPolicy(QtGui.QComboBox.InsertAtBottom)
         self.populate_combos()
@@ -88,7 +91,8 @@ class NewFwRuleDlg (QtGui.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
             if len(self.serviceComboBox.currentText()) == 0:
                 msg = QtGui.QMessageBox()
                 msg.warning(self, self.tr("Firewall rule"),
-                    self.tr("You need to fill service name/port for TCP/UDP rule"))
+                    self.tr("You need to fill service "
+                            "name/port for TCP/UDP rule"))
                 return
         QtGui.QDialog.accept(self)
 
@@ -138,13 +142,16 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
 
         self.__columnNames = {0: "Address", 1: "Service", 2: "Protocol", }
         self.__services = list()
-        pattern = re.compile("(?P<name>[a-z][a-z0-9-]+)\s+(?P<port>[0-9]+)/(?P<protocol>[a-z]+)", re.IGNORECASE)
+        pattern = re.compile(
+            "(?P<name>[a-z][a-z0-9-]+)\s+(?P<port>[0-9]+)/(?P<protocol>[a-z]+)",
+            re.IGNORECASE)
         f = open('/etc/services', 'r')
         for line in f:
             match = pattern.match(line)
             if match is not None:
                 service = match.groupdict()
-                self.__services.append( (service["name"], int(service["port"]),) )
+                self.__services.append(
+                    (service["name"], int(service["port"]),) )
         f.close()
 
         self.fw_changed = False
@@ -372,7 +379,9 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
                 try:
                     rule.dstports = service
                 except ValueError:
-                    QtGui.QMessageBox.warning(None, self.tr("Invalid port or service"),
+                    QtGui.QMessageBox.warning(
+                        None,
+                        self.tr("Invalid port or service"),
                         self.tr("Port number or service '{0}' is invalid.")
                                         .format(service))
             elif service is not None:
@@ -421,7 +430,8 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
 
     def headerData(self, section, orientation, role=QtCore.Qt.DisplayRole):
         if section < len(self.__columnNames) \
-                and orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
+                and orientation == QtCore.Qt.Horizontal \
+                and role == QtCore.Qt.DisplayRole:
                     return self.__columnNames[section]
 
     @property

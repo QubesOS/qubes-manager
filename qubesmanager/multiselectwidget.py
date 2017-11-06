@@ -1,7 +1,8 @@
 from PyQt4 import QtCore, QtGui
 from . import ui_multiselectwidget
 
-class MultiSelectWidget(ui_multiselectwidget.Ui_MultiSelectWidget, QtGui.QWidget):
+class MultiSelectWidget(
+    ui_multiselectwidget.Ui_MultiSelectWidget, QtGui.QWidget):
 
     __pyqtSignals__ = ("selected_changed()",)
     __pyqtSignals__ = ("items_added(PyQt_PyObject)",)
@@ -14,8 +15,10 @@ class MultiSelectWidget(ui_multiselectwidget.Ui_MultiSelectWidget, QtGui.QWidget
         self.add_all_button.clicked.connect(self.add_all)
         self.remove_selected_button.clicked.connect(self.remove_selected)
         self.remove_all_button.clicked.connect(self.remove_all)
-        self.available_list.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
-        self.selected_list.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+        self.available_list.setSelectionMode(
+            QtGui.QAbstractItemView.ExtendedSelection)
+        self.selected_list.setSelectionMode(
+            QtGui.QAbstractItemView.ExtendedSelection)
 
     def switch_selected(self, src, dst):
         selected = src.selectedItems()

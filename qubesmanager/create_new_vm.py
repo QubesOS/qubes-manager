@@ -46,7 +46,8 @@ class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
         self.app = app
 
         # Theoretically we should be locking for writing here and unlock
-        # only after the VM creation finished. But the code would be more messy...
+        # only after the VM creation finished. But the code would be
+        # more messy...
         # Instead we lock for writing in the actual worker thread
         self.label_list, self.label_idx = utils.prepare_label_choice(
             self.label,
@@ -94,7 +95,8 @@ class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
         self.done(0)
 
     def accept(self):
-        vmclass = ('AppVM' if self.vm_type.currentIndex() == 0 else 'StandaloneVM')
+        vmclass = ('AppVM' if self.vm_type.currentIndex() == 0
+                   else 'StandaloneVM')
 
         name = str(self.name.text())
         try:

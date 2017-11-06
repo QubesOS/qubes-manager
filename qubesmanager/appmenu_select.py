@@ -50,7 +50,9 @@ class AppmenuSelectManager:
             ).decode().strip().split('\n') if line]
 
         # Check if appmenu entry is really installed
-#       whitelisted = [a for a in whitelisted if os.path.exists('%s/apps/%s-%s' % (self.vm.dir_path, self.vm.name, a))]
+        # whitelisted = [a for a in whitelisted
+        #  if os.path.exists('%s/apps/%s-%s' %
+        # (self.vm.dir_path, self.vm.name, a))]
 
         self.app_list.clear()
 

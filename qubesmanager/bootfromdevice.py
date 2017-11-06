@@ -34,9 +34,13 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
         self.qapp = qapp
 
         self.setupUi(self)
-        self.setWindowTitle(self.tr("Boot {vm} from device").format(vm=self.vm.name))
+        self.setWindowTitle(
+            self.tr("Boot {vm} from device").format(vm=self.vm.name))
 
-        self.connect(self.buttonBox, QtCore.SIGNAL("accepted()"), self.save_and_apply)
+        self.connect(
+            self.buttonBox,
+            QtCore.SIGNAL("accepted()"),
+            self.save_and_apply)
         self.connect(self.buttonBox, QtCore.SIGNAL("rejected()"), self.reject)
 
         # populate buttons and such
@@ -50,12 +54,14 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
         if self.blockDeviceRadioButton.isChecked():
             cdrom_location = self.blockDeviceComboBox.currentText()
         elif self.fileRadioButton.isChecked():
-            cdrom_location = str(self.vm_list[self.fileVM.currentIndex()]) + ":" + self.pathText.text()
+            cdrom_location = str(
+                self.vm_list[self.fileVM.currentIndex()]) + \
+                             ":" + self.pathText.text()
         else:
-            QtGui.QMessageBox.warning(None,
-                                self.tr(
-                                    "ERROR!"),
-                                self.tr("No file or block device selected; please select one."))
+            QtGui.QMessageBox.warning(
+                None,
+                self.tr("ERROR!"),
+                self.tr("No file or block device selected; please select one."))
             return
         qvm_start.main(['--cdrom', cdrom_location, self.vm.name])
 
@@ -87,7 +93,8 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
         )
 
     def radio_button_clicked(self):
-        self.blockDeviceComboBox.setEnabled(self.blockDeviceRadioButton.isChecked())
+        self.blockDeviceComboBox.setEnabled(
+            self.blockDeviceRadioButton.isChecked())
         self.fileVM.setEnabled(self.fileRadioButton.isChecked())
         self.selectFileButton.setEnabled(self.fileRadioButton.isChecked())
         self.pathText.setEnabled(self.fileRadioButton.isChecked())
