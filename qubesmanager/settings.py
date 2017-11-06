@@ -438,9 +438,9 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
     def rename_vm(self):
 
-        new_vm_name, ok = QInputDialog.getText(self
-            , self.tr('Rename VM')
-            , self.tr('New name: (WARNING: '
+        new_vm_name, ok = QInputDialog.getText(self,
+            self.tr('Rename VM'),
+            self.tr('New name: (WARNING: '
                       'all other changes will be discarded)'))
 
         if ok:
@@ -458,10 +458,12 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
     def remove_vm(self):
 
-        answer, ok = QInputDialog.getText(self, self.tr('Delete VM')
-            , self.tr('Are you absolutely sure you want to delete this VM? '
-                      '<br \> All VM settings and data will be irrevocably'
-                      ' deleted. <br \> If you are sure, please enter this '
+        answer, ok = QInputDialog.getText(
+            self,
+            self.tr('Delete VM'),
+            self.tr('Are you absolutely sure you want to delete this VM? '
+                      '<br/> All VM settings and data will be irrevocably'
+                      ' deleted. <br/> If you are sure, please enter this '
                       'VM\'s name below.'))
 
 
@@ -469,9 +471,11 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
             self._run_in_thread(self._remove_vm)
             self.done(0)
 
-        else:
-            QMessageBox.warning(None, self.tr("Removal cancelled")
-                                , self.tr("The VM will not be removed."))
+        elif ok:
+            QMessageBox.warning(
+                None,
+                self.tr("Removal cancelled"),
+                self.tr("The VM will not be removed."))
 
     def _clone_vm(self, t_monitor, name):
         try:
@@ -484,13 +488,17 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
     def clone_vm(self):
 
-        cloned_vm_name, ok = QInputDialog.getText(self, self.tr('Clone VM')
-                                        , self.tr('Name for the cloned VM:'))
+        cloned_vm_name, ok = QInputDialog.getText(
+            self,
+            self.tr('Clone VM'),
+            self.tr('Name for the cloned VM:'))
 
         if ok:
             self._run_in_thread(self._clone_vm, cloned_vm_name)
-            QMessageBox.warning(None, self.tr("Success")
-                            , self.tr("The VM was cloned successfully."))
+            QMessageBox.warning(
+                None,
+                self.tr("Success"),
+                self.tr("The VM was cloned successfully."))
 
     ######### advanced tab
 
