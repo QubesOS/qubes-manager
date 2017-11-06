@@ -157,7 +157,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         while not t_monitor.is_finished():
             self.qapp.processEvents()
-            time.sleep (0.1)
+            time.sleep(0.1)
 
         progress.hide()
 
@@ -209,7 +209,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         except Exception as ex:
             ret += [self.tr("Applications tab:"), str(ex)]
 
-        if len(ret) > 0 :
+        if len(ret) > 0:
             t_monitor.set_error_msg('\n'.join(ret))
 
         utils.debug('\n'.join(ret))
@@ -626,7 +626,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             devs.append((dev.rstrip(), dev.split(' ')[0]))
 
         class DevListWidgetItem(QtGui.QListWidgetItem):
-            def __init__(self, name, ident, parent = None):
+            def __init__(self, name, ident, parent=None):
                 super(DevListWidgetItem, self).__init__(name, parent)
                 self.ident = ident
                 self.Type
@@ -688,7 +688,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         return msg
 
     def include_in_balancing_state_changed(self, state):
-        for r in range (self.services_list.count()):
+        for r in range(self.services_list.count()):
             item = self.services_list.item(r)
             if str(item.text()) == 'meminfo-writer':
                 item.setCheckState(state)
@@ -705,7 +705,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
     def devices_selection_changed(self):
         if self.include_in_balancing.isChecked():
-            if self.dev_list.selected_list.count() > 0 :
+            if self.dev_list.selected_list.count() > 0:
                 self.dmm_warning_adv.show()
                 self.dmm_warning_dev.show()
             else:
@@ -747,7 +747,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         while not t_monitor.is_finished():
             self.qapp.processEvents()
-            time.sleep (0.1)
+            time.sleep(0.1)
 
         self.AppListManager = AppmenuSelectManager(self.vm, self.app_list)
 
@@ -942,7 +942,7 @@ def handle_exception(exc_type, exc_value, exc_traceback):
                     "This is most likely a bug in Qubes Manager.<br><br>"
                     "<b><i>%s</i></b>" % error +
                     "<br/>at line <b>%d</b><br/>of file %s.<br/><br/>"
-                    % ( line, filename ))
+                    % (line, filename))
 
     msg_box.exec_()
 

@@ -44,7 +44,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.qvm_collection = qvm_collection
 
         self.setupUi(self)
- 
+
         self.connect(
             self.buttonBox,
             QtCore.SIGNAL("accepted()"),
@@ -125,7 +125,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             updatevm_name = str(self.update_vm_combo.currentText())
             updatevm_name = updatevm_name.split(' ')[0]
             updatevm = self.qvm_collection.domains[updatevm_name]
-            
+
             self.qvm_collection.updatevm = updatevm
 
         #clockvm
@@ -133,7 +133,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             clockvm_name = str(self.clock_vm_combo.currentText())
             clockvm_name = clockvm_name.split(' ')[0]
             clockvm = self.qvm_collection.domains[clockvm_name]
-            
+
             self.qvm_collection.clockvm = clockvm
 
         #default netvm
@@ -141,7 +141,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             name = str(self.default_netvm_combo.currentText())
             name = name.split(' ')[0]
             vm = self.qvm_collection.domains[name]
-            
+
             self.qvm_collection.default_netvm = vm
 
         #default template
@@ -149,7 +149,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             name = str(self.default_template_combo.currentText())
             name = name.split(' ')[0]
             vm = self.qvm_collection.domains[name]
-            
+
             self.qvm_collection.default_template = vm
 
 
@@ -174,17 +174,17 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         if self.default_kernel_combo.currentIndex() != self.kernel_idx:
             kernel = str(self.default_kernel_combo.currentText())
             kernel = kernel.split(' ')[0]
-            
+
             self.qvm_collection.default_kernel = kernel
 
-        
+
     def __init_mem_defaults__(self):
 
         #qmemman settings
         self.qmemman_config = ConfigParser()
-        self.vm_min_mem_val =  '200MiB'  #str(qmemman_algo.MIN_PREFMEM)
+        self.vm_min_mem_val = '200MiB'  #str(qmemman_algo.MIN_PREFMEM)
         self.dom0_mem_boost_val = '350MiB' #str(qmemman_algo.DOM0_MEM_BOOST)
-        
+
         self.qmemman_config.read(qmemman_config_path)
         if self.qmemman_config.has_section('global'):
             self.vm_min_mem_val = \
@@ -230,7 +230,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 #If there already is a 'global' section, we don't use
                 # SafeConfigParser.write() - it would get rid of
                 # all the comments...
-                
+
                 lines_to_add = {}
                 lines_to_add['vm-min-mem'] = \
                     "vm-min-mem = " + current_min_vm_mem + "\n"
@@ -249,7 +249,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                         del lines_to_add['dom0-mem-boost']
                     else:
                         config_lines.append(l)
-                
+
                 qmemman_config_file.close()
 
                 for l in lines_to_add:
@@ -286,7 +286,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
 
     def save_and_apply(self):
 
-        self.__apply_system_defaults__()        
+        self.__apply_system_defaults__()
         self.__apply_kernel_defaults__()
         self.__apply_mem_defaults__()
         self.__apply_updates__()
@@ -296,13 +296,13 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
 # Bases on the original code by:
 # Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
 
-def handle_exception( exc_type, exc_value, exc_traceback ):
+def handle_exception(exc_type, exc_value, exc_traceback):
     import os.path
     import traceback
 
-    filename, line, dummy, dummy = traceback.extract_tb( exc_traceback ).pop()
-    filename = os.path.basename( filename )
-    error    = "%s: %s" % ( exc_type.__name__, exc_value )
+    filename, line, dummy, dummy = traceback.extract_tb(exc_traceback).pop()
+    filename = os.path.basename(filename)
+    error = "%s: %s" % (exc_type.__name__, exc_value)
 
     QtGui.QMessageBox.critical(
         None,
@@ -310,7 +310,7 @@ def handle_exception( exc_type, exc_value, exc_traceback ):
         "Whoops. A critical error has occured. This is most likely a bug "
         "in Qubes Global Settings application.<br><br><b><i>%s</i></b>" %
         error + "at <b>line %d</b> of file <b>%s</b>.<br/><br/>"
-        % ( line, filename ))
+        % (line, filename))
 
 
 def main():

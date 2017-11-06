@@ -31,8 +31,8 @@ class FirewallModifiedOutsideError(ValueError):
     pass
 
 class QIPAddressValidator(QtGui.QValidator):
-    def __init__(self, parent = None):
-        super (QIPAddressValidator, self).__init__(parent)
+    def __init__(self, parent=None):
+        super(QIPAddressValidator, self).__init__(parent)
 
     def validate(self, input, pos):
         hostname = str(input)
@@ -69,9 +69,9 @@ class QIPAddressValidator(QtGui.QValidator):
 
         return (QtGui.QValidator.Invalid, input, pos)
 
-class NewFwRuleDlg (QtGui.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
-    def __init__(self, parent = None):
-        super (NewFwRuleDlg, self).__init__(parent)
+class NewFwRuleDlg(QtGui.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
+    def __init__(self, parent=None):
+        super(NewFwRuleDlg, self).__init__(parent)
         self.setupUi(self)
 
         self.set_ok_enabled(False)
@@ -105,8 +105,8 @@ class NewFwRuleDlg (QtGui.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
         displayed_services = [
                 '',
                 'http', 'https', 'ftp', 'ftps', 'smtp',
-                'smtps', 'pop3', 'pop3s', 'imap', 'imaps', 'odmr', 
-                'nntp', 'nntps', 'ssh', 'telnet', 'telnets', 'ntp', 
+                'smtps', 'pop3', 'pop3s', 'imap', 'imaps', 'odmr',
+                'nntp', 'nntps', 'ssh', 'telnet', 'telnets', 'ntp',
                 'snmp', 'ldap', 'ldaps', 'irc', 'ircs', 'xmpp-client',
                 'syslog', 'printer', 'nfs', 'x11',
                 '1024-1234'
@@ -151,7 +151,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
             if match is not None:
                 service = match.groupdict()
                 self.__services.append(
-                    (service["name"], int(service["port"]),) )
+                    (service["name"], int(service["port"]),))
         f.close()
 
         self.fw_changed = False
@@ -160,8 +160,8 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         from operator import attrgetter
 
         rev = (order == QtCore.Qt.AscendingOrder)
-        self.children.sort(key = lambda x: self.get_column_string(idx, x)
-                           , reverse = rev)
+        self.children.sort(key=lambda x: self.get_column_string(idx, x)
+                           , reverse=rev)
 
         index1 = self.createIndex(0, 0)
         index2 = self.createIndex(len(self)-1, len(self.__columnNames)-1)
@@ -295,7 +295,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
                 action='accept'))
         else:
             rules.append(qubesadmin.firewall.Rule(None,
-                action = 'drop'))
+                action='drop'))
 
         vm.firewall.rules = rules
 
@@ -324,14 +324,14 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
                 (self.tempFullAccessExpireTime != 0) != tempFullAccess:
             self.fw_changed = True
 
-        conf = { "allow": allow,
+        conf = {"allow": allow,
                 "rules": list()
             }
 
         conf['rules'].extend(self.children)
 
         if tempFullAccess and not allow:
-            conf["rules"].append(qubesadmin.firewall.Rule(None,action='accept'
+            conf["rules"].append(qubesadmin.firewall.Rule(None, action='accept'
                         , expire=int(datetime.datetime.now().strftime("%s"))+\
                                         tempFullAccessTime*60))
 
@@ -355,13 +355,13 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         else:
             dialog.any_radio.setChecked(True)
 
-    def run_rule_dialog(self, dialog, row = None):
+    def run_rule_dialog(self, dialog, row=None):
         if dialog.exec_():
 
             address = str(dialog.addressComboBox.currentText())
             service = str(dialog.serviceComboBox.currentText())
 
-            rule = qubesadmin.firewall.Rule(None,action='accept')
+            rule = qubesadmin.firewall.Rule(None, action='accept')
 
             if address is not None and address != "*":
                 try:
@@ -425,8 +425,8 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
         if index.isValid() and role == QtCore.Qt.DisplayRole:
-            return self.get_column_string(index.column()
-                                          ,self.children[index.row()])
+            return self.get_column_string(index.column(),
+                                          self.children[index.row()])
 
     def headerData(self, section, orientation, role=QtCore.Qt.DisplayRole):
         if section < len(self.__columnNames) \

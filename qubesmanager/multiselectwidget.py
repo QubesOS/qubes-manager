@@ -31,7 +31,7 @@ class MultiSelectWidget(
             items.append(item)
         dst.sortItems()
         self.emit(QtCore.SIGNAL("selected_changed()"))
-        if src is self.selected_list:    
+        if src is self.selected_list:
             self.emit(QtCore.SIGNAL("items_removed(PyQt_PyObject)"), items)
         else:
             self.emit(QtCore.SIGNAL("items_added(PyQt_PyObject)"), items)
@@ -40,8 +40,8 @@ class MultiSelectWidget(
         self.switch_selected(self.available_list, self.selected_list)
 
     def remove_selected(self):
-        self.switch_selected(self.selected_list, self.available_list)    
-   
+        self.switch_selected(self.selected_list, self.available_list)
+
     def move_all(self, src, dst):
         items = []
         while src.count() > 0:
@@ -50,7 +50,7 @@ class MultiSelectWidget(
             items.append(item)
         dst.sortItems()
         self.emit(QtCore.SIGNAL("selected_changed()"))
-        if src is self.selected_list:    
+        if src is self.selected_list:
             self.emit(QtCore.SIGNAL("items_removed(PyQt_PyObject)"), items)
         else:
             self.emit(QtCore.SIGNAL("items_added(PyQt_PyObject)"), items)

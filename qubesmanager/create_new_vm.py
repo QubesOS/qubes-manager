@@ -38,7 +38,7 @@ from .thread_monitor import ThreadMonitor
 
 
 class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
-    def __init__(self, qtapp, app, parent = None):
+    def __init__(self, qtapp, app, parent=None):
         super(NewVmDlg, self).__init__(parent)
         self.setupUi(self)
 
@@ -137,7 +137,7 @@ class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
 
         while not thread_monitor.is_finished():
             self.qtapp.processEvents()
-            time.sleep (0.1)
+            time.sleep(0.1)
 
         progress.hide()
 
