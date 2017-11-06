@@ -22,20 +22,19 @@
 
 import sys
 import os
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt4 import QtCore, QtGui
 
 from qubesadmin import Qubes
+from qubesadmin.utils import parse_size, updates_vms_status
 
-from .ui_globalsettingsdlg import *
+from . import ui_globalsettingsdlg
 
 from configparser import ConfigParser
-from qubesadmin.utils import parse_size, updates_vms_status
 
 qmemman_config_path = '/etc/qubes/qmemman.conf'
 
 
-class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
+class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings, QtGui.QDialog):
 
     def __init__(self, app, qvm_collection, parent=None):
         super(GlobalSettingsWindow, self).__init__(parent)
@@ -45,9 +44,9 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
 
         self.setupUi(self)
  
-        self.connect(self.buttonBox, SIGNAL("accepted()"), self.save_and_apply)
-        self.connect(self.buttonBox, SIGNAL("rejected()"), self.reject)
-       
+        self.connect(self.buttonBox, QtCore.SIGNAL("accepted()"), self.save_and_apply)
+        self.connect(self.buttonBox, QtCore.SIGNAL("rejected()"), self.reject)
+
         self.__init_system_defaults__()
         self.__init_kernel_defaults__()
         self.__init_mem_defaults__()
@@ -251,7 +250,7 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
         self.updates_dom0.setChecked(self.updates_dom0_val)
         updates_vms = updates_vms_status(self.qvm_collection)
         if updates_vms is None:
-            self.updates_vm.setCheckState(Qt.PartiallyChecked)
+            self.updates_vm.setCheckState(QtCore.Qt.PartiallyChecked)
         else:
             self.updates_vm.setCheckState(updates_vms)
 
@@ -259,7 +258,7 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
         if self.updates_dom0.isChecked() != self.updates_dom0_val:
             # TODO updates_dom0_toggle(self.qvm_collection, self.updates_dom0.isChecked())
             raise NotImplementedError('Toggle dom0 updates not implemented')
-        if self.updates_vm.checkState() != Qt.PartiallyChecked:
+        if self.updates_vm.checkState() != QtCore.Qt.PartiallyChecked:
             for vm in self.qvm_collection.domains:
                 vm.features['check-updates'] = bool(self.updates_vm.checkState())
 
@@ -286,18 +285,18 @@ def handle_exception( exc_type, exc_value, exc_traceback ):
     filename = os.path.basename( filename )
     error    = "%s: %s" % ( exc_type.__name__, exc_value )
 
-    QMessageBox.critical(None, "Houston, we have a problem...",
+    QtGui.QMessageBox.critical(None, "Houston, we have a problem...",
                          "Whoops. A critical error has occured. This is most likely a bug "
                          "in Qubes Global Settings application.<br><br>"
                          "<b><i>%s</i></b>" % error +
                          "at <b>line %d</b> of file <b>%s</b>.<br/><br/>"
-                         % ( line, filename ))
+                                                    % ( line, filename ))
 
 
 def main():
 
     global qtapp
-    qtapp = QApplication(sys.argv)
+    qtapp = QtGui.QApplication(sys.argv)
     qtapp.setOrganizationName("The Qubes Project")
     qtapp.setOrganizationDomain("http://qubes-os.org")
     qtapp.setApplicationName("Qubes Global Settings")

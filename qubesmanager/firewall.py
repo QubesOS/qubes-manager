@@ -21,9 +21,7 @@
 import datetime
 import re
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-
+from PyQt4 import QtCore, QtGui
 import qubesadmin.firewall
 
 from . import ui_newfwruledlg
@@ -32,7 +30,7 @@ from . import ui_newfwruledlg
 class FirewallModifiedOutsideError(ValueError):
     pass
 
-class QIPAddressValidator(QValidator):
+class QIPAddressValidator(QtGui.QValidator):
     def __init__(self, parent = None):
         super (QIPAddressValidator, self).__init__(parent)
 
@@ -40,10 +38,10 @@ class QIPAddressValidator(QValidator):
         hostname = str(input)
 
         if len(hostname) > 255 or len(hostname) == 0:
-            return (QValidator.Intermediate, input, pos)
+            return (QtGui.QValidator.Intermediate, input, pos)
 
         if hostname == "*":
-            return (QValidator.Acceptable, input, pos)
+            return (QtGui.QValidator.Acceptable, input, pos)
 
         unmask = hostname.split("/", 1)
         if len(unmask) == 2:
@@ -51,27 +49,27 @@ class QIPAddressValidator(QValidator):
             mask = unmask[1]
             if mask.isdigit() or mask == "":
                 if re.match("^([0-9]{1,3}\.){3}[0-9]{1,3}$", hostname) is None:
-                    return (QValidator.Invalid, input, pos)
+                    return (QtGui.QValidator.Invalid, input, pos)
                 if mask != "":
                     mask = int(unmask[1])
                     if mask < 0 or mask > 32:
-                        return (QValidator.Invalid, input, pos)
+                        return (QtGui.QValidator.Invalid, input, pos)
             else:
-                return (QValidator.Invalid, input, pos)
+                return (QtGui.QValidator.Invalid, input, pos)
 
         if hostname[-1:] == ".":
             hostname = hostname[:-1]
 
         if hostname[-1:] == "-":
-            return (QValidator.Intermediate, input, pos)
+            return (QtGui.QValidator.Intermediate, input, pos)
 
         allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
         if all(allowed.match(x) for x in hostname.split(".")):
-            return (QValidator.Acceptable, input, pos)
+            return (QtGui.QValidator.Acceptable, input, pos)
 
-        return (QValidator.Invalid, input, pos)
+        return (QtGui.QValidator.Invalid, input, pos)
 
-class NewFwRuleDlg (QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
+class NewFwRuleDlg (QtGui.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
     def __init__(self, parent = None):
         super (NewFwRuleDlg, self).__init__(parent)
         self.setupUi(self)
@@ -79,20 +77,20 @@ class NewFwRuleDlg (QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
         self.set_ok_enabled(False)
         self.addressComboBox.setValidator(QIPAddressValidator())
         self.addressComboBox.editTextChanged.connect(self.address_editing_finished)
-        self.serviceComboBox.setValidator(QRegExpValidator(QRegExp("[a-z][a-z0-9-]+|[0-9]+(-[0-9]+)?", Qt.CaseInsensitive), None))
+        self.serviceComboBox.setValidator(QtGui.QRegExpValidator(QtCore.QRegExp("[a-z][a-z0-9-]+|[0-9]+(-[0-9]+)?", QtCore.Qt.CaseInsensitive), None))
         self.serviceComboBox.setEnabled(False)
-        self.serviceComboBox.setInsertPolicy(QComboBox.InsertAtBottom)
+        self.serviceComboBox.setInsertPolicy(QtGui.QComboBox.InsertAtBottom)
         self.populate_combos()
-        self.serviceComboBox.setInsertPolicy(QComboBox.InsertAtTop)
+        self.serviceComboBox.setInsertPolicy(QtGui.QComboBox.InsertAtTop)
 
     def accept(self):
         if self.tcp_radio.isChecked() or self.udp_radio.isChecked():
             if len(self.serviceComboBox.currentText()) == 0:
-                msg = QMessageBox()
+                msg = QtGui.QMessageBox()
                 msg.warning(self, self.tr("Firewall rule"),
                     self.tr("You need to fill service name/port for TCP/UDP rule"))
                 return
-        QDialog.accept(self)
+        QtGui.QDialog.accept(self)
 
     def populate_combos(self):
         example_addresses = [
@@ -118,7 +116,7 @@ class NewFwRuleDlg (QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
         self.set_ok_enabled(True)
 
     def set_ok_enabled(self, on):
-        ok_button = self.buttonBox.button(QDialogButtonBox.Ok)
+        ok_button = self.buttonBox.button(QtGui.QDialogButtonBox.Ok)
         if ok_button is not None:
             ok_button.setEnabled(on)
 
@@ -134,9 +132,9 @@ class NewFwRuleDlg (QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
         if checked:
             self.serviceComboBox.setEnabled(False)
 
-class QubesFirewallRulesModel(QAbstractItemModel):
+class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
     def __init__(self, parent=None):
-        QAbstractItemModel.__init__(self, parent)
+        QtCore.QAbstractItemModel.__init__(self, parent)
 
         self.__columnNames = {0: "Address", 1: "Service", 2: "Protocol", }
         self.__services = list()
@@ -154,7 +152,7 @@ class QubesFirewallRulesModel(QAbstractItemModel):
     def sort(self, idx, order):
         from operator import attrgetter
 
-        rev = (order == Qt.AscendingOrder)
+        rev = (order == QtCore.Qt.AscendingOrder)
         self.children.sort(key = lambda x: self.get_column_string(idx, x)
                            , reverse = rev)
 
@@ -362,7 +360,7 @@ class QubesFirewallRulesModel(QAbstractItemModel):
                 try:
                     rule.dsthost = address
                 except ValueError:
-                    QMessageBox.warning(None, self.tr("Invalid address"),
+                    QtGui.QMessageBox.warning(None, self.tr("Invalid address"),
                         self.tr("Address '{0}' is invalid.").format(address))
 
             if dialog.tcp_radio.isChecked():
@@ -374,7 +372,7 @@ class QubesFirewallRulesModel(QAbstractItemModel):
                 try:
                     rule.dstports = service
                 except ValueError:
-                    QMessageBox.warning(None, self.tr("Invalid port or service"),
+                    QtGui.QMessageBox.warning(None, self.tr("Invalid port or service"),
                         self.tr("Port number or service '{0}' is invalid.")
                                         .format(service))
             elif service is not None:
@@ -384,7 +382,7 @@ class QubesFirewallRulesModel(QAbstractItemModel):
                     if self.get_service_port(service) is not None:
                         rule.dstports = self.get_service_port(service)
                     else:
-                        QMessageBox.warning(None,
+                        QtGui.QMessageBox.warning(None,
                             self.tr("Invalid port or service"),
                             self.tr("Port number or service '{0}' is invalid.")
                                             .format(service))
@@ -394,36 +392,36 @@ class QubesFirewallRulesModel(QAbstractItemModel):
             else:
                 self.appendChild(rule)
 
-    def index(self, row, column, parent=QModelIndex()):
+    def index(self, row, column, parent=QtCore.QModelIndex()):
         if not self.hasIndex(row, column, parent):
-            return QModelIndex()
+            return QtCore.QModelIndex()
 
         return self.createIndex(row, column, self.children[row])
 
     def parent(self, child):
-        return QModelIndex()
+        return QtCore.QModelIndex()
 
-    def rowCount(self, parent=QModelIndex()):
+    def rowCount(self, parent=QtCore.QModelIndex()):
         return len(self)
 
-    def columnCount(self, parent=QModelIndex()):
+    def columnCount(self, parent=QtCore.QModelIndex()):
         return len(self.__columnNames)
 
-    def hasChildren(self, index=QModelIndex()):
+    def hasChildren(self, index=QtCore.QModelIndex()):
         parentItem = index.internalPointer()
         if parentItem is not None:
             return False
         else:
             return True
 
-    def data(self, index, role=Qt.DisplayRole):
-        if index.isValid() and role == Qt.DisplayRole:
+    def data(self, index, role=QtCore.Qt.DisplayRole):
+        if index.isValid() and role == QtCore.Qt.DisplayRole:
             return self.get_column_string(index.column()
                                           ,self.children[index.row()])
 
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
+    def headerData(self, section, orientation, role=QtCore.Qt.DisplayRole):
         if section < len(self.__columnNames) \
-                and orientation == Qt.Horizontal and role == Qt.DisplayRole:
+                and orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
                     return self.__columnNames[section]
 
     @property
@@ -432,7 +430,7 @@ class QubesFirewallRulesModel(QAbstractItemModel):
 
     def appendChild(self, child):
         row = len(self)
-        self.beginInsertRows(QModelIndex(), row, row)
+        self.beginInsertRows(QtCore.QModelIndex(), row, row)
         self.children.append(child)
         self.endInsertRows()
         index = self.createIndex(row, 0, child)
@@ -443,7 +441,7 @@ class QubesFirewallRulesModel(QAbstractItemModel):
         if i >= len(self):
             return
 
-        self.beginRemoveRows(QModelIndex(), i, i)
+        self.beginRemoveRows(QtCore.QModelIndex(), i, i)
         del self.children[i]
         self.endRemoveRows()
         index = self.createIndex(i, 0)

@@ -20,11 +20,11 @@
 #
 
 
-from PyQt4.QtCore import *
+import PyQt4.QtCore
 
 import threading
 
-class ThreadMonitor(QObject):
+class ThreadMonitor(PyQt4.QtCore.QObject):
     def __init__(self):
         self.success = True
         self.error_msg = None

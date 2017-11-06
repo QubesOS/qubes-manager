@@ -26,8 +26,7 @@ import threading
 import time
 import subprocess
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt4 import QtCore, QtGui
 
 import qubesadmin
 import qubesadmin.tools
@@ -38,7 +37,7 @@ from .ui_newappvmdlg import Ui_NewVMDlg
 from .thread_monitor import ThreadMonitor
 
 
-class NewVmDlg(QDialog, Ui_NewVMDlg):
+class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
     def __init__(self, qtapp, app, parent = None):
         super(NewVmDlg, self).__init__(parent)
         self.setupUi(self)
@@ -69,13 +68,13 @@ class NewVmDlg(QDialog, Ui_NewVMDlg):
             (lambda vm: vm.provides_network),
             allow_internal=False, allow_default=True, allow_none=True)
 
-        self.name.setValidator(QRegExpValidator(
-            QRegExp("[a-zA-Z0-9-]*", Qt.CaseInsensitive), None))
+        self.name.setValidator(QtGui.QRegExpValidator(
+            QtCore.QRegExp("[a-zA-Z0-9-]*", QtCore.Qt.CaseInsensitive), None))
         self.name.selectAll()
         self.name.setFocus()
 
         if len(self.template_list) == 0:
-            QMessageBox.warning(None,
+            QtGui.QMessageBox.warning(None,
                 self.tr('No template available!'),
                 self.tr('Cannot create a qube when no template exists.'))
 
@@ -103,7 +102,7 @@ class NewVmDlg(QDialog, Ui_NewVMDlg):
         except LookupError:
             pass
         else:
-            QMessageBox.warning(None,
+            QtGui.QMessageBox.warning(None,
                 self.tr('Incorrect qube name!'),
                 self.tr('A qube with the name <b>{}</b> already exists in the '
                         'system!').format(name))
@@ -128,7 +127,7 @@ class NewVmDlg(QDialog, Ui_NewVMDlg):
         thread.daemon = True
         thread.start()
 
-        progress = QProgressDialog(
+        progress = QtGui.QProgressDialog(
             self.tr("Creating new qube <b>{}</b>...").format(name), "", 0, 0)
         progress.setCancelButton(None)
         progress.setModal(True)
@@ -141,7 +140,7 @@ class NewVmDlg(QDialog, Ui_NewVMDlg):
         progress.hide()
 
         if not thread_monitor.success:
-            QMessageBox.warning(None,
+            QtGui.QMessageBox.warning(None,
                 self.tr("Error creating the qube!"),
                 self.tr("ERROR: {}").format(thread_monitor.error_msg))
 
@@ -214,7 +213,7 @@ parser = qubesadmin.tools.QubesArgumentParser()
 def main(args=None):
     args = parser.parse_args(args)
 
-    qtapp = QApplication(sys.argv)
+    qtapp = QtGui.QApplication(sys.argv)
     qtapp.setOrganizationName('Invisible Things Lab')
     qtapp.setOrganizationDomain('https://www.qubes-os.org/')
     qtapp.setApplicationName('Create qube')

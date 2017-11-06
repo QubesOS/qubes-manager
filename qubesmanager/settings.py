@@ -28,7 +28,9 @@ import subprocess
 import threading
 import time
 import traceback
-
+import os
+import sys
+from qubesadmin.tools import QubesArgumentParser
 
 from . import utils
 from . import multiselectwidget
@@ -36,10 +38,11 @@ from . import thread_monitor
 
 from .appmenu_select import AppmenuSelectManager
 from . import firewall
+from PyQt4 import QtCore, QtGui
 
 from . import ui_settingsdlg
 
-class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, firewall.QDialog):
+class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
     tabs_indices = collections.OrderedDict((
             ('basic', 0),
             ('advanced', 1),
@@ -66,8 +69,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, firewall.QDialog):
             assert (idx in range(self.tabWidget.count()))
             self.tabWidget.setCurrentIndex(idx)
 
-        self.connect(self.buttonBox, firewall.SIGNAL("accepted()"), self.save_and_apply)
-        self.connect(self.buttonBox, firewall.SIGNAL("rejected()"), self.reject)
+        self.connect(self.buttonBox, QtCore.SIGNAL("accepted()"), self.save_and_apply)
+        self.connect(self.buttonBox, QtCore.SIGNAL("rejected()"), self.reject)
 
         self.tabWidget.currentChanged.connect(self.current_tab_changed)
 
@@ -83,8 +86,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, firewall.QDialog):
         ###### advanced tab
         self.__init_advanced_tab__()
         self.include_in_balancing.stateChanged.connect(self.include_in_balancing_state_changed)
-        self.connect(self.init_mem, firewall.SIGNAL("editingFinished()"), self.check_mem_changes)
-        self.connect(self.max_mem_size, firewall.SIGNAL("editingFinished()"), self.check_mem_changes)
+        self.connect(self.init_mem, QtCore.SIGNAL("editingFinished()"), self.check_mem_changes)
+        self.connect(self.max_mem_size, QtCore.SIGNAL("editingFinished()"), self.check_mem_changes)
         self.bootFromDeviceButton.clicked.connect(self.boot_from_cdrom_button_pressed)
 
         ###### firewall tab
@@ -105,7 +108,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, firewall.QDialog):
 
         ####### devices tab
         self.__init_devices_tab__()
-        self.connect(self.dev_list, firewall.SIGNAL("selected_changed()"), self.devices_selection_changed)
+        self.connect(self.dev_list, QtCore.SIGNAL("selected_changed()"), self.devices_selection_changed)
 
         ####### services tab
         self.__init_services_tab__()
@@ -132,7 +135,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, firewall.QDialog):
         thread.daemon = True
         thread.start()
 
-        progress = firewall.QProgressDialog(
+        progress = QtGui.QProgressDialog(
             self.tr("Applying settings to <b>{0}</b>...").format(self.vm.name), "", 0, 0)
         progress.setCancelButton(None)
         progress.setModal(True)
@@ -145,7 +148,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, firewall.QDialog):
         progress.hide()
 
         if not t_monitor.success:
-            firewall.QMessageBox.warning(None,
+            QtGui.QMessageBox.warning(None,
                                          self.tr("Error while changing settings for {0}!").format(self.vm.name),
                                          self.tr("ERROR: {0}").format(t_monitor.error_msg))
 
@@ -201,7 +204,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, firewall.QDialog):
             netvm = self.vm.netvm
             if netvm is not None and \
                     not netvm.features.check_with_template('qubes-firewall', False):
-                firewall.QMessageBox.warning(None,
+                QtGui.QMessageBox.warning(None,
                                              self.tr("VM configuration problem!"),
                                              self.tr("The '{vm}' AppVM is network connected to "
                         "'{netvm}', which does not support firewall!<br/>"
@@ -227,7 +230,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, firewall.QDialog):
 
     def __init_basic_tab__(self):
         self.vmname.setText(self.vm.name)
-        self.vmname.setValidator(firewall.QRegExpValidator(firewall.QRegExp("[a-zA-Z0-9-]*", firewall.Qt.CaseInsensitive), None))
+        self.vmname.setValidator(QtGui.QRegExpValidator(QtCore.QRegExp("[a-zA-Z0-9-]*", QtCore.Qt.CaseInsensitive), None))
         self.vmname.setEnabled(False)
         self.rename_vm_button.setEnabled(not self.vm.is_running())
         self.delete_vm_button.setEnabled(not self.vm.is_running())
@@ -385,14 +388,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, firewall.QDialog):
 
     def check_mem_changes(self):
         if self.max_mem_size.value() < self.init_mem.value():
-            firewall.QMessageBox.warning(None,
+            QtGui.QMessageBox.warning(None,
                                          self.tr("Warning!"),
                                          self.tr("Max memory can not be less than initial memory.<br>"
                         "Setting max memory to equal initial memory."))
             self.max_mem_size.setValue(self.init_mem.value())
         # Linux specific limit: init memory must not be below max_mem_size/10.79 in order to allow scaling up to max_mem_size (or else "add_memory() failed: -17" problem)
         if self.init_mem.value() * 10 < self.max_mem_size.value():
-            firewall.QMessageBox.warning(None,
+            QtGui.QMessageBox.warning(None,
                                          self.tr("Warning!"),
                                          self.tr("Initial memory can not be less than one tenth "
                         "Max memory.<br>Setting initial memory to the minimum "
@@ -410,7 +413,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, firewall.QDialog):
             time.sleep(0.1)
 
         if not t_monitor.success:
-            firewall.QMessageBox.warning(None,
+            QtGui.QMessageBox.warning(None,
                                          self.tr("Error!"),
                                          self.tr("ERROR: {}").format(
                                     t_monitor.error_msg))
@@ -429,7 +432,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, firewall.QDialog):
 
     def rename_vm(self):
 
-        new_vm_name, ok = firewall.QInputDialog.getText(self,
+        new_vm_name, ok = QtGui.QInputDialog.getText(self,
                                                         self.tr('Rename VM'),
                                                         self.tr('New name: (WARNING: '
                       'all other changes will be discarded)'))
@@ -449,7 +452,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, firewall.QDialog):
 
     def remove_vm(self):
 
-        answer, ok = firewall.QInputDialog.getText(
+        answer, ok = QtGui.QInputDialog.getText(
             self,
             self.tr('Delete VM'),
             self.tr('Are you absolutely sure you want to delete this VM? '
@@ -463,7 +466,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, firewall.QDialog):
             self.done(0)
 
         elif ok:
-            firewall.QMessageBox.warning(
+            QtGui.QMessageBox.warning(
                 None,
                 self.tr("Removal cancelled"),
                 self.tr("The VM will not be removed."))
@@ -479,14 +482,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, firewall.QDialog):
 
     def clone_vm(self):
 
-        cloned_vm_name, ok = firewall.QInputDialog.getText(
+        cloned_vm_name, ok = QtGui.QInputDialog.getText(
             self,
             self.tr('Clone VM'),
             self.tr('Name for the cloned VM:'))
 
         if ok:
             self._run_in_thread(self._clone_vm, cloned_vm_name)
-            firewall.QMessageBox.warning(
+            QtGui.QMessageBox.warning(
                 None,
                 self.tr("Success"),
                 self.tr("The VM was cloned successfully."))
@@ -593,7 +596,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, firewall.QDialog):
         for dev in lspci.splitlines():
             devs.append((dev.rstrip(), dev.split(' ')[0]))
 
-        class DevListWidgetItem(firewall.QListWidgetItem):
+        class DevListWidgetItem(QtGui.QListWidgetItem):
             def __init__(self, name, ident, parent = None):
                 super(DevListWidgetItem, self).__init__(name, parent)
                 self.ident = ident
@@ -727,22 +730,22 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, firewall.QDialog):
             if not feature.startswith('service.'):
                 continue
             service = feature[len('service.'):]
-            item = firewall.QListWidgetItem(service)
+            item = QtGui.QListWidgetItem(service)
             item.setCheckState(ui_settingsdlg.QtCore.Qt.Checked
                 if self.vm.features[feature] else ui_settingsdlg.QtCore.Qt.Unchecked)
             self.services_list.addItem(item)
             self.new_srv_dict[service] = self.vm.features[feature]
 
-        self.connect(self.services_list, firewall.SIGNAL("itemClicked(QListWidgetItem *)"), self.services_item_clicked)
+        self.connect(self.services_list, QtCore.SIGNAL("itemClicked(QListWidgetItem *)"), self.services_item_clicked)
 
     def __add_service__(self):
         srv = str(self.service_line_edit.text()).strip()
         if srv != "":
             if srv in self.new_srv_dict:
-                firewall.QMessageBox.information(None, '',
+                QtGui.QMessageBox.information(None, '',
                                                  self.tr('Service already on the list!'))
             else:
-                item = firewall.QListWidgetItem(srv)
+                item = QtGui.QListWidgetItem(srv)
                 item.setCheckState(ui_settingsdlg.QtCore.Qt.Checked)
                 self.services_list.addItem(item)
                 self.new_srv_dict[srv] = True
@@ -753,7 +756,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, firewall.QDialog):
         if not item:
             return
         if str(item.text()) == 'meminfo-writer':
-            firewall.QMessageBox.information(None,
+            QtGui.QMessageBox.information(None,
                                              self.tr('Service can not be removed'),
                                              self.tr('Service meminfo-writer can not be removed from the list.'))
             return
@@ -812,8 +815,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, firewall.QDialog):
     def set_fw_model(self, model):
         self.fw_model = model
         self.rulesTreeView.setModel(model)
-        self.rulesTreeView.header().setResizeMode(firewall.QHeaderView.ResizeToContents)
-        self.rulesTreeView.header().setResizeMode(0, firewall.QHeaderView.Stretch)
+        self.rulesTreeView.header().setResizeMode(QtGui.QHeaderView.ResizeToContents)
+        self.rulesTreeView.header().setResizeMode(0, QtGui.QHeaderView.Stretch)
         self.set_allow(model.allow)
         if model.tempFullAccessExpireTime:
             self.tempFullAccess.setChecked(True)
@@ -874,7 +877,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, firewall.QDialog):
 def handle_exception(exc_type, exc_value, exc_traceback):
 
     filename, line, dummy, dummy = traceback.extract_tb(exc_traceback).pop()
-    filename = firewall.os.path.basename(filename)
+    filename = os.path.basename(filename)
     error = "%s: %s" % (exc_type.__name__, exc_value)
 
     strace = ""
@@ -887,9 +890,9 @@ def handle_exception(exc_type, exc_value, exc_traceback):
         strace += "line no.: %d\n" %line
         strace += "file: %s\n" %filename
 
-    msg_box = firewall.QMessageBox()
+    msg_box = QtGui.QMessageBox()
     msg_box.setDetailedText(strace)
-    msg_box.setIcon(firewall.QMessageBox.Critical)
+    msg_box.setIcon(QtGui.QMessageBox.Critical)
     msg_box.setWindowTitle("Houston, we have a problem...")
     msg_box.setText("Whoops. A critical error has occured. This is most likely a bug "
                     "in Qubes Manager.<br><br>"
@@ -900,7 +903,7 @@ def handle_exception(exc_type, exc_value, exc_traceback):
     msg_box.exec_()
 
 
-parser = firewall.qubesadmin.tools.QubesArgumentParser(vmname_nargs=1)
+parser = QubesArgumentParser(vmname_nargs=1)
 
 parser.add_argument('--tab', metavar='TAB',
     action='store',
@@ -916,13 +919,13 @@ def main(args=None):
     args = parser.parse_args(args)
     vm = args.domains.pop()
 
-    qapp = firewall.QApplication(firewall.sys.argv)
+    qapp = QtGui.QApplication(sys.argv)
     qapp.setOrganizationName('Invisible Things Lab')
     qapp.setOrganizationDomain("https://www.qubes-os.org/")
     qapp.setApplicationName("Qubes VM Settings")
 
     if not utils.is_debug():
-        firewall.sys.excepthook = handle_exception
+        sys.excepthook = handle_exception
 
     settings_window = VMSettingsWindow(vm, qapp, args.tab)
     settings_window.show()

@@ -21,11 +21,11 @@
 
 import subprocess
 
-from PyQt4.QtGui import *
+import PyQt4.QtGui
 
 # TODO description in tooltip
 # TODO icon
-class AppListWidgetItem(QListWidgetItem):
+class AppListWidgetItem(PyQt4.QtGui.QListWidgetItem):
     def __init__(self, name, ident, parent=None):
         super(AppListWidgetItem, self).__init__(name, parent)
 #       self.setToolTip(command)

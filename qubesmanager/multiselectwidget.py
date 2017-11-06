@@ -1,8 +1,7 @@
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from .ui_multiselectwidget import *
+from PyQt4 import QtCore, QtGui
+from . import ui_multiselectwidget
 
-class MultiSelectWidget(Ui_MultiSelectWidget, QWidget):
+class MultiSelectWidget(ui_multiselectwidget.Ui_MultiSelectWidget, QtGui.QWidget):
 
     __pyqtSignals__ = ("selected_changed()",)
     __pyqtSignals__ = ("items_added(PyQt_PyObject)",)
@@ -15,8 +14,8 @@ class MultiSelectWidget(Ui_MultiSelectWidget, QWidget):
         self.add_all_button.clicked.connect(self.add_all)
         self.remove_selected_button.clicked.connect(self.remove_selected)
         self.remove_all_button.clicked.connect(self.remove_all)
-        self.available_list.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.selected_list.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.available_list.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+        self.selected_list.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
 
     def switch_selected(self, src, dst):
         selected = src.selectedItems()
@@ -28,11 +27,11 @@ class MultiSelectWidget(Ui_MultiSelectWidget, QWidget):
             dst.addItem(item)
             items.append(item)
         dst.sortItems()
-        self.emit(SIGNAL("selected_changed()"))
+        self.emit(QtCore.SIGNAL("selected_changed()"))
         if src is self.selected_list:    
-            self.emit(SIGNAL("items_removed(PyQt_PyObject)"), items)
+            self.emit(QtCore.SIGNAL("items_removed(PyQt_PyObject)"), items)
         else:
-            self.emit(SIGNAL("items_added(PyQt_PyObject)"), items)
+            self.emit(QtCore.SIGNAL("items_added(PyQt_PyObject)"), items)
 
     def add_selected(self):
         self.switch_selected(self.available_list, self.selected_list)
@@ -47,11 +46,11 @@ class MultiSelectWidget(Ui_MultiSelectWidget, QWidget):
             dst.addItem(item)
             items.append(item)
         dst.sortItems()
-        self.emit(SIGNAL("selected_changed()"))
+        self.emit(QtCore.SIGNAL("selected_changed()"))
         if src is self.selected_list:    
-            self.emit(SIGNAL("items_removed(PyQt_PyObject)"), items)
+            self.emit(QtCore.SIGNAL("items_removed(PyQt_PyObject)"), items)
         else:
-            self.emit(SIGNAL("items_added(PyQt_PyObject)"), items)
+            self.emit(QtCore.SIGNAL("items_added(PyQt_PyObject)"), items)
 
 
     def add_all(self):

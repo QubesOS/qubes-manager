@@ -17,14 +17,16 @@
 #
 #
 
+import sys
 import subprocess
 from . import utils
-from .firewall import *
-from .ui_bootfromdevice import *
+from . import firewall
+from . import ui_bootfromdevice
+from PyQt4 import QtGui, QtCore
 import qubesadmin.tools.qvm_start as qvm_start
 
 
-class VMBootFromDeviceWindow(Ui_BootDialog, QDialog):
+class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
     def __init__(self, vm, qapp, parent=None):
         super(VMBootFromDeviceWindow, self).__init__(parent)
 
@@ -34,8 +36,8 @@ class VMBootFromDeviceWindow(Ui_BootDialog, QDialog):
         self.setupUi(self)
         self.setWindowTitle(self.tr("Boot {vm} from device").format(vm=self.vm.name))
 
-        self.connect(self.buttonBox, SIGNAL("accepted()"), self.save_and_apply)
-        self.connect(self.buttonBox, SIGNAL("rejected()"), self.reject)
+        self.connect(self.buttonBox, QtCore.SIGNAL("accepted()"), self.save_and_apply)
+        self.connect(self.buttonBox, QtCore.SIGNAL("rejected()"), self.reject)
 
         # populate buttons and such
         self.__init_buttons__()
@@ -50,7 +52,7 @@ class VMBootFromDeviceWindow(Ui_BootDialog, QDialog):
         elif self.fileRadioButton.isChecked():
             cdrom_location = str(self.vm_list[self.fileVM.currentIndex()]) + ":" + self.pathText.text()
         else:
-            QMessageBox.warning(None,
+            QtGui.QMessageBox.warning(None,
                                 self.tr(
                                     "ERROR!"),
                                 self.tr("No file or block device selected; please select one."))
@@ -102,7 +104,7 @@ class VMBootFromDeviceWindow(Ui_BootDialog, QDialog):
             self.pathText.setText(new_path)
 
 
-parser = qubesadmin.tools.QubesArgumentParser(vmname_nargs=1)
+parser = firewall.qubesadmin.tools.QubesArgumentParser(vmname_nargs=1)
 
 def main(args=None):
     global bootfromdevice_window
@@ -110,7 +112,7 @@ def main(args=None):
     args = parser.parse_args(args)
     vm = args.domains.pop()
 
-    qapp = QApplication(sys.argv)
+    qapp = QtGui.QApplication(sys.argv)
     qapp.setOrganizationName('Invisible Things Lab')
     qapp.setOrganizationDomain("https://www.qubes-os.org/")
     qapp.setApplicationName("Qubes VM Settings")
