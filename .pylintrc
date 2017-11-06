@@ -1,6 +1,19 @@
 [MASTER]
 persistent=no
-ignore=tests
+ignore=tests,
+    ui_about.py,
+    ui_backupdlg.py,
+    ui_bootfromdevice.py,
+    ui_globalsettingsdlg.py,
+    ui_informationnotes.py,
+    ui_logdlg.py,
+    ui_multiselectwidget.py,
+    ui_newappvmdlg.py,
+    ui_newfwruledlg.py,
+    ui_releasenotes.py,
+    ui_restoredlg.py,
+    ui_settingsdlg.py,
+    resources_rc.py
 
 [MESSAGES CONTROL]
 # abstract-class-little-used: see http://www.logilab.org/ticket/111138
