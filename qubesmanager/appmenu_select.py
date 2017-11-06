@@ -19,18 +19,9 @@
 #
 #
 
-import os
 import subprocess
-import sys
-import time
 
-from operator import itemgetter
-
-from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
-
-import qubesmanager.resources_rc
 
 # TODO description in tooltip
 # TODO icon

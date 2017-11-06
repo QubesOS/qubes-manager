@@ -21,7 +21,6 @@
 #
 #
 
-import os
 import sys
 import threading
 import time
@@ -32,8 +31,6 @@ from PyQt4.QtGui import *
 
 import qubesadmin
 import qubesadmin.tools
-
-import qubesmanager.resources_rc
 
 from . import utils
 

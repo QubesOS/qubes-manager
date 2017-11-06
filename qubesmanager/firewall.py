@@ -19,11 +19,7 @@
 #
 
 import datetime
-import ipaddress
-import os
 import re
-import sys
-import xml.etree.ElementTree
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *

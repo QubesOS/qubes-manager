@@ -24,28 +24,20 @@
 
 
 import collections
-import copy
-import os
-import os.path
 import subprocess
-import sys
 import threading
 import time
 import traceback
 
-import qubesadmin
-import qubesadmin.tools
 
 from . import utils
 from . import multiselectwidget
 from . import thread_monitor
 
 from .appmenu_select import AppmenuSelectManager
-from .backup_utils import get_path_for_vm
 from . import firewall
 
 from . import ui_settingsdlg
-from .bootfromdevice import main as bootfromdevice
 
 class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, firewall.QDialog):
     tabs_indices = collections.OrderedDict((
