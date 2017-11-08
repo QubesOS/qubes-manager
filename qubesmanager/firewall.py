@@ -74,7 +74,7 @@ class NewFwRuleDlg(QtGui.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
         super(NewFwRuleDlg, self).__init__(parent)
         self.setupUi(self)
 
-        self.set_ok_enabled(False)
+        self.set_ok_state(False)
         self.addressComboBox.setValidator(QIPAddressValidator())
         self.addressComboBox.editTextChanged.connect(
             self.address_editing_finished)
@@ -117,12 +117,12 @@ class NewFwRuleDlg(QtGui.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
             self.serviceComboBox.addItem(service)
 
     def address_editing_finished(self):
-        self.set_ok_enabled(True)
+        self.set_ok_state(True)
 
-    def set_ok_enabled(self, on):
+    def set_ok_state(self, ok_state):
         ok_button = self.buttonBox.button(QtGui.QDialogButtonBox.Ok)
         if ok_button is not None:
-            ok_button.setEnabled(on)
+            ok_button.setEnabled(ok_state)
 
     def on_tcp_radio_toggled(self, checked):
         if checked:
@@ -140,19 +140,19 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
     def __init__(self, parent=None):
         QtCore.QAbstractItemModel.__init__(self, parent)
 
-        self.__columnNames = {0: "Address", 1: "Service", 2: "Protocol", }
+        self.__column_names = {0: "Address", 1: "Service", 2: "Protocol", }
         self.__services = list()
         pattern = re.compile(
             "(?P<name>[a-z][a-z0-9-]+)\s+(?P<port>[0-9]+)/(?P<protocol>[a-z]+)",
             re.IGNORECASE)
-        f = open('/etc/services', 'r')
-        for line in f:
+        file = open('/etc/services', 'r')
+        for line in file:
             match = pattern.match(line)
             if match is not None:
                 service = match.groupdict()
                 self.__services.append(
                     (service["name"], int(service["port"]),))
-        f.close()
+        file.close()
 
         self.fw_changed = False
 
@@ -164,7 +164,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
                            , reverse=rev)
 
         index1 = self.createIndex(0, 0)
-        index2 = self.createIndex(len(self)-1, len(self.__columnNames)-1)
+        index2 = self.createIndex(len(self) - 1, len(self.__column_names) - 1)
         self.dataChanged.emit(index1, index2)
 
 
@@ -219,8 +219,8 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
             'rules': [],
         }
 
-        allowDns = False
-        allowIcmp = False
+        allow_dns = False
+        allow_icmp = False
         common_action = None
 
         reversed_rules = list(reversed(vm.firewall.rules))
@@ -241,11 +241,11 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
             rule = reversed_rules.pop(0)
 
             if rule == dns_rule:
-                allowDns = True
+                allow_dns = True
                 continue
 
             if rule.proto == icmp_rule:
-                allowIcmp = True
+                allow_icmp = True
                 continue
 
             if rule.specialtarget is not None or rule.icmptype is not None:
@@ -268,10 +268,10 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
 
         conf['allow'] = (common_action == 'accept')
 
-        if not allowIcmp and not conf['allow']:
+        if not allow_icmp and not conf['allow']:
             raise FirewallModifiedOutsideError('ICMP must be allowed.')
 
-        if not allowDns and not conf['allow']:
+        if not allow_dns and not conf['allow']:
             raise FirewallModifiedOutsideError('DNS must be allowed')
 
         return conf
@@ -302,26 +302,26 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
     def set_vm(self, vm):
         self.__vm = vm
 
-        self.clearChildren()
+        self.clear_children()
 
         conf = self.get_firewall_conf(vm)
 
         self.allow = conf["allow"]
 
-        self.tempFullAccessExpireTime = conf['expire']
+        self.temp_full_access_expire_time = conf['expire']
 
         for rule in conf["rules"]:
-            self.appendChild(rule)
+            self.append_child(rule)
 
     def get_vm_name(self):
         return self.__vm.name
 
-    def apply_rules(self, allow, tempFullAccess=False,
-                    tempFullAccessTime=None):
+    def apply_rules(self, allow, temp_full_access=False,
+                    temp_full_access_time=None):
         assert self.__vm is not None
 
         if self.allow != allow or \
-                (self.tempFullAccessExpireTime != 0) != tempFullAccess:
+                (self.temp_full_access_expire_time != 0) != temp_full_access:
             self.fw_changed = True
 
         conf = {"allow": allow,
@@ -330,10 +330,12 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
 
         conf['rules'].extend(self.children)
 
-        if tempFullAccess and not allow:
-            conf["rules"].append(qubesadmin.firewall.Rule(None, action='accept'
-                        , expire=int(datetime.datetime.now().strftime("%s"))+\
-                                        tempFullAccessTime*60))
+        if temp_full_access and not allow:
+            conf["rules"].append(qubesadmin.firewall.Rule(
+                None,
+                action='accept',
+                expire=int(datetime.datetime.now().strftime("%s")) +
+                       temp_full_access_time * 60))
 
         if self.fw_changed:
             self.write_firewall_conf(self.__vm, conf)
@@ -397,9 +399,9 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
                                             .format(service))
 
             if row is not None:
-                self.setChild(row, rule)
+                self.set_child(row, rule)
             else:
-                self.appendChild(rule)
+                self.append_child(rule)
 
     def index(self, row, column, parent=QtCore.QModelIndex()):
         if not self.hasIndex(row, column, parent):
@@ -410,15 +412,18 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
     def parent(self, child):
         return QtCore.QModelIndex()
 
+    # pylint: disable=invalid-name
     def rowCount(self, parent=QtCore.QModelIndex()):
         return len(self)
 
+    # pylint: disable=invalid-name
     def columnCount(self, parent=QtCore.QModelIndex()):
-        return len(self.__columnNames)
+        return len(self.__column_names)
 
+    # pylint: disable=invalid-name
     def hasChildren(self, index=QtCore.QModelIndex()):
-        parentItem = index.internalPointer()
-        if parentItem is not None:
+        parent_item = index.internalPointer()
+        if parent_item is not None:
             return False
         else:
             return True
@@ -428,17 +433,18 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
             return self.get_column_string(index.column(),
                                           self.children[index.row()])
 
+    # pylint: disable=invalid-name
     def headerData(self, section, orientation, role=QtCore.Qt.DisplayRole):
-        if section < len(self.__columnNames) \
+        if section < len(self.__column_names) \
                 and orientation == QtCore.Qt.Horizontal \
                 and role == QtCore.Qt.DisplayRole:
-                    return self.__columnNames[section]
+                    return self.__column_names[section]
 
     @property
     def children(self):
         return self.__children
 
-    def appendChild(self, child):
+    def append_child(self, child):
         row = len(self)
         self.beginInsertRows(QtCore.QModelIndex(), row, row)
         self.children.append(child)
@@ -447,7 +453,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         self.dataChanged.emit(index, index)
         self.fw_changed = True
 
-    def removeChild(self, i):
+    def remove_child(self, i):
         if i >= len(self):
             return
 
@@ -458,13 +464,13 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         self.dataChanged.emit(index, index)
         self.fw_changed = True
 
-    def setChild(self, i, child):
+    def set_child(self, i, child):
         self.children[i] = child
         index = self.createIndex(i, 0, child)
         self.dataChanged.emit(index, index)
         self.fw_changed = True
 
-    def clearChildren(self):
+    def clear_children(self):
         self.__children = list()
 
     def __len__(self):

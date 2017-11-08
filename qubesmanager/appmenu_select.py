@@ -61,11 +61,11 @@ class AppmenuSelectManager:
                     '--get-available', '--i-understand-format-is-unstable',
                     self.vm.name]).decode().splitlines()]
 
-        for a in available_appmenus:
-            if a.ident in self.whitelisted:
-                self.app_list.selected_list.addItem(a)
+        for app in available_appmenus:
+            if app.ident in self.whitelisted:
+                self.app_list.selected_list.addItem(app)
             else:
-                self.app_list.available_list.addItem(a)
+                self.app_list.available_list.addItem(app)
 
         self.app_list.available_list.sortItems()
         self.app_list.selected_list.sortItems()

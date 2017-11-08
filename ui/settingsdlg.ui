@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>773</width>
-    <height>581</height>
+    <height>609</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -487,7 +487,7 @@ border-width: 1px;</string>
              <widget class="QComboBox" name="default_dispvm"/>
             </item>
             <item row="2" column="0" colspan="2">
-             <widget class="QPushButton" name="bootFromDeviceButton">
+             <widget class="QPushButton" name="boot_from_device_button">
               <property name="text">
                <string>Boot qube from CDROM</string>
               </property>
@@ -678,14 +678,14 @@ border-width: 1px;</string>
          <item row="1" column="0">
           <layout class="QHBoxLayout" name="horizontalLayout_5">
            <item>
-            <widget class="QRadioButton" name="policyAllowRadioButton">
+            <widget class="QRadioButton" name="policy_allow_radio_button">
              <property name="text">
               <string>Allow all outgoing Internet connections</string>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QRadioButton" name="policyDenyRadioButton">
+            <widget class="QRadioButton" name="policy_deny_radio_button">
              <property name="text">
               <string>Limit outgoing Internet connections to ...</string>
              </property>
@@ -714,7 +714,7 @@ border-width: 1px;</string>
           </widget>
          </item>
          <item row="4" column="0">
-          <widget class="QLabel" name="firewalRulesLabel">
+          <widget class="QLabel" name="firewal_rules_label">
            <property name="text">
             <string>List of allowed (whitelisted) addresses:</string>
            </property>
@@ -736,14 +736,14 @@ border-width: 1px;</string>
              <number>0</number>
             </property>
             <item row="1" column="0">
-             <widget class="QCheckBox" name="tempFullAccess">
+             <widget class="QCheckBox" name="temp_full_access">
               <property name="text">
                <string>Allow full access for </string>
               </property>
              </widget>
             </item>
             <item row="1" column="1">
-             <widget class="QSpinBox" name="tempFullAccessTime">
+             <widget class="QSpinBox" name="temp_full_access_time">
               <property name="suffix">
                <string> min</string>
               </property>
@@ -811,7 +811,7 @@ border-width: 1px;</string>
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_6">
              <item>
-              <widget class="QPushButton" name="newRuleButton">
+              <widget class="QPushButton" name="new_rule_button">
                <property name="text">
                 <string/>
                </property>
@@ -828,7 +828,7 @@ border-width: 1px;</string>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="editRuleButton">
+              <widget class="QPushButton" name="edit_rule_button">
                <property name="text">
                 <string/>
                </property>
@@ -845,7 +845,7 @@ border-width: 1px;</string>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="deleteRuleButton">
+              <widget class="QPushButton" name="delete_rule_button">
                <property name="text">
                 <string/>
                </property>
@@ -879,7 +879,7 @@ border-width: 1px;</string>
           </layout>
          </item>
          <item row="0" column="0">
-          <widget class="QLabel" name="firewallModifiedOutsidelabel">
+          <widget class="QLabel" name="firewall_modified_outside_label">
            <property name="palette">
             <palette>
              <active>
@@ -1117,10 +1117,10 @@ border-width: 1px;</string>
   <tabstop>vcpus</tabstop>
   <tabstop>include_in_balancing</tabstop>
   <tabstop>kernel</tabstop>
-  <tabstop>newRuleButton</tabstop>
+  <tabstop>new_rule_button</tabstop>
   <tabstop>rulesTreeView</tabstop>
-  <tabstop>editRuleButton</tabstop>
-  <tabstop>deleteRuleButton</tabstop>
+  <tabstop>edit_rule_button</tabstop>
+  <tabstop>delete_rule_button</tabstop>
   <tabstop>service_line_edit</tabstop>
   <tabstop>add_srv_button</tabstop>
   <tabstop>services_list</tabstop>

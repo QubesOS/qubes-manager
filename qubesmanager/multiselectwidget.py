@@ -24,8 +24,8 @@ class MultiSelectWidget(
         selected = src.selectedItems()
         items = []
 
-        for s in selected:
-            row = src.indexFromItem(s).row()
+        for selected_item in selected:
+            row = src.indexFromItem(selected_item).row()
             item = src.takeItem(row)
             dst.addItem(item)
             items.append(item)

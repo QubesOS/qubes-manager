@@ -240,20 +240,20 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 config_lines = []
 
                 qmemman_config_file = open(qmemman_config_path, 'r')
-                for l in qmemman_config_file:
-                    if l.strip().startswith('vm-min-mem'):
+                for line in qmemman_config_file:
+                    if line.strip().startswith('vm-min-mem'):
                         config_lines.append(lines_to_add['vm-min-mem'])
                         del lines_to_add['vm-min-mem']
-                    elif l.strip().startswith('dom0-mem-boost'):
+                    elif line.strip().startswith('dom0-mem-boost'):
                         config_lines.append(lines_to_add['dom0-mem-boost'])
                         del lines_to_add['dom0-mem-boost']
                     else:
-                        config_lines.append(l)
+                        config_lines.append(line)
 
                 qmemman_config_file.close()
 
-                for l in lines_to_add:
-                    config_lines.append(l)
+                for line in lines_to_add:
+                    config_lines.append(line)
 
                 qmemman_config_file = open(qmemman_config_path, 'w')
                 qmemman_config_file.writelines(config_lines)

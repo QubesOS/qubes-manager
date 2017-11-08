@@ -89,14 +89,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         ###### advanced tab
         self.__init_advanced_tab__()
         self.include_in_balancing.stateChanged.connect(
-            self.include_in_balancing_state_changed)
+            self.include_in_balancing_changed)
         self.connect(self.init_mem,
                      QtCore.SIGNAL("editingFinished()"),
                      self.check_mem_changes)
         self.connect(self.max_mem_size,
                      QtCore.SIGNAL("editingFinished()"),
                      self.check_mem_changes)
-        self.bootFromDeviceButton.clicked.connect(
+        self.boot_from_device_button.clicked.connect(
             self.boot_from_cdrom_button_pressed)
 
         ###### firewall tab
@@ -105,16 +105,16 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             try:
                 model.set_vm(vm)
                 self.set_fw_model(model)
-                self.firewallModifiedOutsidelabel.setVisible(False)
+                self.firewall_modified_outside_label.setVisible(False)
             except firewall.FirewallModifiedOutsideError as ex:
                 self.disable_all_fw_conf()
 
-            self.newRuleButton.clicked.connect(self.new_rule_button_pressed)
-            self.editRuleButton.clicked.connect(self.edit_rule_button_pressed)
-            self.deleteRuleButton.clicked.connect(
+            self.new_rule_button.clicked.connect(self.new_rule_button_pressed)
+            self.edit_rule_button.clicked.connect(self.edit_rule_button_pressed)
+            self.delete_rule_button.clicked.connect(
                 self.delete_rule_button_pressed)
-            self.policyDenyRadioButton.clicked.connect(self.policy_changed)
-            self.policyAllowRadioButton.clicked.connect(self.policy_changed)
+            self.policy_deny_radio_button.clicked.connect(self.policy_changed)
+            self.policy_allow_radio_button.clicked.connect(self.policy_changed)
 
         ####### devices tab
         self.__init_devices_tab__()
@@ -131,7 +131,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
             self.app_list = multiselectwidget.MultiSelectWidget(self)
             self.apps_layout.addWidget(self.app_list)
-            self.AppListManager = AppmenuSelectManager(self.vm, self.app_list)
+            self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
             self.refresh_apps_button.clicked.connect(
                 self.refresh_apps_button_pressed)
 
@@ -195,11 +195,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             ret.append(repr(ex))
 
         try:
-            if self.policyAllowRadioButton.isEnabled():
+            if self.policy_allow_radio_button.isEnabled():
                 self.fw_model.apply_rules(
-                    self.policyAllowRadioButton.isChecked(),
-                    self.tempFullAccess.isChecked(),
-                    self.tempFullAccessTime.value())
+                    self.policy_allow_radio_button.isChecked(),
+                    self.temp_full_access.isChecked(),
+                    self.temp_full_access_time.value())
                 if self.fw_model.fw_changed:
                     # might modified vm.services
                     self.anything_changed = True
@@ -210,7 +210,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         try:
             if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
-                self.AppListManager.save_appmenu_select_changes()
+                self.app_list_manager.save_appmenu_select_changes()
         except qubesadmin.exc.QubesException as qex:
             ret += [self.tr("Applications tab:"), str(qex)]
         except Exception as ex:  # pylint: disable=broad-except
@@ -700,9 +700,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         return msg
 
-    def include_in_balancing_state_changed(self, state):
-        for r in range(self.services_list.count()):
-            item = self.services_list.item(r)
+    def include_in_balancing_changed(self, state):
+        for i in range(self.services_list.count()):
+            item = self.services_list.item(i)
             if str(item.text()) == 'meminfo-writer':
                 item.setCheckState(state)
                 break
@@ -762,7 +762,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             self.qapp.processEvents()
             time.sleep(0.1)
 
-        self.AppListManager = AppmenuSelectManager(self.vm, self.app_list)
+        self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
 
         self.refresh_apps_button.setEnabled(True)
         self.refresh_apps_button.setText(self.tr('Refresh Applications'))
@@ -833,8 +833,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         msg = []
 
         try:
-            for r in range(self.services_list.count()):
-                item = self.services_list.item(r)
+            for i in range(self.services_list.count()):
+                item = self.services_list.item(i)
                 self.new_srv_dict[str(item.text())] = \
                     (item.checkState() == ui_settingsdlg.QtCore.Qt.Checked)
 
@@ -875,37 +875,41 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             QtGui.QHeaderView.ResizeToContents)
         self.rulesTreeView.header().setResizeMode(0, QtGui.QHeaderView.Stretch)
         self.set_allow(model.allow)
-        if model.tempFullAccessExpireTime:
-            self.tempFullAccess.setChecked(True)
-            self.tempFullAccessTime.setValue(
-                (model.tempFullAccessExpireTime -
+        if model.temp_full_access_expire_time:
+            self.temp_full_access.setChecked(True)
+            self.temp_full_access_time.setValue(
+                (model.temp_full_access_expire_time -
                  int(firewall.datetime.datetime.now().strftime("%s"))) / 60)
 
     def disable_all_fw_conf(self):
-        self.firewallModifiedOutsidelabel.setVisible(True)
-        self.policyAllowRadioButton.setEnabled(False)
-        self.policyDenyRadioButton.setEnabled(False)
+        self.firewall_modified_outside_label.setVisible(True)
+        self.policy_allow_radio_button.setEnabled(False)
+        self.policy_deny_radio_button.setEnabled(False)
         self.rulesTreeView.setEnabled(False)
-        self.newRuleButton.setEnabled(False)
-        self.editRuleButton.setEnabled(False)
-        self.deleteRuleButton.setEnabled(False)
-        self.firewalRulesLabel.setEnabled(False)
+        self.new_rule_button.setEnabled(False)
+        self.edit_rule_button.setEnabled(False)
+        self.delete_rule_button.setEnabled(False)
+        self.firewal_rules_label.setEnabled(False)
         self.tempFullAccessWidget.setEnabled(False)
 
     def set_allow(self, allow):
-        self.policyAllowRadioButton.setChecked(allow)
-        self.policyDenyRadioButton.setChecked(not allow)
+        self.policy_allow_radio_button.setChecked(allow)
+        self.policy_deny_radio_button.setChecked(not allow)
         self.policy_changed(allow)
 
-    def policy_changed(self, checked):
-        self.rulesTreeView.setEnabled(self.policyDenyRadioButton.isChecked())
-        self.newRuleButton.setEnabled(self.policyDenyRadioButton.isChecked())
-        self.editRuleButton.setEnabled(self.policyDenyRadioButton.isChecked())
-        self.deleteRuleButton.setEnabled(self.policyDenyRadioButton.isChecked())
-        self.firewalRulesLabel.setEnabled(
-            self.policyDenyRadioButton.isChecked())
+    def policy_changed(self):
+        self.rulesTreeView.setEnabled(
+            self.policy_deny_radio_button.isChecked())
+        self.new_rule_button.setEnabled(
+            self.policy_deny_radio_button.isChecked())
+        self.edit_rule_button.setEnabled(
+            self.policy_deny_radio_button.isChecked())
+        self.delete_rule_button.setEnabled(
+            self.policy_deny_radio_button.isChecked())
+        self.firewal_rules_label.setEnabled(
+            self.policy_deny_radio_button.isChecked())
         self.tempFullAccessWidget.setEnabled(
-            self.policyDenyRadioButton.isChecked())
+            self.policy_deny_radio_button.isChecked())
 
     def new_rule_button_pressed(self):
         dialog = firewall.NewFwRuleDlg()
@@ -917,7 +921,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         if len(selected) > 0:
             dialog = firewall.NewFwRuleDlg()
-            dialog.set_ok_enabled(True)
+            dialog.set_ok_state(True)
             row = self.rulesTreeView.selectedIndexes().pop().row()
             self.fw_model.populate_edit_dialog(dialog, row)
             self.fw_model.run_rule_dialog(dialog, row)
@@ -925,7 +929,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
     def delete_rule_button_pressed(self):
         for i in set([index.row() for index
                       in self.rulesTreeView.selectedIndexes()]):
-            self.fw_model.removeChild(i)
+            self.fw_model.remove_child(i)
 
 
 # Bases on the original code by:
