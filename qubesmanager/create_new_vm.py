@@ -30,6 +30,7 @@ from PyQt4 import QtCore, QtGui
 
 import qubesadmin
 import qubesadmin.tools
+import qubesadmin.exc
 
 from . import utils
 
@@ -174,8 +175,10 @@ class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
                 for k, v in properties.items():
                     setattr(vm, k, v)
 
-        except Exception as ex:
-            thread_monitor.set_error_msg(str(ex))
+        except qubesadmin.exc.QubesException as qex:
+            thread_monitor.set_error_msg(str(qex))
+        except Exception as ex:  # pylint: disable=broad-except
+            thread_monitor.set_error_msg(repr(ex))
 
         thread_monitor.set_finished()
 

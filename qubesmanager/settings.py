@@ -31,6 +31,7 @@ import traceback
 import os
 import sys
 from qubesadmin.tools import QubesArgumentParser
+import qubesadmin.exc
 
 from . import utils
 from . import multiselectwidget
@@ -188,8 +189,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             ret_tmp = self.__apply_services_tab__()
             if len(ret_tmp) > 0:
                 ret += ["Sevices tab:"] + ret_tmp
-        except Exception as ex:
-            ret.append(self.tr('Error while saving changes: ') + str(ex))
+        except qubesadmin.exc.QubesException as qex:
+            ret.append(self.tr('Error while saving changes: ') + str(qex))
+        except Exception as ex:  # pylint: disable=broad-except
+            ret.append(repr(ex))
 
         try:
             if self.policyAllowRadioButton.isEnabled():
@@ -200,14 +203,18 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 if self.fw_model.fw_changed:
                     # might modified vm.services
                     self.anything_changed = True
-        except Exception as ex:
-            ret += [self.tr("Firewall tab:"), str(ex)]
+        except qubesadmin.exc.QubesException as qex:
+            ret+= [self.tr("Firewall tab:"), str(qex)]
+        except Exception as ex:  # pylint: disable=broad-except
+            ret += [self.tr("Firewall tab:"), repr(ex)]
 
         try:
             if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
                 self.AppListManager.save_appmenu_select_changes()
-        except Exception as ex:
-            ret += [self.tr("Applications tab:"), str(ex)]
+        except qubesadmin.exc.QubesException as qex:
+            ret += [self.tr("Applications tab:"), str(qex)]
+        except Exception as ex:  # pylint: disable=broad-except
+            ret += [self.tr("Applications tab:"), repr(ex)]
 
         if len(ret) > 0:
             t_monitor.set_error_msg('\n'.join(ret))
@@ -342,7 +349,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                     label = self.label_list[self.vmlabel.currentIndex()]
                     self.vm.label = label
                     self.anything_changed = True
-        except Exception as ex:
+        except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
         #vm template changed
@@ -351,7 +358,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 self.vm.template = \
                     self.template_list[self.template_name.currentIndex()]
                 self.anything_changed = True
-        except Exception as ex:
+        except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
         #vm netvm changed
@@ -359,7 +366,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             if self.netVM.currentIndex() != self.netvm_idx:
                 self.vm.netvm = self.netvm_list[self.netVM.currentIndex()]
                 self.anything_changed = True
-        except Exception as ex:
+        except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
         #include in backups
@@ -368,7 +375,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                     self.include_in_backups.isChecked():
                 self.vm.include_in_backups = self.include_in_backups.isChecked()
                 self.anything_changed = True
-        except Exception as ex:
+        except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
         #run_in_debug_mode
@@ -377,7 +384,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 if self.vm.debug != self.run_in_debug_mode.isChecked():
                     self.vm.debug = self.run_in_debug_mode.isChecked()
                     self.anything_changed = True
-        except Exception as ex:
+        except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
         #autostart_vm
@@ -386,7 +393,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 if self.vm.autostart != self.autostart_vm.isChecked():
                     self.vm.autostart = self.autostart_vm.isChecked()
                     self.anything_changed = True
-        except Exception as ex:
+        except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
         #max priv storage
@@ -395,7 +402,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             try:
                 self.vm.volumes['private'].resize(priv_size * 1024**2)
                 self.anything_changed = True
-            except Exception as ex:
+            except qubesadmin.exc.QubesException as ex:
                 msg.append(str(ex))
 
         #max sys storage
@@ -404,7 +411,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             try:
                 self.vm.volumes['root'].resize(sys_size * 1024**2)
                 self.anything_changed = True
-            except Exception as ex:
+            except qubesadmin.exc.QubesException as ex:
                 msg.append(str(ex))
 
         return msg
@@ -452,8 +459,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             self.vm.app.clone_vm(self.vm, name)
             del self.vm.app.domains[self.vm.name]
 
-        except Exception as ex:
-            t_monitor.set_error_msg(str(ex))
+        except qubesadmin.exc.QubesException as qex:
+            t_monitor.set_error_msg(str(qex))
+        except Exception as ex:  # pylint: disable=broad-except
+            t_monitor.set_error_msg(repr(ex))
 
         t_monitor.set_finished()
 
@@ -473,8 +482,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         try:
             del self.vm.app.domains[self.vm.name]
 
-        except Exception as ex:
-            t_monitor.set_error_msg(str(ex))
+        except qubesadmin.exc.QubesException as qex:
+            t_monitor.set_error_msg(str(qex))
+        except Exception as ex:  # pylint: disable=broad-except
+            t_monitor.set_error_msg(repr(ex))
 
         t_monitor.set_finished()
 
@@ -503,8 +514,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         try:
             self.vm.app.clone_vm(self.vm, name)
 
-        except Exception as ex:
-            t_monitor.set_error_msg(str(ex))
+        except qubesadmin.exc.QubesException as qex:
+            t_monitor.set_error_msg(str(qex))
+        except Exception as ex:  # pylint: disable=broad-except
+            t_monitor.set_error_msg(repr(ex))
 
         t_monitor.set_finished()
 
@@ -584,7 +597,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             if self.vcpus.value() != int(self.vm.vcpus):
                 self.vm.vcpus = self.vcpus.value()
                 self.anything_changed = True
-        except Exception as ex:
+        except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
         #include_in_memory_balancing applied in services tab
@@ -596,7 +609,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                     self.vm.kernel = self.kernel_list[
                         self.kernel.currentIndex()]
                     self.anything_changed = True
-            except Exception as ex:
+            except qubesadmin.exc.QubesException as ex:
                 msg.append(str(ex))
 
         #vm default_dispvm changed
@@ -605,7 +618,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 self.vm.default_dispvm = \
                     self.default_dispvm_list[self.default_dispvm.currentIndex()]
                 self.anything_changed = True
-        except Exception as ex:
+        except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
         return msg
@@ -680,7 +693,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
             self.anything_changed = True
 
-        except Exception as ex:
+        except qubesadmin.exc.QubesException as ex:
             if utils.is_debug():
                 traceback.print_exc()
             msg.append(str(ex))
@@ -847,7 +860,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 service = feature[len('service.'):]
                 if service not in self.new_srv_dict:
                     del self.vm.features[feature]
-        except Exception as ex:
+        except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
         return msg
