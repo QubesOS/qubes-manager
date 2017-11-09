@@ -314,8 +314,6 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 
 
 def main():
-
-    global qtapp
     qtapp = QtGui.QApplication(sys.argv)
     qtapp.setOrganizationName("The Qubes Project")
     qtapp.setOrganizationDomain("http://qubes-os.org")
@@ -325,7 +323,6 @@ def main():
 
     app = Qubes()
 
-    global global_window
     global_window = GlobalSettingsWindow(qtapp, app)
 
     global_window.show()

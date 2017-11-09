@@ -954,8 +954,6 @@ parser.set_defaults(
 )
 
 def main(args=None):
-    global settings_window
-
     args = parser.parse_args(args)
     vm = args.domains.pop()
 

@@ -114,8 +114,6 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
 parser = firewall.qubesadmin.tools.QubesArgumentParser(vmname_nargs=1)
 
 def main(args=None):
-    global bootfromdevice_window
-
     args = parser.parse_args(args)
     vm = args.domains.pop()
 
