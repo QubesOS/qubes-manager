@@ -187,6 +187,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         return None
 
     def get_column_string(self, col, rule):
+        # pylint: disable=too-many-return-statements
         # Address
         if col == 0:
             if rule.dsthost is None:
