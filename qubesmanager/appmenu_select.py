@@ -25,6 +25,7 @@ import PyQt4.QtGui
 
 # TODO description in tooltip
 # TODO icon
+# pylint: disable=too-few-public-methods
 class AppListWidgetItem(PyQt4.QtGui.QListWidgetItem):
     def __init__(self, name, ident, parent=None):
         super(AppListWidgetItem, self).__init__(name, parent)

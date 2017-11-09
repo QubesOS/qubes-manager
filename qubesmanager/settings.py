@@ -620,6 +620,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         for dev in lspci.splitlines():
             devs.append((dev.rstrip(), dev.split(' ')[0]))
 
+        # pylint: disable=too-few-public-methods
         class DevListWidgetItem(QtGui.QListWidgetItem):
             def __init__(self, name, ident, parent=None):
                 super(DevListWidgetItem, self).__init__(name, parent)
