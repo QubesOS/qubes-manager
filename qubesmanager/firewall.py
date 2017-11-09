@@ -35,6 +35,7 @@ class QIPAddressValidator(QtGui.QValidator):
         super(QIPAddressValidator, self).__init__(parent)
 
     def validate(self, input, pos):
+        # pylint: disable=too-many-return-statements,no-self-use
         hostname = str(input)
 
         if len(hostname) > 255 or len(hostname) == 0:
@@ -212,7 +213,8 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
                 return str(rule.proto)
         return "unknown"
 
-    def get_firewall_conf(self, vm):
+    @staticmethod
+    def get_firewall_conf(vm):
         conf = {
             'allow': None,
             'expire': 0,
@@ -276,7 +278,8 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
 
         return conf
 
-    def write_firewall_conf(self, vm, conf):
+    @staticmethod
+    def write_firewall_conf(vm, conf):
         rules = []
 
         for rule in conf['rules']:
@@ -409,7 +412,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
 
         return self.createIndex(row, column, self.children[row])
 
-    def parent(self, child): # pylint: disable=unused-argument
+    def parent(self, child): # pylint: disable=unused-argument,no-self-use
         return QtCore.QModelIndex()
 
     # pylint: disable=invalid-name,unused-argument
@@ -420,7 +423,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
     def columnCount(self, parent=QtCore.QModelIndex()):
         return len(self.__column_names)
 
-    # pylint: disable=invalid-name
+    # pylint: disable=invalid-name,no-self-use
     def hasChildren(self, index=QtCore.QModelIndex()):
         parent_item = index.internalPointer()
         if parent_item is not None:
