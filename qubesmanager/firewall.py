@@ -49,7 +49,7 @@ class QIPAddressValidator(QtGui.QValidator):
             hostname = unmask[0]
             mask = unmask[1]
             if mask.isdigit() or mask == "":
-                if re.match("^([0-9]{1,3}\.){3}[0-9]{1,3}$", hostname) is None:
+                if re.match(r"^([0-9]{1,3}\.){3}[0-9]{1,3}$", hostname) is None:
                     return (QtGui.QValidator.Invalid, input, pos)
                 if mask != "":
                     mask = int(unmask[1])
@@ -64,7 +64,7 @@ class QIPAddressValidator(QtGui.QValidator):
         if hostname[-1:] == "-":
             return (QtGui.QValidator.Intermediate, input, pos)
 
-        allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+        allowed = re.compile(r"(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
         if all(allowed.match(x) for x in hostname.split(".")):
             return (QtGui.QValidator.Acceptable, input, pos)
 
@@ -144,7 +144,8 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         self.__column_names = {0: "Address", 1: "Service", 2: "Protocol", }
         self.__services = list()
         pattern = re.compile(
-            "(?P<name>[a-z][a-z0-9-]+)\s+(?P<port>[0-9]+)/(?P<protocol>[a-z]+)",
+            r"(?P<name>[a-z][a-z0-9-]+)\s+(?P<port>[0-9]+)/"
+            r"(?P<protocol>[a-z]+)",
             re.IGNORECASE)
         file = open('/etc/services', 'r')
         for line in file:
