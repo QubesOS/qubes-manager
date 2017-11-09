@@ -38,7 +38,7 @@ class AppListWidgetItem(PyQt4.QtGui.QListWidgetItem):
 
 
 class AppmenuSelectManager:
-    def __init__(self, vm, apps_multiselect, parent=None):
+    def __init__(self, vm, apps_multiselect):
         self.vm = vm
         self.app_list = apps_multiselect # this is a multiselect wiget
         self.whitelisted = None

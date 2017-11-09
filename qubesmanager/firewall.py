@@ -409,14 +409,14 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
 
         return self.createIndex(row, column, self.children[row])
 
-    def parent(self, child):
+    def parent(self, child): # pylint: disable=unused-argument
         return QtCore.QModelIndex()
 
-    # pylint: disable=invalid-name
+    # pylint: disable=invalid-name,unused-argument
     def rowCount(self, parent=QtCore.QModelIndex()):
         return len(self)
 
-    # pylint: disable=invalid-name
+    # pylint: disable=invalid-name,unused-argument
     def columnCount(self, parent=QtCore.QModelIndex()):
         return len(self.__column_names)
 

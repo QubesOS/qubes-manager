@@ -9,7 +9,7 @@ class MultiSelectWidget(
     __pyqtSignals__ = ("items_removed(PyQt_PyObject)",)
 
     def __init__(self, parent=None):
-        super(MultiSelectWidget, self).__init__()
+        super(MultiSelectWidget, self).__init__(parent)
         self.setupUi(self)
         self.add_selected_button.clicked.connect(self.add_selected)
         self.add_all_button.clicked.connect(self.add_all)

@@ -874,7 +874,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
     def set_allow(self, allow):
         self.policy_allow_radio_button.setChecked(allow)
         self.policy_deny_radio_button.setChecked(not allow)
-        self.policy_changed(allow)
+        self.policy_changed()
 
     def policy_changed(self):
         self.rulesTreeView.setEnabled(
