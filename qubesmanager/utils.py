@@ -150,7 +150,7 @@ def get_path_from_vm(vm, service_name):
 
     if not vm:
         return None
-    stdout, stderr = vm.run_service_for_stdio(service_name)
+    stdout, _stderr = vm.run_service_for_stdio(service_name)
 
     untrusted_path = stdout.decode(encoding='ascii')[:path_max_len]
 

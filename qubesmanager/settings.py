@@ -106,7 +106,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 model.set_vm(vm)
                 self.set_fw_model(model)
                 self.firewall_modified_outside_label.setVisible(False)
-            except firewall.FirewallModifiedOutsideError as ex:
+            except firewall.FirewallModifiedOutsideError:
                 self.disable_all_fw_conf()
 
             self.new_rule_button.clicked.connect(self.new_rule_button_pressed)

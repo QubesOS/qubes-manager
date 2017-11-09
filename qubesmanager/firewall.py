@@ -389,7 +389,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
             elif service is not None and service != "":
                 try:
                     rule.dstports = service
-                except (TypeError, ValueError) as ex:
+                except (TypeError, ValueError):
                     if self.get_service_port(service) is not None:
                         rule.dstports = self.get_service_port(service)
                     else:
