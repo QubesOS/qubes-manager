@@ -43,6 +43,7 @@ from PyQt4 import QtCore, QtGui
 
 from . import ui_settingsdlg
 
+# pylint: disable=too-many-instance-attributes
 class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
     tabs_indices = collections.OrderedDict((
             ('basic', 0),
