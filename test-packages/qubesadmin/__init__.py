@@ -1,0 +1,2 @@
+class Qubes(object):
+    pass

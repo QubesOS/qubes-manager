@@ -1,0 +1,1 @@
+### mock qubesadmin.DEFAULT module
