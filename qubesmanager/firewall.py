@@ -386,7 +386,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
                         self.tr("Invalid port or service"),
                         self.tr("Port number or service '{0}' is invalid.")
                                         .format(service))
-            elif service is not None:
+            elif service is not None and service != "":
                 try:
                     rule.dstports = service
                 except (TypeError, ValueError) as ex:
