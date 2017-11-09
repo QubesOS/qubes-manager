@@ -173,8 +173,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
     def __save_changes__(self, t_monitor):
 
-        self.anything_changed = False
-
         ret = []
         try:
             ret_tmp = self.__apply_basic_tab__()
@@ -200,9 +198,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                     self.policy_allow_radio_button.isChecked(),
                     self.temp_full_access.isChecked(),
                     self.temp_full_access_time.value())
-                if self.fw_model.fw_changed:
-                    # might modified vm.services
-                    self.anything_changed = True
         except qubesadmin.exc.QubesException as qex:
             ret+= [self.tr("Firewall tab:"), str(qex)]
         except Exception as ex:  # pylint: disable=broad-except
@@ -348,7 +343,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 if self.vmlabel.currentIndex() != self.label_idx:
                     label = self.label_list[self.vmlabel.currentIndex()]
                     self.vm.label = label
-                    self.anything_changed = True
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
@@ -357,7 +351,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             if self.template_name.currentIndex() != self.template_idx:
                 self.vm.template = \
                     self.template_list[self.template_name.currentIndex()]
-                self.anything_changed = True
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
@@ -365,7 +358,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         try:
             if self.netVM.currentIndex() != self.netvm_idx:
                 self.vm.netvm = self.netvm_list[self.netVM.currentIndex()]
-                self.anything_changed = True
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
@@ -374,7 +366,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             if self.vm.include_in_backups != \
                     self.include_in_backups.isChecked():
                 self.vm.include_in_backups = self.include_in_backups.isChecked()
-                self.anything_changed = True
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
@@ -383,7 +374,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             if self.run_in_debug_mode.isVisible():
                 if self.vm.debug != self.run_in_debug_mode.isChecked():
                     self.vm.debug = self.run_in_debug_mode.isChecked()
-                    self.anything_changed = True
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
@@ -392,7 +382,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             if self.autostart_vm.isVisible():
                 if self.vm.autostart != self.autostart_vm.isChecked():
                     self.vm.autostart = self.autostart_vm.isChecked()
-                    self.anything_changed = True
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
@@ -401,7 +390,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         if self.priv_img_size != priv_size:
             try:
                 self.vm.volumes['private'].resize(priv_size * 1024**2)
-                self.anything_changed = True
             except qubesadmin.exc.QubesException as ex:
                 msg.append(str(ex))
 
@@ -410,7 +398,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         if self.root_img_size != sys_size:
             try:
                 self.vm.volumes['root'].resize(sys_size * 1024**2)
-                self.anything_changed = True
             except qubesadmin.exc.QubesException as ex:
                 msg.append(str(ex))
 
@@ -588,15 +575,12 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         try:
             if self.init_mem.value() != int(self.vm.memory):
                 self.vm.memory = self.init_mem.value()
-                self.anything_changed = True
 
             if self.max_mem_size.value() != int(self.vm.maxmem):
                 self.vm.maxmem = self.max_mem_size.value()
-                self.anything_changed = True
 
             if self.vcpus.value() != int(self.vm.vcpus):
                 self.vm.vcpus = self.vcpus.value()
-                self.anything_changed = True
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
@@ -608,7 +592,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 if self.kernel.currentIndex() != self.kernel_idx:
                     self.vm.kernel = self.kernel_list[
                         self.kernel.currentIndex()]
-                    self.anything_changed = True
             except qubesadmin.exc.QubesException as ex:
                 msg.append(str(ex))
 
@@ -617,7 +600,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             if self.default_dispvm.currentIndex() != self.default_dispvm_idx:
                 self.vm.default_dispvm = \
                     self.default_dispvm_list[self.default_dispvm.currentIndex()]
-                self.anything_changed = True
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
@@ -690,8 +672,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             for ass in self.vm.devices['pci'].assignments(persistent=True):
                 if ass.ident.replace('_', ':') not in new:
                     self.vm.devices['pci'].detach(ass)
-
-            self.anything_changed = True
 
         except qubesadmin.exc.QubesException as ex:
             if utils.is_debug():
@@ -852,7 +832,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 feature = 'service.' + service
                 if v != self.vm.features.get(feature, object()):
                     self.vm.features[feature] = v
-                    self.anything_changed = True
 
             for feature in self.vm.features:
                 if not feature.startswith('service.'):
