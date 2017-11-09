@@ -447,7 +447,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         if section < len(self.__column_names) \
                 and orientation == QtCore.Qt.Horizontal \
                 and role == QtCore.Qt.DisplayRole:
-                    return self.__column_names[section]
+            return self.__column_names[section]
 
     @property
     def children(self):

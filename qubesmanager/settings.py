@@ -67,7 +67,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         self.setWindowTitle(self.tr("Settings: {vm}").format(vm=self.vm.name))
         if init_page in self.tabs_indices:
             idx = self.tabs_indices[init_page]
-            assert (idx in range(self.tabWidget.count()))
+            assert idx in range(self.tabWidget.count())
             self.tabWidget.setCurrentIndex(idx)
 
         self.connect(self.buttonBox,
@@ -199,7 +199,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                     self.temp_full_access.isChecked(),
                     self.temp_full_access_time.value())
         except qubesadmin.exc.QubesException as qex:
-            ret+= [self.tr("Firewall tab:"), str(qex)]
+            ret += [self.tr("Firewall tab:"), str(qex)]
         except Exception as ex:  # pylint: disable=broad-except
             ret += [self.tr("Firewall tab:"), repr(ex)]
 
@@ -625,7 +625,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             def __init__(self, name, ident, parent=None):
                 super(DevListWidgetItem, self).__init__(name, parent)
                 self.ident = ident
-                self.Type
 
         persistent = [ass.ident.replace('_', ':')
             for ass in self.vm.devices['pci'].persistent()]
