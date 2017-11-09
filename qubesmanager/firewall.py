@@ -156,6 +156,10 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         file.close()
 
         self.fw_changed = False
+        self.allow = None # is the default policy allow or deny
+        self.temp_full_access_expire_time = None # temporary full access time
+        self.__vm = None # VM that the model applies to
+        self.__children = None # list of rules in the FW
 
     def sort(self, idx, order):
         from operator import attrgetter
