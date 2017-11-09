@@ -179,7 +179,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
 
 
     def __init_mem_defaults__(self):
-
+    # pylint: disable=redefined-variable-type
         #qmemman settings
         self.qmemman_config = ConfigParser()
         self.vm_min_mem_val = '200MiB'  #str(qmemman_algo.MIN_PREFMEM)

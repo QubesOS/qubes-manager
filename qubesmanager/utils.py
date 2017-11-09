@@ -65,7 +65,7 @@ def prepare_choice(widget, holder, propname, choice, default,
         choice_list = filter(_filter_internal, choice_list)
     if filter_function is not None:
         choice_list = filter(filter_function, choice_list)
-    choice_list = list(choice_list)
+    choice_list = list(choice_list) # pylint: disable=redefined-variable-type
 
     if allow_default:
         choice_list.insert(0, qubesadmin.DEFAULT)
