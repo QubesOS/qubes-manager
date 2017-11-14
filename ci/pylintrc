@@ -32,6 +32,7 @@ disable=
   logging-format-interpolation,
   missing-docstring,
   star-args,
+  useless-super-delegation,
   wrong-import-order
 
 [REPORTS]

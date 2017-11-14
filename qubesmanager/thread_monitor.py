@@ -20,7 +20,7 @@
 #
 
 
-import PyQt4.QtCore
+import PyQt4.QtCore  # pylint: disable=import-error
 
 import threading
 
@@ -40,4 +40,3 @@ class ThreadMonitor(PyQt4.QtCore.QObject):
 
     def set_finished(self):
         self.event_finished.set()
-

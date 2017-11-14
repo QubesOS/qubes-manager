@@ -21,8 +21,8 @@ import sys
 import subprocess
 from . import utils
 from . import firewall
-from . import ui_bootfromdevice
-from PyQt4 import QtGui, QtCore
+from . import ui_bootfromdevice  # pylint: disable=no-name-in-module
+from PyQt4 import QtGui, QtCore  # pylint: disable=import-error
 import qubesadmin.tools.qvm_start as qvm_start
 
 

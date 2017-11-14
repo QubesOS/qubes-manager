@@ -26,7 +26,7 @@ import threading
 import time
 import subprocess
 
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtCore, QtGui  # pylint: disable=import-error
 
 import qubesadmin
 import qubesadmin.tools
@@ -34,7 +34,7 @@ import qubesadmin.exc
 
 from . import utils
 
-from .ui_newappvmdlg import Ui_NewVMDlg
+from .ui_newappvmdlg import Ui_NewVMDlg  # pylint: disable=import-error
 from .thread_monitor import ThreadMonitor
 
 
@@ -75,7 +75,7 @@ class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
         self.name.selectAll()
         self.name.setFocus()
 
-        if len(self.template_list) == 0:
+        if not self.template_list:
             QtGui.QMessageBox.warning(None,
                 self.tr('No template available!'),
                 self.tr('Cannot create a qube when no template exists.'))

@@ -1,5 +1,5 @@
-from PyQt4 import QtCore, QtGui
-from . import ui_multiselectwidget
+from PyQt4 import QtCore, QtGui  # pylint: disable=import-error
+from . import ui_multiselectwidget # pylint: disable=no-name-in-module
 
 class MultiSelectWidget(
     ui_multiselectwidget.Ui_MultiSelectWidget, QtGui.QWidget):
@@ -65,4 +65,3 @@ class MultiSelectWidget(
     def clear(self):
         self.available_list.clear()
         self.selected_list.clear()
-

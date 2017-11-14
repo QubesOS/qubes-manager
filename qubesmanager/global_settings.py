@@ -24,12 +24,12 @@ import sys
 import os
 import os.path
 import traceback
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtCore, QtGui  # pylint: disable=import-error
 
 from qubesadmin import Qubes
 from qubesadmin.utils import parse_size, updates_vms_status
 
-from . import ui_globalsettingsdlg
+from . import ui_globalsettingsdlg  # pylint: disable=no-name-in-module
 
 from configparser import ConfigParser
 
@@ -181,7 +181,6 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
 
 
     def __init_mem_defaults__(self):
-    # pylint: disable=redefined-variable-type
         #qmemman settings
         self.qmemman_config = ConfigParser()
         self.vm_min_mem_val = '200MiB'  #str(qmemman_algo.MIN_PREFMEM)

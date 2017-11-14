@@ -21,16 +21,17 @@
 import datetime
 import re
 
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtCore, QtGui  # pylint: disable=import-error
 import qubesadmin.firewall
 
-from . import ui_newfwruledlg
+from . import ui_newfwruledlg  # pylint: disable=no-name-in-module
 
 
 class FirewallModifiedOutsideError(ValueError):
     pass
 
 class QIPAddressValidator(QtGui.QValidator):
+    # pylint: disable=too-few-public-methods
     def __init__(self, parent=None):
         super(QIPAddressValidator, self).__init__(parent)
 
@@ -38,7 +39,7 @@ class QIPAddressValidator(QtGui.QValidator):
         # pylint: disable=too-many-return-statements,no-self-use
         hostname = str(input_string)
 
-        if len(hostname) > 255 or len(hostname) == 0:
+        if len(hostname) > 255 or not hostname:
             return (QtGui.QValidator.Intermediate, input_string, pos)
 
         if hostname == "*":
@@ -89,7 +90,7 @@ class NewFwRuleDlg(QtGui.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
 
     def accept(self):
         if self.tcp_radio.isChecked() or self.udp_radio.isChecked():
-            if len(self.serviceComboBox.currentText()) == 0:
+            if not self.serviceComboBox.currentText():
                 msg = QtGui.QMessageBox()
                 msg.warning(self, self.tr("Firewall rule"),
                     self.tr("You need to fill service "
@@ -163,8 +164,6 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         self.__children = None # list of rules in the FW
 
     def sort(self, idx, order):
-        from operator import attrgetter
-
         rev = (order == QtCore.Qt.AscendingOrder)
         self.children.sort(key=lambda x: self.get_column_string(idx, x)
                            , reverse=rev)
@@ -192,31 +191,25 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         if col == 0:
             if rule.dsthost is None:
                 return "*"
-            else:
-                if rule.dsthost.type == 'dst4'\
-                        and rule.dsthost.prefixlen == '32':
-                    return str(rule.dsthost)[:-3]
-                elif rule.dsthost.type == 'dst6'\
-                        and rule.dsthost.prefixlen == '128':
-                    return str(rule.dsthost)[:-4]
-                else:
-                    return str(rule.dsthost)
+            if rule.dsthost.type == 'dst4' and rule.dsthost.prefixlen == '32':
+                return str(rule.dsthost)[:-3]
+            if rule.dsthost.type == 'dst6' and rule.dsthost.prefixlen == '128':
+                return str(rule.dsthost)[:-4]
+            return str(rule.dsthost)
 
         # Service
         if col == 1:
             if rule.dstports is None:
                 return "any"
-            elif rule.dstports.range[0] != rule.dstports.range[1]:
+            if rule.dstports.range[0] != rule.dstports.range[1]:
                 return str(rule.dstports)
-            else:
-                return self.get_service_name(rule.dstports)
+            return self.get_service_name(rule.dstports)
 
         # Protocol
         if col == 2:
             if rule.proto is None:
                 return "any"
-            else:
-                return str(rule.proto)
+            return str(rule.proto)
         return "unknown"
 
     @staticmethod
@@ -434,8 +427,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         parent_item = index.internalPointer()
         if parent_item is not None:
             return False
-        else:
-            return True
+        return True
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
         if index.isValid() and role == QtCore.Qt.DisplayRole:
@@ -484,4 +476,3 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
 
     def __len__(self):
         return len(self.children)
-

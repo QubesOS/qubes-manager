@@ -21,7 +21,7 @@
 
 import subprocess
 
-import PyQt4.QtGui
+import PyQt4.QtGui  # pylint: disable=import-error
 
 # TODO description in tooltip
 # TODO icon

@@ -24,7 +24,7 @@ import os
 import re
 import qubesadmin
 
-from PyQt4.QtGui import QIcon
+from PyQt4.QtGui import QIcon  # pylint: disable=import-error
 
 def _filter_internal(vm):
     return (not vm.klass == 'AdminVM'
@@ -65,7 +65,7 @@ def prepare_choice(widget, holder, propname, choice, default,
         choice_list = filter(_filter_internal, choice_list)
     if filter_function is not None:
         choice_list = filter(filter_function, choice_list)
-    choice_list = list(choice_list) # pylint: disable=redefined-variable-type
+    choice_list = list(choice_list)
 
     if allow_default:
         choice_list.insert(0, qubesadmin.DEFAULT)
@@ -154,7 +154,7 @@ def get_path_from_vm(vm, service_name):
 
     untrusted_path = stdout.decode(encoding='ascii')[:path_max_len]
 
-    if len(untrusted_path) == 0:
+    if not untrusted_path:
         return None
     if path_re.match(untrusted_path):
         assert '../' not in untrusted_path

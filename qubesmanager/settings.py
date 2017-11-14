@@ -39,9 +39,9 @@ from . import thread_monitor
 
 from .appmenu_select import AppmenuSelectManager
 from . import firewall
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtCore, QtGui  # pylint: disable=import-error
 
-from . import ui_settingsdlg
+from . import ui_settingsdlg  #pylint: disable=no-name-in-module
 
 # pylint: disable=too-many-instance-attributes
 class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
@@ -177,16 +177,16 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         ret = []
         try:
             ret_tmp = self.__apply_basic_tab__()
-            if len(ret_tmp) > 0:
+            if ret_tmp:
                 ret += ["Basic tab:"] + ret_tmp
             ret_tmp = self.__apply_advanced_tab__()
-            if len(ret_tmp) > 0:
+            if ret_tmp:
                 ret += ["Advanced tab:"] + ret_tmp
             ret_tmp = self.__apply_devices_tab__()
-            if len(ret_tmp) > 0:
+            if ret_tmp:
                 ret += ["Devices tab:"] + ret_tmp
             ret_tmp = self.__apply_services_tab__()
-            if len(ret_tmp) > 0:
+            if ret_tmp:
                 ret += ["Sevices tab:"] + ret_tmp
         except qubesadmin.exc.QubesException as qex:
             ret.append(self.tr('Error while saving changes: ') + str(qex))
@@ -212,7 +212,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         except Exception as ex:  # pylint: disable=broad-except
             ret += [self.tr("Applications tab:"), repr(ex)]
 
-        if len(ret) > 0:
+        if ret:
             t_monitor.set_error_msg('\n'.join(ret))
 
         utils.debug('\n'.join(ret))
@@ -899,7 +899,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         selected = self.rulesTreeView.selectedIndexes()
 
-        if len(selected) > 0:
+        if selected:
             dialog = firewall.NewFwRuleDlg()
             dialog.set_ok_state(True)
             row = self.rulesTreeView.selectedIndexes().pop().row()
@@ -923,7 +923,7 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 
     strace = ""
     stacktrace = traceback.extract_tb(exc_traceback)
-    while len(stacktrace) > 0:
+    while stacktrace:
         (filename, line, func, txt) = stacktrace.pop()
         strace += "----\n"
         strace += "line: %s\n" %txt
