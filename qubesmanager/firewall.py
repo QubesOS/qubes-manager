@@ -244,7 +244,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
                 allow_dns = True
                 continue
 
-            if rule.proto == icmp_rule:
+            if rule == icmp_rule:
                 allow_icmp = True
                 continue
 
