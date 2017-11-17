@@ -148,14 +148,13 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
             r"(?P<name>[a-z][a-z0-9-]+)\s+(?P<port>[0-9]+)/"
             r"(?P<protocol>[a-z]+)",
             re.IGNORECASE)
-        file = open('/etc/services', 'r')
-        for line in file:
-            match = pattern.match(line)
-            if match is not None:
-                service = match.groupdict()
-                self.__services.append(
-                    (service["name"], int(service["port"]),))
-        file.close()
+        with open('/etc/services', 'r') as file:
+            for line in file:
+                match = pattern.match(line)
+                if match is not None:
+                    service = match.groupdict()
+                    self.__services.append(
+                        (service["name"], int(service["port"]),))
 
         self.fw_changed = False
         self.allow = None # is the default policy allow or deny
@@ -165,8 +164,8 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
 
     def sort(self, idx, order):
         rev = (order == QtCore.Qt.AscendingOrder)
-        self.children.sort(key=lambda x: self.get_column_string(idx, x)
-                           , reverse=rev)
+        self.children.sort(key=lambda x: self.get_column_string(idx, x),
+                           reverse=rev)
 
         index1 = self.createIndex(0, 0)
         index2 = self.createIndex(len(self) - 1, len(self.__column_names) - 1)
@@ -388,7 +387,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
                         self.tr("Invalid port or service"),
                         self.tr("Port number or service '{0}' is invalid.")
                                         .format(service))
-            elif service is not None and service != "":
+            elif service:
                 try:
                     rule.dstports = service
                 except (TypeError, ValueError):
@@ -425,9 +424,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
     # pylint: disable=invalid-name,no-self-use
     def hasChildren(self, index=QtCore.QModelIndex()):
         parent_item = index.internalPointer()
-        if parent_item is not None:
-            return False
-        return True
+        return parent_item is None
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
         if index.isValid() and role == QtCore.Qt.DisplayRole:

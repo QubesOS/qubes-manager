@@ -20,10 +20,9 @@
 import sys
 import subprocess
 from . import utils
-from . import firewall
 from . import ui_bootfromdevice  # pylint: disable=no-name-in-module
 from PyQt4 import QtGui, QtCore  # pylint: disable=import-error
-import qubesadmin.tools.qvm_start as qvm_start
+from qubesadmin import tools
 
 
 class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
@@ -63,7 +62,7 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
                 self.tr("ERROR!"),
                 self.tr("No file or block device selected; please select one."))
             return
-        qvm_start.main(['--cdrom', cdrom_location, self.vm.name])
+        tools.qvm_start.main(['--cdrom', cdrom_location, self.vm.name])
 
     def __init_buttons__(self):
         self.fileVM.setEnabled(False)
@@ -111,7 +110,7 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
             self.pathText.setText(new_path)
 
 
-parser = firewall.qubesadmin.tools.QubesArgumentParser(vmname_nargs=1)
+parser = tools.QubesArgumentParser(vmname_nargs=1)
 
 def main(args=None):
     args = parser.parse_args(args)

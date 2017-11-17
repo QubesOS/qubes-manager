@@ -158,7 +158,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
     def __init_kernel_defaults__(self):
         kernel_list = []
         # TODO system_path["qubes_kernels_base_dir"]
-        # idea: qubes.pulls['linux-kernel'].volumes
+        # idea: qubes.pools['linux-kernel'].volumes
         for k in os.listdir('/var/lib/qubes/vm-kernels'):
             kernel_list.append(k)
 

@@ -4,7 +4,6 @@ language: python
 python:
   - '3.5'
 install:
- - sudo apt-get install python-qt4 pyqt4-dev-tools
  - pip install --quiet -r ci/requirements.txt
  - git clone https://github.com/QubesOS/qubes-builder ~/qubes-builder
 script:

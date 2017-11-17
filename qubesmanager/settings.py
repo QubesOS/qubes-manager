@@ -31,6 +31,7 @@ import traceback
 import os
 import sys
 from qubesadmin.tools import QubesArgumentParser
+from qubesadmin import devices
 import qubesadmin.exc
 
 from . import utils
@@ -665,7 +666,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                     for i in range(self.dev_list.selected_list.count())]
             for ident in new:
                 if ident not in old:
-                    ass = firewall.qubesadmin.devices.DeviceAssignment(
+                    ass = devices.DeviceAssignment(
                         self.vm.app.domains['dom0'],
                         ident.replace(':', '_'),
                         persistent=True)
