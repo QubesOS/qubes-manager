@@ -79,9 +79,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         self.tabWidget.currentChanged.connect(self.current_tab_changed)
 
-        self.tabWidget.setTabEnabled(self.tabs_indices["firewall"],
-                            vm.netvm is not None and not vm.provides_network)
-
         ###### basic tab
         self.__init_basic_tab__()
         self.rename_vm_button.clicked.connect(self.rename_vm)
@@ -223,13 +220,26 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
     def current_tab_changed(self, idx):
         if idx == self.tabs_indices["firewall"]:
             netvm = self.vm.netvm
+            self.no_netvm_label.setVisible(netvm is None)
+            self.netvm_no_firewall_label.setVisible(
+                netvm is not None and
+                not netvm.features.check_with_template('qubes-firewall', False))
+            if netvm is None:
+                QtGui.QMessageBox.warning(
+                    None,
+                    self.tr("Qube configuration problem!"),
+                    self.tr('This qube has networking disabled '
+                            '(Basic -> Networking) - network will be disabled. '
+                            'If you want to use firewall, '
+                            'please enable networking.')
+                )
             if netvm is not None and \
                     not netvm.features.check_with_template(
                         'qubes-firewall',
                         False):
                 QtGui.QMessageBox.warning(
                     None,
-                    self.tr("VM configuration problem!"),
+                    self.tr("Qube configuration problem!"),
                     self.tr("The '{vm}' AppVM is network connected to "
                         "'{netvm}', which does not support firewall!<br/>"
                         "You may edit the '{vm}' VM firewall rules, but these "
