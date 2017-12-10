@@ -30,10 +30,6 @@ import yaml
 path_re = re.compile(r"[a-zA-Z0-9/:.,_+=() -]*")
 path_max_len = 512
 
-# TODO: replace it with a more dynamic approach: allowing user to turn on or off
-# profile saving
-backup_profile_path = '/etc/qubes/backup/qubes-manager-backup.conf'
-
 
 def fill_appvms_list(dialog):
     dialog.appvm_combobox.clear()
@@ -90,20 +86,16 @@ def select_path_button_clicked(dialog, select_file=False):
         dialog.select_dir_page.emit(QtCore.SIGNAL("completeChanged()"))
 
 
-def load_backup_profile():
-    with open(backup_profile_path) as profile_file:
+def load_backup_profile(use_temp=False):
+
+    path = get_profile_path(use_temp)
+
+    with open(path) as profile_file:
         profile_data = yaml.safe_load(profile_file)
     return profile_data
 
 
-def write_backup_profile(args):
-    '''Format limited backup profile (for GUI purposes and print it to
-    *output_stream* (a file or stdout)
-
-    :param output_stream: file-like object ro print the profile to
-    :param args: dictionary with arguments
-    :param passphrase: passphrase to use
-    '''
+def write_backup_profile(args, use_temp=False):
 
     acceptable_fields = ['include', 'passphrase_text', 'compression',
                          'destination_vm', 'destination_path']
@@ -111,6 +103,20 @@ def write_backup_profile(args):
     profile_data = {key: value for key, value in args.items()
                     if key in acceptable_fields}
 
+    path = get_profile_path(use_temp)
+
     # TODO add compression parameter to GUI issue#943
-    with open(backup_profile_path, 'w') as profile_file:
+    with open(path, 'w') as profile_file:
         yaml.safe_dump(profile_data, profile_file)
+
+
+def get_profile_name(use_temp):
+    backup_profile_name = 'qubes-manager-backup'
+    temp_backup_profile_name = 'qubes-manager-backup-tmp'
+
+    return temp_backup_profile_name if use_temp else backup_profile_name
+
+
+def get_profile_path(use_temp):
+    path = '/etc/qubes/backup/' + get_profile_name(use_temp) + '.conf'
+    return path

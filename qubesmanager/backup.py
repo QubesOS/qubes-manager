@@ -145,21 +145,20 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
             self.passphrase_line_edit.setText(profile_data['passphrase_text'])
             self.passphrase_line_edit_verify.setText(
                 profile_data['passphrase_text'])
-        # TODO: make a checkbox for saving the profile
-        # TODO: warn that unknown data will be overwritten
 
         if 'include' in profile_data:
             return profile_data['include']
 
         return None
 
-    def save_settings(self):
+    def save_settings(self, use_temp):
         settings = {'destination_vm': self.appvm_combobox.currentText(),
                     'destination_path': self.dir_line_edit.text(),
                     'include': [vm.name for vm in self.selected_vms],
                     'passphrase_text': self.passphrase_line_edit.text()}
         # TODO: add compression when it is added
-        backup_utils.write_backup_profile(settings)
+
+        backup_utils.write_backup_profile(settings, use_temp)
 
     class VmListItem(QtGui.QListWidgetItem):
         def __init__(self, vm):
@@ -267,9 +266,9 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
                     self.appvm_combobox.currentText()]
                 if not vm.is_running():
                     vm.start()
-                self.qvm_collection.qubesd_call('dom0',
-                                                'admin.backup.Execute',
-                                                'qubes-manager-backup')
+                self.qvm_collection.qubesd_call(
+                    'dom0', 'admin.backup.Execute',
+                    backup_utils.get_profile_name(True))
             except exc.QubesException as err:
                 # TODO fixme
                 print('\nBackup error: {}'.format(err), file=sys.stderr)
@@ -288,15 +287,20 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
         old_sigchld_handler = signal.signal(signal.SIGCHLD, signal.SIG_DFL)
         if self.currentPage() is self.confirm_page:
 
-            self.save_settings()
+            self.save_settings(True)
             backup_summary = self.qvm_collection.qubesd_call(
-                'dom0', 'admin.backup.Info', 'qubes-manager-backup')
+                'dom0', 'admin.backup.Info',
+                backup_utils.get_profile_name(True))
 
             self.textEdit.setReadOnly(True)
             self.textEdit.setFontFamily("Monospace")
             self.textEdit.setText(backup_summary.decode())
 
         elif self.currentPage() is self.commit_page:
+
+            if self.save_profile_checkbox.isChecked():
+                self.save_settings(False)
+
             self.button(self.FinishButton).setDisabled(True)
             self.showFileDialog.setEnabled(
                 self.appvm_combobox.currentIndex() != 0)

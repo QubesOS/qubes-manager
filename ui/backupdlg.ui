@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>650</width>
-    <height>399</height>
+    <width>737</width>
+    <height>420</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -137,6 +137,12 @@
    <layout class="QGridLayout" name="gridLayout_5">
     <item row="0" column="0">
      <widget class="QGroupBox" name="groupBox">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="title">
        <string>Backup destination directory</string>
       </property>
@@ -176,69 +182,101 @@
     </item>
     <item row="1" column="0">
      <widget class="QGroupBox" name="groupBox_2">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="title">
        <string>Backup security</string>
       </property>
       <layout class="QFormLayout" name="formLayout">
-       <item row="2" column="0">
+       <property name="fieldGrowthPolicy">
+        <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+       </property>
+       <item row="1" column="0">
         <widget class="QLabel" name="label_12">
          <property name="text">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Encryption / Verification&lt;br/&gt;passphrase:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="label_10">
-         <property name="text">
-          <string>Encrypt backup:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QCheckBox" name="encryption_checkbox">
-         <property name="layoutDirection">
-          <enum>Qt::LeftToRight</enum>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="checked">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="label_11">
-         <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Reenter passphrase:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
+       <item row="1" column="1">
         <widget class="QLineEdit" name="passphrase_line_edit">
          <property name="echoMode">
           <enum>QLineEdit::Password</enum>
          </property>
         </widget>
        </item>
-       <item row="5" column="1">
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_11">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Reenter passphrase:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
         <widget class="QLineEdit" name="passphrase_line_edit_verify">
          <property name="echoMode">
           <enum>QLineEdit::Password</enum>
          </property>
         </widget>
        </item>
-       <item row="6" column="1">
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>&lt;b&gt;Note:&lt;/b&gt; Even if you choose not to encrypt your backup, a password is still required in order to provide authenticated verification of the data. See the emergency restore instructions for more info.</string>
-         </property>
-         <property name="wordWrap">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
       </layout>
+     </widget>
+    </item>
+    <item row="2" column="0">
+     <widget class="QGroupBox" name="groupBox_3">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="title">
+       <string>Save backup profile</string>
+      </property>
+      <widget class="QLabel" name="label_8">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>30</y>
+         <width>267</width>
+         <height>25</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Save settings as default backup profile:</string>
+       </property>
+      </widget>
+      <widget class="QCheckBox" name="save_profile_checkbox">
+       <property name="geometry">
+        <rect>
+         <x>270</x>
+         <y>30</y>
+         <width>539</width>
+         <height>25</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string> </string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+      <zorder>checkBox</zorder>
+      <zorder>groupBox_2</zorder>
+      <zorder>groupBox_2</zorder>
+      <zorder>label_8</zorder>
+      <zorder>save_profile_checkbox</zorder>
+      <zorder>groupBox_2</zorder>
+      <zorder>label_8</zorder>
+      <zorder>label_8</zorder>
+      <zorder>save_profile_checkbox</zorder>
+      <zorder>label_8</zorder>
+      <zorder>save_profile_checkbox</zorder>
      </widget>
     </item>
    </layout>
