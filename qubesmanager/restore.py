@@ -24,30 +24,29 @@
 import sys
 import os
 import shutil
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from .thread_monitor import *
+from PyQt4 import QtCore
+from PyQt4 import QtGui
+from . import thread_monitor
+import threading
 import time
 import os.path
 import traceback
 
-import qubesmanager.resources_rc
 import signal
 
 from qubes import backup
 
-from .ui_restoredlg import *
-from .multiselectwidget import *
+from . import ui_restoredlg
+from . import multiselectwidget
 
-from .backup_utils import *
+from . import backup_utils
 from multiprocessing import Queue, Event
 from multiprocessing.queues import Empty
-from qubesadmin import Qubes, events, exc
-from qubesadmin import utils as admin_utils
+from qubesadmin import Qubes, exc
 from qubesadmin.backup import restore
 
 
-class RestoreVMsWindow(Ui_Restore, QWizard):
+class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
 
     __pyqtSignals__ = ("restore_progress(int)", "backup_progress(int)")
 
@@ -69,20 +68,20 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
         self.setupUi(self)
 
-        self.select_vms_widget = MultiSelectWidget(self)
+        self.select_vms_widget = multiselectwidget.MultiSelectWidget(self)
         self.select_vms_layout.insertWidget(1, self.select_vms_widget)
 
         self.connect(self,
-                     SIGNAL("currentIdChanged(int)"), self.current_page_changed)
+                     QtCore.SIGNAL("currentIdChanged(int)"), self.current_page_changed)
         self.connect(self,
-                     SIGNAL("restore_progress(QString)"),
+                     QtCore.SIGNAL("restore_progress(QString)"),
                      self.commit_text_edit.append)
         self.connect(self,
-                     SIGNAL("backup_progress(int)"), self.progress_bar.setValue)
+                     QtCore.SIGNAL("backup_progress(int)"), self.progress_bar.setValue)
         self.dir_line_edit.connect(self.dir_line_edit,
-                                   SIGNAL("textChanged(QString)"),
+                                   QtCore.SIGNAL("textChanged(QString)"),
                                    self.backup_location_changed)
-        self.connect(self.verify_only, SIGNAL("stateChanged(int)"),
+        self.connect(self.verify_only, QtCore.SIGNAL("stateChanged(int)"),
                      self.on_verify_only_toogled)
 
         self.select_dir_page.isComplete = self.has_selected_dir
@@ -92,15 +91,15 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         # this causes to run isComplete() twice, I don't know why
         self.select_vms_page.connect(
             self.select_vms_widget,
-            SIGNAL("selected_changed()"),
-            SIGNAL("completeChanged()"))
+            QtCore.SIGNAL("selected_changed()"),
+            QtCore.SIGNAL("completeChanged()"))
 
-        fill_appvms_list(self)
+        backup_utils.fill_appvms_list(self)
 #        self.__init_restore_options__()
 
-    @pyqtSlot(name='on_select_path_button_clicked')
+    @QtCore.pyqtSlot(name='on_select_path_button_clicked')
     def select_path_button_clicked(self):
-        select_path_button_clicked(self, True)
+        backup_utils.select_path_button_clicked(self, True)
 
     def on_ignore_missing_toggled(self, checked):
         self.restore_options['use-default-template'] = checked
@@ -158,22 +157,22 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                     continue
                 self.select_vms_widget.available_list.addItem(vmname)
         except exc.QubesException as ex:
-            QMessageBox.warning(None, self.tr("Restore error!"), str(ex))
+            QtGui.QMessageBox.warning(None, self.tr("Restore error!"), str(ex))
 
     def gather_output(self, s):
         self.func_output.append(s)
 
     def restore_error_output(self, s):
         self.error_detected.set()
-        self.feedback_queue.put((SIGNAL("restore_progress(QString)"),
+        self.feedback_queue.put((QtCore.SIGNAL("restore_progress(QString)"),
                                  u'<font color="red">{0}</font>'.format(s)))
 
     def restore_output(self, s):
-        self.feedback_queue.put((SIGNAL("restore_progress(QString)"),
+        self.feedback_queue.put((QtCore.SIGNAL("restore_progress(QString)"),
                                  u'<font color="black">{0}</font>'.format(s)))
 
     def update_progress_bar(self, value):
-        self.feedback_queue.put((SIGNAL("backup_progress(int)"), value))
+        self.feedback_queue.put((QtCore.SIGNAL("backup_progress(int)"), value))
 
     def __do_restore__(self, thread_monitor):
         err_msg = []
@@ -192,17 +191,17 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                         "investigate them and/or clean them up"))
 
         if self.canceled:
-            self.emit(SIGNAL("restore_progress(QString)"),
+            self.emit(QtCore.SIGNAL("restore_progress(QString)"),
                       '<b><font color="red">{0}</font></b>'
                       .format(self.tr("Restore aborted!")))
         elif len(err_msg) > 0 or self.error_detected.is_set():
             if len(err_msg) > 0:
                 thread_monitor.set_error_msg('\n'.join(err_msg))
-            self.emit(SIGNAL("restore_progress(QString)"),
+            self.emit(QtCore.SIGNAL("restore_progress(QString)"),
                       '<b><font color="red">{0}</font></b>'
                       .format(self.tr("Finished with errors!")))
         else:
-            self.emit(SIGNAL("restore_progress(QString)"),
+            self.emit(QtCore.SIGNAL("restore_progress(QString)"),
                       '<font color="green">{0}</font>'
                       .format(self.tr("Finished successfully!")))
 
@@ -234,7 +233,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
             self.confirm_text_edit.setFontFamily("Monospace")
             self.confirm_text_edit.setText(self.func_output)
 
-            self.confirm_page.emit(SIGNAL("completeChanged()"))
+            self.confirm_page.emit(QtCore.SIGNAL("completeChanged()"))
 
         elif self.currentPage() is self.commit_page:
             self.button(self.FinishButton).setDisabled(True)
@@ -243,8 +242,8 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                                            and str(self.dir_line_edit.text())
                                            .count("media/") > 0)
 
-            self.thread_monitor = ThreadMonitor()
-            thread = threading.Thread (target= self.__do_restore__ , args=(self.thread_monitor,))
+            self.thread_monitor = thread_monitor.ThreadMonitor()
+            thread = threading.Thread (target= self.__do_restore__, args=(self.thread_monitor,))
             thread.daemon = True
             thread.start()
 
@@ -260,19 +259,23 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
             if not self.thread_monitor.success:
                 if self.canceled:
                     if self.tmpdir_to_remove and \
-                        QMessageBox.warning(None, self.tr("Restore aborted"),
+                        QtGui.QMessageBox.warning(
+                            None,
+                            self.tr("Restore aborted"),
                             self.tr("Do you want to remove temporary files "
                                     "from %s?") % self.tmpdir_to_remove,
-                            QMessageBox.Yes, QMessageBox.No) == \
-                            QMessageBox.Yes:
+                            QtGui.QMessageBox.Yes,
+                            QtGui.QMessageBox.No) == QtGui.QMessageBox.Yes:
                         shutil.rmtree(self.tmpdir_to_remove)
                 else:
-                    QMessageBox.warning(None,
-                        self.tr("Backup error!"), self.tr("ERROR: {0}")
-                                      .format(self.thread_monitor.error_msg))
+                    QtGui.QMessageBox.warning(
+                        None,
+                        self.tr("Backup error!"),
+                        self.tr("ERROR: {0}").format(
+                            self.thread_monitor.error_msg))
 
             if self.showFileDialog.isChecked():  # TODO: this is not working
-                self.emit(SIGNAL("restore_progress(QString)"),
+                self.emit(QtCore.SIGNAL("restore_progress(QString)"),
                           '<b><font color="black">{0}</font></b>'.format(
                               self.tr(
                                   "Please unmount your backup volume and cancel"
@@ -281,7 +284,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                     self.target_appvm.run("QUBESRPC %s dom0" %
                                           "qubes.SelectDirectory")
                 else:
-                    file_dialog = QFileDialog()
+                    file_dialog = QtGui.QFileDialog()
                     file_dialog.setReadOnly(True)
                     file_dialog.getExistingDirectory(
                         self, self.tr("Detach backup device"),
@@ -304,7 +307,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
     def reject(self):  # TODO: probably not working too
         if self.currentPage() is self.commit_page:
             if self.backup_restore.canceled:
-                self.emit(SIGNAL("restore_progress(QString)"),
+                self.emit(QtCore.SIGNAL("restore_progress(QString)"),
                           '<font color="red">{0}</font>'
                           .format(self.tr("Aborting the operation...")))
                 self.button(self.CancelButton).setDisabled(True)
@@ -328,7 +331,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         return self.select_vms_widget.selected_list.count() > 0
 
     def backup_location_changed(self, new_dir=None):
-        self.select_dir_page.emit(SIGNAL("completeChanged()"))
+        self.select_dir_page.emit(QtCore.SIGNAL("completeChanged()"))
 
 
 # Bases on the original code by:
@@ -340,18 +343,18 @@ def handle_exception(exc_type, exc_value, exc_traceback):
     filename = os.path.basename(filename)
     error = "%s: %s" % (exc_type.__name__, exc_value)
 
-    QMessageBox.critical(None, "Houston, we have a problem...",
+    QtGui.QMessageBox.critical(None, "Houston, we have a problem...",
                          "Whoops. A critical error has occured. "
                          "This is most likely a bug "
                          "in Qubes Restore VMs application.<br><br>"
                          "<b><i>%s</i></b>" % error +
                          "at <b>line %d</b> of file <b>%s</b>.<br/><br/>"
-                         % (line, filename))
+                                      % (line, filename))
 
 
 def main():
 
-    qtapp = QApplication(sys.argv)
+    qtapp = QtGui.QApplication(sys.argv)
     qtapp.setOrganizationName("The Qubes Project")
     qtapp.setOrganizationDomain("http://qubes-os.org")
     qtapp.setApplicationName("Qubes Restore VMs")

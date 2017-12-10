@@ -20,8 +20,8 @@
 #
 #
 import re
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt4 import QtGui
+from PyQt4 import QtCore
 
 import subprocess
 from . import utils
@@ -63,7 +63,7 @@ def enable_dir_line_edit(dialog, boolean):
 
 def select_path_button_clicked(dialog, select_file=False):
     backup_location = str(dialog.dir_line_edit.text())
-    file_dialog = QFileDialog()
+    file_dialog = QtGui.QFileDialog()
     file_dialog.setReadOnly(True)
 
     new_path = None
@@ -77,7 +77,7 @@ def select_path_button_clicked(dialog, select_file=False):
             "qubes.SelectFile" if select_file
             else "qubes.SelectDirectory")
     except subprocess.CalledProcessError as ex:
-        QMessageBox.warning(
+        QtGui.QMessageBox.warning(
             None,
             dialog.tr("Nothing selected!"),
             dialog.tr("No file or directory selected."))
@@ -87,7 +87,7 @@ def select_path_button_clicked(dialog, select_file=False):
         dialog.dir_line_edit.setText(new_path)
 
     if new_path and len(backup_location) > 0:
-        dialog.select_dir_page.emit(SIGNAL("completeChanged()"))
+        dialog.select_dir_page.emit(QtCore.SIGNAL("completeChanged()"))
 
 
 def load_backup_profile():

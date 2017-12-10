@@ -30,21 +30,23 @@ from qubesadmin import Qubes, events, exc
 from qubesadmin import utils as admin_utils
 from qubes.storage.file import get_disk_usage
 
-from PyQt4 import QtCore, QtGui  # pylint: disable=import-error
+from PyQt4 import QtCore   # pylint: disable=import-error
+from PyQt4 import QtGui  # pylint: disable=import-error
+from . import ui_backupdlg
+from . import multiselectwidget
 
-from .ui_backupdlg import *
-from .multiselectwidget import *
-
-from .backup_utils import *
+from . import backup_utils
 from . import utils
 import grp
 import pwd
 import sys
 import os
-from .thread_monitor import *
+from . import thread_monitor
+import threading
 import time
 
-class BackupVMsWindow(Ui_Backup, QWizard):
+
+class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
 
     __pyqtSignals__ = ("backup_progress(int)",)
 
@@ -67,21 +69,21 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.progress_status.text = self.tr("Backup in progress...")
         self.dir_line_edit.setReadOnly(False)
 
-        self.select_vms_widget = MultiSelectWidget(self)
+        self.select_vms_widget = multiselectwidget.MultiSelectWidget(self)
         self.verticalLayout.insertWidget(1, self.select_vms_widget)
 
-        self.connect(self, SIGNAL("currentIdChanged(int)"),
+        self.connect(self, QtCore.SIGNAL("currentIdChanged(int)"),
                      self.current_page_changed)
         self.connect(self.select_vms_widget,
-                     SIGNAL("items_removed(PyQt_PyObject)"),
+                     QtCore.SIGNAL("items_removed(PyQt_PyObject)"),
                      self.vms_removed)
         self.connect(self.select_vms_widget,
-                     SIGNAL("items_added(PyQt_PyObject)"),
+                     QtCore.SIGNAL("items_added(PyQt_PyObject)"),
                      self.vms_added)
-        self.connect(self, SIGNAL("backup_progress(int)"),
+        self.connect(self, QtCore.SIGNAL("backup_progress(int)"),
                      self.progress_bar.setValue)
         self.dir_line_edit.connect(self.dir_line_edit,
-                                   SIGNAL("textChanged(QString)"),
+                                   QtCore.SIGNAL("textChanged(QString)"),
                                    self.backup_location_changed)
 
         self.select_vms_page.isComplete = self.has_selected_vms
@@ -90,15 +92,15 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         # this causes to run isComplete() twice, I don't know why
         self.select_vms_page.connect(
                 self.select_vms_widget,
-                SIGNAL("selected_changed()"),
-                SIGNAL("completeChanged()"))
+                QtCore.SIGNAL("selected_changed()"),
+                QtCore.SIGNAL("completeChanged()"))
         self.passphrase_line_edit.connect(
                 self.passphrase_line_edit,
-                SIGNAL("textChanged(QString)"),
+                QtCore.SIGNAL("textChanged(QString)"),
                 self.backup_location_changed)
         self.passphrase_line_edit_verify.connect(
                 self.passphrase_line_edit_verify,
-                SIGNAL("textChanged(QString)"),
+                QtCore.SIGNAL("textChanged(QString)"),
                 self.backup_location_changed)
 
         self.total_size = 0
@@ -123,7 +125,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 
     def load_settings(self):
         try:
-            profile_data = load_backup_profile()
+            profile_data = backup_utils.load_backup_profile()
         except Exception as ex:  # TODO: fix just for file not found
             return
         if not profile_data:
@@ -157,9 +159,9 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                     'include': [vm.name for vm in self.selected_vms],
                     'passphrase_text': self.passphrase_line_edit.text()}
         # TODO: add compression when it is added
-        write_backup_profile(settings)
+        backup_utils.write_backup_profile(settings)
 
-    class VmListItem(QListWidgetItem):
+    class VmListItem(QtGui.QListWidgetItem):
         def __init__(self, vm):
             self.vm = vm
             if vm.qid == 0:
@@ -205,9 +207,9 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         self.total_size_label.setText(
             admin_utils.size_to_human(self.total_size))
 
-    @pyqtSlot(name='on_select_path_button_clicked')
+    @QtCore.pyqtSlot(name='on_select_path_button_clicked')
     def select_path_button_clicked(self):
-        select_path_button_clicked(self)
+        backup_utils.select_path_button_clicked(self)
 
     def validateCurrentPage(self):
         if self.currentPage() is self.select_vms_page:
@@ -220,26 +222,26 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         elif self.currentPage() is self.select_dir_page:
             backup_location = str(self.dir_line_edit.text())
             if not backup_location:
-                QMessageBox.information(
+                QtGui.QMessageBox.information(
                     None, self.tr("Wait!"),
                     self.tr("Enter backup target location first."))
                 return False
             if self.appvm_combobox.currentIndex() == 0 \
                     and not os.path.isdir(backup_location):
-                QMessageBox.information(
+                QtGui.QMessageBox.information(
                     None, self.tr("Wait!"),
                     self.tr("Selected directory do not exists or "
                             "not a directory (%s).") % backup_location)
                 return False
             if not len(self.passphrase_line_edit.text()):
-                QMessageBox.information(
+                QtGui.QMessageBox.information(
                     None, self.tr("Wait!"),
                     self.tr("Enter passphrase for backup "
                             "encryption/verification first."))
                 return False
             if self.passphrase_line_edit.text() !=\
                     self.passphrase_line_edit_verify.text():
-                QMessageBox.information(
+                QtGui.QMessageBox.information(
                     None, self.tr("Wait!"),
                     self.tr("Enter the same passphrase in both fields."))
                 return False
@@ -250,7 +252,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
 #        self.func_output.append(s)
 
     def update_progress_bar(self, value):
-        self.emit(SIGNAL("backup_progress(int)"), value)
+        self.emit(QtCore.SIGNAL("backup_progress(int)"), value)
 
     def __do_backup__(self, thread_monitor):
         msg = []
@@ -301,9 +303,10 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             self.showFileDialog.setChecked(self.showFileDialog.isEnabled()
                                            and str(self.dir_line_edit.text())
                                            .count("media/") > 0)
-            self.thread_monitor = ThreadMonitor()
-            thread = threading.Thread(target=self.__do_backup__,
-                                      args=(self.thread_monitor,))
+            self.thread_monitor = thread_monitor.ThreadMonitor()
+            thread = threading.Thread(
+                target=self.__do_backup__,
+                args=(self.thread_monitor,))
             thread.daemon = True
             thread.start()
 
@@ -315,17 +318,17 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                 if self.canceled:
                     self.progress_status.setText(self.tr("Backup aborted."))
                     if self.tmpdir_to_remove:
-                        if QMessageBox.warning(
+                        if QtGui.QMessageBox.warning(
                                 None, self.tr("Backup aborted"),
                                 self.tr(
                                     "Do you want to remove temporary files "
                                     "from %s?") % self.tmpdir_to_remove,
-                                QMessageBox.Yes, QMessageBox.No) == \
-                                QMessageBox.Yes:
+                                QtGui.QMessageBox.Yes,
+                                QtGui.QMessageBox.No) == QtGui.QMessageBox.Yes:
                             shutil.rmtree(self.tmpdir_to_remove)
                 else:
                     self.progress_status.setText(self.tr("Backup error."))
-                    QMessageBox.warning(
+                    QtGui.QMessageBox.warning(
                         self, self.tr("Backup error!"),
                         self.tr("ERROR: {}").format(
                             self.thread_monitor.error_msg))
@@ -368,7 +371,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
         return len(self.dir_line_edit.text()) > 0
 
     def backup_location_changed(self, new_dir=None):
-        self.select_dir_page.emit(SIGNAL("completeChanged()"))
+        self.select_dir_page.emit(QtCore.SIGNAL("completeChanged()"))
 
 
 # Bases on the original code by:
