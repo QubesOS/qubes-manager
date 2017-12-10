@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# pylint: skip-file
 #
 # The Qubes OS Project, http://www.qubes-os.org
 #
@@ -30,7 +29,7 @@ from qubesadmin import Qubes, events, exc
 from qubesadmin import utils as admin_utils
 from qubes.storage.file import get_disk_usage
 
-from PyQt4 import QtCore   # pylint: disable=import-error
+from PyQt4 import QtCore  # pylint: disable=import-error
 from PyQt4 import QtGui  # pylint: disable=import-error
 from . import ui_backupdlg
 from . import multiselectwidget
@@ -57,12 +56,10 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
         self.qvm_collection = qvm_collection
         self.backup_settings = QtCore.QSettings()
 
-        self.func_output = []
         self.selected_vms = []
         self.tmpdir_to_remove = None
         self.canceled = False
-
-        self.files_to_backup = None
+        self.thread_monitor = None
 
         self.setupUi(self)
 
@@ -122,7 +119,12 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
     def load_settings(self):
         try:
             profile_data = backup_utils.load_backup_profile()
-        except Exception as ex:  # TODO: fix just for file not found
+        except FileNotFoundError as ex:  # pylint: disable=unused-variable
+            return
+        except exc.QubesException as qex:  # pylint: disable=unused-variable
+            QtGui.QMessageBox.information(
+                None, self.tr("Error loading backup profile"),
+                self.tr("Unable to load saved backup profile."))
             return
         if not profile_data:
             return
@@ -157,6 +159,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
         backup_utils.write_backup_profile(settings, use_temp)
 
     class VmListItem(QtGui.QListWidgetItem):
+        # pylint: disable=too-few-public-methods
         def __init__(self, vm):
             self.vm = vm
             if vm.qid == 0:
@@ -207,6 +210,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
         backup_utils.select_path_button_clicked(self)
 
     def validateCurrentPage(self):
+        # pylint: disable=invalid-name
         if self.currentPage() is self.select_vms_page:
 
             self.selected_vms = []
@@ -243,13 +247,10 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
 
         return True
 
-#    def gather_output(self, s):
-#        self.func_output.append(s)
-
     def update_progress_bar(self, value):
         self.emit(QtCore.SIGNAL("backup_progress(int)"), value)
 
-    def __do_backup__(self, thread_monitor):
+    def __do_backup__(self, t_monitor):
         msg = []
 
         try:
@@ -257,29 +258,23 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
             events_dispatcher = events.EventsDispatcher(self.app)
             events_dispatcher.add_handler('backup-progress',
                                           self.update_progress_bar)
-            try:
-                vm = self.qvm_collection.domains[
-                    self.appvm_combobox.currentText()]
-                if not vm.is_running():
-                    vm.start()
-                self.qvm_collection.qubesd_call(
-                    'dom0', 'admin.backup.Execute',
-                    backup_utils.get_profile_name(True))
-            except exc.QubesException as err:
-                # TODO fixme
-                print('\nBackup error: {}'.format(err), file=sys.stderr)
-                return 1
-        except Exception as ex:  # TODO: fixme
-            print("Exception:", ex)
+            vm = self.qvm_collection.domains[
+                self.appvm_combobox.currentText()]
+            if not vm.is_running():
+                vm.start()
+            self.qvm_collection.qubesd_call(
+                'dom0', 'admin.backup.Execute',
+                backup_utils.get_profile_name(True))
+        except Exception as ex:  # pylint: disable=broad-except
             msg.append(str(ex))
 
         if len(msg) > 0:
-            thread_monitor.set_error_msg('\n'.join(msg))
+            t_monitor.set_error_msg('\n'.join(msg))
 
-        thread_monitor.set_finished()
+        t_monitor.set_finished()
 
 
-    def current_page_changed(self, id):
+    def current_page_changed(self, page_id): # pylint: disable=unused-argument
         old_sigchld_handler = signal.signal(signal.SIGCHLD, signal.SIG_DFL)
         if self.currentPage() is self.confirm_page:
 
@@ -371,6 +366,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
         return len(self.dir_line_edit.text()) > 0
 
     def backup_location_changed(self, new_dir=None):
+        # pylint: disable=unused-argument
         self.select_dir_page.emit(QtCore.SIGNAL("completeChanged()"))
 
 

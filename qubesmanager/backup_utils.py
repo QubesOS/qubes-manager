@@ -1,5 +1,4 @@
 #!/usr/bin/python2
-# pylint: skip-file
 #
 # The Qubes OS Project, http://www.qubes-os.org
 #
@@ -67,6 +66,7 @@ def select_path_button_clicked(dialog, select_file=False):
             "qubes.SelectFile" if select_file
             else "qubes.SelectDirectory")
     except subprocess.CalledProcessError as ex:
+        # pylint: disable=unused-variable
         QtGui.QMessageBox.warning(
             None,
             dialog.tr("Nothing selected!"),
