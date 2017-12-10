@@ -64,8 +64,6 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
         self.tmpdir_to_remove = None
         self.error_detected = Event()
 
-        self.excluded = {}
-
         self.setupUi(self)
 
         self.select_vms_widget = multiselectwidget.MultiSelectWidget(self)
@@ -95,7 +93,6 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
             QtCore.SIGNAL("completeChanged()"))
 
         backup_utils.fill_appvms_list(self)
-#        self.__init_restore_options__()
 
     @QtCore.pyqtSlot(name='on_select_path_button_clicked')
     def select_path_button_clicked(self):
@@ -214,21 +211,20 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
             self.__fill_vms_list__()
 
         elif self.currentPage() is self.confirm_page:
-            for v in self.excluded:
-                self.vms_to_restore[v] = self.excluded[v]
-            self.excluded = {}
+
+            self.vms_to_restore = self.backup_restore.get_restore_info()
+
             for i in range(self.select_vms_widget.available_list.count()):
-                vmname =  self.select_vms_widget.available_list.item(i).text()
-                self.excluded[str(vmname)] = self.vms_to_restore[str(vmname)]
+                vmname = self.select_vms_widget.available_list.item(i).text()
                 del self.vms_to_restore[str(vmname)]
 
-            del self.func_output[:]
-            # TODO: am I ignoring changes made by user?
             self.vms_to_restore = self.backup_restore.restore_info_verify(
-                self.backup_restore.get_restore_info())
+                self.vms_to_restore)
+
             self.func_output = self.backup_restore.get_restore_summary(
-                self.backup_restore.get_restore_info()
+                self.vms_to_restore
             )
+
             self.confirm_text_edit.setReadOnly(True)
             self.confirm_text_edit.setFontFamily("Monospace")
             self.confirm_text_edit.setText(self.func_output)
@@ -243,7 +239,7 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
                                            .count("media/") > 0)
 
             self.thread_monitor = thread_monitor.ThreadMonitor()
-            thread = threading.Thread (target= self.__do_restore__, args=(self.thread_monitor,))
+            thread = threading.Thread (target=self.__do_restore__, args=(self.thread_monitor,))
             thread.daemon = True
             thread.start()
 
