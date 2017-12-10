@@ -60,6 +60,8 @@ rm -rf $RPM_BUILD_ROOT
 /usr/bin/qubes-vm-settings
 /usr/bin/qubes-vm-create
 /usr/bin/qubes-vm-boot-from-device
+/usr/bin/qubes-backup
+/usr/bin/qubes-backup-restore
 /usr/libexec/qubes-manager/mount_for_backup.sh
 /usr/libexec/qubes-manager/qvm_about.sh
 

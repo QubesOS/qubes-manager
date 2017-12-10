@@ -26,23 +26,15 @@ import os
 import shutil
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
+from .thread_monitor import *
+import time
+import os.path
+import traceback
 
-from qubes.qubes import QubesVmCollection
-from qubes.qubes import QubesException
-from qubes.qubes import QubesDaemonPidfile
-from qubes.qubes import QubesHost
-from qubes.qubes import qubes_base_dir
 import qubesmanager.resources_rc
 import signal
 
-from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
-
-import time
-from operator import itemgetter
-from .thread_monitor import *
-
 from qubes import backup
-from qubes import qubesutils
 
 from .ui_restoredlg import *
 from .multiselectwidget import *
@@ -50,17 +42,20 @@ from .multiselectwidget import *
 from .backup_utils import *
 from multiprocessing import Queue, Event
 from multiprocessing.queues import Empty
+from qubesadmin import Qubes, events, exc
+from qubesadmin import utils as admin_utils
+from qubesadmin.backup import restore
+
 
 class RestoreVMsWindow(Ui_Restore, QWizard):
 
-    __pyqtSignals__ = ("restore_progress(int)","backup_progress(int)")
+    __pyqtSignals__ = ("restore_progress(int)", "backup_progress(int)")
 
-    def __init__(self, app, qvm_collection, blk_manager, parent=None):
+    def __init__(self, app, qvm_collection, parent=None):
         super(RestoreVMsWindow, self).__init__(parent)
 
         self.app = app
         self.qvm_collection = qvm_collection
-        self.blk_manager = blk_manager
 
         self.restore_options = None
         self.vms_to_restore = None
@@ -72,31 +67,36 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
         self.excluded = {}
 
-        self.vm = self.qvm_collection[0]
-
-        assert self.vm != None
-
         self.setupUi(self)
 
         self.select_vms_widget = MultiSelectWidget(self)
         self.select_vms_layout.insertWidget(1, self.select_vms_widget)
 
-        self.connect(self, SIGNAL("currentIdChanged(int)"), self.current_page_changed)
-        self.connect(self, SIGNAL("restore_progress(QString)"), self.commit_text_edit.append)
-        self.connect(self, SIGNAL("backup_progress(int)"), self.progress_bar.setValue)
-        self.dir_line_edit.connect(self.dir_line_edit, SIGNAL("textChanged(QString)"), self.backup_location_changed)
+        self.connect(self,
+                     SIGNAL("currentIdChanged(int)"), self.current_page_changed)
+        self.connect(self,
+                     SIGNAL("restore_progress(QString)"),
+                     self.commit_text_edit.append)
+        self.connect(self,
+                     SIGNAL("backup_progress(int)"), self.progress_bar.setValue)
+        self.dir_line_edit.connect(self.dir_line_edit,
+                                   SIGNAL("textChanged(QString)"),
+                                   self.backup_location_changed)
         self.connect(self.verify_only, SIGNAL("stateChanged(int)"),
                      self.on_verify_only_toogled)
 
         self.select_dir_page.isComplete = self.has_selected_dir
         self.select_vms_page.isComplete = self.has_selected_vms
         self.confirm_page.isComplete = self.all_vms_good
-        #FIXME
-        #this causes to run isComplete() twice, I don't know why
-        self.select_vms_page.connect(self.select_vms_widget, SIGNAL("selected_changed()"), SIGNAL("completeChanged()"))
+        # FIXME
+        # this causes to run isComplete() twice, I don't know why
+        self.select_vms_page.connect(
+            self.select_vms_widget,
+            SIGNAL("selected_changed()"),
+            SIGNAL("completeChanged()"))
 
         fill_appvms_list(self)
-        self.__init_restore_options__()
+#        self.__init_restore_options__()
 
     @pyqtSlot(name='on_select_path_button_clicked')
     def select_path_button_clicked(self):
@@ -125,41 +125,40 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.select_vms_widget.selected_list.clear()
         self.select_vms_widget.available_list.clear()
 
-        self.target_appvm = None
-        if self.appvm_combobox.currentIndex() != 0:   #An existing appvm chosen
-            self.target_appvm = self.qvm_collection.get_vm_by_name(
-                    str(self.appvm_combobox.currentText()))
+        self.target_appvm = None  # TODO: what is the purpose of this
+        if self.appvm_combobox.currentIndex() != 0:   # An existing appvm chosen
+            self.target_appvm = self.qvm_collection.domains[
+                str(self.appvm_combobox.currentText())]
 
         try:
-            self.vms_to_restore = backup.backup_restore_prepare(
-                    self.dir_line_edit.text(),
-                    self.passphrase_line_edit.text(),
-                    options=self.restore_options,
-                    host_collection=self.qvm_collection,
-                    encrypted=self.encryption_checkbox.isChecked(),
-                    appvm=self.target_appvm)
+            self.backup_restore = restore.BackupRestore(
+                self.qvm_collection,
+                self.dir_line_edit.text(),
+                self.target_appvm,
+                self.passphrase_line_edit.text()
+            )
+
+            # TODO: change text of ignore missing to ignore
+            # missing templates and netvms
+            if self.ignore_missing.isChecked():
+                self.backup_restore.options.use_default_template = True
+                self.backup_restore.options.use_default_netvm = True
+
+            if self.ignore_uname_mismatch.isChecked():
+                self.backup_restore.options.ignore_username_mismatch = True
+
+            if self.verify_only.isChecked():
+                self.backup_restore.options.verify_only = True
+
+            self.vms_to_restore = self.backup_restore.get_restore_info()
 
             for vmname in self.vms_to_restore:
                 if vmname.startswith('$'):
                     # Internal info
                     continue
                 self.select_vms_widget.available_list.addItem(vmname)
-        except QubesException as ex:
-            QMessageBox.warning (None, self.tr("Restore error!"), str(ex))
-
-    def __init_restore_options__(self):
-        if not self.restore_options:
-            self.restore_options = {}
-            backup.backup_restore_set_defaults(self.restore_options)
-
-        if 'use-default-template' in self.restore_options and 'use-default-netvm' in self.restore_options:
-            val = self.restore_options['use-default-template'] and self.restore_options['use-default-netvm']
-            self.ignore_missing.setChecked(val)
-        else:
-            self.ignore_missing.setChecked(False)
-
-        if 'ignore-username-mismatch' in self.restore_options:
-            self.ignore_uname_mismatch.setChecked(self.restore_options['ignore-username-mismatch'])
+        except exc.QubesException as ex:
+            QMessageBox.warning(None, self.tr("Restore error!"), str(ex))
 
     def gather_output(self, s):
         self.func_output.append(s)
@@ -178,25 +177,20 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
     def __do_restore__(self, thread_monitor):
         err_msg = []
-        self.qvm_collection.lock_db_for_writing()
         try:
-            backup.backup_restore_do(self.vms_to_restore,
-                                     self.qvm_collection,
-                                     print_callback=self.restore_output,
-                                     error_callback=self.restore_error_output,
-                                     progress_callback=self.update_progress_bar)
+            self.backup_restore.progress_callback = self.update_progress_bar
+            self.backup_restore.restore_do(self.vms_to_restore)
+
         except backup.BackupCanceledError as ex:
             self.canceled = True
             self.tmpdir_to_remove = ex.tmpdir
             err_msg.append(str(ex))
         except Exception as ex:
-            print ("Exception:", ex)
             err_msg.append(str(ex))
             err_msg.append(
-                self.tr("Partially restored files left in "
-                   "/var/tmp/restore_*, investigate them and/or clean them up"))
+                self.tr("Partially restored files left in /var/tmp/restore_*, "
+                        "investigate them and/or clean them up"))
 
-        self.qvm_collection.unlock_db()
         if self.canceled:
             self.emit(SIGNAL("restore_progress(QString)"),
                       '<b><font color="red">{0}</font></b>'
@@ -230,13 +224,15 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                 del self.vms_to_restore[str(vmname)]
 
             del self.func_output[:]
-            self.vms_to_restore = backup.restore_info_verify(self.vms_to_restore,
-                                                             self.qvm_collection)
-            backup.backup_restore_print_summary(
-                    self.vms_to_restore, print_callback = self.gather_output)
+            # TODO: am I ignoring changes made by user?
+            self.vms_to_restore = self.backup_restore.restore_info_verify(
+                self.backup_restore.get_restore_info())
+            self.func_output = self.backup_restore.get_restore_summary(
+                self.backup_restore.get_restore_info()
+            )
             self.confirm_text_edit.setReadOnly(True)
             self.confirm_text_edit.setFontFamily("Monospace")
-            self.confirm_text_edit.setText("\n".join(self.func_output))
+            self.confirm_text_edit.setText(self.func_output)
 
             self.confirm_page.emit(SIGNAL("completeChanged()"))
 
@@ -275,13 +271,13 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
                         self.tr("Backup error!"), self.tr("ERROR: {0}")
                                       .format(self.thread_monitor.error_msg))
 
-            if self.showFileDialog.isChecked():
+            if self.showFileDialog.isChecked():  # TODO: this is not working
                 self.emit(SIGNAL("restore_progress(QString)"),
                           '<b><font color="black">{0}</font></b>'.format(
                               self.tr(
                                   "Please unmount your backup volume and cancel"
                                   " the file selection dialog.")))
-                if self.target_appvm:
+                if self.target_appvm: # TODO does this work at all?
                     self.target_appvm.run("QUBESRPC %s dom0" %
                                           "qubes.SelectDirectory")
                 else:
@@ -298,16 +294,16 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         signal.signal(signal.SIGCHLD, old_sigchld_handler)
 
     def all_vms_good(self):
-        for vminfo in self.vms_to_restore.values():
-            if not vminfo.has_key('vm'):
+        for vm_info in self.vms_to_restore.values():
+            if not vm_info.vm:
                 continue
-            if not vminfo['good-to-go']:
+            if not vm_info.good_to_go:
                 return False
         return True
 
-    def reject(self):
+    def reject(self):  # TODO: probably not working too
         if self.currentPage() is self.commit_page:
-            if backup.backup_cancel():
+            if self.backup_restore.canceled:
                 self.emit(SIGNAL("restore_progress(QString)"),
                           '<font color="red">{0}</font>'
                           .format(self.tr("Aborting the operation...")))
@@ -331,58 +327,45 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
     def has_selected_vms(self):
         return self.select_vms_widget.selected_list.count() > 0
 
-    def backup_location_changed(self, new_dir = None):
+    def backup_location_changed(self, new_dir=None):
         self.select_dir_page.emit(SIGNAL("completeChanged()"))
 
 
 # Bases on the original code by:
 # Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
 
-def handle_exception( exc_type, exc_value, exc_traceback ):
-    import sys
-    import os.path
-    import traceback
+def handle_exception(exc_type, exc_value, exc_traceback):
 
-    filename, line, dummy, dummy = traceback.extract_tb( exc_traceback ).pop()
-    filename = os.path.basename( filename )
-    error    = "%s: %s" % ( exc_type.__name__, exc_value )
+    filename, line, dummy, dummy = traceback.extract_tb(exc_traceback).pop()
+    filename = os.path.basename(filename)
+    error = "%s: %s" % (exc_type.__name__, exc_value)
 
     QMessageBox.critical(None, "Houston, we have a problem...",
-                         "Whoops. A critical error has occured. This is most likely a bug "
+                         "Whoops. A critical error has occured. "
+                         "This is most likely a bug "
                          "in Qubes Restore VMs application.<br><br>"
                          "<b><i>%s</i></b>" % error +
                          "at <b>line %d</b> of file <b>%s</b>.<br/><br/>"
-                         % ( line, filename ))
-
-
+                         % (line, filename))
 
 
 def main():
 
-    global qubes_host
-    qubes_host = QubesHost()
-
-    global app
-    app = QApplication(sys.argv)
-    app.setOrganizationName("The Qubes Project")
-    app.setOrganizationDomain("http://qubes-os.org")
-    app.setApplicationName("Qubes Restore VMs")
+    qtapp = QApplication(sys.argv)
+    qtapp.setOrganizationName("The Qubes Project")
+    qtapp.setOrganizationDomain("http://qubes-os.org")
+    qtapp.setApplicationName("Qubes Restore VMs")
 
     sys.excepthook = handle_exception
 
-    qvm_collection = QubesVmCollection()
-    qvm_collection.lock_db_for_reading()
-    qvm_collection.load()
-    qvm_collection.unlock_db()
+    app = Qubes()
 
-    global restore_window
-    restore_window = RestoreVMsWindow()
+    restore_window = RestoreVMsWindow(qtapp, app)
 
     restore_window.show()
 
-    app.exec_()
-    app.exit()
-
+    qtapp.exec_()
+    qtapp.exit()
 
 
 if __name__ == "__main__":
