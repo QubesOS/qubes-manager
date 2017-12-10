@@ -121,7 +121,7 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
         self.select_vms_widget.selected_list.clear()
         self.select_vms_widget.available_list.clear()
 
-        self.target_appvm = None  # TODO: what is the purpose of this
+        self.target_appvm = None
         if self.appvm_combobox.currentIndex() != 0:   # An existing appvm chosen
             self.target_appvm = self.qvm_collection.domains[
                 str(self.appvm_combobox.currentText())]
@@ -134,8 +134,6 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
                 self.passphrase_line_edit.text()
             )
 
-            # TODO: change text of ignore missing to ignore
-            # missing templates and netvms
             if self.ignore_missing.isChecked():
                 self.backup_restore.options.use_default_template = True
                 self.backup_restore.options.use_default_netvm = True

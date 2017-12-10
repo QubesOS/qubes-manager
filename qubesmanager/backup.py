@@ -105,10 +105,6 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
 
         self.total_size = 0
 
-        # TODO: is the is_running criterion really necessary? It's designed to
-        # avoid backuping a VM into itself or surprising the user with starting
-        # a VM when they didn't plan to.
-        # TODO: inform the user only running VMs are listed?
         self.target_vm_list, self.target_vm_idx = utils.prepare_vm_choice(
             self.appvm_combobox,
             self.qvm_collection,

@@ -52,7 +52,7 @@
           <string>Ignore missing templates or netvms, restore VMs anyway.</string>
          </property>
          <property name="text">
-          <string>ignore missing</string>
+          <string>ignore missing templates and net VMs</string>
          </property>
         </widget>
        </item>

@@ -43,12 +43,7 @@ def fill_appvms_list(dialog):
         if vm.klass == 'TemplateVM' and vm.installed_by_rpm:
             continue
 
-        # TODO: is the is_running criterion really necessary? It's designed to
-        # avoid backuping a VM into itself or surprising the user with starting
-        # a VM when they didn't plan to.
-        # TODO: remove debug
-        debug = True
-        if (debug or vm.is_running()) and vm.qid != 0:
+        if vm.is_running() and vm.qid != 0:
             dialog.appvm_combobox.addItem(vm.name)
 
 
@@ -63,7 +58,6 @@ def select_path_button_clicked(dialog, select_file=False):
     file_dialog.setReadOnly(True)
 
     new_path = None
-    # TODO: check if dom0 is available
 
     new_appvm = str(dialog.appvm_combobox.currentText())
     vm = dialog.qvm_collection.domains[new_appvm]
@@ -78,7 +72,6 @@ def select_path_button_clicked(dialog, select_file=False):
             dialog.tr("Nothing selected!"),
             dialog.tr("No file or directory selected."))
 
-    # TODO: check if this works for restore
     if new_path:
         dialog.dir_line_edit.setText(new_path)
 
