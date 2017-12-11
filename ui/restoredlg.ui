@@ -244,6 +244,9 @@ p, li { white-space: pre-wrap; }
     </item>
     <item>
      <widget class="QProgressBar" name="progress_bar">
+      <property name="maximum">
+       <number>0</number>
+      </property>
       <property name="value">
        <number>0</number>
       </property>

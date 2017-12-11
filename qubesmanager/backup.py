@@ -47,8 +47,6 @@ import time
 
 class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
 
-    __pyqtSignals__ = ("backup_progress(int)",)
-
     def __init__(self, app, qvm_collection, parent=None):
         super(BackupVMsWindow, self).__init__(parent)
 
@@ -77,8 +75,6 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
         self.connect(self.select_vms_widget,
                      QtCore.SIGNAL("items_added(PyQt_PyObject)"),
                      self.vms_added)
-        self.connect(self, QtCore.SIGNAL("backup_progress(int)"),
-                     self.progress_bar.setValue)
         self.dir_line_edit.connect(self.dir_line_edit,
                                    QtCore.SIGNAL("textChanged(QString)"),
                                    self.backup_location_changed)
@@ -247,17 +243,10 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
 
         return True
 
-    def update_progress_bar(self, value):
-        self.emit(QtCore.SIGNAL("backup_progress(int)"), value)
-
     def __do_backup__(self, t_monitor):
         msg = []
 
         try:
-            # TODO: this does nothing, events are not handled
-            events_dispatcher = events.EventsDispatcher(self.app)
-            events_dispatcher.add_handler('backup-progress',
-                                          self.update_progress_bar)
             vm = self.qvm_collection.domains[
                 self.appvm_combobox.currentText()]
             if not vm.is_running():
@@ -328,6 +317,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
                         self.tr("ERROR: {}").format(
                             self.thread_monitor.error_msg))
             else:
+                self.progress_bar.setMaximum(100)
                 self.progress_bar.setValue(100)
                 self.progress_status.setText(self.tr("Backup finished."))
             if self.showFileDialog.isChecked():

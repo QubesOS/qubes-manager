@@ -47,8 +47,6 @@ from qubesadmin.backup import restore
 
 class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
 
-    __pyqtSignals__ = ("restore_progress(int)", "backup_progress(int)")
-
     def __init__(self, app, qvm_collection, parent=None):
         super(RestoreVMsWindow, self).__init__(parent)
 
@@ -76,14 +74,9 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
         self.connect(self,
                      QtCore.SIGNAL("restore_progress(QString)"),
                      self.commit_text_edit.append)
-        self.connect(self,
-                     QtCore.SIGNAL("backup_progress(int)"),
-                     self.progress_bar.setValue)
         self.dir_line_edit.connect(self.dir_line_edit,
                                    QtCore.SIGNAL("textChanged(QString)"),
                                    self.backup_location_changed)
-        self.connect(self.verify_only, QtCore.SIGNAL("stateChanged(int)"),
-                     self.on_verify_only_toogled)
 
         self.select_dir_page.isComplete = self.has_selected_dir
         self.select_vms_page.isComplete = self.has_selected_vms
@@ -157,13 +150,9 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
             QtCore.SIGNAL("restore_progress(QString)"),
             u'<font color="black">{0}</font>'.format(text)))
 
-    def update_progress_bar(self, value):
-        self.feedback_queue.put((QtCore.SIGNAL("backup_progress(int)"), value))
-
     def __do_restore__(self, t_monitor):
         err_msg = []
         try:
-            self.backup_restore.progress_callback = self.update_progress_bar
             self.backup_restore.restore_do(self.vms_to_restore)
 
         except backup.BackupCanceledError as ex:
@@ -276,6 +265,7 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
                     file_dialog.getExistingDirectory(
                         self, self.tr("Detach backup device"),
                         os.path.dirname(self.dir_line_edit.text()))
+            self.progress_bar.setMaximum(100)
             self.progress_bar.setValue(100)
             self.button(self.FinishButton).setEnabled(True)
             self.button(self.CancelButton).setEnabled(False)
