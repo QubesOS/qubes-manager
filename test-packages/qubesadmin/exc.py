@@ -1,4 +1,4 @@
-### mock qubesadmin.exc module
+# pylint: disable=unused-variable### mock qubesadmin.exc module
 
 class QubesException(BaseException):
     pass

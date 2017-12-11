@@ -31,7 +31,7 @@ from qubes.storage.file import get_disk_usage
 
 from PyQt4 import QtCore  # pylint: disable=import-error
 from PyQt4 import QtGui  # pylint: disable=import-error
-from . import ui_backupdlg
+from . import ui_backupdlg  # pylint: disable=no-name-in-module
 from . import multiselectwidget
 
 from . import backup_utils
@@ -119,9 +119,9 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
     def load_settings(self):
         try:
             profile_data = backup_utils.load_backup_profile()
-        except FileNotFoundError as ex:  # pylint: disable=unused-variable
+        except FileNotFoundError:
             return
-        except exc.QubesException as qex:  # pylint: disable=unused-variable
+        except exc.QubesException:
             QtGui.QMessageBox.information(
                 None, self.tr("Error loading backup profile"),
                 self.tr("Unable to load saved backup profile."))
@@ -232,7 +232,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
                     self.tr("Selected directory do not exists or "
                             "not a directory (%s).") % backup_location)
                 return False
-            if not len(self.passphrase_line_edit.text()):
+            if not self.passphrase_line_edit.text():
                 QtGui.QMessageBox.information(
                     None, self.tr("Wait!"),
                     self.tr("Enter passphrase for backup "
@@ -268,7 +268,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
         except Exception as ex:  # pylint: disable=broad-except
             msg.append(str(ex))
 
-        if len(msg) > 0:
+        if msg:
             t_monitor.set_error_msg('\n'.join(msg))
 
         t_monitor.set_finished()
@@ -358,7 +358,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
         return self.select_vms_widget.selected_list.count() > 0
 
     def has_selected_dir_and_pass(self):
-        if not len(self.passphrase_line_edit.text()):
+        if not self.passphrase_line_edit.text():
             return False
         if self.passphrase_line_edit.text() != \
                 self.passphrase_line_edit_verify.text():

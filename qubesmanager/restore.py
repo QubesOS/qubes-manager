@@ -22,8 +22,8 @@
 
 import sys
 import shutil
-from PyQt4 import QtCore
-from PyQt4 import QtGui
+from PyQt4 import QtCore  # pylint: disable=import-error
+from PyQt4 import QtGui  # pylint: disable=import-error
 import threading
 import time
 import os
@@ -34,7 +34,7 @@ import signal
 
 from qubes import backup
 
-from . import ui_restoredlg
+from . import ui_restoredlg  # pylint: disable=no-name-in-module
 from . import multiselectwidget
 from . import backup_utils
 from . import thread_monitor
@@ -180,8 +180,8 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
             self.emit(QtCore.SIGNAL("restore_progress(QString)"),
                       '<b><font color="red">{0}</font></b>'
                       .format(self.tr("Restore aborted!")))
-        elif len(err_msg) > 0 or self.error_detected.is_set():
-            if len(err_msg) > 0:
+        elif err_msg or self.error_detected.is_set():
+            if err_msg:
                 t_monitor.set_error_msg('\n'.join(err_msg))
             self.emit(QtCore.SIGNAL("restore_progress(QString)"),
                       '<b><font color="red">{0}</font></b>'

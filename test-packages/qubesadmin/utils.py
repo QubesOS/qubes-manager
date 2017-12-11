@@ -5,3 +5,6 @@ def parse_size(*args, **kwargs):
 
 def updates_vms_status(*args, **kwargs):
     return args[0]
+
+def size_to_human(*args, **kwargs):
+    return args[0]

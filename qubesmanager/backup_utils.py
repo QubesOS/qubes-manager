@@ -19,8 +19,8 @@
 #
 #
 import re
-from PyQt4 import QtGui
-from PyQt4 import QtCore
+from PyQt4 import QtGui  # pylint: disable=import-error
+from PyQt4 import QtCore  # pylint: disable=import-error
 
 import subprocess
 from . import utils
@@ -65,8 +65,7 @@ def select_path_button_clicked(dialog, select_file=False):
             vm,
             "qubes.SelectFile" if select_file
             else "qubes.SelectDirectory")
-    except subprocess.CalledProcessError as ex:
-        # pylint: disable=unused-variable
+    except subprocess.CalledProcessError:
         QtGui.QMessageBox.warning(
             None,
             dialog.tr("Nothing selected!"),
@@ -75,7 +74,7 @@ def select_path_button_clicked(dialog, select_file=False):
     if new_path:
         dialog.dir_line_edit.setText(new_path)
 
-    if new_path and len(backup_location) > 0:
+    if new_path and backup_location:
         dialog.select_dir_page.emit(QtCore.SIGNAL("completeChanged()"))
 
 
