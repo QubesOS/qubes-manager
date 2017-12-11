@@ -23,7 +23,6 @@
 import traceback
 
 import signal
-import shutil
 
 from qubesadmin import Qubes, exc
 from qubesadmin import utils as admin_utils

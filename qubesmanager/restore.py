@@ -21,7 +21,6 @@
 #
 
 import sys
-import shutil
 from PyQt4 import QtCore  # pylint: disable=import-error
 from PyQt4 import QtGui  # pylint: disable=import-error
 import threading
