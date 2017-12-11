@@ -81,6 +81,16 @@
      </layout>
     </item>
     <item>
+     <widget class="QCheckBox" name="compress_checkbox">
+      <property name="text">
+       <string>Compress the backup</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
      <widget class="QLabel" name="unrecognized_config_label">
       <property name="palette">
        <palette>

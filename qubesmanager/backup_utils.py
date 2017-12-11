@@ -100,7 +100,6 @@ def write_backup_profile(args, use_temp=False):
 
     path = get_profile_path(use_temp)
 
-    # TODO add compression parameter to GUI issue#943
     with open(path, 'w') as profile_file:
         yaml.safe_dump(profile_data, profile_file)
 

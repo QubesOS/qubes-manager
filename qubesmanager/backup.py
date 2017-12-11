@@ -139,6 +139,9 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
             self.passphrase_line_edit_verify.setText(
                 profile_data['passphrase_text'])
 
+        if 'compression' in profile_data:
+            self.compress_checkbox.setChecked(profile_data['compression'])
+
         if 'include' in profile_data:
             return profile_data['include']
 
@@ -148,8 +151,8 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
         settings = {'destination_vm': self.appvm_combobox.currentText(),
                     'destination_path': self.dir_line_edit.text(),
                     'include': [vm.name for vm in self.selected_vms],
-                    'passphrase_text': self.passphrase_line_edit.text()}
-        # TODO: add compression when it is added
+                    'passphrase_text': self.passphrase_line_edit.text(),
+                    'compression': self.compress_checkbox.isChecked()}
 
         backup_utils.write_backup_profile(settings, use_temp)
 
