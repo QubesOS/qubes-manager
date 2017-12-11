@@ -55,7 +55,6 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
         self.backup_settings = QtCore.QSettings()
 
         self.selected_vms = []
-        self.tmpdir_to_remove = None
         self.canceled = False
         self.thread_monitor = None
 
@@ -300,16 +299,10 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
 
             if not self.thread_monitor.success:
                 if self.canceled:
-                    self.progress_status.setText(self.tr("Backup aborted."))
-                    if self.tmpdir_to_remove:
-                        if QtGui.QMessageBox.warning(
-                                None, self.tr("Backup aborted"),
-                                self.tr(
-                                    "Do you want to remove temporary files "
-                                    "from %s?") % self.tmpdir_to_remove,
-                                QtGui.QMessageBox.Yes,
-                                QtGui.QMessageBox.No) == QtGui.QMessageBox.Yes:
-                            shutil.rmtree(self.tmpdir_to_remove)
+                    self.progress_status.setText(
+                        self.tr(
+                            "Backup aborted. "
+                            "Temporary file may be left at backup location."))
                 else:
                     self.progress_status.setText(self.tr("Backup error."))
                     QtGui.QMessageBox.warning(
@@ -333,12 +326,14 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
         signal.signal(signal.SIGCHLD, old_sigchld_handler)
 
     def reject(self):
-        # cancel clicked while the backup is in progress.
-        # calling kill on tar.
         if self.currentPage() is self.commit_page:
-            pass  # TODO: this does nothing
-            # if backup.backup_cancel():
-            #     self.button(self.CancelButton).setDisabled(True)
+            self.canceled = True
+            self.qvm_collection.qubesd_call(
+                'dom0', 'admin.backup.Cancel',
+                backup_utils.get_profile_name(True))
+            self.progress_bar.setMaximum(100)
+            self.progress_bar.setValue(0)
+            self.button(self.CancelButton).setDisabled(True)
         else:
             self.done(0)
 

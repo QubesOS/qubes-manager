@@ -57,7 +57,6 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
         self.func_output = []
         self.feedback_queue = Queue()
         self.canceled = False
-        self.tmpdir_to_remove = None
         self.error_detected = Event()
         self.thread_monitor = None
         self.backup_restore = None
@@ -154,7 +153,6 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
 
         except backup.BackupCanceledError as ex:
             self.canceled = True
-            self.tmpdir_to_remove = ex.tmpdir
             err_msg.append(str(ex))
         except Exception as ex:  # pylint: disable=broad-except
             err_msg.append(str(ex))
@@ -227,17 +225,7 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
                     pass
 
             if not self.thread_monitor.success:
-                if self.canceled:
-                    if self.tmpdir_to_remove and \
-                        QtGui.QMessageBox.warning(
-                            None,
-                            self.tr("Restore aborted"),
-                            self.tr("Do you want to remove temporary files "
-                                    "from %s?") % self.tmpdir_to_remove,
-                            QtGui.QMessageBox.Yes,
-                            QtGui.QMessageBox.No) == QtGui.QMessageBox.Yes:
-                        shutil.rmtree(self.tmpdir_to_remove)
-                else:
+                if not self.canceled:
                     QtGui.QMessageBox.warning(
                         None,
                         self.tr("Backup error!"),
@@ -268,12 +256,12 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
                 return False
         return True
 
-    def reject(self):  # TODO: probably not working too
+    def reject(self):
         if self.currentPage() is self.commit_page:
-            if self.backup_restore.canceled:
-                self.append_output('<font color="red">{0}</font>'.format(
-                    self.tr("Aborting the operation...")))
-                self.button(self.CancelButton).setDisabled(True)
+            self.backup_restore.canceled = True
+            self.append_output('<font color="red">{0}</font>'.format(
+                self.tr("Aborting the operation...")))
+            self.button(self.CancelButton).setDisabled(True)
         else:
             self.done(0)
 
