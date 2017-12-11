@@ -51,7 +51,7 @@ def enable_dir_line_edit(dialog, boolean):
     dialog.select_path_button.setEnabled(boolean)
 
 
-def select_path_button_clicked(dialog, select_file=False):
+def select_path_button_clicked(dialog, select_file=False, read_only=False):
     backup_location = str(dialog.dir_line_edit.text())
     file_dialog = QtGui.QFileDialog()
     file_dialog.setReadOnly(True)
@@ -66,15 +66,18 @@ def select_path_button_clicked(dialog, select_file=False):
             "qubes.SelectFile" if select_file
             else "qubes.SelectDirectory")
     except subprocess.CalledProcessError:
-        QtGui.QMessageBox.warning(
-            None,
-            dialog.tr("Nothing selected!"),
-            dialog.tr("No file or directory selected."))
+        if not read_only:
+            QtGui.QMessageBox.warning(
+                None,
+                dialog.tr("Nothing selected!"),
+                dialog.tr("No file or directory selected."))
+        else:
+            return
 
-    if new_path:
+    if new_path and not read_only:
         dialog.dir_line_edit.setText(new_path)
 
-    if new_path and backup_location:
+    if new_path and backup_location and not read_only:
         dialog.select_dir_page.emit(QtCore.SIGNAL("completeChanged()"))
 
 

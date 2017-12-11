@@ -71,9 +71,6 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
         self.connect(self,
                      QtCore.SIGNAL("currentIdChanged(int)"),
                      self.current_page_changed)
-        self.connect(self,
-                     QtCore.SIGNAL("restore_progress(QString)"),
-                     self.commit_text_edit.append)
         self.dir_line_edit.connect(self.dir_line_edit,
                                    QtCore.SIGNAL("textChanged(QString)"),
                                    self.backup_location_changed)
@@ -140,15 +137,15 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
         except exc.QubesException as ex:
             QtGui.QMessageBox.warning(None, self.tr("Restore error!"), str(ex))
 
+    def append_output(self, text):
+        self.commit_text_edit.append(text)
+
     def restore_error_output(self, text):
         self.error_detected.set()
-        self.feedback_queue.put((QtCore.SIGNAL("restore_progress(QString)"),
-                                 u'<font color="red">{0}</font>'.format(text)))
+        self.append_output(u'<font color="red">{0}</font>'.format(text))
 
     def restore_output(self, text):
-        self.feedback_queue.put((
-            QtCore.SIGNAL("restore_progress(QString)"),
-            u'<font color="black">{0}</font>'.format(text)))
+        self.append_output(u'<font color="black">{0}</font>'.format(text))
 
     def __do_restore__(self, t_monitor):
         err_msg = []
@@ -166,19 +163,16 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
                         "investigate them and/or clean them up"))
 
         if self.canceled:
-            self.emit(QtCore.SIGNAL("restore_progress(QString)"),
-                      '<b><font color="red">{0}</font></b>'
-                      .format(self.tr("Restore aborted!")))
+            self.append_output('<b><font color="red">{0}</font></b>'.format(
+                self.tr("Restore aborted!")))
         elif err_msg or self.error_detected.is_set():
             if err_msg:
                 t_monitor.set_error_msg('\n'.join(err_msg))
-            self.emit(QtCore.SIGNAL("restore_progress(QString)"),
-                      '<b><font color="red">{0}</font></b>'
-                      .format(self.tr("Finished with errors!")))
+            self.append_output('<b><font color="red">{0}</font></b>'.format(
+                self.tr("Finished with errors!")))
         else:
-            self.emit(QtCore.SIGNAL("restore_progress(QString)"),
-                      '<font color="green">{0}</font>'
-                      .format(self.tr("Finished successfully!")))
+            self.append_output('<font color="green">{0}</font>'.format(
+                self.tr("Finished successfully!")))
 
         t_monitor.set_finished()
 
@@ -249,24 +243,17 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
                         self.tr("Backup error!"),
                         self.tr("ERROR: {0}").format(
                             self.thread_monitor.error_msg))
-
-            if self.showFileDialog.isChecked():  # TODO: this is not working
-                self.emit(QtCore.SIGNAL("restore_progress(QString)"),
-                          '<b><font color="black">{0}</font></b>'.format(
-                              self.tr(
-                                  "Please unmount your backup volume and cancel"
-                                  " the file selection dialog.")))
-                if self.target_appvm: # TODO does this work at all?
-                    self.target_appvm.run("QUBESRPC %s dom0" %
-                                          "qubes.SelectDirectory")
-                else:
-                    file_dialog = QtGui.QFileDialog()
-                    file_dialog.setReadOnly(True)
-                    file_dialog.getExistingDirectory(
-                        self, self.tr("Detach backup device"),
-                        os.path.dirname(self.dir_line_edit.text()))
             self.progress_bar.setMaximum(100)
             self.progress_bar.setValue(100)
+
+            if self.showFileDialog.isChecked():
+                self.append_output(
+                    '<b><font color="black">{0}</font></b>'.format(
+                        self.tr("Please unmount your backup volume and cancel "
+                                "the file selection dialog.")))
+                self.app.processEvents()
+                backup_utils.select_path_button_clicked(self, False, True)
+
             self.button(self.FinishButton).setEnabled(True)
             self.button(self.CancelButton).setEnabled(False)
             self.showFileDialog.setEnabled(False)
@@ -284,9 +271,8 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
     def reject(self):  # TODO: probably not working too
         if self.currentPage() is self.commit_page:
             if self.backup_restore.canceled:
-                self.emit(QtCore.SIGNAL("restore_progress(QString)"),
-                          '<font color="red">{0}</font>'
-                          .format(self.tr("Aborting the operation...")))
+                self.append_output('<font color="red">{0}</font>'.format(
+                    self.tr("Aborting the operation...")))
                 self.button(self.CancelButton).setDisabled(True)
         else:
             self.done(0)

@@ -25,7 +25,7 @@ import traceback
 import signal
 import shutil
 
-from qubesadmin import Qubes, events, exc
+from qubesadmin import Qubes, exc
 from qubesadmin import utils as admin_utils
 from qubes.storage.file import get_disk_usage
 
@@ -326,16 +326,14 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
                     orig_text + self.tr(
                         " Please unmount your backup volume and cancel "
                         "the file selection dialog."))
-                if self.target_appvm:  # FIXME I'm not sure if this works
-                    self.target_appvm.run(
-                        "QUBESRPC %s dom0" % "qubes.SelectDirectory")
+                backup_utils.select_path_button_clicked(self, False, True)
             self.button(self.CancelButton).setEnabled(False)
             self.button(self.FinishButton).setEnabled(True)
             self.showFileDialog.setEnabled(False)
         signal.signal(signal.SIGCHLD, old_sigchld_handler)
 
     def reject(self):
-        # cancell clicked while the backup is in progress.
+        # cancel clicked while the backup is in progress.
         # calling kill on tar.
         if self.currentPage() is self.commit_page:
             pass  # TODO: this does nothing
