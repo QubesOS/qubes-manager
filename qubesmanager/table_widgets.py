@@ -23,7 +23,6 @@ from PyQt4 import QtGui
 from PyQt4 import QtCore
 
 # TODO: are those needed?
-qubes_dom0_updates_stat_file = '/var/lib/qubes/updates/dom0-updates-available'
 power_order = QtCore.Qt.DescendingOrder
 update_order = QtCore.Qt.AscendingOrder
 
@@ -31,7 +30,6 @@ update_order = QtCore.Qt.AscendingOrder
 row_height = 30
 
 
-# TODO: do I need to find icons?
 class VmIconWidget(QtGui.QWidget):
     def __init__(self, icon_path, enabled=True, size_multiplier=0.7,
                  tooltip=None, parent=None, icon_sz=(32, 32)):
@@ -81,7 +79,7 @@ class VmTypeWidget(VmIconWidget):
             elif other.vm.qid == 0:
                 return False
             elif self.value == other.value:
-                return self.vm.qid < other.vm.qid
+                return self.vm.name < other.vm.name
             else:
                 return self.value < other.value
 
@@ -137,7 +135,7 @@ class VmLabelWidget(VmIconWidget):
             elif other.vm.qid == 0:
                 return False
             elif self.value == other.value:
-                return self.vm.qid < other.vm.qid
+                return self.vm.name < other.vm.name
             else:
                 return self.value < other.value
 
@@ -217,14 +215,14 @@ class VmInfoWidget (QtGui.QWidget):
 
             self_val = self.upd_info_item.value
             other_val = other.upd_info_item.value
-            # TODO: is this shit needed?
+
             if self.tableWidget().\
                     horizontalHeader().sortIndicatorOrder() == update_order:
                 # the result will be sorted by upd, sorting order: Ascending
                 self_val += 1 if self.vm.is_running() else 0
                 other_val += 1 if other.vm.is_running() else 0
                 if self_val == other_val:
-                    return self.vm.qid < other.vm.qid
+                    return self.vm.name < other.vm.name
                 else:
                     return self_val > other_val
             elif self.tableWidget().\
@@ -236,7 +234,7 @@ class VmInfoWidget (QtGui.QWidget):
                 other_val = -(other_val/10 +
                               10*(1 if other.vm.is_running() else 0))
                 if self_val == other_val:
-                    return self.vm.qid < other.vm.qid
+                    return self.vm.name < other.vm.name
                 else:
                     return self_val > other_val
             else:
@@ -272,19 +270,10 @@ class VmInfoWidget (QtGui.QWidget):
 
         self.tableItem = self.VmInfoItem(self.upd_info.tableItem, vm)
 
-    def update_vm_state(self, vm, blk_visible, rec_visible=None):
+    def update_vm_state(self, vm):
         self.on_icon.update()
         self.upd_info.update_outdated(vm)
-        if blk_visible is not None:
-            self.blk_icon.setVisible(blk_visible)
-        if rec_visible is not None:
-            self.rec_icon.setVisible(rec_visible)
-        # TODO: are these needed?
-        # self.error_icon.setToolTip(vm.qubes_manager_state[main.QMVmState
-        #     .ErrorMsg])
-        # self.error_icon.setVisible(vm.qubes_manager_state[main.QMVmState
-        #                            .ErrorMsg] is not None)
-
+        # TODO: add updating things like label? name? evrything? size?
 
 # TODO add main to git history as a saner name and with a decent comment
 # TODO and rename that shit
@@ -294,7 +283,7 @@ class VmTemplateItem (QtGui.QTableWidgetItem):
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
         self.vm = vm
 
-        if vm.template is not None:
+        if getattr(vm, 'template', None) is not None:
             self.setText(vm.template.name)
         else:
             font = QtGui.QFont()
@@ -312,7 +301,7 @@ class VmTemplateItem (QtGui.QTableWidgetItem):
         elif other.vm.qid == 0:
             return False
         elif self.text() == other.text():
-            return self.vm.qid < other.vm.qid
+            return self.vm.name < other.vm.name
         else:
             return super(VmTemplateItem, self).__lt__(other)
 
@@ -325,7 +314,7 @@ class VmNetvmItem (QtGui.QTableWidgetItem):
 
         # TODO: differentiate without no net vm/ no networking?
         # TODO: mark provides network somehow?
-        if vm.netvm is None:
+        if getattr(vm, 'netvm', None) is None:
             self.setText("n/a")
         else:
             self.setText(vm.netvm.name)
@@ -338,7 +327,7 @@ class VmNetvmItem (QtGui.QTableWidgetItem):
         elif other.vm.qid == 0:
             return False
         elif self.text() == other.text():
-            return self.vm.qid < other.vm.qid
+            return self.vm.name < other.vm.name
         else:
             return super(VmNetvmItem, self).__lt__(other)
 
@@ -350,7 +339,6 @@ class VmInternalItem(QtGui.QTableWidgetItem):
 
         self.vm = vm
         self.internal = vm.features.get('internal', False)
-        # TODO: should default be false
 
         self.setText("Yes" if self.internal else "")
 
@@ -386,7 +374,7 @@ class VmUpdateInfoWidget(QtGui.QWidget):
             elif other.vm.qid == 0:
                 return False
             elif self.value == other.value:
-                return self.vm.qid < other.vm.qid
+                return self.vm.name < other.vm.name
             else:
                 return self.value < other.value
 
@@ -419,7 +407,8 @@ class VmUpdateInfoWidget(QtGui.QWidget):
         except AttributeError:
             pass
 
-        if not outdated_state and vm.template and vm.template.is_running():
+        if not outdated_state and getattr(vm, 'template', None)\
+                and vm.template.is_running():
             outdated_state = "to-be-outdated"
         if outdated_state != self.previous_outdated_state:
             self.update_status_widget(outdated_state)
@@ -491,24 +480,19 @@ class VmSizeOnDiskItem (QtGui.QTableWidgetItem):
         elif other.vm.qid == 0:
             return False
         elif self.value == other.value:
-            return self.vm.qid < other.vm.qid
+            return self.vm.name < other.vm.name
         else:
             return self.value < other.value
 
-
+# TODO: replace these widgets with a generic widgets
 class VmIPItem(QtGui.QTableWidgetItem):
     def __init__(self, vm):
         super(VmIPItem, self).__init__()
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
-        # TODO: check if you don't need a try around here
         self.vm = vm
-        self.ip = self.vm.ip
-        if self.ip:
-            self.setText(self.ip)
-        else:
-            self.setText("n/a")
-        self.setText("n/a")
+        self.ip = getattr(self.vm, 'ip', None)
+        self.setText(self.ip if self.ip is not None else 'n/a')
 
     def __lt__(self, other):
         if self.vm.qid == 0:
@@ -524,7 +508,7 @@ class VmIncludeInBackupsItem(QtGui.QTableWidgetItem):
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
         self.vm = vm
-        if self.vm.include_in_backups:
+        if getattr(self.vm, 'include_in_backups', None):
             self.setText("Yes")
         else:
             self.setText("")
@@ -536,7 +520,7 @@ class VmIncludeInBackupsItem(QtGui.QTableWidgetItem):
         elif other.vm.qid == 0:
             return False
         elif self.vm.include_in_backups == other.vm.include_in_backups:
-            return self.vm.qid < other.vm.qid
+            return self.vm.name < other.vm.name
         else:
             return self.vm.include_in_backups < other.vm.include_in_backups
 
@@ -547,7 +531,7 @@ class VmLastBackupItem(QtGui.QTableWidgetItem):
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
         self.vm = vm
-        if self.vm.backup_timestamp:
+        if getattr(self.vm, 'backup_timestamp', None):
             self.setText(self.vm.backup_timestamp)
         else:
             self.setText("")
@@ -559,7 +543,7 @@ class VmLastBackupItem(QtGui.QTableWidgetItem):
         elif other.vm.qid == 0:
             return False
         elif self.vm.backup_timestamp == other.vm.backup_timestamp:
-            return self.vm.qid < other.vm.qid
+            return self.vm.name < other.vm.name
         elif not self.vm.backup_timestamp:
             return False
         elif not other.vm.backup_timestamp:

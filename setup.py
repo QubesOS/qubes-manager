@@ -23,6 +23,7 @@ if __name__ == '__main__':
                 'qubes-vm-create = qubesmanager.create_new_vm:main',
                 'qubes-vm-boot-from-device = qubesmanager.bootfromdevice:main',
                 'qubes-backup = qubesmanager.backup:main',
-                'qubes-backup-restore = qubesmanager.restore:main'
+                'qubes-backup-restore = qubesmanager.restore:main',
+                'qubes-template-volume-manager = qubesmanager.main:main'
             ],
         })
