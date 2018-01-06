@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Exec=qubes-backup
+Path=/user/bin
+Icon=qubes-manager
+Terminal=false
+Name=Backup Qubes
+GenericName=Backup Qubes
+StartupNotify=false
+Categories=System;

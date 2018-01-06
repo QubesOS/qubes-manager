@@ -43,6 +43,8 @@ cp qubesmanager/qvm_about.sh $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 mkdir -p $RPM_BUILD_ROOT/usr/share/applications
 cp qubes-global-settings.desktop $RPM_BUILD_ROOT/usr/share/applications/
 cp qubes-vm-create.desktop $RPM_BUILD_ROOT/usr/share/applications/
+cp qubes-backup.desktop $RPM_BUILD_ROOT/usr/share/applications/
+cp qubes-backup-restore.desktop $RPM_BUILD_ROOT/usr/share/applications/
 
 
 %post
@@ -110,3 +112,5 @@ rm -rf $RPM_BUILD_ROOT
 
 /usr/share/applications/qubes-global-settings.desktop
 /usr/share/applications/qubes-vm-create.desktop
+/usr/share/applications/qubes-backup.desktop
+/usr/share/applications/qubes-backup-restore.desktop
