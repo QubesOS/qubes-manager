@@ -31,15 +31,18 @@ path_max_len = 512
 
 
 def fill_appvms_list(dialog):
+    """
+    Helper function, designed to fill the destination vm combobox in both backup
+    and restore GUI tools.
+    :param dialog: QtGui.QWizard with a combobox called appvm_combobox
+    """
     dialog.appvm_combobox.clear()
     dialog.appvm_combobox.addItem("dom0")
 
     dialog.appvm_combobox.setCurrentIndex(0)  # current selected is null ""
 
-    for vm in dialog.qvm_collection.domains:
-        if vm.klass == 'AppVM' and vm.features.get('internal', False):
-            continue
-        if vm.klass == 'TemplateVM' and vm.installed_by_rpm:
+    for vm in dialog.qubes_app.domains:
+        if vm.features.get('internal', False) or vm.klass == 'TemplateVM':
             continue
 
         if vm.is_running() and vm.qid != 0:
@@ -52,6 +55,17 @@ def enable_dir_line_edit(dialog, boolean):
 
 
 def select_path_button_clicked(dialog, select_file=False, read_only=False):
+    """
+    Helper function that displays a file/directory selection wizard. Used by
+    backup and restore GUI tools.
+    :param dialog: QtGui.QWizard with a dir_line_edit text box that wants to
+    receive a file/directory path and appvm_combobox with VM to use
+    :param select_file: True: select file dialog; False: select directory
+    dialog
+    :param read_only: should the dir_line_edit be changed after selecting a file
+    or directory
+    :return:
+    """
     backup_location = str(dialog.dir_line_edit.text())
     file_dialog = QtGui.QFileDialog()
     file_dialog.setReadOnly(True)
@@ -59,7 +73,7 @@ def select_path_button_clicked(dialog, select_file=False, read_only=False):
     new_path = None
 
     new_appvm = str(dialog.appvm_combobox.currentText())
-    vm = dialog.qvm_collection.domains[new_appvm]
+    vm = dialog.qubes_app.domains[new_appvm]
     try:
         new_path = utils.get_path_from_vm(
             vm,
@@ -79,6 +93,18 @@ def select_path_button_clicked(dialog, select_file=False, read_only=False):
 
     if new_path and backup_location and not read_only:
         dialog.select_dir_page.emit(QtCore.SIGNAL("completeChanged()"))
+
+
+def get_profile_name(use_temp):
+    backup_profile_name = 'qubes-manager-backup'
+    temp_backup_profile_name = 'qubes-manager-backup-tmp'
+
+    return temp_backup_profile_name if use_temp else backup_profile_name
+
+
+def get_profile_path(use_temp):
+    path = '/etc/qubes/backup/' + get_profile_name(use_temp) + '.conf'
+    return path
 
 
 def load_backup_profile(use_temp=False):
@@ -102,15 +128,3 @@ def write_backup_profile(args, use_temp=False):
 
     with open(path, 'w') as profile_file:
         yaml.safe_dump(profile_data, profile_file)
-
-
-def get_profile_name(use_temp):
-    backup_profile_name = 'qubes-manager-backup'
-    temp_backup_profile_name = 'qubes-manager-backup-tmp'
-
-    return temp_backup_profile_name if use_temp else backup_profile_name
-
-
-def get_profile_path(use_temp):
-    path = '/etc/qubes/backup/' + get_profile_name(use_temp) + '.conf'
-    return path

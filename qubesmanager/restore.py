@@ -28,6 +28,8 @@ import time
 import os
 import os.path
 import traceback
+import logging
+import logging.handlers
 
 import signal
 
@@ -46,15 +48,22 @@ from qubesadmin.backup import restore
 
 class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
 
-    def __init__(self, app, qvm_collection, parent=None):
+    def __init__(self, qt_app, qubes_app, parent=None):
         super(RestoreVMsWindow, self).__init__(parent)
 
-        self.app = app
-        self.qvm_collection = qvm_collection
+        self.qt_app = qt_app
+        self.qubes_app = qubes_app
 
         self.vms_to_restore = None
         self.func_output = []
+
+        # Set up logging
         self.feedback_queue = Queue()
+        handler = logging.handlers.QueueHandler(self.feedback_queue)
+        logger = logging.getLogger('qubesadmin.backup')
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+
         self.canceled = False
         self.error_detected = Event()
         self.thread_monitor = None
@@ -104,12 +113,12 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
 
         self.target_appvm = None
         if self.appvm_combobox.currentIndex() != 0:   # An existing appvm chosen
-            self.target_appvm = self.qvm_collection.domains[
+            self.target_appvm = self.qubes_app.domains[
                 str(self.appvm_combobox.currentText())]
 
         try:
             self.backup_restore = restore.BackupRestore(
-                self.qvm_collection,
+                self.qubes_app,
                 self.dir_line_edit.text(),
                 self.target_appvm,
                 self.passphrase_line_edit.text()
@@ -137,13 +146,6 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
 
     def append_output(self, text):
         self.commit_text_edit.append(text)
-
-    def restore_error_output(self, text):
-        self.error_detected.set()
-        self.append_output(u'<font color="red">{0}</font>'.format(text))
-
-    def restore_output(self, text):
-        self.append_output(u'<font color="black">{0}</font>'.format(text))
 
     def __do_restore__(self, t_monitor):
         err_msg = []
@@ -212,14 +214,20 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
                                       args=(self.thread_monitor,))
             thread.daemon = True
             thread.start()
-
             while not self.thread_monitor.is_finished():
-                self.app.processEvents()
+                self.qt_app.processEvents()
                 time.sleep(0.1)
                 try:
-                    for (signal_to_emit, data) in iter(
-                            self.feedback_queue.get_nowait, None):
-                        self.emit(signal_to_emit, data)
+                    log_record = self.feedback_queue.get_nowait()
+                    while log_record:
+                        if log_record.levelno == logging.ERROR or\
+                                        log_record.levelno == logging.CRITICAL:
+                            output = '<font color="red">{0}</font>'.format(
+                                log_record.getMessage())
+                        else:
+                            output = log_record.getMessage()
+                        self.append_output(output)
+                        log_record = self.feedback_queue.get_nowait()
                 except Empty:
                     pass
 
@@ -238,7 +246,7 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
                     '<b><font color="black">{0}</font></b>'.format(
                         self.tr("Please unmount your backup volume and cancel "
                                 "the file selection dialog.")))
-                self.app.processEvents()
+                self.qt_app.processEvents()
                 backup_utils.select_path_button_clicked(self, False, True)
 
             self.button(self.FinishButton).setEnabled(True)
@@ -305,21 +313,21 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 
 def main():
 
-    qtapp = QtGui.QApplication(sys.argv)
-    qtapp.setOrganizationName("The Qubes Project")
-    qtapp.setOrganizationDomain("http://qubes-os.org")
-    qtapp.setApplicationName("Qubes Restore VMs")
+    qt_app = QtGui.QApplication(sys.argv)
+    qt_app.setOrganizationName("The Qubes Project")
+    qt_app.setOrganizationDomain("http://qubes-os.org")
+    qt_app.setApplicationName("Qubes Restore VMs")
 
     sys.excepthook = handle_exception
 
-    app = Qubes()
+    qubes_app = Qubes()
 
-    restore_window = RestoreVMsWindow(qtapp, app)
+    restore_window = RestoreVMsWindow(qt_app, qubes_app)
 
     restore_window.show()
 
-    qtapp.exec_()
-    qtapp.exit()
+    qt_app.exec_()
+    qt_app.exit()
 
 
 if __name__ == "__main__":

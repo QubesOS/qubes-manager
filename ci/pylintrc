@@ -27,6 +27,7 @@ disable=
   duplicate-code,
   file-ignored,
   fixme,
+  inconsistent-return-statements,
   locally-disabled,
   locally-enabled,
   logging-format-interpolation,

@@ -46,11 +46,11 @@ import time
 
 class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
 
-    def __init__(self, app, qvm_collection, parent=None):
+    def __init__(self, qt_app, qubes_app, parent=None):
         super(BackupVMsWindow, self).__init__(parent)
 
-        self.app = app
-        self.qvm_collection = qvm_collection
+        self.qt_app = qt_app
+        self.qubes_app = qubes_app
         self.backup_settings = QtCore.QSettings()
 
         self.selected_vms = []
@@ -98,9 +98,9 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
 
         self.target_vm_list, self.target_vm_idx = utils.prepare_vm_choice(
             self.appvm_combobox,
-            self.qvm_collection,
+            self.qubes_app,
             None,
-            self.qvm_collection.domains['dom0'],
+            self.qubes_app.domains['dom0'],
             (lambda vm: vm.klass != 'TemplateVM' and vm.is_running()),
             allow_internal=False,
             allow_default=False,
@@ -111,6 +111,13 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
         self.__fill_vms_list__(selected)
 
     def load_settings(self):
+        """
+        Helper function that tries to load existing backup profile
+        (default path: /etc/qubes/backup/qubes-manager-backup.conf )
+        and then apply its contents to the Backup window.
+        :return: list of vms to include in backup, if it exists in the profile,
+        or None if it does not
+        """
         try:
             profile_data = backup_utils.load_backup_profile()
         except FileNotFoundError:
@@ -147,6 +154,13 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
         return None
 
     def save_settings(self, use_temp):
+        """
+        Helper function that saves backup profile to either
+        /etc/qubes/backup/qubes-manager-backup.conf or
+        /etc/qubes/backup/qubes-manager-backup-tmp.conf
+        :param use_temp: whether to use temporary profile (True) or the default
+         backup profile (False)
+        """
         settings = {'destination_vm': self.appvm_combobox.currentText(),
                     'destination_path': self.dir_line_edit.text(),
                     'include': [vm.name for vm in self.selected_vms],
@@ -169,7 +183,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
                 vm.name + " (" + admin_utils.size_to_human(self.size) + ")")
 
     def __fill_vms_list__(self, selected=None):
-        for vm in self.qvm_collection.domains:
+        for vm in self.qubes_app.domains:
             if vm.features.get('internal', False):
                 continue
 
@@ -248,11 +262,11 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
         msg = []
 
         try:
-            vm = self.qvm_collection.domains[
+            vm = self.qubes_app.domains[
                 self.appvm_combobox.currentText()]
             if not vm.is_running():
                 vm.start()
-            self.qvm_collection.qubesd_call(
+            self.qubes_app.qubesd_call(
                 'dom0', 'admin.backup.Execute',
                 backup_utils.get_profile_name(True))
         except Exception as ex:  # pylint: disable=broad-except
@@ -263,13 +277,19 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
 
         t_monitor.set_finished()
 
+    @staticmethod
+    def cleanup_temporary_files():
+        try:
+            os.remove(backup_utils.get_profile_path(use_temp=True))
+        except FileNotFoundError:
+            pass
 
     def current_page_changed(self, page_id): # pylint: disable=unused-argument
         old_sigchld_handler = signal.signal(signal.SIGCHLD, signal.SIG_DFL)
         if self.currentPage() is self.confirm_page:
 
-            self.save_settings(True)
-            backup_summary = self.qvm_collection.qubesd_call(
+            self.save_settings(use_temp=True)
+            backup_summary = self.qubes_app.qubesd_call(
                 'dom0', 'admin.backup.Info',
                 backup_utils.get_profile_name(True))
 
@@ -280,7 +300,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
         elif self.currentPage() is self.commit_page:
 
             if self.save_profile_checkbox.isChecked():
-                self.save_settings(False)
+                self.save_settings(use_temp=False)
 
             self.button(self.FinishButton).setDisabled(True)
             self.showFileDialog.setEnabled(
@@ -296,7 +316,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
             thread.start()
 
             while not self.thread_monitor.is_finished():
-                self.app.processEvents()
+                self.qt_app.processEvents()
                 time.sleep(0.1)
 
             if not self.thread_monitor.success:
@@ -325,18 +345,21 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
             self.button(self.CancelButton).setEnabled(False)
             self.button(self.FinishButton).setEnabled(True)
             self.showFileDialog.setEnabled(False)
+            self.cleanup_temporary_files()
         signal.signal(signal.SIGCHLD, old_sigchld_handler)
 
     def reject(self):
         if self.currentPage() is self.commit_page:
             self.canceled = True
-            self.qvm_collection.qubesd_call(
+            self.qubes_app.qubesd_call(
                 'dom0', 'admin.backup.Cancel',
                 backup_utils.get_profile_name(True))
             self.progress_bar.setMaximum(100)
             self.progress_bar.setValue(0)
             self.button(self.CancelButton).setDisabled(True)
+            self.cleanup_temporary_files()
         else:
+            self.cleanup_temporary_files()
             self.done(0)
 
     def has_selected_vms(self):
@@ -374,21 +397,21 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 
 def main():
 
-    qtapp = QtGui.QApplication(sys.argv)
-    qtapp.setOrganizationName("The Qubes Project")
-    qtapp.setOrganizationDomain("http://qubes-os.org")
-    qtapp.setApplicationName("Qubes Backup VMs")
+    qt_app = QtGui.QApplication(sys.argv)
+    qt_app.setOrganizationName("The Qubes Project")
+    qt_app.setOrganizationDomain("http://qubes-os.org")
+    qt_app.setApplicationName("Qubes Backup VMs")
 
     sys.excepthook = handle_exception
 
     app = Qubes()
 
-    backup_window = BackupVMsWindow(qtapp, app)
+    backup_window = BackupVMsWindow(qt_app, app)
 
     backup_window.show()
 
-    qtapp.exec_()
-    qtapp.exit()
+    qt_app.exec_()
+    qt_app.exit()
 
 
 if __name__ == "__main__":
