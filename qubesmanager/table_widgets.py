@@ -448,7 +448,7 @@ class VmSizeOnDiskItem(QtGui.QTableWidgetItem):
             self.setText("n/a")
         else:
             self.value = 10
-            self.value = self.vm.get_disk_utilization()/(1024*1024)
+            self.value = round(self.vm.get_disk_utilization()/(1024*1024), 2)
             self.setText(str(self.value) + " MiB")
 
     def __lt__(self, other):
