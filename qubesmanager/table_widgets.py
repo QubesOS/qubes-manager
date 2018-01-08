@@ -19,8 +19,9 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-from PyQt4 import QtGui
-from PyQt4 import QtCore
+from PyQt4 import QtGui  # pylint: disable=import-error
+from PyQt4 import QtCore  # pylint: disable=import-error
+# pylint: disable=too-few-public-methods
 
 power_order = QtCore.Qt.DescendingOrder
 update_order = QtCore.Qt.AscendingOrder
@@ -54,7 +55,7 @@ class VmIconWidget(QtGui.QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
-    def setToolTip(self, tooltip):
+    def setToolTip(self, tooltip):  # pylint: disable=invalid-name
         if tooltip is not None:
             self.label_icon.setToolTip(tooltip)
         else:
@@ -78,15 +79,14 @@ class VmTypeWidget(VmIconWidget):
                 return False
             elif self.value == other.value:
                 return self.vm.name < other.vm.name
-            else:
-                return self.value < other.value
+            return self.value < other.value
 
     def __init__(self, vm, parent=None):
         (icon_path, tooltip) = self.get_vm_icon(vm)
         super(VmTypeWidget, self).__init__(
             icon_path, True, 0.8, tooltip, parent)
         self.vm = vm
-        self.tableItem = self.VmTypeItem(self.value, vm)
+        self.table_item = self.VmTypeItem(self.value, vm)
         self.value = None
 
     # TODO: add "provides network" column
@@ -126,14 +126,13 @@ class VmLabelWidget(VmIconWidget):
                 return False
             elif self.value == other.value:
                 return self.vm.name < other.vm.name
-            else:
-                return self.value < other.value
+            return self.value < other.value
 
     def __init__(self, vm, parent=None):
         icon_path = self.get_vm_icon_path(vm)
         super(VmLabelWidget, self).__init__(icon_path, True, 0.8, None, parent)
         self.vm = vm
-        self.tableItem = self.VmLabelItem(self.value, vm)
+        self.table_item = self.VmLabelItem(self.value, vm)
         self.value = None
 
     def get_vm_icon_path(self, vm):
@@ -141,7 +140,7 @@ class VmLabelWidget(VmIconWidget):
         return vm.label.icon
 
 
-class VmNameItem (QtGui.QTableWidgetItem):
+class VmNameItem(QtGui.QTableWidgetItem):
     def __init__(self, vm):
         super(VmNameItem, self).__init__()
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
@@ -186,14 +185,15 @@ class VmStatusIcon(QtGui.QLabel):
         self.setFixedSize(icon_sz)
 
 
-class VmInfoWidget (QtGui.QWidget):
-    class VmInfoItem (QtGui.QTableWidgetItem):
+class VmInfoWidget(QtGui.QWidget):
+    class VmInfoItem(QtGui.QTableWidgetItem):
         def __init__(self, upd_info_item, vm):
             super(VmInfoWidget.VmInfoItem, self).__init__()
             self.upd_info_item = upd_info_item
             self.vm = vm
 
         def __lt__(self, other):
+            # pylint: disable=too-many-return-statements
             if self.vm.qid == 0:
                 return True
             elif other.vm.qid == 0:
@@ -209,8 +209,7 @@ class VmInfoWidget (QtGui.QWidget):
                 other_val += 1 if other.vm.is_running() else 0
                 if self_val == other_val:
                     return self.vm.name < other.vm.name
-                else:
-                    return self_val > other_val
+                return self_val > other_val
             elif self.tableWidget().\
                     horizontalHeader().sortIndicatorOrder() == power_order:
                 # the result will be sorted by power state,
@@ -221,8 +220,7 @@ class VmInfoWidget (QtGui.QWidget):
                               10*(1 if other.vm.is_running() else 0))
                 if self_val == other_val:
                     return self.vm.name < other.vm.name
-                else:
-                    return self_val > other_val
+                return self_val > other_val
             else:
                 # it would be strange if this happened
                 return
@@ -254,14 +252,14 @@ class VmInfoWidget (QtGui.QWidget):
         self.blk_icon.setVisible(False)
         self.error_icon.setVisible(False)
 
-        self.tableItem = self.VmInfoItem(self.upd_info.tableItem, vm)
+        self.table_item = self.VmInfoItem(self.upd_info.table_item, vm)
 
     def update_vm_state(self, vm):
         self.on_icon.update()
         self.upd_info.update_outdated(vm)
 
 
-class VmTemplateItem (QtGui.QTableWidgetItem):
+class VmTemplateItem(QtGui.QTableWidgetItem):
     def __init__(self, vm):
         super(VmTemplateItem, self).__init__()
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
@@ -286,11 +284,10 @@ class VmTemplateItem (QtGui.QTableWidgetItem):
             return False
         elif self.text() == other.text():
             return self.vm.name < other.vm.name
-        else:
-            return super(VmTemplateItem, self).__lt__(other)
+        return super(VmTemplateItem, self).__lt__(other)
 
 
-class VmNetvmItem (QtGui.QTableWidgetItem):
+class VmNetvmItem(QtGui.QTableWidgetItem):
     def __init__(self, vm):
         super(VmNetvmItem, self).__init__()
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
@@ -310,8 +307,7 @@ class VmNetvmItem (QtGui.QTableWidgetItem):
             return False
         elif self.text() == other.text():
             return self.vm.name < other.vm.name
-        else:
-            return super(VmNetvmItem, self).__lt__(other)
+        return super(VmNetvmItem, self).__lt__(other)
 
 
 class VmInternalItem(QtGui.QTableWidgetItem):
@@ -335,7 +331,7 @@ class VmInternalItem(QtGui.QTableWidgetItem):
 # features man qvm-features
 class VmUpdateInfoWidget(QtGui.QWidget):
 
-    class VmUpdateInfoItem (QtGui.QTableWidgetItem):
+    class VmUpdateInfoItem(QtGui.QTableWidgetItem):
         def __init__(self, value, vm):
             super(VmUpdateInfoWidget.VmUpdateInfoItem, self).__init__()
             self.value = 0
@@ -357,8 +353,7 @@ class VmUpdateInfoWidget(QtGui.QWidget):
                 return False
             elif self.value == other.value:
                 return self.vm.name < other.vm.name
-            else:
-                return self.value < other.value
+            return self.value < other.value
 
     def __init__(self, vm, show_text=True, parent=None):
         super(VmUpdateInfoWidget, self).__init__(parent)
@@ -375,7 +370,7 @@ class VmUpdateInfoWidget(QtGui.QWidget):
         self.previous_outdated_state = None
         self.previous_update_recommended = None
         self.value = None
-        self.tableItem = VmUpdateInfoWidget.VmUpdateInfoItem(self.value, vm)
+        self.table_item = VmUpdateInfoWidget.VmUpdateInfoItem(self.value, vm)
 
     def update_outdated(self, vm):
 
@@ -403,7 +398,7 @@ class VmUpdateInfoWidget(QtGui.QWidget):
 
     def update_status_widget(self, state):
         self.value = state
-        self.tableItem.set_value(state)
+        self.table_item.set_value(state)
         if state == "update":
             label_text = "<font color=\"#CCCC00\">Check updates</font>"
             icon_path = ":/update-recommended.png"
@@ -438,7 +433,7 @@ class VmUpdateInfoWidget(QtGui.QWidget):
             self.layout().addWidget(self.icon, alignment=QtCore.Qt.AlignCenter)
 
 
-class VmSizeOnDiskItem (QtGui.QTableWidgetItem):
+class VmSizeOnDiskItem(QtGui.QTableWidgetItem):
     def __init__(self, vm):
         super(VmSizeOnDiskItem, self).__init__()
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
@@ -463,8 +458,7 @@ class VmSizeOnDiskItem (QtGui.QTableWidgetItem):
             return False
         elif self.value == other.value:
             return self.vm.name < other.vm.name
-        else:
-            return self.value < other.value
+        return self.value < other.value
 
 
 class VmIPItem(QtGui.QTableWidgetItem):
@@ -502,8 +496,7 @@ class VmIncludeInBackupsItem(QtGui.QTableWidgetItem):
             return False
         elif self.vm.include_in_backups == other.vm.include_in_backups:
             return self.vm.name < other.vm.name
-        else:
-            return self.vm.include_in_backups < other.vm.include_in_backups
+        return self.vm.include_in_backups < other.vm.include_in_backups
 
 
 class VmLastBackupItem(QtGui.QTableWidgetItem):
@@ -528,5 +521,4 @@ class VmLastBackupItem(QtGui.QTableWidgetItem):
             return False
         elif not other.vm.backup_timestamp:
             return True
-        else:
-            return self.vm.backup_timestamp < other.vm.backup_timestamp
+        return self.vm.backup_timestamp < other.vm.backup_timestamp

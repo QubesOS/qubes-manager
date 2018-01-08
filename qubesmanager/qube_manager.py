@@ -31,11 +31,12 @@ from datetime import datetime, timedelta
 import traceback
 
 from qubesadmin import Qubes
+from qubesadmin import exc
 
-from PyQt4 import QtGui
-from PyQt4 import QtCore
+from PyQt4 import QtGui  # pylint: disable=import-error
+from PyQt4 import QtCore  # pylint: disable=import-error
 
-from . import ui_qubemanager
+from . import ui_qubemanager  # pylint: disable=no-name-in-module
 from . import thread_monitor
 from . import table_widgets
 from . import settings
@@ -48,23 +49,17 @@ import threading
 from qubesmanager.about import AboutDialog
 
 
-class QMVmState:
-    ErrorMsg = 1
-    AudioRecAvailable = 2
-    AudioRecAllowed = 3
-
-
 class SearchBox(QtGui.QLineEdit):
     def __init__(self, parent=None):
         super(SearchBox, self).__init__(parent)
         self.focusing = False
 
-    def focusInEvent(self, e):
+    def focusInEvent(self, e):  # pylint: disable=invalid-name
         super(SearchBox, self).focusInEvent(e)
         self.selectAll()
         self.focusing = True
 
-    def mousePressEvent(self, e):
+    def mousePressEvent(self, e):  # pylint: disable=invalid-name
         super(SearchBox, self).mousePressEvent(e)
         if self.focusing:
             self.selectAll()
@@ -72,6 +67,7 @@ class SearchBox(QtGui.QLineEdit):
 
 
 class VmRowInTable(object):
+    # pylint: disable=too-few-public-methods
 
     def __init__(self, vm, row_no, table):
         self.vm = vm
@@ -86,13 +82,13 @@ class VmRowInTable(object):
         table.setCellWidget(row_no, VmManagerWindow.columns_indices['Type'],
                             self.type_widget)
         table.setItem(row_no, VmManagerWindow.columns_indices['Type'],
-                      self.type_widget.tableItem)
+                      self.type_widget.table_item)
 
         self.label_widget = table_widgets.VmLabelWidget(vm)
         table.setCellWidget(row_no, VmManagerWindow.columns_indices['Label'],
                             self.label_widget)
         table.setItem(row_no, VmManagerWindow.columns_indices['Label'],
-                      self.label_widget.tableItem)
+                      self.label_widget.table_item)
 
         self.name_widget = table_widgets.VmNameItem(vm)
         table.setItem(row_no, VmManagerWindow.columns_indices['Name'],
@@ -102,7 +98,7 @@ class VmRowInTable(object):
         table.setCellWidget(row_no, VmManagerWindow.columns_indices['State'],
                             self.info_widget)
         table.setItem(row_no, VmManagerWindow.columns_indices['State'],
-                      self.info_widget.tableItem)
+                      self.info_widget.table_item)
 
         self.template_widget = table_widgets.VmTemplateItem(vm)
         table.setItem(row_no, VmManagerWindow.columns_indices['Template'],
@@ -213,6 +209,7 @@ class VmShutdownMonitor(QtCore.QObject):
 
 
 class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
+    # pylint: disable=too-many-instance-attributes
     row_height = 30
     column_width = 200
     min_visible_rows = 10
@@ -233,6 +230,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                        }
 
     def __init__(self, qubes_app, qt_app, parent=None):
+        # pylint: disable=unused-argument
         super(VmManagerWindow, self).__init__()
         self.setupUi(self)
         self.toolbar = self.toolBar
@@ -258,9 +256,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.vms_list = []
         self.vms_in_table = {}
         self.reload_table = False
-
-        self.vm_errors = {}
-        self.vm_rec = {}
 
         self.frame_width = 0
         self.frame_height = 0
@@ -343,7 +338,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.connect(
             self.table.horizontalHeader(),
             QtCore.SIGNAL("sortIndicatorChanged(int, Qt::SortOrder)"),
-            self.sortIndicatorChanged)
+            self.sort_indicator_changed)
         self.connect(self.table,
                      QtCore.SIGNAL("customContextMenuRequested(const QPoint&)"),
                      self.open_context_menu)
@@ -381,11 +376,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
     def load_manager_settings(self):
         # visible columns
-        for col in self.columns_indices.keys():
+        for col in self.columns_indices:
             col_no = self.columns_indices[col]
             visible = self.manager_settings.value(
                 'columns/%s' % col,
-                defaultValue=not self.table.isColumnHidden(col_no))
+                defaultValue="true")
             self.columns_actions[col_no].setChecked(visible == "true")
 
         self.sort_by_column = str(
@@ -393,8 +388,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                                         defaultValue=self.sort_by_column))
         self.sort_order = QtCore.Qt.SortOrder(
             self.manager_settings.value("view/sort_order",
-                                        defaultValue=self.sort_order)[
-                0])
+                                        defaultValue=self.sort_order))
         self.table.sortItems(self.columns_indices[self.sort_by_column],
                              self.sort_order)
         if not self.manager_settings.value("view/menubar_visible",
@@ -478,13 +472,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.table_selection_changed()
 
     # noinspection PyPep8Naming
-    @QtCore.pyqtSlot(bool, str)
-    def recAllowedChanged(self, state, vmname):
-        self.vm_rec[str(vmname)] = bool(state)
-
-    # noinspection PyPep8Naming
-    def sortIndicatorChanged(self, column, order):
-        self.sort_by_column = [name for name in self.columns_indices.keys() if
+    def sort_indicator_changed(self, column, order):
+        self.sort_by_column = [name for name in self.columns_indices if
                                self.columns_indices[name] == column][0]
         self.sort_order = order
         if self.settings_loaded:
@@ -546,29 +535,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             self.action_run_command_in_vm.setEnabled(False)
             self.action_set_keyboard_layout.setEnabled(False)
 
-    def set_error(self, qid, message):
-        for vm in self.vms_list:
-            if vm.qid == qid:
-                vm.qubes_manager_state[QMVmState.ErrorMsg] = message
-        # Store error in separate dict to make it immune to VM list reload
-        self.vm_errors[qid] = str(message)
-
-    def clear_error(self, qid):
-        self.vm_errors.pop(qid, None)
-        for vm in self.vms_list:
-            if vm.qid == qid:
-                vm.qubes_manager_state[QMVmState.ErrorMsg] = None
-
-    def clear_error_exact(self, qid, message):
-        for vm in self.vms_list:
-            if vm.qid == qid:
-                if vm.qubes_manager_state[QMVmState.ErrorMsg] == message:
-                    vm.qubes_manager_state[QMVmState.ErrorMsg] = None
-                    self.vm_errors.pop(qid, None)
-
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_createvm_triggered')
-    def action_createvm_triggered(self):
+    def action_createvm_triggered(self):  # pylint: disable=no-self-use
         subprocess.check_call('qubes-vm-create')
 
     def get_selected_vm(self):
@@ -665,7 +634,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     def do_remove_vm(vm, qubes_app, t_monitor):
         try:
             del qubes_app.domains[vm.name]
-        except Exception as ex:
+        except exc.QubesException as ex:
             t_monitor.set_error_msg(str(ex))
 
         t_monitor.set_finished()
@@ -721,7 +690,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         dst_vm = None
         try:
             dst_vm = qubes_app.clone_vm(src_vm, dst_name)
-        except Exception as ex:
+        except exc.QubesException as ex:
             t_monitor.set_error_msg(str(ex))
             if dst_vm:
                 pass
@@ -735,7 +704,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         if vm.get_power_state() in ["Paused", "Suspended"]:
             try:
                 vm.unpause()
-            except Exception as ex:
+            except exc.QubesException as ex:
                 QtGui.QMessageBox.warning(
                     None, self.tr("Error unpausing Qube!"),
                     self.tr("ERROR: {0}").format(ex))
@@ -758,9 +727,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             time.sleep(0.1)
 
         if not t_monitor.success:
-            self.set_error(
-                vm.qid,
-                self.tr("Error starting Qube: %s") % t_monitor.error_msg)
+            QtGui.QMessageBox.warning(
+                None,
+                self.tr("Error starting Qube!"),
+                self.tr("ERROR: {0}").format(t_monitor.error_msg))
 
         self.update_table()
 
@@ -768,7 +738,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     def do_start_vm(vm, t_monitor):
         try:
             vm.start()
-        except Exception as ex:
+        except exc.QubesException as ex:
             t_monitor.set_error_msg(str(ex))
             t_monitor.set_finished()
             return
@@ -779,6 +749,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     @QtCore.pyqtSlot(name='on_action_startvm_tools_install_triggered')
     # TODO: replace with boot from device
     def action_startvm_tools_install_triggered(self):
+        # pylint: disable=invalid-name
         pass
 
     @QtCore.pyqtSlot(name='on_action_pausevm_triggered')
@@ -788,7 +759,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         try:
             vm.pause()
             self.update_table()
-        except Exception as ex:
+        except exc.QubesException as ex:
             QtGui.QMessageBox.warning(
                 None,
                 self.tr("Error pausing Qube!"),
@@ -819,7 +790,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                     check_time=vm_restart_check_timeout, and_restart=False):
         try:
             vm.shutdown()
-        except Exception as ex:
+        except exc.QubesException as ex:
             QtGui.QMessageBox.warning(
                 None,
                 self.tr("Error shutting down Qube!"),
@@ -873,7 +844,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         if reply == QtGui.QMessageBox.Yes:
             try:
                 vm.force_shutdown()
-            except Exception as ex:
+            except exc.QubesException as ex:
                 QtGui.QMessageBox.critical(
                     None, self.tr("Error while killing Qube!"),
                     self.tr(
@@ -961,7 +932,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                     vm.start()
                 vm.run_service("qubes.InstallUpdatesGUI",
                                user="root", wait=False)
-        except Exception as ex:
+        except (ChildProcessError, exc.QubesException) as ex:
             t_monitor.set_error_msg(str(ex))
             t_monitor.set_finished()
             return
@@ -970,6 +941,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_run_command_in_vm_triggered')
     def action_run_command_in_vm_triggered(self):
+        # pylint: disable=invalid-name
         vm = self.get_selected_vm()
 
         (command_to_run, ok) = QtGui.QInputDialog.getText(
@@ -997,13 +969,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     def do_run_command_in_vm(vm, command_to_run, t_monitor):
         try:
             vm.run(command_to_run)
-        except Exception as ex:
+        except (ChildProcessError, exc.QubesException) as ex:
             t_monitor.set_error_msg(str(ex))
         t_monitor.set_finished()
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_set_keyboard_layout_triggered')
     def action_set_keyboard_layout_triggered(self):
+        # pylint: disable=invalid-name
         vm = self.get_selected_vm()
         vm.run('qubes-change-keyboard-layout')
 
@@ -1016,7 +989,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_global_settings_triggered')
-    def action_global_settings_triggered(self):
+    def action_global_settings_triggered(self):  # pylint: disable=invalid-name
         global_settings_window = global_settings.GlobalSettingsWindow(
             self.qt_app,
             self.qubes_app)
@@ -1070,19 +1043,19 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         if self.visible_columns_count == 1:
             # disable hiding the last one
-            for c in self.columns_actions:
-                if self.columns_actions[c].isChecked():
-                    self.columns_actions[c].setEnabled(False)
+            for col in self.columns_actions:
+                if self.columns_actions[col].isChecked():
+                    self.columns_actions[col].setEnabled(False)
                     break
         elif self.visible_columns_count == 2 and val == 1:
             # enable hiding previously disabled column
-            for c in self.columns_actions:
-                if not self.columns_actions[c].isEnabled():
-                    self.columns_actions[c].setEnabled(True)
+            for col in self.columns_actions:
+                if not self.columns_actions[col].isEnabled():
+                    self.columns_actions[col].setEnabled(True)
                     break
 
         if self.settings_loaded:
-            col_name = [name for name in self.columns_indices.keys() if
+            col_name = [name for name in self.columns_indices if
                         self.columns_indices[name] == col_num][0]
             self.manager_settings.setValue('columns/%s' % col_name, show)
             self.manager_settings.sync()
@@ -1122,11 +1095,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_about_qubes_triggered')
-    def action_about_qubes_triggered(self):
+    def action_about_qubes_triggered(self):  # pylint: disable=no-self-use
         about = AboutDialog()
         about.exec_()
 
-    def createPopupMenu(self):
+    def createPopupMenu(self):  # pylint: disable=invalid-name
         menu = QtGui.QMenu()
         menu.addAction(self.action_toolbar)
         menu.addAction(self.action_menubar)
