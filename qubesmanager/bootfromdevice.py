@@ -75,8 +75,8 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
             QtGui.QMessageBox.warning(
                 None,
                 self.tr("Warning!"),
-                self.tr("VM must be turned off before booting it from"
-                        "device. Please turn off the VM.")
+                self.tr("Qube must be turned off before booting it from"
+                        "device. Please turn off the qube.")
             )
 
     def __init_buttons__(self):
@@ -135,7 +135,7 @@ def main(args=None):
     qapp = QtGui.QApplication(sys.argv)
     qapp.setOrganizationName('Invisible Things Lab')
     qapp.setOrganizationDomain("https://www.qubes-os.org/")
-    qapp.setApplicationName("Qubes VM Settings")
+    qapp.setApplicationName("Boot Qube From Device")
 
 #    if not utils.is_debug(): #FIXME
 #        sys.excepthook = handle_exception
