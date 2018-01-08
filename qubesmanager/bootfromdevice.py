@@ -45,6 +45,8 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
 
         # populate buttons and such
         self.__init_buttons__()
+        # warn user if the VM is currently running
+        self.__warn_if_running__()
 
     def reject(self):
         self.done(0)
@@ -62,7 +64,20 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
                 self.tr("ERROR!"),
                 self.tr("No file or block device selected; please select one."))
             return
+
+        # warn user if the VM is currently running
+        self.__warn_if_running__()
+
         qvm_start.main(['--cdrom', cdrom_location, self.vm.name])
+
+    def __warn_if_running__(self):
+        if self.vm.is_running():
+            QtGui.QMessageBox.warning(
+                None,
+                self.tr("Warning!"),
+                self.tr("VM must be turned off before booting it from"
+                        "device. Please turn off the VM.")
+            )
 
     def __init_buttons__(self):
         self.fileVM.setEnabled(False)
