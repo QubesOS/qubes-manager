@@ -184,9 +184,9 @@ class VmShutdownMonitor(QtCore.QObject):
                 and vm_start_time < self.shutdown_started:
             if self.timeout_reached():
                 reply = QtGui.QMessageBox.question(
-                    None, self.tr("VM Shutdown"),
+                    None, self.tr("Qube Shutdown"),
                     self.tr(
-                        "The VM <b>'{0}'</b> hasn't shutdown within the last "
+                        "The Qube <b>'{0}'</b> hasn't shutdown within the last "
                         "{1} seconds, do you want to kill it?<br>").format(
                         vm.name, self.shutdown_time / 1000),
                     self.tr("Kill it!"),
@@ -602,20 +602,20 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             if dependent_vms > 0:
                 QtGui.QMessageBox.warning(
                     None, self.tr("Warning!"),
-                    self.tr("This Template VM cannot be removed, "
-                            "because there is at least one AppVM that is based "
+                    self.tr("This Template Qube cannot be removed, "
+                            "because there is at least one Qube that is based "
                             "on it.<br><small>If you want to remove this "
-                            "Template VM and all the AppVMs based on it, you "
-                            "should first remove each individual AppVM that "
+                            "Template Qube and all the Qubes based on it, you "
+                            "should first remove each individual Qube that "
                             "uses this template.</small>"))
                 return
 
         (requested_name, ok) = QtGui.QInputDialog.getText(
-            None, self.tr("VM Removal Confirmation"),
-            self.tr("Are you sure you want to remove the VM <b>'{0}'</b>?<br> "
-                    "All data on this VM's private storage will be lost!"
-                    "<br><br>Type the name of the VM (<b>{1}</b>) below to "
-                    "confirm:").format(vm.name, vm.name))
+            None, self.tr("Qube Removal Confirmation"),
+            self.tr("Are you sure you want to remove the Qube <b>'{0}'</b>"
+                    "?<br> All data on this Qube's private storage will be "
+                    "lost!<br><br>Type the name of the Qube (<b>{1}</b>) below "
+                    "to confirm:").format(vm.name, vm.name))
 
         if not ok:
             # user clicked cancel
@@ -625,7 +625,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             # name did not match
             QtGui.QMessageBox.warning(
                 None,
-                self.tr("VM removal confirmation failed"),
+                self.tr("Qube removal confirmation failed"),
                 self.tr(
                     "Entered name did not match! Not removing "
                     "{0}.").format(vm.name))
@@ -640,7 +640,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             thread.start()
 
             progress = QtGui.QProgressDialog(
-                self.tr("Removing VM: <b>{0}</b>...").format(vm.name), "", 0, 0)
+                self.tr(
+                    "Removing Qube: <b>{0}</b>...").format(vm.name), "", 0, 0)
             progress.setCancelButton(None)
             progress.setModal(True)
             progress.show()
@@ -654,7 +655,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             if t_monitor.success:
                 pass
             else:
-                QtGui.QMessageBox.warning(None, self.tr("Error removing VM!"),
+                QtGui.QMessageBox.warning(None, self.tr("Error removing Qube!"),
                                           self.tr("ERROR: {0}").format(
                                               t_monitor.error_msg))
 
@@ -680,8 +681,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             name_number += 1
 
         (clone_name, ok) = QtGui.QInputDialog.getText(
-            self, self.tr('Qubes clone VM'),
-            self.tr('Enter name for VM <b>{}</b> clone:').format(vm.name),
+            self, self.tr('Qubes clone Qube'),
+            self.tr('Enter name for Qube <b>{}</b> clone:').format(vm.name),
             text=(name_format % name_number))
         if not ok or clone_name == "":
             return
@@ -694,7 +695,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         thread.start()
 
         progress = QtGui.QProgressDialog(
-            self.tr("Cloning VM <b>{0}</b> to <b>{1}</b>...").format(
+            self.tr("Cloning Qube <b>{0}</b> to <b>{1}</b>...").format(
                 vm.name, clone_name), "", 0, 0)
         progress.setCancelButton(None)
         progress.setModal(True)
@@ -709,7 +710,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         if not t_monitor.success:
             QtGui.QMessageBox.warning(
                 None,
-                self.tr("Error while cloning VM"),
+                self.tr("Error while cloning Qube"),
                 self.tr("Exception while cloning:<br>{0}").format(
                     t_monitor.error_msg))
 
@@ -735,8 +736,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             try:
                 vm.unpause()
             except Exception as ex:
-                QtGui.QMessageBox.warning(None, self.tr("Error unpausing VM!"),
-                                          self.tr("ERROR: {0}").format(ex))
+                QtGui.QMessageBox.warning(
+                    None, self.tr("Error unpausing Qube!"),
+                    self.tr("ERROR: {0}").format(ex))
             return
 
         self.start_vm(vm)
@@ -758,7 +760,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         if not t_monitor.success:
             self.set_error(
                 vm.qid,
-                self.tr("Error starting VM: %s") % t_monitor.error_msg)
+                self.tr("Error starting Qube: %s") % t_monitor.error_msg)
 
         self.update_table()
 
@@ -789,7 +791,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         except Exception as ex:
             QtGui.QMessageBox.warning(
                 None,
-                self.tr("Error pausing VM!"),
+                self.tr("Error pausing Qube!"),
                 self.tr("ERROR: {0}").format(ex))
             return
 
@@ -800,10 +802,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         assert vm.is_running()
 
         reply = QtGui.QMessageBox.question(
-            None, self.tr("VM Shutdown Confirmation"),
-            self.tr("Are you sure you want to power down the VM"
+            None, self.tr("Qube Shutdown Confirmation"),
+            self.tr("Are you sure you want to power down the Qube"
                     " <b>'{0}'</b>?<br><small>This will shutdown all the "
-                    "running applications within this VM.</small>").format(
+                    "running applications within this Qube.</small>").format(
                 vm.name), QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel)
 
         self.qt_app.processEvents()
@@ -820,7 +822,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         except Exception as ex:
             QtGui.QMessageBox.warning(
                 None,
-                self.tr("Error shutting down VM!"),
+                self.tr("Error shutting down Qube!"),
                 self.tr("ERROR: {0}").format(ex))
             return
 
@@ -838,10 +840,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         assert vm.is_running()
 
         reply = QtGui.QMessageBox.question(
-            None, self.tr("VM Restart Confirmation"),
-            self.tr("Are you sure you want to restart the VM <b>'{0}'</b>?<br>"
-                    "<small>This will shutdown all the running applications "
-                    "within this VM.</small>").format(vm.name),
+            None, self.tr("Qube Restart Confirmation"),
+            self.tr("Are you sure you want to restart the Qube <b>'{0}'</b>?"
+                    "<br><small>This will shutdown all the running "
+                    "applications within this Qube.</small>").format(vm.name),
             QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel)
 
         self.qt_app.processEvents()
@@ -858,10 +860,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         assert vm.is_running() or vm.is_paused()
 
         reply = QtGui.QMessageBox.question(
-            None, self.tr("VM Kill Confirmation"),
-            self.tr("Are you sure you want to kill the VM <b>'{0}'</b>?<br>"
+            None, self.tr("Qube Kill Confirmation"),
+            self.tr("Are you sure you want to kill the Qube <b>'{0}'</b>?<br>"
                     "<small>This will end <b>(not shutdown!)</b> all the "
-                    "running applications within this VM.</small>").format(
+                    "running applications within this Qube.</small>").format(
                 vm.name),
             QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel,
             QtGui.QMessageBox.Cancel)
@@ -873,7 +875,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 vm.force_shutdown()
             except Exception as ex:
                 QtGui.QMessageBox.critical(
-                    None, self.tr("Error while killing VM!"),
+                    None, self.tr("Error while killing Qube!"),
                     self.tr(
                         "<b>An exception ocurred while killing {0}.</b><br>"
                         "ERROR: {1}").format(vm.name, ex))
@@ -909,10 +911,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         if not vm.is_running():
             reply = QtGui.QMessageBox.question(
-                None, self.tr("VM Update Confirmation"),
+                None, self.tr("Qube Update Confirmation"),
                 self.tr(
-                    "<b>{0}</b><br>The VM has to be running to be updated.<br>"
-                    "Do you want to start it?<br>").format(vm.name),
+                    "<b>{0}</b><br>The Qube has to be running to be updated."
+                    "<br>Do you want to start it?<br>").format(vm.name),
                 QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel)
             if reply != QtGui.QMessageBox.Yes:
                 return
@@ -943,7 +945,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             if not t_monitor.success:
                 QtGui.QMessageBox.warning(
                     None,
-                    self.tr("Error VM update!"),
+                    self.tr("Error on Qube update!"),
                     self.tr("ERROR: {0}").format(t_monitor.error_msg))
 
         self.update_table()
@@ -1204,7 +1206,7 @@ def main():
     qt_app = QtGui.QApplication(sys.argv)
     qt_app.setOrganizationName("The Qubes Project")
     qt_app.setOrganizationDomain("http://qubes-os.org")
-    qt_app.setApplicationName("Qubes VM Manager")
+    qt_app.setApplicationName("Qube Manager")
     qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
 
     sys.excepthook = handle_exception
