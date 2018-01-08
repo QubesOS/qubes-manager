@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 #
 # The Qubes OS Project, http://www.qubes-os.org
 #
@@ -43,6 +43,7 @@ from . import firewall
 from PyQt4 import QtCore, QtGui  # pylint: disable=import-error
 
 from . import ui_settingsdlg  #pylint: disable=no-name-in-module
+
 
 # pylint: disable=too-many-instance-attributes
 class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
