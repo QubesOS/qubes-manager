@@ -64,7 +64,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/bin/qubes-vm-boot-from-device
 /usr/bin/qubes-backup
 /usr/bin/qubes-backup-restore
-/usr/bin/qubes-template-volume-manager
+/usr/bin/qubes-qube-manager
 /usr/libexec/qubes-manager/mount_for_backup.sh
 /usr/libexec/qubes-manager/qvm_about.sh
 
@@ -88,7 +88,7 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/informationnotes.py
 %{python3_sitelib}/qubesmanager/create_new_vm.py
 %{python3_sitelib}/qubesmanager/thread_monitor.py
-%{python3_sitelib}/qubesmanager/main.py
+%{python3_sitelib}/qubesmanager/qube_manager.py
 %{python3_sitelib}/qubesmanager/utils.py
 %{python3_sitelib}/qubesmanager/bootfromdevice.py
 
@@ -106,7 +106,7 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/ui_about.py
 %{python3_sitelib}/qubesmanager/ui_releasenotes.py
 %{python3_sitelib}/qubesmanager/ui_informationnotes.py
-%{python3_sitelib}/qubesmanager/ui_vtmanager.py
+%{python3_sitelib}/qubesmanager/ui_qubemanager.py
 %{python3_sitelib}/qubesmanager/i18n/qubesmanager_*.qm
 %{python3_sitelib}/qubesmanager/i18n/qubesmanager_*.ts
 

@@ -22,7 +22,6 @@
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 
-# TODO: are those needed?
 power_order = QtCore.Qt.DescendingOrder
 update_order = QtCore.Qt.AscendingOrder
 
@@ -35,7 +34,6 @@ class VmIconWidget(QtGui.QWidget):
                  tooltip=None, parent=None, icon_sz=(32, 32)):
         super(VmIconWidget, self).__init__(parent)
 
-        # TODO: check with Marek how icons should be done
         self.label_icon = QtGui.QLabel()
         if icon_path[0] in ':/':
             icon = QtGui.QIcon(icon_path)
@@ -91,14 +89,7 @@ class VmTypeWidget(VmIconWidget):
         self.tableItem = self.VmTypeItem(self.value, vm)
         self.value = None
 
-    # TODO: seriously, are numbers the best idea here?
-    # TODO: add "provides network column
-    # TODO: in type make vmtype
-    #         'AdminVM': '0',
-    #         'TemplateVM': 't',
-    #         'AppVM': 'a',
-    #         'StandaloneVM': 's',
-    #         'DispVM': 'd',
+    # TODO: add "provides network" column
 
     def get_vm_icon(self, vm):
         if vm.klass == 'AdminVM':
@@ -128,7 +119,6 @@ class VmLabelWidget(VmIconWidget):
         def set_value(self, value):
             self.value = value
 
-        # TODO: figure a prettier sorting method?
         def __lt__(self, other):
             if self.vm.qid == 0:
                 return True
@@ -154,7 +144,6 @@ class VmLabelWidget(VmIconWidget):
 class VmNameItem (QtGui.QTableWidgetItem):
     def __init__(self, vm):
         super(VmNameItem, self).__init__()
-        # TODO: is this needed
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
         self.setText(vm.name)
         self.setTextAlignment(QtCore.Qt.AlignVCenter)
@@ -168,14 +157,11 @@ class VmNameItem (QtGui.QTableWidgetItem):
         return super(VmNameItem, self).__lt__(other)
 
 
-# TODO: current status - it should work...
-# TODO: maybe dbus events?
 class VmStatusIcon(QtGui.QLabel):
     def __init__(self, vm, parent=None):
         super(VmStatusIcon, self).__init__(parent)
         self.vm = vm
         self.set_on_icon()
-        # TODO: rename previous power state to something better?
         self.previous_power_state = self.vm.get_power_state()
 
     def update(self):
@@ -273,10 +259,8 @@ class VmInfoWidget (QtGui.QWidget):
     def update_vm_state(self, vm):
         self.on_icon.update()
         self.upd_info.update_outdated(vm)
-        # TODO: add updating things like label? name? evrything? size?
 
-# TODO add main to git history as a saner name and with a decent comment
-# TODO and rename that shit
+
 class VmTemplateItem (QtGui.QTableWidgetItem):
     def __init__(self, vm):
         super(VmTemplateItem, self).__init__()
@@ -312,8 +296,6 @@ class VmNetvmItem (QtGui.QTableWidgetItem):
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
         self.vm = vm
 
-        # TODO: differentiate without no net vm/ no networking?
-        # TODO: mark provides network somehow?
         if getattr(vm, 'netvm', None) is None:
             self.setText("n/a")
         else:
@@ -484,7 +466,7 @@ class VmSizeOnDiskItem (QtGui.QTableWidgetItem):
         else:
             return self.value < other.value
 
-# TODO: replace these widgets with a generic widgets
+
 class VmIPItem(QtGui.QTableWidgetItem):
     def __init__(self, vm):
         super(VmIPItem, self).__init__()
@@ -512,7 +494,6 @@ class VmIncludeInBackupsItem(QtGui.QTableWidgetItem):
             self.setText("Yes")
         else:
             self.setText("")
-        self.setText("")
 
     def __lt__(self, other):
         if self.vm.qid == 0:
@@ -535,7 +516,6 @@ class VmLastBackupItem(QtGui.QTableWidgetItem):
             self.setText(self.vm.backup_timestamp)
         else:
             self.setText("")
-        self.setText("")
 
     def __lt__(self, other):
         if self.vm.qid == 0:

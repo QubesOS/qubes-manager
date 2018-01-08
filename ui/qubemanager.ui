@@ -278,10 +278,9 @@
     <addaction name="action_toolbar"/>
     <addaction name="action_menubar"/>
     <addaction name="separator"/>
-    <addaction name="action_showallvms"/>
-    <addaction name="action_showinternalvms"/>
     <addaction name="separator"/>
     <addaction name="action_search"/>
+    <addaction name="action_refresh_list"/>
    </widget>
    <widget class="QMenu" name="menu_vm">
     <property name="title">
@@ -321,7 +320,6 @@
     <addaction name="action_updatevm"/>
     <addaction name="action_run_command_in_vm"/>
     <addaction name="action_set_keyboard_layout"/>
-    <addaction name="action_toggle_audio_input"/>
     <addaction name="separator"/>
     <addaction name="logs_menu"/>
     <addaction name="blk_menu"/>
@@ -369,13 +367,12 @@
    <addaction name="action_appmenus"/>
    <addaction name="action_updatevm"/>
    <addaction name="action_set_keyboard_layout"/>
-   <addaction name="action_toggle_audio_input"/>
    <addaction name="separator"/>
    <addaction name="action_global_settings"/>
    <addaction name="action_backup"/>
    <addaction name="action_restore"/>
    <addaction name="separator"/>
-   <addaction name="action_showallvms"/>
+   <addaction name="action_refresh_list"/>
   </widget>
   <action name="action_createvm">
    <property name="icon">
@@ -494,40 +491,6 @@
     <string>Update VM system</string>
    </property>
   </action>
-  <action name="action_toggle_audio_input">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="../resources.qrc">
-     <normaloff>:/mic.png</normaloff>:/mic.png</iconset>
-   </property>
-   <property name="text">
-    <string>Attach/detach &amp;audio-input to the VM</string>
-   </property>
-   <property name="toolTip">
-    <string>Attach/detach audio-input to the VM</string>
-   </property>
-  </action>
-  <action name="action_showallvms">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>false</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="../resources.qrc">
-     <normaloff>:/show-all-running.png</normaloff>
-     <selectedoff>:/showallvms.png</selectedoff>:/show-all-running.png</iconset>
-   </property>
-   <property name="text">
-    <string>Show/Hide inactive VMs</string>
-   </property>
-   <property name="toolTip">
-    <string>Show/Hide inactive VMs</string>
-   </property>
-  </action>
   <action name="action_editfwrules">
    <property name="icon">
     <iconset resource="../resources.qrc">
@@ -563,50 +526,6 @@
   <action name="action_view">
    <property name="text">
     <string>View</string>
-   </property>
-  </action>
-  <action name="action_cpu">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>&amp;CPU</string>
-   </property>
-  </action>
-  <action name="action_cpu_graph">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>CPU &amp;Graph</string>
-   </property>
-  </action>
-  <action name="action_mem">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>&amp;MEM</string>
-   </property>
-  </action>
-  <action name="action_mem_graph">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>M&amp;EM Graph</string>
    </property>
   </action>
   <action name="action_template">
@@ -677,6 +596,9 @@
    </property>
    <property name="text">
     <string>&amp;Qubes Network</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
    </property>
   </action>
   <action name="action_state">
@@ -834,21 +756,6 @@
     <string>Is an internal VM</string>
    </property>
   </action>
-  <action name="action_showinternalvms">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>false</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="../resources.qrc">
-     <normaloff>:/show-all-running.png</normaloff>:/show-all-running.png</iconset>
-   </property>
-   <property name="text">
-    <string>Show/Hide internal VMs</string>
-   </property>
-  </action>
   <action name="action_startvm_tools_install">
    <property name="enabled">
     <bool>false</bool>
@@ -903,6 +810,18 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+F</string>
+   </property>
+  </action>
+  <action name="action_refresh_list">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/outdated.png</normaloff>:/outdated.png</iconset>
+   </property>
+   <property name="text">
+    <string>Refresh Qube List</string>
+   </property>
+   <property name="toolTip">
+    <string>Refresh Qube List</string>
    </property>
   </action>
  </widget>

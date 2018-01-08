@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Exec=qubes-qube-manager
+Icon=qubes-manager
+Terminal=false
+Name=Qube Manager
+GenericName=Qube Manager
+StartupNotify=false
+Categories=System;
