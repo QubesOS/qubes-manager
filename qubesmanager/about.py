@@ -1,6 +1,5 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 # coding=utf-8
-# pylint: skip-file
 #
 # The Qubes OS Project, http://www.qubes-os.org
 #
@@ -21,16 +20,15 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #
-from PyQt4.QtCore import SIGNAL, SLOT
-from PyQt4.QtGui import QDialog, QIcon
+from PyQt4.QtCore import SIGNAL, SLOT  # pylint: disable=import-error
+from PyQt4.QtGui import QDialog, QIcon  # pylint: disable=import-error
 from qubesmanager.releasenotes import ReleaseNotesDialog
 from qubesmanager.informationnotes import InformationNotesDialog
 
-from .ui_about import *
+from . import ui_about  # pylint: disable=no-name-in-module
 
 
-
-class AboutDialog(Ui_AboutDialog, QDialog):
+class AboutDialog(ui_about.Ui_AboutDialog, QDialog):
     def __init__(self):
         super(AboutDialog, self).__init__()
 
