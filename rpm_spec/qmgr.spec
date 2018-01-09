@@ -91,6 +91,7 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/qube_manager.py
 %{python3_sitelib}/qubesmanager/utils.py
 %{python3_sitelib}/qubesmanager/bootfromdevice.py
+%{python3_sitelib}/qubesmanager/device_list.py
 
 %{python3_sitelib}/qubesmanager/resources_rc.py
 
@@ -107,6 +108,7 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/ui_releasenotes.py
 %{python3_sitelib}/qubesmanager/ui_informationnotes.py
 %{python3_sitelib}/qubesmanager/ui_qubemanager.py
+%{python3_sitelib}/qubesmanager/ui_devicelist.py
 %{python3_sitelib}/qubesmanager/i18n/qubesmanager_*.qm
 %{python3_sitelib}/qubesmanager/i18n/qubesmanager_*.ts
 

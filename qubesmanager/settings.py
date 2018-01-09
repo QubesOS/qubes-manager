@@ -37,6 +37,7 @@ import qubesadmin.exc
 from . import utils
 from . import multiselectwidget
 from . import thread_monitor
+from . import device_list
 
 from .appmenu_select import AppmenuSelectManager
 from . import firewall
@@ -123,6 +124,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         self.connect(self.dev_list,
                      QtCore.SIGNAL("selected_changed()"),
                      self.devices_selection_changed)
+        self.no_strict_reset_button.clicked.connect(
+            self.strict_reset_button_pressed)
 
         ####### services tab
         self.__init_services_tab__()
@@ -668,6 +671,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
     def __apply_devices_tab__(self):
         msg = []
 
+        no_strict_reset = self.no_pci_strict_reset.isChecked()
+
         try:
             old = [ass.ident.replace('_', ':')
                    for ass in self.vm.devices['pci'].persistent()]
@@ -676,10 +681,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                    for i in range(self.dev_list.selected_list.count())]
             for ident in new:
                 if ident not in old:
+                    options = {}
+                    if no_strict_reset:
+                        options['no-strict-reset'] = True
                     ass = devices.DeviceAssignment(
                         self.vm.app.domains['dom0'],
                         ident.replace(':', '_'),
-                        persistent=True)
+                        persistent=True, options=options)
                     self.vm.devices['pci'].attach(ass)
             for ass in self.vm.devices['pci'].assignments(persistent=True):
                 if ass.ident.replace('_', ':') not in new:
@@ -716,6 +724,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             else:
                 self.dmm_warning_adv.hide()
                 self.dmm_warning_dev.hide()
+
+    def strict_reset_button_pressed(self):
+        device_list_window = device_list.PCIDeviceListWindow(
+            self.vm, self.qapp, self.dev_list, self)
+        device_list_window.show()
+        pass
+
 
     ######## applications tab
 

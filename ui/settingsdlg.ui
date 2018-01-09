@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>2</number>
+        <number>3</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -1088,6 +1088,13 @@ border-width: 1px;</string>
             </widget>
            </item>
           </layout>
+         </item>
+         <item>
+          <widget class="QPushButton" name="no_strict_reset_button">
+           <property name="text">
+            <string>Configure strict reset for PCI devices</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>
