@@ -164,7 +164,6 @@ class VmStatusIcon(QtGui.QLabel):
         self.previous_power_state = self.vm.get_power_state()
 
     def update(self):
-        self.previous_power_state = self.vm.get_power_state()
         if self.previous_power_state != self.vm.get_power_state():
             self.set_on_icon()
             self.previous_power_state = self.vm.get_power_state()

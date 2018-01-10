@@ -25,6 +25,7 @@ from PyQt4 import QtGui  # pylint: disable=import-error
 
 from . import ui_logdlg   # pylint: disable=no-name-in-module
 from . import clipboard
+import os
 
 # Display only this size of log
 LOG_DISPLAY_SIZE = 1024*1024
@@ -51,13 +52,13 @@ class LogDialog(ui_logdlg.Ui_LogDialog, QtGui.QDialog):
     def __init_log_text__(self):
         self.displayed_text = ""
         log = open(self.log_path)
-        log.seek(0, clipboard.os.SEEK_END)
+        log.seek(0, os.SEEK_END)
         if log.tell() > LOG_DISPLAY_SIZE:
             self.displayed_text = self.tr(
                 "(Showing only last %d bytes of file)\n") % LOG_DISPLAY_SIZE
-            log.seek(-LOG_DISPLAY_SIZE, clipboard.os.SEEK_END)
+            log.seek(-LOG_DISPLAY_SIZE, os.SEEK_END)
         else:
-            log.seek(0, clipboard.os.SEEK_SET)
+            log.seek(0, os.SEEK_SET)
         self.displayed_text += log.read()
         log.close()
         self.log_text.setPlainText(self.displayed_text)

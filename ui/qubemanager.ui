@@ -335,7 +335,7 @@
    <addaction name="menu_view"/>
    <addaction name="menu_about"/>
   </widget>
-  <widget class="QToolBar" name="toolBar">
+  <widget class="QToolBar" name="toolbar">
    <property name="contextMenuPolicy">
     <enum>Qt::CustomContextMenu</enum>
    </property>

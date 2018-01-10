@@ -174,8 +174,11 @@ class VmShutdownMonitor(QtCore.QObject):
     def check_if_vm_has_shutdown(self):
         vm = self.vm
         vm_is_running = vm.is_running()
-        vm_start_time = datetime.fromtimestamp(
-            float(getattr(vm, 'start_time', None)))
+        try:
+            vm_start_time = datetime.fromtimestamp(float(vm.start_time))
+        except AttributeError:
+            vm_start_time = None
+
         if vm_is_running and vm_start_time \
                 and vm_start_time < self.shutdown_started:
             if self.timeout_reached():
@@ -233,7 +236,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         # pylint: disable=unused-argument
         super(VmManagerWindow, self).__init__()
         self.setupUi(self)
-        self.toolbar = self.toolBar
 
         self.manager_settings = QtCore.QSettings(self)
 
@@ -278,16 +280,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         }
 
         self.visible_columns_count = len(self.columns_indices)
-        self.table.setColumnHidden(self.columns_indices["Size"], True)
-        self.action_size_on_disk.setChecked(False)
-        self.table.setColumnHidden(self.columns_indices["Internal"], True)
-        self.action_internal.setChecked(False)
-        self.table.setColumnHidden(self.columns_indices["IP"], True)
-        self.action_ip.setChecked(False)
-        self.table.setColumnHidden(self.columns_indices["Backups"], True)
-        self.action_backups.setChecked(False)
-        self.table.setColumnHidden(self.columns_indices["Last backup"], True)
-        self.action_last_backup.setChecked(False)
 
         self.table.setColumnWidth(self.columns_indices["State"], 80)
         self.table.setColumnWidth(self.columns_indices["Name"], 150)
@@ -333,8 +325,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.tools_context_menu.addAction(self.action_toolbar)
         self.tools_context_menu.addAction(self.action_menubar)
 
-        self.table_selection_changed()
-
         self.connect(
             self.table.horizontalHeader(),
             QtCore.SIGNAL("sortIndicatorChanged(int, Qt::SortOrder)"),
@@ -346,9 +336,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                      QtCore.SIGNAL("customContextMenuRequested(const QPoint&)"),
                      lambda pos: self.open_tools_context_menu(self.menubar,
                                                               pos))
-        self.connect(self.toolBar,
+        self.connect(self.toolbar,
                      QtCore.SIGNAL("customContextMenuRequested(const QPoint&)"),
-                     lambda pos: self.open_tools_context_menu(self.toolBar,
+                     lambda pos: self.open_tools_context_menu(self.toolbar,
                                                               pos))
         self.connect(self.logs_menu, QtCore.SIGNAL("triggered(QAction *)"),
                      self.show_log)
@@ -376,12 +366,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
     def load_manager_settings(self):
         # visible columns
+        self.visible_columns_count = 0
         for col in self.columns_indices:
             col_no = self.columns_indices[col]
             visible = self.manager_settings.value(
                 'columns/%s' % col,
                 defaultValue="true")
             self.columns_actions[col_no].setChecked(visible == "true")
+            self.visible_columns_count += 1
 
         self.sort_by_column = str(
             self.manager_settings.value("view/sort_column",
@@ -414,7 +406,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.table.setSortingEnabled(False)
         self.table.clearContents()
         vms_list = self.get_vms_list()
-        self.table.setRowCount(len(vms_list))
 
         vms_in_table = {}
 
@@ -444,7 +435,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             for row_no in range(self.table.rowCount()):
                 widget = self.table.cellWidget(row_no,
                                                self.columns_indices["State"])
-                show = (self.search in widget.vm.name or not self.search)
+                show = (self.search in widget.vm.name)
                 self.table.setRowHidden(row_no, not show)
 
     @QtCore.pyqtSlot(str)
@@ -504,13 +495,13 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 and vm.klass != 'AdminVM')
             self.action_restartvm.setEnabled(
                 vm.is_running() and vm.get_power_state() != "Paused"
-                and vm.klass != 'AdminVM' and vm.klass != 'DisposableVM')
+                and vm.klass != 'AdminVM' and vm.klass != 'DispVM')
             self.action_killvm.setEnabled(
                 (vm.get_power_state() == "Paused" or vm.is_running())
                 and vm.klass != 'AdminVM')
 
             self.action_appmenus.setEnabled(
-                vm.klass != 'AdminVM' and vm.klass != 'DisposableMV'
+                vm.klass != 'AdminVM' and vm.klass != 'DispVM'
                 and not vm.features.get('internal', False))
             self.action_editfwrules.setEnabled(vm.klass != 'AdminVM')
             self.action_updatevm.setEnabled(getattr(vm, 'updateable', False)
