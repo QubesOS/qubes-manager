@@ -22,12 +22,13 @@ from PyQt4 import QtGui, QtCore  # pylint: disable=import-error
 
 
 class PCIDeviceListWindow(ui_devicelist.Ui_Dialog, QtGui.QDialog):
-    def __init__(self, vm, qapp, dev_list, parent=None):
+    def __init__(self, vm, qapp, dev_list, no_strict_reset_list, parent=None):
         super(PCIDeviceListWindow, self).__init__(parent)
 
         self.vm = vm
         self.qapp = qapp
         self.dev_list = dev_list
+        self.no_strict_reset_list = no_strict_reset_list
 
         self.setupUi(self)
 
@@ -36,26 +37,26 @@ class PCIDeviceListWindow(ui_devicelist.Ui_Dialog, QtGui.QDialog):
         self.connect(
             self.buttonBox, QtCore.SIGNAL("rejected()"), self.reject)
 
+        self.ident_list = {}
         self.fill_device_list()
 
     def fill_device_list(self):
         self.device_list.clear()
 
-        pci_devices = [ass.ident.replace('_', ':')
-                       for ass in self.vm.devices['pci'].assignments()]
-
         for i in range(self.dev_list.selected_list.count()):
             text = self.dev_list.selected_list.item(i).text()
             ident = self.dev_list.selected_list.item(i).ident
-            if ident in pci_devices:
-                self.device_list.addItem(text)
+            self.device_list.addItem(text)
+            self.ident_list[text] = ident
+            if ident in self.no_strict_reset_list:
+                self.device_list.setItemSelected(
+                    self.device_list.item(i), True)
 
     def reject(self):
         self.done(0)
 
     def save_and_apply(self):
+        self.no_strict_reset_list.clear()
+        self.no_strict_reset_list.extend([self.ident_list[item.text()] for item
+                                          in self.device_list.selectedItems()])
         self.done(0)
-
-    def show(self):
-        super(PCIDeviceListWindow, self).show()
-        self.fill_device_list()

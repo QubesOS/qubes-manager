@@ -126,6 +126,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                      self.devices_selection_changed)
         self.no_strict_reset_button.clicked.connect(
             self.strict_reset_button_pressed)
+        self.current_strict_reset_list = []
+        self.new_strict_reset_list = []
+        self.define_strict_reset_devices()
 
         ####### services tab
         self.__init_services_tab__()
@@ -664,14 +667,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         if self.vm.is_running():
             self.dev_list.setEnabled(False)
             self.turn_off_vm_to_modify_devs.setVisible(True)
+            self.no_strict_reset_button.setEnabled(False)
         else:
             self.dev_list.setEnabled(True)
             self.turn_off_vm_to_modify_devs.setVisible(False)
 
     def __apply_devices_tab__(self):
         msg = []
-
-        no_strict_reset = self.no_pci_strict_reset.isChecked()
 
         try:
             old = [ass.ident.replace('_', ':')
@@ -682,13 +684,35 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             for ident in new:
                 if ident not in old:
                     options = {}
-                    if no_strict_reset:
+                    if ident in self.new_strict_reset_list:
                         options['no-strict-reset'] = True
                     ass = devices.DeviceAssignment(
                         self.vm.app.domains['dom0'],
                         ident.replace(':', '_'),
                         persistent=True, options=options)
                     self.vm.devices['pci'].attach(ass)
+                elif (ident in self.current_strict_reset_list) != \
+                        (ident in self.new_strict_reset_list):
+                    current_assignment = None
+                    for assignment in self.vm.devices['pci'].assignments(
+                            persistent=True):
+                        if assignment.ident.replace("_", ":") == ident:
+                            current_assignment = assignment
+                            break
+                    if current_assignment is None:
+                        # it would be very weird if this happened
+                        break
+                    self.vm.devices['pci'].detach(current_assignment)
+
+                    options = {}
+                    if ident in self.new_strict_reset_list:
+                        options['no-strict-reset'] = True
+                    new_assignment = devices.DeviceAssignment(
+                        self.vm.app.domains['dom0'],
+                        ident.replace(':', '_'),
+                        persistent=True, options=options)
+                    self.vm.devices['pci'].attach(new_assignment)
+
             for ass in self.vm.devices['pci'].assignments(persistent=True):
                 if ass.ident.replace('_', ':') not in new:
                     self.vm.devices['pci'].detach(ass)
@@ -725,12 +749,18 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 self.dmm_warning_adv.hide()
                 self.dmm_warning_dev.hide()
 
+    def define_strict_reset_devices(self):
+        for assignment in self.vm.devices['pci'].assignments():
+            if 'no-strict-reset' in assignment.options and \
+                    assignment.options['no-strict-reset']:
+                self.current_strict_reset_list.append(
+                    assignment.ident.replace('_', ':'))
+        self.new_strict_reset_list = self.current_strict_reset_list.copy()
+
     def strict_reset_button_pressed(self):
         device_list_window = device_list.PCIDeviceListWindow(
-            self.vm, self.qapp, self.dev_list, self)
-        device_list_window.show()
-        pass
-
+            self.vm, self.qapp, self.dev_list, self.new_strict_reset_list, self)
+        device_list_window.exec()
 
     ######## applications tab
 
