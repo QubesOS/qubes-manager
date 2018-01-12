@@ -23,6 +23,7 @@ from . import utils
 from . import ui_bootfromdevice  # pylint: disable=no-name-in-module
 from PyQt4 import QtGui, QtCore  # pylint: disable=import-error
 from qubesadmin import tools
+from qubesadmin.tools import qvm_start
 
 
 class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
@@ -44,7 +45,8 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
 
         # populate buttons and such
         self.__init_buttons__()
-
+        # warn user if the VM is currently running
+        self.__warn_if_running__()
 
     def reject(self):
         self.done(0)
@@ -62,7 +64,20 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
                 self.tr("ERROR!"),
                 self.tr("No file or block device selected; please select one."))
             return
-        tools.qvm_start.main(['--cdrom', cdrom_location, self.vm.name])
+
+        # warn user if the VM is currently running
+        self.__warn_if_running__()
+
+        qvm_start.main(['--cdrom', cdrom_location, self.vm.name])
+
+    def __warn_if_running__(self):
+        if self.vm.is_running():
+            QtGui.QMessageBox.warning(
+                None,
+                self.tr("Warning!"),
+                self.tr("Qube must be turned off before booting it from"
+                        "device. Please turn off the qube.")
+            )
 
     def __init_buttons__(self):
         self.fileVM.setEnabled(False)
@@ -112,6 +127,7 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
 
 parser = tools.QubesArgumentParser(vmname_nargs=1)
 
+
 def main(args=None):
     args = parser.parse_args(args)
     vm = args.domains.pop()
@@ -119,7 +135,7 @@ def main(args=None):
     qapp = QtGui.QApplication(sys.argv)
     qapp.setOrganizationName('Invisible Things Lab')
     qapp.setOrganizationDomain("https://www.qubes-os.org/")
-    qapp.setApplicationName("Qubes VM Settings")
+    qapp.setApplicationName("Boot Qube From Device")
 
 #    if not utils.is_debug(): #FIXME
 #        sys.excepthook = handle_exception
