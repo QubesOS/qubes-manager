@@ -114,6 +114,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 self.delete_rule_button_pressed)
             self.policy_deny_radio_button.clicked.connect(self.policy_changed)
             self.policy_allow_radio_button.clicked.connect(self.policy_changed)
+            if init_page == 'firewall':
+                self.check_network_availability()
 
         ####### devices tab
         self.__init_devices_tab__()
@@ -217,36 +219,38 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         t_monitor.set_finished()
 
-    def current_tab_changed(self, idx):
-        if idx == self.tabs_indices["firewall"]:
-            netvm = self.vm.netvm
-            self.no_netvm_label.setVisible(netvm is None)
-            self.netvm_no_firewall_label.setVisible(
-                netvm is not None and
-                not netvm.features.check_with_template('qubes-firewall', False))
-            if netvm is None:
-                QtGui.QMessageBox.warning(
-                    None,
-                    self.tr("Qube configuration problem!"),
-                    self.tr('This qube has networking disabled '
-                            '(Basic -> Networking) - network will be disabled. '
-                            'If you want to use firewall, '
-                            'please enable networking.')
-                )
-            if netvm is not None and \
-                    not netvm.features.check_with_template(
-                        'qubes-firewall',
-                        False):
-                QtGui.QMessageBox.warning(
-                    None,
-                    self.tr("Qube configuration problem!"),
-                    self.tr("The '{vm}' AppVM is network connected to "
+    def check_network_availability(self):
+        netvm = self.vm.netvm
+        self.no_netvm_label.setVisible(netvm is None)
+        self.netvm_no_firewall_label.setVisible(
+            netvm is not None and
+            not netvm.features.check_with_template('qubes-firewall', False))
+        if netvm is None:
+            QtGui.QMessageBox.warning(
+                None,
+                self.tr("Qube configuration problem!"),
+                self.tr('This qube has networking disabled '
+                        '(Basic -> Networking) - network will be disabled. '
+                        'If you want to use firewall, '
+                        'please enable networking.')
+            )
+        if netvm is not None and \
+                not netvm.features.check_with_template(
+                    'qubes-firewall',
+                    False):
+            QtGui.QMessageBox.warning(
+                None,
+                self.tr("Qube configuration problem!"),
+                self.tr("The '{vm}' AppVM is network connected to "
                         "'{netvm}', which does not support firewall!<br/>"
                         "You may edit the '{vm}' VM firewall rules, but these "
                         "will not take any effect until you connect it to "
                         "a working Firewall VM.").format(
-                            vm=self.vm.name, netvm=netvm.name))
+                    vm=self.vm.name, netvm=netvm.name))
 
+    def current_tab_changed(self, idx):
+        if idx == self.tabs_indices["firewall"]:
+            self.check_network_availability()
 
     ######### basic tab
 
