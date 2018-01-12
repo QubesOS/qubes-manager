@@ -45,7 +45,7 @@ cp qubes-global-settings.desktop $RPM_BUILD_ROOT/usr/share/applications/
 cp qubes-vm-create.desktop $RPM_BUILD_ROOT/usr/share/applications/
 cp qubes-backup.desktop $RPM_BUILD_ROOT/usr/share/applications/
 cp qubes-backup-restore.desktop $RPM_BUILD_ROOT/usr/share/applications/
-
+cp qubes-qube-manager.desktop $RPM_BUILD_ROOT/usr/share/applications/
 
 %post
 update-desktop-database &> /dev/null || :
@@ -117,3 +117,4 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/applications/qubes-vm-create.desktop
 /usr/share/applications/qubes-backup.desktop
 /usr/share/applications/qubes-backup-restore.desktop
+/usr/share/applications/qubes-qube-manager.desktop
