@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 # coding=utf-8
 #
 # The Qubes OS Project, http://www.qubes-os.org
@@ -16,18 +16,17 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #
-from PyQt4.QtCore import SIGNAL
-from PyQt4.QtGui import QDialog, QIcon
+from PyQt4.QtGui import QDialog  # pylint: disable=import-error
 
-from .ui_releasenotes import *
+from . import ui_releasenotes  # pylint: disable=no-name-in-module
 
 
-class ReleaseNotesDialog(Ui_ReleaseNotesDialog, QDialog):
+class ReleaseNotesDialog(ui_releasenotes.Ui_ReleaseNotesDialog, QDialog):
+    # pylint: disable=too-few-public-methods
     def __init__(self):
         super(ReleaseNotesDialog, self).__init__()
 

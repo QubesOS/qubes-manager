@@ -12,20 +12,21 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #
 
+import sys
 import subprocess
 from . import utils
-from .firewall import *
-from .ui_bootfromdevice import *
-import qubesadmin.tools.qvm_start as qvm_start
+from . import ui_bootfromdevice  # pylint: disable=no-name-in-module
+from PyQt4 import QtGui, QtCore  # pylint: disable=import-error
+from qubesadmin import tools
+from qubesadmin.tools import qvm_start
 
 
-class VMBootFromDeviceWindow(Ui_BootDialog, QDialog):
+class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
     def __init__(self, vm, qapp, parent=None):
         super(VMBootFromDeviceWindow, self).__init__(parent)
 
@@ -33,14 +34,19 @@ class VMBootFromDeviceWindow(Ui_BootDialog, QDialog):
         self.qapp = qapp
 
         self.setupUi(self)
-        self.setWindowTitle(self.tr("Boot {vm} from device").format(vm=self.vm.name))
+        self.setWindowTitle(
+            self.tr("Boot {vm} from device").format(vm=self.vm.name))
 
-        self.connect(self.buttonBox, SIGNAL("accepted()"), self.save_and_apply)
-        self.connect(self.buttonBox, SIGNAL("rejected()"), self.reject)
+        self.connect(
+            self.buttonBox,
+            QtCore.SIGNAL("accepted()"),
+            self.save_and_apply)
+        self.connect(self.buttonBox, QtCore.SIGNAL("rejected()"), self.reject)
 
         # populate buttons and such
         self.__init_buttons__()
-
+        # warn user if the VM is currently running
+        self.__warn_if_running__()
 
     def reject(self):
         self.done(0)
@@ -49,14 +55,29 @@ class VMBootFromDeviceWindow(Ui_BootDialog, QDialog):
         if self.blockDeviceRadioButton.isChecked():
             cdrom_location = self.blockDeviceComboBox.currentText()
         elif self.fileRadioButton.isChecked():
-            cdrom_location = str(self.vm_list[self.fileVM.currentIndex()]) + ":" + self.pathText.text()
+            cdrom_location = str(
+                self.vm_list[self.fileVM.currentIndex()]) + \
+                             ":" + self.pathText.text()
         else:
-            QMessageBox.warning(None,
-                                self.tr(
-                                    "ERROR!"),
-                                self.tr("No file or block device selected; please select one."))
+            QtGui.QMessageBox.warning(
+                None,
+                self.tr("ERROR!"),
+                self.tr("No file or block device selected; please select one."))
             return
+
+        # warn user if the VM is currently running
+        self.__warn_if_running__()
+
         qvm_start.main(['--cdrom', cdrom_location, self.vm.name])
+
+    def __warn_if_running__(self):
+        if self.vm.is_running():
+            QtGui.QMessageBox.warning(
+                None,
+                self.tr("Warning!"),
+                self.tr("Qube must be turned off before booting it from"
+                        "device. Please turn off the qube.")
+            )
 
     def __init_buttons__(self):
         self.fileVM.setEnabled(False)
@@ -86,7 +107,8 @@ class VMBootFromDeviceWindow(Ui_BootDialog, QDialog):
         )
 
     def radio_button_clicked(self):
-        self.blockDeviceComboBox.setEnabled(self.blockDeviceRadioButton.isChecked())
+        self.blockDeviceComboBox.setEnabled(
+            self.blockDeviceRadioButton.isChecked())
         self.fileVM.setEnabled(self.fileRadioButton.isChecked())
         self.selectFileButton.setEnabled(self.fileRadioButton.isChecked())
         self.pathText.setEnabled(self.fileRadioButton.isChecked())
@@ -103,18 +125,17 @@ class VMBootFromDeviceWindow(Ui_BootDialog, QDialog):
             self.pathText.setText(new_path)
 
 
-parser = qubesadmin.tools.QubesArgumentParser(vmname_nargs=1)
+parser = tools.QubesArgumentParser(vmname_nargs=1)
+
 
 def main(args=None):
-    global bootfromdevice_window
-
     args = parser.parse_args(args)
     vm = args.domains.pop()
 
-    qapp = QApplication(sys.argv)
+    qapp = QtGui.QApplication(sys.argv)
     qapp.setOrganizationName('Invisible Things Lab')
     qapp.setOrganizationDomain("https://www.qubes-os.org/")
-    qapp.setApplicationName("Qubes VM Settings")
+    qapp.setApplicationName("Boot Qube From Device")
 
 #    if not utils.is_debug(): #FIXME
 #        sys.excepthook = handle_exception

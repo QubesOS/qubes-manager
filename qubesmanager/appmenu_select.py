@@ -14,28 +14,19 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #
 
-import os
 import subprocess
-import sys
-import time
 
-from operator import itemgetter
-
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
-
-import qubesmanager.resources_rc
+import PyQt4.QtGui  # pylint: disable=import-error
 
 # TODO description in tooltip
 # TODO icon
-class AppListWidgetItem(QListWidgetItem):
+# pylint: disable=too-few-public-methods
+class AppListWidgetItem(PyQt4.QtGui.QListWidgetItem):
     def __init__(self, name, ident, parent=None):
         super(AppListWidgetItem, self).__init__(name, parent)
 #       self.setToolTip(command)
@@ -43,12 +34,12 @@ class AppListWidgetItem(QListWidgetItem):
 
     @classmethod
     def from_line(cls, line):
-        ident, icon_name, name = line.strip().split(maxsplit=2)
+        ident, _icon_name, name = line.strip().split(maxsplit=2)
         return cls(name=name, ident=ident)
 
 
 class AppmenuSelectManager:
-    def __init__(self, vm, apps_multiselect, parent=None):
+    def __init__(self, vm, apps_multiselect):
         self.vm = vm
         self.app_list = apps_multiselect # this is a multiselect wiget
         self.whitelisted = None
@@ -60,7 +51,9 @@ class AppmenuSelectManager:
             ).decode().strip().split('\n') if line]
 
         # Check if appmenu entry is really installed
-#       whitelisted = [a for a in whitelisted if os.path.exists('%s/apps/%s-%s' % (self.vm.dir_path, self.vm.name, a))]
+        # whitelisted = [a for a in whitelisted
+        #  if os.path.exists('%s/apps/%s-%s' %
+        # (self.vm.dir_path, self.vm.name, a))]
 
         self.app_list.clear()
 
@@ -69,11 +62,11 @@ class AppmenuSelectManager:
                     '--get-available', '--i-understand-format-is-unstable',
                     self.vm.name]).decode().splitlines()]
 
-        for a in available_appmenus:
-            if a.ident in self.whitelisted:
-                self.app_list.selected_list.addItem(a)
+        for app in available_appmenus:
+            if app.ident in self.whitelisted:
+                self.app_list.selected_list.addItem(app)
             else:
-                self.app_list.available_list.addItem(a)
+                self.app_list.available_list.addItem(app)
 
         self.app_list.available_list.sortItems()
         self.app_list.selected_list.sortItems()

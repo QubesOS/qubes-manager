@@ -16,34 +16,30 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #
 
-import os
 import sys
 import threading
 import time
 import subprocess
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt4 import QtCore, QtGui  # pylint: disable=import-error
 
 import qubesadmin
 import qubesadmin.tools
-
-import qubesmanager.resources_rc
+import qubesadmin.exc
 
 from . import utils
 
-from .ui_newappvmdlg import Ui_NewVMDlg
+from .ui_newappvmdlg import Ui_NewVMDlg  # pylint: disable=import-error
 from .thread_monitor import ThreadMonitor
 
 
-class NewVmDlg(QDialog, Ui_NewVMDlg):
-    def __init__(self, qtapp, app, parent = None):
+class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
+    def __init__(self, qtapp, app, parent=None):
         super(NewVmDlg, self).__init__(parent)
         self.setupUi(self)
 
@@ -51,7 +47,8 @@ class NewVmDlg(QDialog, Ui_NewVMDlg):
         self.app = app
 
         # Theoretically we should be locking for writing here and unlock
-        # only after the VM creation finished. But the code would be more messy...
+        # only after the VM creation finished. But the code would be
+        # more messy...
         # Instead we lock for writing in the actual worker thread
         self.label_list, self.label_idx = utils.prepare_label_choice(
             self.label,
@@ -73,13 +70,13 @@ class NewVmDlg(QDialog, Ui_NewVMDlg):
             (lambda vm: vm.provides_network),
             allow_internal=False, allow_default=True, allow_none=True)
 
-        self.name.setValidator(QRegExpValidator(
-            QRegExp("[a-zA-Z0-9-]*", Qt.CaseInsensitive), None))
+        self.name.setValidator(QtGui.QRegExpValidator(
+            QtCore.QRegExp("[a-zA-Z0-9-]*", QtCore.Qt.CaseInsensitive), None))
         self.name.selectAll()
         self.name.setFocus()
 
-        if len(self.template_list) == 0:
-            QMessageBox.warning(None,
+        if not self.template_list:
+            QtGui.QMessageBox.warning(None,
                 self.tr('No template available!'),
                 self.tr('Cannot create a qube when no template exists.'))
 
@@ -99,7 +96,8 @@ class NewVmDlg(QDialog, Ui_NewVMDlg):
         self.done(0)
 
     def accept(self):
-        vmclass = ('AppVM' if self.vm_type.currentIndex() == 0 else 'StandaloneVM')
+        vmclass = ('AppVM' if self.vm_type.currentIndex() == 0
+                   else 'StandaloneVM')
 
         name = str(self.name.text())
         try:
@@ -107,7 +105,7 @@ class NewVmDlg(QDialog, Ui_NewVMDlg):
         except LookupError:
             pass
         else:
-            QMessageBox.warning(None,
+            QtGui.QMessageBox.warning(None,
                 self.tr('Incorrect qube name!'),
                 self.tr('A qube with the name <b>{}</b> already exists in the '
                         'system!').format(name))
@@ -132,7 +130,7 @@ class NewVmDlg(QDialog, Ui_NewVMDlg):
         thread.daemon = True
         thread.start()
 
-        progress = QProgressDialog(
+        progress = QtGui.QProgressDialog(
             self.tr("Creating new qube <b>{}</b>...").format(name), "", 0, 0)
         progress.setCancelButton(None)
         progress.setModal(True)
@@ -140,12 +138,12 @@ class NewVmDlg(QDialog, Ui_NewVMDlg):
 
         while not thread_monitor.is_finished():
             self.qtapp.processEvents()
-            time.sleep (0.1)
+            time.sleep(0.1)
 
         progress.hide()
 
         if not thread_monitor.success:
-            QMessageBox.warning(None,
+            QtGui.QMessageBox.warning(None,
                 self.tr("Error creating the qube!"),
                 self.tr("ERROR: {}").format(thread_monitor.error_msg))
 
@@ -177,8 +175,10 @@ class NewVmDlg(QDialog, Ui_NewVMDlg):
                 for k, v in properties.items():
                     setattr(vm, k, v)
 
-        except Exception as ex:
-            thread_monitor.set_error_msg(str(ex))
+        except qubesadmin.exc.QubesException as qex:
+            thread_monitor.set_error_msg(str(qex))
+        except Exception as ex:  # pylint: disable=broad-except
+            thread_monitor.set_error_msg(repr(ex))
 
         thread_monitor.set_finished()
 
@@ -218,7 +218,7 @@ parser = qubesadmin.tools.QubesArgumentParser()
 def main(args=None):
     args = parser.parse_args(args)
 
-    qtapp = QApplication(sys.argv)
+    qtapp = QtGui.QApplication(sys.argv)
     qtapp.setOrganizationName('Invisible Things Lab')
     qtapp.setOrganizationDomain('https://www.qubes-os.org/')
     qtapp.setApplicationName('Create qube')

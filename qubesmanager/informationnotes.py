@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 # coding=utf-8
 #
 # The Qubes OS Project, http://www.qubes-os.org
@@ -16,22 +16,23 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #
-from PyQt4.QtCore import SIGNAL
-from PyQt4.QtGui import QDialog, QIcon
+from PyQt4.QtGui import QDialog  # pylint: disable=import-error
 
-from .ui_informationnotes import *
+from . import ui_informationnotes  # pylint: disable=no-name-in-module
 import subprocess
 
 
-class InformationNotesDialog(Ui_InformationNotesDialog, QDialog):
+class InformationNotesDialog(ui_informationnotes.Ui_InformationNotesDialog,
+                             QDialog):
+    # pylint: disable=too-few-public-methods
     def __init__(self):
         super(InformationNotesDialog, self).__init__()
 
         self.setupUi(self)
-        details = subprocess.check_output(['/usr/libexec/qubes-manager/qvm_about.sh'])
-        self.informationNotes.setText(details)
+        details = subprocess.check_output(
+            ['/usr/libexec/qubes-manager/qvm_about.sh'])
+        self.informationNotes.setText(details.decode())

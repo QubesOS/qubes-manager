@@ -20,12 +20,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import functools
 import os
 import re
 import qubesadmin
 
-from PyQt4.QtGui import QIcon
+from PyQt4.QtGui import QIcon  # pylint: disable=import-error
 
 def _filter_internal(vm):
     return (not vm.klass == 'AdminVM'
@@ -153,11 +152,11 @@ def get_path_from_vm(vm, service_name):
 
     if not vm:
         return None
-    stdout, stderr = vm.run_service_for_stdio(service_name)
+    stdout, _stderr = vm.run_service_for_stdio(service_name)
 
     untrusted_path = stdout.decode(encoding='ascii')[:path_max_len]
 
-    if len(untrusted_path) == 0:
+    if not untrusted_path:
         return None
     if path_re.match(untrusted_path):
         assert '../' not in untrusted_path

@@ -14,96 +14,117 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #
 import re
-import sys
-import os
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt4 import QtGui  # pylint: disable=import-error
+from PyQt4 import QtCore  # pylint: disable=import-error
 
 import subprocess
-import time
-
-from .thread_monitor import *
+from . import utils
+import yaml
 
 path_re = re.compile(r"[a-zA-Z0-9/:.,_+=() -]*")
 path_max_len = 512
 
+
 def fill_appvms_list(dialog):
+    """
+    Helper function, designed to fill the destination vm combobox in both backup
+    and restore GUI tools.
+    :param dialog: QtGui.QWizard with a combobox called appvm_combobox
+    """
     dialog.appvm_combobox.clear()
     dialog.appvm_combobox.addItem("dom0")
 
-    dialog.appvm_combobox.setCurrentIndex(0) #current selected is null ""
+    dialog.appvm_combobox.setCurrentIndex(0)  # current selected is null ""
 
-    for vm in dialog.qvm_collection.values():
-        if vm.is_appvm() and vm.internal:
-            continue
-        if vm.is_template() and vm.installed_by_rpm:
+    for vm in dialog.qubes_app.domains:
+        if vm.features.get('internal', False) or vm.klass == 'TemplateVM':
             continue
 
         if vm.is_running() and vm.qid != 0:
             dialog.appvm_combobox.addItem(vm.name)
 
+
 def enable_dir_line_edit(dialog, boolean):
     dialog.dir_line_edit.setEnabled(boolean)
     dialog.select_path_button.setEnabled(boolean)
 
-def get_path_for_vm(vm, service_name):
-    if not vm:
-        return None
-    proc = vm.run("QUBESRPC %s dom0" % service_name, passio_popen=True)
-    proc.stdin.close()
-    untrusted_path = proc.stdout.readline(path_max_len)
-    if len(untrusted_path) == 0:
-        return None
-    if path_re.match(untrusted_path):
-        assert '../' not in untrusted_path
-        assert '\0' not in untrusted_path
-        return untrusted_path.strip()
-    else:
-        return None
 
-def select_path_button_clicked(dialog, select_file = False):
+def select_path_button_clicked(dialog, select_file=False, read_only=False):
+    """
+    Helper function that displays a file/directory selection wizard. Used by
+    backup and restore GUI tools.
+    :param dialog: QtGui.QWizard with a dir_line_edit text box that wants to
+    receive a file/directory path and appvm_combobox with VM to use
+    :param select_file: True: select file dialog; False: select directory
+    dialog
+    :param read_only: should the dir_line_edit be changed after selecting a file
+    or directory
+    :return:
+    """
     backup_location = str(dialog.dir_line_edit.text())
-    file_dialog = QFileDialog()
+    file_dialog = QtGui.QFileDialog()
     file_dialog.setReadOnly(True)
 
-    if select_file:
-        file_dialog_function = file_dialog.getOpenFileName
-    else:
-        file_dialog_function = file_dialog.getExistingDirectory
-
-    new_appvm = None
     new_path = None
-    if dialog.appvm_combobox.currentIndex() != 0:   #An existing appvm chosen
-        new_appvm = str(dialog.appvm_combobox.currentText())
-        vm = dialog.qvm_collection.get_vm_by_name(new_appvm)
-        if vm:
-            new_path = get_path_for_vm(vm, "qubes.SelectFile" if select_file
-                    else "qubes.SelectDirectory")
-    else:
-        new_path = file_dialog_function(dialog,
-            dialog.tr("Select backup location."),
-            backup_location if backup_location else '/')
 
-    if new_path != None:
-        if os.path.basename(new_path) == 'qubes.xml':
-            backup_location = os.path.dirname(new_path)
+    new_appvm = str(dialog.appvm_combobox.currentText())
+    vm = dialog.qubes_app.domains[new_appvm]
+    try:
+        new_path = utils.get_path_from_vm(
+            vm,
+            "qubes.SelectFile" if select_file
+            else "qubes.SelectDirectory")
+    except subprocess.CalledProcessError:
+        if not read_only:
+            QtGui.QMessageBox.warning(
+                None,
+                dialog.tr("Nothing selected!"),
+                dialog.tr("No file or directory selected."))
         else:
-            backup_location = new_path
-        dialog.dir_line_edit.setText(backup_location)
+            return
 
-    if (new_path or new_appvm) and len(backup_location) > 0:
-        dialog.select_dir_page.emit(SIGNAL("completeChanged()"))
+    if new_path and not read_only:
+        dialog.dir_line_edit.setText(new_path)
 
-def simulate_long_lasting_proces(period, progress_callback):
-    for i in range(period):
-        progress_callback((i*100)/period)
-        time.sleep(1)
+    if new_path and backup_location and not read_only:
+        dialog.select_dir_page.emit(QtCore.SIGNAL("completeChanged()"))
 
-    progress_callback(100)
-    return 0
+
+def get_profile_name(use_temp):
+    backup_profile_name = 'qubes-manager-backup'
+    temp_backup_profile_name = 'qubes-manager-backup-tmp'
+
+    return temp_backup_profile_name if use_temp else backup_profile_name
+
+
+def get_profile_path(use_temp):
+    path = '/etc/qubes/backup/' + get_profile_name(use_temp) + '.conf'
+    return path
+
+
+def load_backup_profile(use_temp=False):
+
+    path = get_profile_path(use_temp)
+
+    with open(path) as profile_file:
+        profile_data = yaml.safe_load(profile_file)
+    return profile_data
+
+
+def write_backup_profile(args, use_temp=False):
+
+    acceptable_fields = ['include', 'passphrase_text', 'compression',
+                         'destination_vm', 'destination_path']
+
+    profile_data = {key: value for key, value in args.items()
+                    if key in acceptable_fields}
+
+    path = get_profile_path(use_temp)
+
+    with open(path, 'w') as profile_file:
+        yaml.safe_dump(profile_data, profile_file)

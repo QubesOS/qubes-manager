@@ -1,9 +1,9 @@
 [Desktop Entry]
 Type=Application
-Exec=qubes-global-settings
+Exec=qubes-backup-restore
 Icon=qubes-manager
 Terminal=false
-Name=Qubes Global Settings
-GenericName=Qubes Global Settings
+Name=Restore Backup
+GenericName=Restore Backup
 StartupNotify=false
 Categories=System;

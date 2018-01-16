@@ -43,7 +43,9 @@ cp qubesmanager/qvm_about.sh $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 mkdir -p $RPM_BUILD_ROOT/usr/share/applications
 cp qubes-global-settings.desktop $RPM_BUILD_ROOT/usr/share/applications/
 cp qubes-vm-create.desktop $RPM_BUILD_ROOT/usr/share/applications/
-
+cp qubes-backup.desktop $RPM_BUILD_ROOT/usr/share/applications/
+cp qubes-backup-restore.desktop $RPM_BUILD_ROOT/usr/share/applications/
+cp qubes-qube-manager.desktop $RPM_BUILD_ROOT/usr/share/applications/
 
 %post
 update-desktop-database &> /dev/null || :
@@ -60,6 +62,9 @@ rm -rf $RPM_BUILD_ROOT
 /usr/bin/qubes-vm-settings
 /usr/bin/qubes-vm-create
 /usr/bin/qubes-vm-boot-from-device
+/usr/bin/qubes-backup
+/usr/bin/qubes-backup-restore
+/usr/bin/qubes-qube-manager
 /usr/libexec/qubes-manager/mount_for_backup.sh
 /usr/libexec/qubes-manager/qvm_about.sh
 
@@ -83,6 +88,7 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/informationnotes.py
 %{python3_sitelib}/qubesmanager/create_new_vm.py
 %{python3_sitelib}/qubesmanager/thread_monitor.py
+%{python3_sitelib}/qubesmanager/qube_manager.py
 %{python3_sitelib}/qubesmanager/utils.py
 %{python3_sitelib}/qubesmanager/bootfromdevice.py
 
@@ -100,6 +106,7 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/ui_about.py
 %{python3_sitelib}/qubesmanager/ui_releasenotes.py
 %{python3_sitelib}/qubesmanager/ui_informationnotes.py
+%{python3_sitelib}/qubesmanager/ui_qubemanager.py
 %{python3_sitelib}/qubesmanager/i18n/qubesmanager_*.qm
 %{python3_sitelib}/qubesmanager/i18n/qubesmanager_*.ts
 
@@ -108,3 +115,6 @@ rm -rf $RPM_BUILD_ROOT
 
 /usr/share/applications/qubes-global-settings.desktop
 /usr/share/applications/qubes-vm-create.desktop
+/usr/share/applications/qubes-backup.desktop
+/usr/share/applications/qubes-backup-restore.desktop
+/usr/share/applications/qubes-qube-manager.desktop

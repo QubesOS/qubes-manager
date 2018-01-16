@@ -15,28 +15,29 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #
 
 import sys
 import os
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+import os.path
+import traceback
+from PyQt4 import QtCore, QtGui  # pylint: disable=import-error
 
 from qubesadmin import Qubes
+from qubesadmin.utils import parse_size, updates_vms_status
 
-from .ui_globalsettingsdlg import *
+from . import ui_globalsettingsdlg  # pylint: disable=no-name-in-module
 
 from configparser import ConfigParser
-from qubesadmin.utils import parse_size, updates_vms_status
 
 qmemman_config_path = '/etc/qubes/qmemman.conf'
 
 
-class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
+class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
+                           QtGui.QDialog):
 
     def __init__(self, app, qvm_collection, parent=None):
         super(GlobalSettingsWindow, self).__init__(parent)
@@ -45,10 +46,13 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
         self.qvm_collection = qvm_collection
 
         self.setupUi(self)
- 
-        self.connect(self.buttonBox, SIGNAL("accepted()"), self.save_and_apply)
-        self.connect(self.buttonBox, SIGNAL("rejected()"), self.reject)
-       
+
+        self.connect(
+            self.buttonBox,
+            QtCore.SIGNAL("accepted()"),
+            self.save_and_apply)
+        self.connect(self.buttonBox, QtCore.SIGNAL("rejected()"), self.reject)
+
         self.__init_system_defaults__()
         self.__init_kernel_defaults__()
         self.__init_mem_defaults__()
@@ -89,7 +93,8 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
         self.clock_vm_combo.setCurrentIndex(self.clockvm_idx)
 
         # default netvm
-        netvms = [vm for vm in all_vms if getattr(vm, 'provides_network', False)]
+        netvms = [vm for vm in all_vms
+                  if getattr(vm, 'provides_network', False)]
         self.netvm_idx = -1
 
         current_netvm = self.qvm_collection.default_netvm
@@ -122,7 +127,7 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
             updatevm_name = str(self.update_vm_combo.currentText())
             updatevm_name = updatevm_name.split(' ')[0]
             updatevm = self.qvm_collection.domains[updatevm_name]
-            
+
             self.qvm_collection.updatevm = updatevm
 
         #clockvm
@@ -130,7 +135,7 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
             clockvm_name = str(self.clock_vm_combo.currentText())
             clockvm_name = clockvm_name.split(' ')[0]
             clockvm = self.qvm_collection.domains[clockvm_name]
-            
+
             self.qvm_collection.clockvm = clockvm
 
         #default netvm
@@ -138,7 +143,7 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
             name = str(self.default_netvm_combo.currentText())
             name = name.split(' ')[0]
             vm = self.qvm_collection.domains[name]
-            
+
             self.qvm_collection.default_netvm = vm
 
         #default template
@@ -146,13 +151,14 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
             name = str(self.default_template_combo.currentText())
             name = name.split(' ')[0]
             vm = self.qvm_collection.domains[name]
-            
+
             self.qvm_collection.default_template = vm
 
 
     def __init_kernel_defaults__(self):
         kernel_list = []
-        # TODO system_path["qubes_kernels_base_dir"] idea: qubes.pulls['linux-kernel'].volumes
+        # TODO system_path["qubes_kernels_base_dir"]
+        # idea: qubes.pools['linux-kernel'].volumes
         for k in os.listdir('/var/lib/qubes/vm-kernels'):
             kernel_list.append(k)
 
@@ -170,21 +176,22 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
         if self.default_kernel_combo.currentIndex() != self.kernel_idx:
             kernel = str(self.default_kernel_combo.currentText())
             kernel = kernel.split(' ')[0]
-            
+
             self.qvm_collection.default_kernel = kernel
 
-        
-    def __init_mem_defaults__(self):
 
+    def __init_mem_defaults__(self):
         #qmemman settings
         self.qmemman_config = ConfigParser()
-        self.vm_min_mem_val =  '200MiB'  #str(qmemman_algo.MIN_PREFMEM)
+        self.vm_min_mem_val = '200MiB'  #str(qmemman_algo.MIN_PREFMEM)
         self.dom0_mem_boost_val = '350MiB' #str(qmemman_algo.DOM0_MEM_BOOST)
-        
+
         self.qmemman_config.read(qmemman_config_path)
         if self.qmemman_config.has_section('global'):
-            self.vm_min_mem_val = self.qmemman_config.get('global', 'vm-min-mem')
-            self.dom0_mem_boost_val = self.qmemman_config.get('global', 'dom0-mem-boost')
+            self.vm_min_mem_val = \
+                self.qmemman_config.get('global', 'vm-min-mem')
+            self.dom0_mem_boost_val = \
+                self.qmemman_config.get('global', 'dom0-mem-boost')
 
         self.vm_min_mem_val = parse_size(self.vm_min_mem_val)
         self.dom0_mem_boost_val = parse_size(self.dom0_mem_boost_val)
@@ -199,7 +206,8 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
         current_min_vm_mem = self.min_vm_mem.value()
         current_dom0_mem_boost = self.dom0_mem_boost.value()
 
-        if current_min_vm_mem*1024*1024 != self.vm_min_mem_val or current_dom0_mem_boost*1024*1024 != self.dom0_mem_boost_val:
+        if current_min_vm_mem*1024*1024 != self.vm_min_mem_val \
+                or current_dom0_mem_boost*1024*1024 != self.dom0_mem_boost_val:
 
             current_min_vm_mem = str(current_min_vm_mem)+'M'
             current_dom0_mem_boost = str(current_dom0_mem_boost)+'M'
@@ -207,38 +215,46 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
             if not self.qmemman_config.has_section('global'):
                 #add the whole section
                 self.qmemman_config.add_section('global')
-                self.qmemman_config.set('global', 'vm-min-mem', current_min_vm_mem)
-                self.qmemman_config.set('global', 'dom0-mem-boost', current_dom0_mem_boost)
-                self.qmemman_config.set('global', 'cache-margin-factor', str(1.3)) # removed qmemman_algo.CACHE_FACTOR
+                self.qmemman_config.set(
+                    'global', 'vm-min-mem', current_min_vm_mem)
+                self.qmemman_config.set(
+                    'global', 'dom0-mem-boost', current_dom0_mem_boost)
+                self.qmemman_config.set(
+                    'global', 'cache-margin-factor', str(1.3))
+                # removed qmemman_algo.CACHE_FACTOR
 
                 qmemman_config_file = open(qmemman_config_path, 'a')
                 self.qmemman_config.write(qmemman_config_file)
                 qmemman_config_file.close()
 
             else:
-                #If there already is a 'global' section, we don't use SafeConfigParser.write() - it would get rid of all the comments...
-                
+                #If there already is a 'global' section, we don't use
+                # SafeConfigParser.write() - it would get rid of
+                # all the comments...
+
                 lines_to_add = {}
-                lines_to_add['vm-min-mem'] = "vm-min-mem = " + current_min_vm_mem + "\n"
-                lines_to_add['dom0-mem-boost'] = "dom0-mem-boost = " + current_dom0_mem_boost +"\n"
+                lines_to_add['vm-min-mem'] = \
+                    "vm-min-mem = " + current_min_vm_mem + "\n"
+                lines_to_add['dom0-mem-boost'] = \
+                    "dom0-mem-boost = " + current_dom0_mem_boost +"\n"
 
                 config_lines = []
 
                 qmemman_config_file = open(qmemman_config_path, 'r')
-                for l in qmemman_config_file:
-                    if l.strip().startswith('vm-min-mem'):
+                for line in qmemman_config_file:
+                    if line.strip().startswith('vm-min-mem'):
                         config_lines.append(lines_to_add['vm-min-mem'])
                         del lines_to_add['vm-min-mem']
-                    elif l.strip().startswith('dom0-mem-boost'):
+                    elif line.strip().startswith('dom0-mem-boost'):
                         config_lines.append(lines_to_add['dom0-mem-boost'])
                         del lines_to_add['dom0-mem-boost']
                     else:
-                        config_lines.append(l)
-                
+                        config_lines.append(line)
+
                 qmemman_config_file.close()
 
-                for l in lines_to_add:
-                    config_lines.append(l)
+                for line in lines_to_add:
+                    config_lines.append(line)
 
                 qmemman_config_file = open(qmemman_config_path, 'w')
                 qmemman_config_file.writelines(config_lines)
@@ -252,24 +268,26 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
         self.updates_dom0.setChecked(self.updates_dom0_val)
         updates_vms = updates_vms_status(self.qvm_collection)
         if updates_vms is None:
-            self.updates_vm.setCheckState(Qt.PartiallyChecked)
+            self.updates_vm.setCheckState(QtCore.Qt.PartiallyChecked)
         else:
             self.updates_vm.setCheckState(updates_vms)
 
     def __apply_updates__(self):
         if self.updates_dom0.isChecked() != self.updates_dom0_val:
-            # TODO updates_dom0_toggle(self.qvm_collection, self.updates_dom0.isChecked())
+            # TODO updates_dom0_toggle(
+            # self.qvm_collection, self.updates_dom0.isChecked())
             raise NotImplementedError('Toggle dom0 updates not implemented')
-        if self.updates_vm.checkState() != Qt.PartiallyChecked:
+        if self.updates_vm.checkState() != QtCore.Qt.PartiallyChecked:
             for vm in self.qvm_collection.domains:
-                vm.features['check-updates'] = bool(self.updates_vm.checkState())
+                vm.features['check-updates'] = \
+                    bool(self.updates_vm.checkState())
 
     def reject(self):
         self.done(0)
 
     def save_and_apply(self):
 
-        self.__apply_system_defaults__()        
+        self.__apply_system_defaults__()
         self.__apply_kernel_defaults__()
         self.__apply_mem_defaults__()
         self.__apply_updates__()
@@ -279,26 +297,22 @@ class GlobalSettingsWindow(Ui_GlobalSettings, QDialog):
 # Bases on the original code by:
 # Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
 
-def handle_exception( exc_type, exc_value, exc_traceback ):
-    import os.path
-    import traceback
+def handle_exception(exc_type, exc_value, exc_traceback):
+    filename, line, dummy, dummy = traceback.extract_tb(exc_traceback).pop()
+    filename = os.path.basename(filename)
+    error = "%s: %s" % (exc_type.__name__, exc_value)
 
-    filename, line, dummy, dummy = traceback.extract_tb( exc_traceback ).pop()
-    filename = os.path.basename( filename )
-    error    = "%s: %s" % ( exc_type.__name__, exc_value )
-
-    QMessageBox.critical(None, "Houston, we have a problem...",
-                         "Whoops. A critical error has occured. This is most likely a bug "
-                         "in Qubes Global Settings application.<br><br>"
-                         "<b><i>%s</i></b>" % error +
-                         "at <b>line %d</b> of file <b>%s</b>.<br/><br/>"
-                         % ( line, filename ))
+    QtGui.QMessageBox.critical(
+        None,
+        "Houston, we have a problem...",
+        "Whoops. A critical error has occured. This is most likely a bug "
+        "in Qubes Global Settings application.<br><br><b><i>%s</i></b>" %
+        error + "at <b>line %d</b> of file <b>%s</b>.<br/><br/>"
+        % (line, filename))
 
 
 def main():
-
-    global qtapp
-    qtapp = QApplication(sys.argv)
+    qtapp = QtGui.QApplication(sys.argv)
     qtapp.setOrganizationName("The Qubes Project")
     qtapp.setOrganizationDomain("http://qubes-os.org")
     qtapp.setApplicationName("Qubes Global Settings")
@@ -307,7 +321,6 @@ def main():
 
     app = Qubes()
 
-    global global_window
     global_window = GlobalSettingsWindow(qtapp, app)
 
     global_window.show()
