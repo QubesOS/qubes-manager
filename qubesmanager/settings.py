@@ -524,7 +524,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         try:
             if self.virt_mode.currentIndex() != self.virt_mode_idx:
-                self.vm.virt_mode = self.selected_virt_mode()
+                self.vm.virt_mode = self.selected_virt_mode().lower()
                 self.anything_changed = True
         except Exception as ex:
             msg.append(str(ex))
@@ -544,13 +544,13 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.update_pvh_kernel_version_warning()
 
     def update_pv_warning(self):
-        if self.selected_virt_mode() == 'pv':
+        if self.selected_virt_mode() == 'PV':
             self.pv_warning.show()
         else:
             self.pv_warning.hide()
 
     def update_virt_mode_list(self):
-        choices = ['hvm', 'pv']
+        choices = ['HVM', 'PV']
 
         if hasattr(self, 'dev_list'):
             devs_attached = self.dev_list.selected_list.count() != 0
@@ -560,7 +560,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         if devs_attached:
             self.pvh_mode_hidden.show()
         else:
-            choices.insert(0, 'pvh')
+            choices.insert(0, 'PVH')
             self.pvh_mode_hidden.hide()
 
         if hasattr(self, 'virt_mode_list'):
@@ -573,8 +573,8 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
         # XXX: Hardcoded default value.
         self.virt_mode_list, self.virt_mode_idx = utils.prepare_choice(
-                self.virt_mode, self.vm, 'virt_mode', choices, 'hvm',
-                allow_default=True)
+                self.virt_mode, self.vm, 'virt_mode', choices, 'HVM',
+                allow_default=True, transform=(lambda x: str(x).upper()))
 
         if old_mode is not None:
             self.virt_mode.setCurrentIndex(self.virt_mode_list.index(old_mode))
@@ -585,7 +585,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.update_pvh_kernel_version_warning()
 
     def update_pvh_kernel_version_warning(self):
-        if self.selected_virt_mode() != 'pvh':
+        if self.selected_virt_mode() != 'PVH':
             self.pvh_kernel_version_warning.hide()
             return
 
@@ -723,7 +723,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
         self.update_virt_mode_list()
 
     def update_pvh_dont_support_devs(self):
-        if self.selected_virt_mode() == 'pvh':
+        if self.selected_virt_mode() == 'PVH':
             self.dev_list.setEnabled(False)
             self.pvh_dont_support_devs.setVisible(True)
         else:
