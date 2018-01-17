@@ -25,12 +25,12 @@
 
 import collections
 import os.path
+import os
 import re
 import subprocess
 import threading
 import time
 import traceback
-import os
 import sys
 from qubesadmin.tools import QubesArgumentParser
 from qubesadmin import devices
@@ -627,8 +627,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         try:
             if self.virt_mode.currentIndex() != self.virt_mode_idx:
                 self.vm.virt_mode = self.selected_virt_mode().lower()
+                # pylint: disable=attribute-defined-outside-init
                 self.anything_changed = True
-        except Exception as ex:
+        except Exception as ex:  # pylint: disable=broad-except
             msg.append(str(ex))
 
         return msg
@@ -640,10 +641,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
     def selected_virt_mode(self):
         return self.virt_mode_list[self.virt_mode.currentIndex()]
 
-    def virt_mode_changed(self, new_idx):
+    def virt_mode_changed(self, new_idx):  # pylint: disable=unused-argument
         self.update_pv_warning()
         self.update_pvh_dont_support_devs()
-        self.update_pvh_kernel_version_warning()
+        self.update_pvh_kernel_ver_warning()
 
     def update_pv_warning(self):
         if self.selected_virt_mode() == 'PV':
@@ -657,7 +658,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         if hasattr(self, 'dev_list'):
             devs_attached = self.dev_list.selected_list.count() != 0
         else:
-            devs_attached = len(list(self.vm.devices['pci'].persistent())) != 0
+            devs_attached = bool(list(self.vm.devices['pci'].persistent()))
 
         if devs_attached:
             self.pvh_mode_hidden.show()
@@ -674,6 +675,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         self.virt_mode.clear()
 
         # XXX: Hardcoded default value.
+        # pylint: disable=attribute-defined-outside-init
         self.virt_mode_list, self.virt_mode_idx = utils.prepare_choice(
                 self.virt_mode, self.vm, 'virt_mode', choices, 'HVM',
                 allow_default=True, transform=(lambda x: str(x).upper()))
@@ -684,9 +686,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         self.virt_mode.currentIndexChanged.connect(self.virt_mode_changed)
 
         self.update_pv_warning()
-        self.update_pvh_kernel_version_warning()
+        self.update_pvh_kernel_ver_warning()
 
-    def update_pvh_kernel_version_warning(self):
+    def update_pvh_kernel_ver_warning(self):
         if self.selected_virt_mode() != 'PVH':
             self.pvh_kernel_version_warning.hide()
             return
@@ -699,7 +701,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             self.pvh_kernel_version_warning.show()
 
     def kernel_changed(self):
-        self.update_pvh_kernel_version_warning()
+        self.update_pvh_kernel_ver_warning()
 
     def pvh_kernel_version_ok(self, name):
         # There are nearly no limitaions on kernel names (only file system and
@@ -713,15 +715,12 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         if name is qubesadmin.DEFAULT:
             name = self.vm.app.default_kernel
 
-        m = re.search('(\d+)\.(\d+)', name)
+        m = re.search(r'(\d+)\.(\d+)', name)
 
         if m is None:
             return False
 
-        x = int(m.group(1))
-        y = int(m.group(2))
-
-        return (x, y) >= (4, 11)
+        return (int(m.group(1)), int(m.group(2))) >= (4, 11)
 
     ######## devices tab
     def __init_devices_tab__(self):
