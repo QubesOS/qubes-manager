@@ -115,7 +115,7 @@ def prepare_label_choice(widget, holder, propname, default, *args, **kwargs):
         app = holder
 
     return prepare_choice(widget, holder, propname,
-        sorted(app.labels, key=lambda l: l.index),
+        sorted(app.labels.values(), key=lambda l: l.index),
         default, *args,
         icon_getter=(lambda label: QIcon.fromTheme(label.icon)),
         **kwargs)

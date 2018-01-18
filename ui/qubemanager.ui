@@ -211,7 +211,7 @@
       </column>
       <column>
        <property name="text">
-        <string>Size</string>
+        <string>Disk size</string>
        </property>
       </column>
       <column>
