@@ -21,6 +21,7 @@
 
 from PyQt4 import QtGui  # pylint: disable=import-error
 from PyQt4 import QtCore  # pylint: disable=import-error
+import datetime
 # pylint: disable=too-few-public-methods
 
 power_order = QtCore.Qt.DescendingOrder
@@ -505,7 +506,8 @@ class VmLastBackupItem(QtGui.QTableWidgetItem):
 
         self.vm = vm
         if getattr(self.vm, 'backup_timestamp', None):
-            self.setText(self.vm.backup_timestamp)
+            self.setText(
+                str(datetime.datetime.fromtimestamp(self.vm.backup_timestamp)))
         else:
             self.setText("")
 
