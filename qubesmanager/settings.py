@@ -701,17 +701,16 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                             break
                     if current_assignment is None:
                         # it would be very weird if this happened
+                        msg.append(self.tr("Error re-assigning device ") +
+                                   ident)
                         break
+
                     self.vm.devices['pci'].detach(current_assignment)
 
-                    options = {}
-                    if ident in self.new_strict_reset_list:
-                        options['no-strict-reset'] = True
-                    new_assignment = devices.DeviceAssignment(
-                        self.vm.app.domains['dom0'],
-                        ident.replace(':', '_'),
-                        persistent=True, options=options)
-                    self.vm.devices['pci'].attach(new_assignment)
+                    current_assignment.options['no-strict-reset'] = \
+                        (ident in self.new_strict_reset_list)
+
+                    self.vm.devices['pci'].attach(current_assignment)
 
             for ass in self.vm.devices['pci'].assignments(persistent=True):
                 if ass.ident.replace('_', ':') not in new:
@@ -751,8 +750,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
     def define_strict_reset_devices(self):
         for assignment in self.vm.devices['pci'].assignments():
-            if 'no-strict-reset' in assignment.options and \
-                    assignment.options['no-strict-reset']:
+            if assignment.options.get('no-strict-reset', False):
                 self.current_strict_reset_list.append(
                     assignment.ident.replace('_', ':'))
         self.new_strict_reset_list = self.current_strict_reset_list.copy()
