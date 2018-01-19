@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 #
 # The Qubes OS Project, http://www.qubes-os.org
 #
@@ -39,12 +39,14 @@ import qubesadmin.exc
 from . import utils
 from . import multiselectwidget
 from . import thread_monitor
+from . import device_list
 
 from .appmenu_select import AppmenuSelectManager
 from . import firewall
 from PyQt4 import QtCore, QtGui  # pylint: disable=import-error
 
-from . import ui_settingsdlg  #pylint: disable=no-name-in-module
+from . import ui_settingsdlg  # pylint: disable=no-name-in-module
+
 
 # pylint: disable=too-many-instance-attributes
 class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
@@ -124,6 +126,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         self.connect(self.dev_list,
                      QtCore.SIGNAL("selected_changed()"),
                      self.devices_selection_changed)
+        self.no_strict_reset_button.clicked.connect(
+            self.strict_reset_button_pressed)
+        self.current_strict_reset_list = []
+        self.new_strict_reset_list = []
+        self.define_strict_reset_devices()
 
         ####### services tab
         self.__init_services_tab__()
@@ -141,7 +148,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
     def reject(self):
         self.done(0)
 
-    #needed not to close the dialog before applying changes
+    # needed not to close the dialog before applying changes
     def accept(self):
         pass
 
@@ -279,8 +286,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         self.delete_vm_button.setEnabled(not self.vm.is_running())
 
         if self.vm.is_running():
-            self.delete_vm_button.setText(self.tr('Delete VM '
-                                            '(cannot delete a running VM)'))
+            self.delete_vm_button.setText(
+                self.tr('Delete VM (cannot delete a running VM)'))
 
         if self.vm.qid == 0:
             self.vmlabel.setVisible(False)
@@ -328,13 +335,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         except AttributeError:
             self.autostart_vm.setVisible(False)
 
-        #type
+        # type
         self.type_label.setText(self.vm.klass)
 
-        #installed by rpm
+        # installed by rpm
         self.rpm_label.setText('Yes' if self.vm.installed_by_rpm else 'No')
 
-        #networking info
+        # networking info
         if self.vm.netvm:
             self.networking_groupbox.setEnabled(True)
             self.ip_label.setText(self.vm.ip or "none")
@@ -343,7 +350,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         else:
             self.networking_groupbox.setEnabled(False)
 
-        #max priv storage
+        # max priv storage
         self.priv_img_size = self.vm.volumes['private'].size // 1024**2
         self.max_priv_storage.setMinimum(self.priv_img_size)
         self.max_priv_storage.setValue(self.priv_img_size)
@@ -357,7 +364,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
     def __apply_basic_tab__(self):
         msg = []
 
-        #vm label changed
+        # vm label changed
         try:
             if self.vmlabel.isVisible():
                 if self.vmlabel.currentIndex() != self.label_idx:
@@ -366,7 +373,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
-        #vm template changed
+        # vm template changed
         try:
             if self.template_name.currentIndex() != self.template_idx:
                 self.vm.template = \
@@ -374,14 +381,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
-        #vm netvm changed
+        # vm netvm changed
         try:
             if self.netVM.currentIndex() != self.netvm_idx:
                 self.vm.netvm = self.netvm_list[self.netVM.currentIndex()]
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
-        #include in backups
+        # include in backups
         try:
             if self.vm.include_in_backups != \
                     self.include_in_backups.isChecked():
@@ -389,7 +396,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
-        #run_in_debug_mode
+        # run_in_debug_mode
         try:
             if self.run_in_debug_mode.isVisible():
                 if self.vm.debug != self.run_in_debug_mode.isChecked():
@@ -397,7 +404,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
-        #autostart_vm
+        # autostart_vm
         try:
             if self.autostart_vm.isVisible():
                 if self.vm.autostart != self.autostart_vm.isChecked():
@@ -405,7 +412,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
-        #max priv storage
+        # max priv storage
         priv_size = self.max_priv_storage.value()
         if self.priv_img_size != priv_size:
             try:
@@ -413,7 +420,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             except qubesadmin.exc.QubesException as ex:
                 msg.append(str(ex))
 
-        #max sys storage
+        # max sys storage
         sys_size = self.root_resize.value()
         if self.root_img_size != sys_size:
             try:
@@ -422,7 +429,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 msg.append(str(ex))
 
         return msg
-
 
     def check_mem_changes(self):
         if self.max_mem_size.value() < self.init_mem.value():
@@ -456,10 +462,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         if not t_monitor.success:
             QtGui.QMessageBox.warning(None,
-                                         self.tr("Error!"),
-                                         self.tr("ERROR: {}").format(
-                                    t_monitor.error_msg))
-
+                                      self.tr("Error!"),
+                                      self.tr("ERROR: {}").format(
+                                          t_monitor.error_msg))
 
     def _rename_vm(self, t_monitor, name):
         try:
@@ -472,7 +477,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             t_monitor.set_error_msg(repr(ex))
 
         t_monitor.set_finished()
-
 
     def rename_vm(self):
 
@@ -502,10 +506,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             self,
             self.tr('Delete VM'),
             self.tr('Are you absolutely sure you want to delete this VM? '
-                      '<br/> All VM settings and data will be irrevocably'
-                      ' deleted. <br/> If you are sure, please enter this '
-                      'VM\'s name below.'))
-
+                    '<br/> All VM settings and data will be irrevocably'
+                    ' deleted. <br/> If you are sure, please enter this '
+                    'VM\'s name below.'))
 
         if ok and answer == self.vm.name:
             self._run_in_thread(self._remove_vm)
@@ -546,7 +549,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
     def __init_advanced_tab__(self):
 
-        #mem/cpu
+        # mem/cpu
 #       qubes_memory = QubesHost().memory_total/1024
 
         self.init_mem.setValue(int(self.vm.memory))
@@ -564,7 +567,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             bool(self.vm.features.get('service.meminfo-writer', True)))
         self.max_mem_size.setEnabled(self.include_in_balancing.isChecked())
 
-        #in case VM is HVM
+        # in case VM is HVM
         if hasattr(self.vm, "kernel"):
             self.kernel_groupbox.setVisible(True)
             self.kernel_list, self.kernel_idx = utils.prepare_kernel_choice(
@@ -594,7 +597,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
     def __apply_advanced_tab__(self):
         msg = []
 
-        #mem/cpu
+        # mem/cpu
         try:
             if self.init_mem.value() != int(self.vm.memory):
                 self.vm.memory = self.init_mem.value()
@@ -607,9 +610,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
-        #include_in_memory_balancing applied in services tab
+        # include_in_memory_balancing applied in services tab
 
-        #in case VM is not Linux
+        # in case VM is not Linux
         if hasattr(self.vm, "kernel") and self.kernel_groupbox.isVisible():
             try:
                 if self.kernel.currentIndex() != self.kernel_idx:
@@ -618,7 +621,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             except qubesadmin.exc.QubesException as ex:
                 msg.append(str(ex))
 
-        #vm default_dispvm changed
+        # vm default_dispvm changed
         try:
             if self.default_dispvm.currentIndex() != self.default_dispvm_idx:
                 self.vm.default_dispvm = \
@@ -739,7 +742,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 self.ident = ident
 
         persistent = [ass.ident.replace('_', ':')
-            for ass in self.vm.devices['pci'].persistent()]
+                      for ass in self.vm.devices['pci'].persistent()]
 
         for name, ident in devs:
             if ident in persistent:
@@ -760,29 +763,53 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         if self.vm.is_running():
             self.dev_list.setEnabled(False)
             self.turn_off_vm_to_modify_devs.setVisible(True)
+            self.no_strict_reset_button.setEnabled(False)
         else:
             self.dev_list.setEnabled(True)
             self.turn_off_vm_to_modify_devs.setVisible(False)
 
         self.update_pvh_dont_support_devs()
 
-
     def __apply_devices_tab__(self):
         msg = []
 
         try:
             old = [ass.ident.replace('_', ':')
-                for ass in self.vm.devices['pci'].persistent()]
+                   for ass in self.vm.devices['pci'].persistent()]
 
             new = [self.dev_list.selected_list.item(i).ident
-                    for i in range(self.dev_list.selected_list.count())]
+                   for i in range(self.dev_list.selected_list.count())]
             for ident in new:
                 if ident not in old:
+                    options = {}
+                    if ident in self.new_strict_reset_list:
+                        options['no-strict-reset'] = True
                     ass = devices.DeviceAssignment(
                         self.vm.app.domains['dom0'],
                         ident.replace(':', '_'),
-                        persistent=True)
+                        persistent=True, options=options)
                     self.vm.devices['pci'].attach(ass)
+                elif (ident in self.current_strict_reset_list) != \
+                        (ident in self.new_strict_reset_list):
+                    current_assignment = None
+                    for assignment in self.vm.devices['pci'].assignments(
+                            persistent=True):
+                        if assignment.ident.replace("_", ":") == ident:
+                            current_assignment = assignment
+                            break
+                    if current_assignment is None:
+                        # it would be very weird if this happened
+                        msg.append(self.tr("Error re-assigning device ") +
+                                   ident)
+                        continue
+
+                    self.vm.devices['pci'].detach(current_assignment)
+
+                    current_assignment.options['no-strict-reset'] = \
+                        (ident in self.new_strict_reset_list)
+
+                    self.vm.devices['pci'].attach(current_assignment)
+
             for ass in self.vm.devices['pci'].assignments(persistent=True):
                 if ass.ident.replace('_', ':') not in new:
                     self.vm.devices['pci'].detach(ass)
@@ -828,6 +855,18 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         else:
             self.dev_list.setEnabled(True)
             self.pvh_dont_support_devs.setVisible(False)
+
+    def define_strict_reset_devices(self):
+        for assignment in self.vm.devices['pci'].assignments():
+            if assignment.options.get('no-strict-reset', False):
+                self.current_strict_reset_list.append(
+                    assignment.ident.replace('_', ':'))
+        self.new_strict_reset_list = self.current_strict_reset_list.copy()
+
+    def strict_reset_button_pressed(self):
+        device_list_window = device_list.PCIDeviceListWindow(
+            self.vm, self.qapp, self.dev_list, self.new_strict_reset_list, self)
+        device_list_window.exec()
 
     ######## applications tab
 
@@ -881,7 +920,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             service = feature[len('service.'):]
             item = QtGui.QListWidgetItem(service)
             item.setCheckState(ui_settingsdlg.QtCore.Qt.Checked
-                if self.vm.features[feature]
+                               if self.vm.features[feature]
                                else ui_settingsdlg.QtCore.Qt.Unchecked)
             self.services_list.addItem(item)
             self.new_srv_dict[service] = self.vm.features[feature]
@@ -922,7 +961,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         item = self.services_list.takeItem(row)
         del self.new_srv_dict[str(item.text())]
 
-
     def services_item_clicked(self, item):
         if str(item.text()) == 'meminfo-writer':
             if item.checkState() == ui_settingsdlg.QtCore.Qt.Checked:
@@ -931,7 +969,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             elif item.checkState() == ui_settingsdlg.QtCore.Qt.Unchecked:
                 if self.include_in_balancing.isChecked():
                     self.include_in_balancing.setChecked(False)
-
 
     def __apply_services_tab__(self):
         msg = []
@@ -968,9 +1005,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         return msg
 
-
     ######### firewall tab related
-
     def set_fw_model(self, model):
         self.fw_model = model
         self.rulesTreeView.setModel(model)
@@ -1049,10 +1084,10 @@ def handle_exception(exc_type, exc_value, exc_traceback):
     while stacktrace:
         (filename, line, func, txt) = stacktrace.pop()
         strace += "----\n"
-        strace += "line: %s\n" %txt
-        strace += "func: %s\n" %func
-        strace += "line no.: %d\n" %line
-        strace += "file: %s\n" %filename
+        strace += "line: %s\n" % txt
+        strace += "func: %s\n" % func
+        strace += "line no.: %d\n" % line
+        strace += "file: %s\n" % filename
 
     msg_box = QtGui.QMessageBox()
     msg_box.setDetailedText(strace)
@@ -1070,12 +1105,13 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 parser = QubesArgumentParser(vmname_nargs=1)
 
 parser.add_argument('--tab', metavar='TAB',
-    action='store',
-    choices=VMSettingsWindow.tabs_indices.keys())
+                    action='store',
+                    choices=VMSettingsWindow.tabs_indices.keys())
 
 parser.set_defaults(
     tab='basic',
 )
+
 
 def main(args=None):
     args = parser.parse_args(args)
