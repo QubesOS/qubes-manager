@@ -12,7 +12,7 @@ URL:		http://fixme
 Requires:	python3
 Requires:	python3-PyQt4
 Requires:	python3-inotify
-Requires:	python3-qubesadmin >= 4.0.7
+Requires:	python3-qubesadmin >= 4.0.13
 Requires:	qubes-artwork
 Requires:	pmount
 Requires:	cryptsetup

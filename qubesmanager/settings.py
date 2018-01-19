@@ -300,7 +300,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 self.vm, 'template',
                 self.vm.app.default_template,
                 (lambda vm: vm.klass == 'TemplateVM'),
-                allow_default=True, allow_none=False)
+                allow_default=False, allow_none=False,
+                transform=(lambda x: x if x != self.vm.app.default_template
+                           else x + self.tr(' (default)')))
         else:
             self.template_name.setEnabled(False)
             self.template_idx = -1
@@ -627,8 +629,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         try:
             if self.virt_mode.currentIndex() != self.virt_mode_idx:
                 self.vm.virt_mode = self.selected_virt_mode().lower()
-                # pylint: disable=attribute-defined-outside-init
-                self.anything_changed = True
         except Exception as ex:  # pylint: disable=broad-except
             msg.append(str(ex))
 
@@ -674,10 +674,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         self.virt_mode.clear()
 
-        # XXX: Hardcoded default value.
         # pylint: disable=attribute-defined-outside-init
         self.virt_mode_list, self.virt_mode_idx = utils.prepare_choice(
-                self.virt_mode, self.vm, 'virt_mode', choices, 'HVM',
+                self.virt_mode, self.vm, 'virt_mode', choices, None,
                 allow_default=True, transform=(lambda x: str(x).upper()))
 
         if old_mode is not None:

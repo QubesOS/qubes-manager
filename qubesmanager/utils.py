@@ -49,17 +49,19 @@ def prepare_choice(widget, holder, propname, choice, default,
         'allow_default={allow_default!r}, '
         'allow_none={allow_none!r})'.format(**locals()))
 
+    if propname is not None and allow_default:
+        default = holder.property_get_default(propname)
+
     if allow_internal is None:
         allow_internal = propname is None or not propname.endswith('vm')
 
     if propname is not None:
-        oldvalue = getattr(holder, propname)
-        if transform is not None:
-            oldvalue = transform(oldvalue)
-        is_default = holder.property_is_default(propname)
+        if holder.property_is_default(propname):
+            oldvalue = qubesadmin.DEFAULT
+        else:
+            oldvalue = getattr(holder, propname)
     else:
         oldvalue = object()  # won't match for identity
-        is_default = False
     idx = 0
 
     choice_list = list(choice)[:]
@@ -78,17 +80,20 @@ def prepare_choice(widget, holder, propname, choice, default,
         debug('i={} item={}'.format(i, item))
         # 0: default (unset)
         if item is qubesadmin.DEFAULT:
-            text = 'default ({})'.format(
-                str(default) if default is not None else 'none')
+            default_string = str(default) if default is not None else 'none'
+            if transform is not None:
+                default_string = transform(default_string)
+            text = 'default ({})'.format(default_string)
         # N+1: explicit None
         elif item is None:
             text = '(none)'
         # 1..N: choices
         else:
             text = str(item)
+            if transform is not None:
+                text = transform(text)
 
-        if item is qubesadmin.DEFAULT and is_default \
-        or item is not qubesadmin.DEFAULT and item == oldvalue:
+        if item == oldvalue:
             text += ' (current)'
             idx = i
 
