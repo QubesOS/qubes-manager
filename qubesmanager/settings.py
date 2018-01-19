@@ -703,7 +703,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                         # it would be very weird if this happened
                         msg.append(self.tr("Error re-assigning device ") +
                                    ident)
-                        break
+                        continue
 
                     self.vm.devices['pci'].detach(current_assignment)
 
