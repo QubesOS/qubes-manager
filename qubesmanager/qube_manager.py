@@ -291,7 +291,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.table.setColumnWidth(self.columns_indices["Backups"], 60)
         self.table.setColumnWidth(self.columns_indices["Last backup"], 90)
 
-        self.table.horizontalHeader().setResizeMode(QtGui.QHeaderView.Fixed)
+        self.table.horizontalHeader().setResizeMode(
+            QtGui.QHeaderView.Interactive)
+        self.table.horizontalHeader().setStretchLastSection(True)
+
 
         self.table.sortItems(self.columns_indices[self.sort_by_column],
                              self.sort_order)

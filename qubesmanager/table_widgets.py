@@ -505,7 +505,9 @@ class VmLastBackupItem(QtGui.QTableWidgetItem):
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
         self.vm = vm
-        if getattr(self.vm, 'backup_timestamp', None):
+        self.backup_timestamp = getattr(self.vm, 'backup_timestamp', None)
+
+        if self.backup_timestamp:
             self.setText(
                 str(datetime.datetime.fromtimestamp(self.vm.backup_timestamp)))
         else:
@@ -516,10 +518,10 @@ class VmLastBackupItem(QtGui.QTableWidgetItem):
             return True
         elif other.vm.qid == 0:
             return False
-        elif self.vm.backup_timestamp == other.vm.backup_timestamp:
+        elif self.backup_timestamp == other.backup_timestamp:
             return self.vm.name < other.vm.name
-        elif not self.vm.backup_timestamp:
+        elif not self.backup_timestamp:
             return False
-        elif not other.vm.backup_timestamp:
+        elif not other.backup_timestamp:
             return True
-        return self.vm.backup_timestamp < other.vm.backup_timestamp
+        return self.backup_timestamp < other.backup_timestamp
