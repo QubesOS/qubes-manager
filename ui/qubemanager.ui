@@ -380,10 +380,10 @@
      <normaloff>:/createvm.png</normaloff>:/createvm.png</iconset>
    </property>
    <property name="text">
-    <string>Create &amp;New Qube</string>
+    <string>Create &amp;new qube</string>
    </property>
    <property name="toolTip">
-    <string>Create a new Qube</string>
+    <string>Create a new qube</string>
    </property>
   </action>
   <action name="action_removevm">
@@ -395,10 +395,10 @@
      <normaloff>:/removevm.png</normaloff>:/removevm.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Delete Qube</string>
+    <string>&amp;Delete qube</string>
    </property>
    <property name="toolTip">
-    <string>Remove an existing Qube (must be stopped first)</string>
+    <string>Remove an existing qube (must be stopped first)</string>
    </property>
   </action>
   <action name="action_resumevm">
@@ -410,10 +410,10 @@
      <normaloff>:/resumevm.png</normaloff>:/resumevm.png</iconset>
    </property>
    <property name="text">
-    <string>Start/Resu&amp;me Qube</string>
+    <string>Start/Resu&amp;me qube</string>
    </property>
    <property name="toolTip">
-    <string>Start/Resume selected Qube</string>
+    <string>Start/Resume selected qube</string>
    </property>
   </action>
   <action name="action_pausevm">
@@ -425,10 +425,10 @@
      <normaloff>:/pausevm.png</normaloff>:/pausevm.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Pause Qube</string>
+    <string>&amp;Pause qube</string>
    </property>
    <property name="toolTip">
-    <string>Pause selected Qube</string>
+    <string>Pause selected qube</string>
    </property>
   </action>
   <action name="action_shutdownvm">
@@ -440,10 +440,10 @@
      <normaloff>:/shutdownvm.png</normaloff>:/shutdownvm.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Shutdown Qube</string>
+    <string>&amp;Shutdown qube</string>
    </property>
    <property name="toolTip">
-    <string>Shutdown selected Qube</string>
+    <string>Shutdown selected qube</string>
    </property>
   </action>
   <action name="action_restartvm">
@@ -455,10 +455,10 @@
      <normaloff>:/restartvm.png</normaloff>:/restartvm.png</iconset>
    </property>
    <property name="text">
-    <string>Restar&amp;t Qube</string>
+    <string>Restar&amp;t qube</string>
    </property>
    <property name="toolTip">
-    <string>Restart selected Qube</string>
+    <string>Restart selected qube</string>
    </property>
   </action>
   <action name="action_appmenus">
@@ -473,7 +473,7 @@
     <string>Add/remove app s&amp;hortcuts</string>
    </property>
    <property name="toolTip">
-    <string>Add/remove app shortcuts for this Qube</string>
+    <string>Add/remove app shortcuts for this qube</string>
    </property>
   </action>
   <action name="action_updatevm">
@@ -485,10 +485,10 @@
      <normaloff>:/updateable.png</normaloff>:/updateable.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Update Qube</string>
+    <string>&amp;Update qube</string>
    </property>
    <property name="toolTip">
-    <string>Update Qube system</string>
+    <string>Update qube system</string>
    </property>
   </action>
   <action name="action_editfwrules">
@@ -497,10 +497,10 @@
      <normaloff>:/firewall.png</normaloff>:/firewall.png</iconset>
    </property>
    <property name="text">
-    <string>Edit Qube &amp;firewall rules</string>
+    <string>Edit qube &amp;firewall rules</string>
    </property>
    <property name="toolTip">
-    <string>Edit Qube firewall rules</string>
+    <string>Edit qube firewall rules</string>
    </property>
   </action>
   <action name="action_showgraphs">
@@ -568,10 +568,10 @@
      <normaloff>:/restore.png</normaloff>:/restore.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Restore Qubes from backup</string>
+    <string>&amp;Restore qubes from backup</string>
    </property>
    <property name="toolTip">
-    <string>Restore Qubes from backup</string>
+    <string>Restore qubes from backup</string>
    </property>
   </action>
   <action name="action_backup">
@@ -580,10 +580,10 @@
      <normaloff>:/backup.png</normaloff>:/backup.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Backup Qubes</string>
+    <string>&amp;Backup qubes</string>
    </property>
    <property name="toolTip">
-    <string>Backup Qubes</string>
+    <string>Backup qubes</string>
    </property>
   </action>
   <action name="action_global_settings">
@@ -624,10 +624,10 @@
      <normaloff>:/killvm.png</normaloff>:/killvm.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Kill Qube</string>
+    <string>&amp;Kill qube</string>
    </property>
    <property name="toolTip">
-    <string>Kill selected Qube</string>
+    <string>Kill selected qube</string>
    </property>
   </action>
   <action name="action_set_keyboard_layout">
@@ -639,7 +639,7 @@
     <string>Set keyboard la&amp;yout</string>
    </property>
    <property name="toolTip">
-    <string>Set keyboard layout per Qube</string>
+    <string>Set keyboard layout per qube</string>
    </property>
   </action>
   <action name="action_vm_type">
@@ -721,7 +721,7 @@
     <string>Si&amp;ze</string>
    </property>
    <property name="toolTip">
-    <string>Size on Disk</string>
+    <string>Size on disk</string>
    </property>
   </action>
   <action name="action_run_command_in_vm">
@@ -730,10 +730,10 @@
      <normaloff>:/run-command.png</normaloff>:/run-command.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Run command in Qube</string>
+    <string>&amp;Run command in qube</string>
    </property>
    <property name="toolTip">
-    <string>Run command in the specified Qube</string>
+    <string>Run command in the specified qube</string>
    </property>
   </action>
   <action name="action_clonevm">
@@ -745,10 +745,10 @@
      <normaloff>:/templatevm.png</normaloff>:/templatevm.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Clone Qube</string>
+    <string>&amp;Clone qube</string>
    </property>
    <property name="toolTip">
-    <string>Clone Qube</string>
+    <string>Clone qube</string>
    </property>
   </action>
   <action name="action_internal">
@@ -762,7 +762,7 @@
     <string>Inte&amp;rnal</string>
    </property>
    <property name="toolTip">
-    <string>Is an internal Qube</string>
+    <string>Is an internal qube</string>
    </property>
   </action>
   <action name="action_startvm_tools_install">
@@ -774,10 +774,10 @@
      <normaloff>:/resumevm.png</normaloff>:/resumevm.png</iconset>
    </property>
    <property name="text">
-    <string>Start Qube for Window Tools installation</string>
+    <string>Start qube for Window Tools installation</string>
    </property>
    <property name="toolTip">
-    <string>Start Qube for Window Tools installation</string>
+    <string>Start qube for Window Tools installation</string>
    </property>
   </action>
   <action name="action_ip">
@@ -827,10 +827,10 @@
      <normaloff>:/outdated.png</normaloff>:/outdated.png</iconset>
    </property>
    <property name="text">
-    <string>Refresh Qube List</string>
+    <string>Refresh qube list</string>
    </property>
    <property name="toolTip">
-    <string>Refresh Qube List</string>
+    <string>Refresh qube list</string>
    </property>
   </action>
  </widget>
