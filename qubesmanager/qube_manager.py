@@ -295,7 +295,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             QtGui.QHeaderView.Interactive)
         self.table.horizontalHeader().setStretchLastSection(True)
 
-
         self.table.sortItems(self.columns_indices[self.sort_by_column],
                              self.sort_order)
 
@@ -854,6 +853,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             settings_window = settings.VMSettingsWindow(
                 vm, self.qt_app, "basic")
             settings_window.exec_()
+            self.update_table()
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_appmenus_triggered')
