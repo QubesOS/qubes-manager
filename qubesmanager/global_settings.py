@@ -30,6 +30,7 @@ from qubesadmin import Qubes
 from qubesadmin.utils import parse_size, updates_vms_status
 
 from . import ui_globalsettingsdlg  # pylint: disable=no-name-in-module
+from . import utils
 
 from configparser import ConfigParser
 
@@ -63,19 +64,10 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         all_vms = [vm for vm in self.qvm_collection.domains
                    if (not vm.features.get('internal', False)) and vm.qid != 0]
 
-        self.updatevm_idx = -1
-
-        current_update_vm = self.qvm_collection.updatevm
-        for (i, vm) in enumerate(all_vms):
-            text = vm.name
-            if vm is current_update_vm:
-                self.updatevm_idx = i
-                text += self.tr(" (current)")
-            self.update_vm_combo.insertItem(i, text)
-        self.update_vm_combo.insertItem(len(all_vms), "none")
-        if current_update_vm is None:
-            self.updatevm_idx = len(all_vms)
-        self.update_vm_combo.setCurrentIndex(self.updatevm_idx)
+        self.update_vm_vmlist, self.update_vm_vmidx = utils.prepare_vm_choice(
+            self.update_vm_combo, self.qvm_collection, 'updatevm',
+            None, allow_none=True
+        )
 
         # clockvm
         self.clockvm_idx = -1
@@ -123,12 +115,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
 
     def __apply_system_defaults__(self):
         #upatevm
-        if self.update_vm_combo.currentIndex() != self.updatevm_idx:
-            updatevm_name = str(self.update_vm_combo.currentText())
-            updatevm_name = updatevm_name.split(' ')[0]
-            updatevm = self.qvm_collection.domains[updatevm_name]
-
-            self.qvm_collection.updatevm = updatevm
+        self.qvm_collection.updatevm = \
+            self.update_vm_vmlist[self.update_vm_combo.currentIndex()]
 
         #clockvm
         if self.clock_vm_combo.currentIndex() != self.clockvm_idx:
