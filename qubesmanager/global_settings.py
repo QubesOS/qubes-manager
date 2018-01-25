@@ -60,9 +60,6 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.__init_updates__()
 
     def __init_system_defaults__(self):
-        all_vms = [vm for vm in self.qvm_collection.domains
-                   if (not vm.features.get('internal', False)) and vm.qid != 0]
-
         # set up updatevm choice
         self.update_vm_vmlist, self.update_vm_idx = utils.prepare_vm_choice(
             self.update_vm_combo, self.qvm_collection, 'updatevm',
@@ -84,19 +81,14 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 filter_function=(lambda vm: vm.provides_network),
                 allow_none=True)
 
-        #default template
-        templates = [vm for vm in all_vms if vm.klass == 'TemplateVM']
-        self.template_idx = -1
-
-        current_template = self.qvm_collection.default_template
-        for (i, vm) in enumerate(templates):
-            text = vm.name
-            if vm is current_template:
-                self.template_idx = i
-                text += self.tr(" (current)")
-            self.default_template_combo.insertItem(i, text)
-        if current_template is not None:
-            self.default_template_combo.setCurrentIndex(self.template_idx)
+        # default template
+        self.default_template_vmlist, self.default_template_idx = \
+            utils.prepare_vm_choice(
+                self.default_template_combo,
+                self.qvm_collection, 'default_template',
+                None,
+                filter_function=(lambda vm: vm.klass == 'TemplateVM')
+            )
 
     def __apply_system_defaults__(self):
         # upatevm
@@ -111,13 +103,10 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.qvm_collection.default_netvm = \
             self.default_netvm_vmlist[self.default_netvm_combo.currentIndex()]
 
-        #default template
-        if self.default_template_combo.currentIndex() != self.template_idx:
-            name = str(self.default_template_combo.currentText())
-            name = name.split(' ')[0]
-            vm = self.qvm_collection.domains[name]
-
-            self.qvm_collection.default_template = vm
+        # default template
+        self.qvm_collection.default_template = \
+            self.default_template_vmlist[
+                self.default_template_combo.currentIndex()]
 
 
     def __init_kernel_defaults__(self):
