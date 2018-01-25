@@ -60,29 +60,20 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.__init_updates__()
 
     def __init_system_defaults__(self):
-        # updatevm and clockvm
         all_vms = [vm for vm in self.qvm_collection.domains
                    if (not vm.features.get('internal', False)) and vm.qid != 0]
 
+        # set up updatevm choice
         self.update_vm_vmlist, self.update_vm_vmidx = utils.prepare_vm_choice(
             self.update_vm_combo, self.qvm_collection, 'updatevm',
             None, allow_none=True
         )
 
-        # clockvm
-        self.clockvm_idx = -1
-
-        current_clock_vm = self.qvm_collection.clockvm
-        for (i, vm) in enumerate(all_vms):
-            text = vm.name
-            if vm is current_clock_vm:
-                self.clockvm_idx = i
-                text += self.tr(" (current)")
-            self.clock_vm_combo.insertItem(i, text)
-        self.clock_vm_combo.insertItem(len(all_vms), "none")
-        if current_clock_vm is None:
-            self.clockvm_idx = len(all_vms)
-        self.clock_vm_combo.setCurrentIndex(self.clockvm_idx)
+        # set up clockvm choice
+        self.clock_vm_vmlist, self.clock_vm_vmidx = utils.prepare_vm_choice(
+            self.clock_vm_combo, self.qvm_collection, 'clockvm',
+            None, allow_none=True
+        )
 
         # default netvm
         netvms = [vm for vm in all_vms
@@ -114,17 +105,13 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             self.default_template_combo.setCurrentIndex(self.template_idx)
 
     def __apply_system_defaults__(self):
-        #upatevm
+        # upatevm
         self.qvm_collection.updatevm = \
             self.update_vm_vmlist[self.update_vm_combo.currentIndex()]
 
-        #clockvm
-        if self.clock_vm_combo.currentIndex() != self.clockvm_idx:
-            clockvm_name = str(self.clock_vm_combo.currentText())
-            clockvm_name = clockvm_name.split(' ')[0]
-            clockvm = self.qvm_collection.domains[clockvm_name]
-
-            self.qvm_collection.clockvm = clockvm
+        # clockvm
+        self.qvm_collection.clockvm = \
+            self.clock_vm_vmlist[self.clock_vm_combo.currentIndex()]
 
         #default netvm
         if self.default_netvm_combo.currentIndex() != self.netvm_idx:
