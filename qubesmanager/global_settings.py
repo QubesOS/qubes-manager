@@ -108,31 +108,16 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             self.default_template_vmlist[
                 self.default_template_combo.currentIndex()]
 
-
     def __init_kernel_defaults__(self):
-        kernel_list = []
-        # TODO system_path["qubes_kernels_base_dir"]
-        # idea: qubes.pools['linux-kernel'].volumes
-        for k in os.listdir('/var/lib/qubes/vm-kernels'):
-            kernel_list.append(k)
-
-        self.kernel_idx = 0
-
-        for (i, k) in enumerate(kernel_list):
-            text = k
-            if k == self.qvm_collection.default_kernel:
-                text += self.tr(" (current)")
-                self.kernel_idx = i
-            self.default_kernel_combo.insertItem(i, text)
-        self.default_kernel_combo.setCurrentIndex(self.kernel_idx)
+        self.kernels_list, self.kernels_idx = utils.prepare_kernel_choice(
+            self.default_kernel_combo, self.qvm_collection, 'default_kernel',
+            None,
+            allow_none=True
+        )
 
     def __apply_kernel_defaults__(self):
-        if self.default_kernel_combo.currentIndex() != self.kernel_idx:
-            kernel = str(self.default_kernel_combo.currentText())
-            kernel = kernel.split(' ')[0]
-
-            self.qvm_collection.default_kernel = kernel
-
+        self.qvm_collection.default_kernel = \
+            self.kernels_list[self.default_kernel_combo.currentIndex()]
 
     def __init_mem_defaults__(self):
         #qmemman settings
