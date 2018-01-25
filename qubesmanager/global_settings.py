@@ -64,31 +64,25 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                    if (not vm.features.get('internal', False)) and vm.qid != 0]
 
         # set up updatevm choice
-        self.update_vm_vmlist, self.update_vm_vmidx = utils.prepare_vm_choice(
+        self.update_vm_vmlist, self.update_vm_idx = utils.prepare_vm_choice(
             self.update_vm_combo, self.qvm_collection, 'updatevm',
             None, allow_none=True
         )
 
         # set up clockvm choice
-        self.clock_vm_vmlist, self.clock_vm_vmidx = utils.prepare_vm_choice(
+        self.clock_vm_vmlist, self.clock_vm_idx = utils.prepare_vm_choice(
             self.clock_vm_combo, self.qvm_collection, 'clockvm',
             None, allow_none=True
         )
 
-        # default netvm
-        netvms = [vm for vm in all_vms
-                  if getattr(vm, 'provides_network', False)]
-        self.netvm_idx = -1
-
-        current_netvm = self.qvm_collection.default_netvm
-        for (i, vm) in enumerate(netvms):
-            text = vm.name
-            if vm is current_netvm:
-                self.netvm_idx = i
-                text += self.tr(" (current)")
-            self.default_netvm_combo.insertItem(i, text)
-        if current_netvm is not None:
-            self.default_netvm_combo.setCurrentIndex(self.netvm_idx)
+        # set up default netvm
+        self.default_netvm_vmlist, self.default_netvm_idx = \
+            utils.prepare_vm_choice(
+                self.default_netvm_combo,
+                self.qvm_collection, 'default_netvm',
+                None,
+                filter_function=(lambda vm: vm.provides_network),
+                allow_none=True)
 
         #default template
         templates = [vm for vm in all_vms if vm.klass == 'TemplateVM']
@@ -113,13 +107,9 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.qvm_collection.clockvm = \
             self.clock_vm_vmlist[self.clock_vm_combo.currentIndex()]
 
-        #default netvm
-        if self.default_netvm_combo.currentIndex() != self.netvm_idx:
-            name = str(self.default_netvm_combo.currentText())
-            name = name.split(' ')[0]
-            vm = self.qvm_collection.domains[name]
-
-            self.qvm_collection.default_netvm = vm
+        # default netvm
+        self.qvm_collection.default_netvm = \
+            self.default_netvm_vmlist[self.default_netvm_combo.currentIndex()]
 
         #default template
         if self.default_template_combo.currentIndex() != self.template_idx:
