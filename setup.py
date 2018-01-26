@@ -12,7 +12,7 @@ if __name__ == '__main__':
         description='Qubes OS Manager',
         license='GPL2+',
         url='https://www.qubes-os.org/',
-        packages=setuptools.find_packages(),
+        packages=setuptools.find_packages(exclude=['qubesmanager.tests']),
         package_data={
             'qubesmanager': ['i18n/*']
         },
