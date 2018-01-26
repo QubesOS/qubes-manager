@@ -199,12 +199,20 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 qmemman_config_file.writelines(config_lines)
                 qmemman_config_file.close()
 
-
     def __init_updates__(self):
-        self.updates_val = False
-        # TODO updates_dom0_status(self.qvm_collection)
-        self.updates_dom0_val = True
+
+        # TODO: remove workaround when it is no longer needed
+        self.dom0_updates_file_path = '/var/lib/qubes/updates/disable-updates'
+
+        try:
+            self.updates_dom0_val = self.qvm_collection.check_updates_dom0
+        except AttributeError:
+            self.updates_dom0_val =\
+                not os.path.isfile(self.dom0_updates_file_path)
+
         self.updates_dom0.setChecked(self.updates_dom0_val)
+
+        self.updates_val = False
         updates_vms = updates_vms_status(self.qvm_collection)
         if updates_vms is None:
             self.updates_vm.setCheckState(QtCore.Qt.PartiallyChecked)
@@ -213,9 +221,16 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
 
     def __apply_updates__(self):
         if self.updates_dom0.isChecked() != self.updates_dom0_val:
-            # TODO updates_dom0_toggle(
-            # self.qvm_collection, self.updates_dom0.isChecked())
-            raise NotImplementedError('Toggle dom0 updates not implemented')
+            # TODO: remove workaround when it is no longer needed
+            try:
+                self.qvm_collection.check_updates_dom0 = \
+                    self.updates_dom0.isChecked()
+            except AttributeError:
+                if self.updates_dom0.isChecked():
+                    os.remove(self.dom0_updates_file_path)
+                else:
+                    open(self.dom0_updates_file_path, 'a').close()
+
         if self.updates_vm.checkState() != QtCore.Qt.PartiallyChecked:
             for vm in self.qvm_collection.domains:
                 vm.features['check-updates'] = \
