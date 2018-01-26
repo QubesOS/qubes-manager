@@ -509,7 +509,7 @@ class VmLastBackupItem(QtGui.QTableWidgetItem):
 
         if self.backup_timestamp:
             self.setText(
-                str(datetime.datetime.fromtimestamp(self.vm.backup_timestamp)))
+                str(datetime.datetime.fromtimestamp(self.backup_timestamp)))
         else:
             self.setText("")
 
