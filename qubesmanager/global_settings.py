@@ -212,12 +212,35 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
 
         self.updates_dom0.setChecked(self.updates_dom0_val)
 
-        self.updates_val = False
-        updates_vms = updates_vms_status(self.qvm_collection)
-        if updates_vms is None:
-            self.updates_vm.setCheckState(QtCore.Qt.PartiallyChecked)
-        else:
-            self.updates_vm.setCheckState(updates_vms)
+        self.updates_vm.setChecked(self.qvm_collection.check_updates_vm)
+        self.enable_updates_all.clicked.connect(self.__enable_updates_all)
+        self.disable_updates_all.clicked.connect(self.__disable_updates_all)
+
+    def __enable_updates_all(self):
+        reply = QtGui.QMessageBox.question(
+            self, self.tr("Change state of all qubes"),
+            self.tr("Are you sure you want to set all qubes to check "
+                    "for updates?"),
+            QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel)
+        if reply == QtGui.QMessageBox.Cancel:
+            return
+
+        self.__set_updates_all(True)
+
+    def __disable_updates_all(self):
+        reply = QtGui.QMessageBox.question(
+            self, self.tr("Change state of all qubes"),
+            self.tr("Are you sure you want to set all qubes to not check "
+                    "for updates?"),
+            QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel)
+        if reply == QtGui.QMessageBox.Cancel:
+            return
+
+        self.__set_updates_all(False)
+
+    def __set_updates_all(self, state):
+        for vm in self.qvm_collection.domains:
+            vm.features['check-updates'] = state
 
     def __apply_updates__(self):
         if self.updates_dom0.isChecked() != self.updates_dom0_val:
@@ -231,10 +254,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 else:
                     open(self.dom0_updates_file_path, 'a').close()
 
-        if self.updates_vm.checkState() != QtCore.Qt.PartiallyChecked:
-            for vm in self.qvm_collection.domains:
-                vm.features['check-updates'] = \
-                    bool(self.updates_vm.checkState())
+        self.qvm_collection.check_updates_vm = self.updates_vm.isChecked()
 
     def reject(self):
         self.done(0)
