@@ -30,6 +30,7 @@ from qubes.tests import SystemTestCase
 import qubesmanager.global_settings as global_settings
 import concurrent.futures
 
+# sudo systemctl stop qubesd; sudo -E python3 test_backup.py -v ; sudo systemctl start qubesd
 
 def wrap_in_loop(func):
     def wrapped(self):
@@ -63,7 +64,7 @@ class GlobalSettingsTest(SystemTestCase):
         del self.qtapp
 
     @wrap_in_loop
-    def test_settings_started(self):
+    def test_00_settings_started(self):
         # non-empty drop-downs
         self.assertNotEqual(
             self.dialog.default_kernel_combo.currentText(), "")
@@ -78,7 +79,7 @@ class GlobalSettingsTest(SystemTestCase):
             self.dialog.update_vm_combo.currentText(), "")
 
     @wrap_in_loop
-    def test_load_correct_defs(self):
+    def test_01_load_correct_defs(self):
         # correctly selected default template
         selected_default_template = \
             self.dialog.default_template_combo.currentText()
@@ -116,7 +117,8 @@ class GlobalSettingsTest(SystemTestCase):
         self.assertEqual(self.app.check_updates_vm,
                          self.dialog.updates_vm.isChecked())
 
-    def test_dom0_updates_load(self):
+    @wrap_in_loop
+    def test_02_dom0_updates_load(self):
         # check dom0 updates
         try:
             dom0_updates = self.app.check_updates_dom0
@@ -152,21 +154,21 @@ class GlobalSettingsTest(SystemTestCase):
                                 QtCore.Qt.LeftButton)
 
     @wrap_in_loop
-    def test_set_update_vm(self):
+    def test_10_set_update_vm(self):
         new_updatevm_name = self.__set_noncurrent(self.dialog.update_vm_combo)
         self.__click_ok()
 
         self.assertEqual(self.app.updatevm.name, new_updatevm_name)
 
     @wrap_in_loop
-    def test_set_update_vm_to_none(self):
+    def test_11_set_update_vm_to_none(self):
         self.__set_none(self.dialog.update_vm_combo)
         self.__click_ok()
 
         self.assertIsNone(self.app.updatevm)
 
     @wrap_in_loop
-    def test_set_update_vm_to_none2(self):
+    def test_12_set_update_vm_to_none2(self):
         self.app.updatevm = None
         self.dialog = global_settings.GlobalSettingsWindow(
             self.qtapp, self.qapp)
@@ -175,21 +177,21 @@ class GlobalSettingsTest(SystemTestCase):
                          "(none) (current)")
 
     @wrap_in_loop
-    def test_set_clock_vm(self):
+    def test_20_set_clock_vm(self):
         new_clockvm_name = self.__set_noncurrent(self.dialog.clock_vm_combo)
         self.__click_ok()
 
         self.assertEqual(self.app.clockvm.name, new_clockvm_name)
 
     @wrap_in_loop
-    def test_set_clock_vm_to_none(self):
+    def test_21_set_clock_vm_to_none(self):
         self.__set_none(self.dialog.clock_vm_combo)
         self.__click_ok()
 
         self.assertIsNone(self.app.clockvm)
 
     @wrap_in_loop
-    def test_set_clock_vm_to_none2(self):
+    def test_22_set_clock_vm_to_none2(self):
         self.app.clockvm = None
         self.dialog = global_settings.GlobalSettingsWindow(
                 self.qtapp, self.qapp)
@@ -198,21 +200,21 @@ class GlobalSettingsTest(SystemTestCase):
                          "(none) (current)")
 
     @wrap_in_loop
-    def test_set_default_netvm(self):
+    def test_30_set_default_netvm(self):
         new_netvm_name = self.__set_noncurrent(self.dialog.default_netvm_combo)
         self.__click_ok()
 
         self.assertEqual(self.app.default_netvm.name, new_netvm_name)
 
     @wrap_in_loop
-    def test_set_default_netvm_to_none(self):
+    def test_31_set_default_netvm_to_none(self):
         self.__set_none(self.dialog.default_netvm_combo)
         self.__click_ok()
 
         self.assertIsNone(self.app.default_netvm)
 
     @wrap_in_loop
-    def test_set_default_netvm_to_none2(self):
+    def test_32_set_default_netvm_to_none2(self):
         self.app.default_netvm = None
         self.dialog = global_settings.GlobalSettingsWindow(
                 self.qtapp, self.qapp)
@@ -221,7 +223,7 @@ class GlobalSettingsTest(SystemTestCase):
                          "(none) (current)")
 
     @wrap_in_loop
-    def test_set_default_template(self):
+    def test_40_set_default_template(self):
         new_def_template_name = self.__set_noncurrent(
             self.dialog.default_template_combo)
         self.__click_ok()
@@ -229,7 +231,7 @@ class GlobalSettingsTest(SystemTestCase):
         self.assertEqual(self.app.default_template.name, new_def_template_name)
 
     @wrap_in_loop
-    def test_set_default_kernel(self):
+    def test__50_set_default_kernel(self):
         new_def_kernel_name = self.__set_noncurrent(
             self.dialog.default_kernel_combo)
         self.__click_ok()
@@ -237,14 +239,14 @@ class GlobalSettingsTest(SystemTestCase):
         self.assertEqual(self.app.default_kernel, new_def_kernel_name)
 
     @wrap_in_loop
-    def test_set_default_kernel_to_none(self):
+    def test_51_set_default_kernel_to_none(self):
         self.__set_none(self.dialog.default_kernel_combo)
         self.__click_ok()
 
         self.assertEqual(self.app.default_kernel, '')
 
     @wrap_in_loop
-    def test_set_default_kernel_to_none2(self):
+    def test_52_set_default_kernel_to_none2(self):
         self.app.default_kernel = None
         self.dialog = global_settings.GlobalSettingsWindow(
                 self.qtapp, self.qapp)
@@ -253,7 +255,7 @@ class GlobalSettingsTest(SystemTestCase):
                          "(none) (current)")
 
     @wrap_in_loop
-    def test_set_dom0_updates_true(self):
+    def test_60_set_dom0_updates_true(self):
         self.dialog.updates_dom0.setChecked(True)
         self.__click_ok()
 
@@ -263,7 +265,7 @@ class GlobalSettingsTest(SystemTestCase):
         self.assertTrue(self.app.check_updates_dom0)
 
     @wrap_in_loop
-    def test_set_dom0_updates_false(self):
+    def test_61_set_dom0_updates_false(self):
         self.dialog.updates_dom0.setChecked(False)
         self.__click_ok()
 
@@ -273,21 +275,21 @@ class GlobalSettingsTest(SystemTestCase):
         self.assertFalse(self.app.check_updates_dom0)
 
     @wrap_in_loop
-    def test_set_vm_updates_true(self):
+    def test_70_set_vm_updates_true(self):
         self.dialog.updates_vm.setChecked(True)
         self.__click_ok()
 
         self.assertTrue(self.app.check_updates_vm)
 
     @wrap_in_loop
-    def test_set_vm_updates_false(self):
+    def test_71_set_vm_updates_false(self):
         self.dialog.updates_vm.setChecked(False)
         self.__click_ok()
 
         self.assertFalse(self.app.check_updates_vm)
 
     @wrap_in_loop
-    def test_00set_all_vms_true(self):
+    def test_72_set_all_vms_true(self):
 
         with unittest.mock.patch("PyQt4.QtGui.QMessageBox.question",
                                  return_value=QtGui.QMessageBox.Yes) as msgbox:
@@ -305,7 +307,7 @@ class GlobalSettingsTest(SystemTestCase):
             self.assertTrue(vm.features['check-updates'])
 
     @wrap_in_loop
-    def test_00set_all_vms_false(self):
+    def test_73_set_all_vms_false(self):
         with unittest.mock.patch("PyQt4.QtGui.QMessageBox.question",
                                  return_value=QtGui.QMessageBox.Yes) as msgbox:
             QtTest.QTest.mouseClick(self.dialog.disable_updates_all,
