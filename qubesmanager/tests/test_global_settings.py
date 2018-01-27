@@ -24,7 +24,6 @@ import sys
 import unittest
 import unittest.mock
 
-import time
 from PyQt4 import QtGui, QtTest, QtCore
 from qubesadmin import Qubes
 from qubes.tests import SystemTestCase
