@@ -182,7 +182,7 @@
         <string>Name</string>
        </property>
        <property name="toolTip">
-        <string>VM name</string>
+        <string>Qube name</string>
        </property>
       </column>
       <column>
@@ -198,7 +198,7 @@
         <string>Template</string>
        </property>
        <property name="toolTip">
-        <string>VM's template</string>
+        <string>Qube template</string>
        </property>
       </column>
       <column>
@@ -206,7 +206,7 @@
         <string>NetVM</string>
        </property>
        <property name="toolTip">
-        <string>VM's netVM</string>
+        <string>Qube netVM</string>
        </property>
       </column>
       <column>
@@ -244,7 +244,7 @@
      <x>0</x>
      <y>0</y>
      <width>769</width>
-     <height>28</height>
+     <height>23</height>
     </rect>
    </property>
    <property name="contextMenuPolicy">

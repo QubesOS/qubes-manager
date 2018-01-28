@@ -121,7 +121,7 @@
     <item row="0" column="1" colspan="2">
      <widget class="QLineEdit" name="name">
       <property name="text">
-       <string>my-new-vm</string>
+       <string>my-new-qube</string>
       </property>
      </widget>
     </item>
