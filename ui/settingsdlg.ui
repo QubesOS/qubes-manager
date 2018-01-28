@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>904</width>
+    <width>917</width>
     <height>573</height>
    </rect>
   </property>
@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>3</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -358,13 +358,6 @@
                <widget class="QCheckBox" name="autostart_vm">
                 <property name="text">
                  <string>Start qube automatically on boot</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="seamless_gui">
-                <property name="text">
-                 <string>Seamless GUI</string>
                 </property>
                </widget>
               </item>
@@ -1355,7 +1348,6 @@ border-width: 1px;</string>
   <tabstop>include_in_backups</tabstop>
   <tabstop>run_in_debug_mode</tabstop>
   <tabstop>autostart_vm</tabstop>
-  <tabstop>seamless_gui</tabstop>
   <tabstop>max_priv_storage</tabstop>
   <tabstop>init_mem</tabstop>
   <tabstop>max_mem_size</tabstop>
