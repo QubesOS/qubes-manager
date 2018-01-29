@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Qubes Backup VMs</string>
+   <string>Qubes OS - Backup qubes</string>
   </property>
   <property name="locale">
    <locale language="English" country="UnitedStates"/>
@@ -26,7 +26,7 @@
       <item row="0" column="0">
        <widget class="QLabel" name="label_4">
         <property name="text">
-         <string>Select VMs to backup:</string>
+         <string>Select qubes to backup:</string>
         </property>
        </widget>
       </item>
@@ -173,14 +173,14 @@
        <item row="1" column="0">
         <widget class="QLabel" name="label_5">
          <property name="text">
-          <string>Target AppVM:</string>
+          <string>Target qube:</string>
          </property>
         </widget>
        </item>
        <item row="3" column="0">
         <widget class="QLabel" name="label_2">
          <property name="text">
-          <string>Backup directory or VM command:</string>
+          <string>Backup directory or command:</string>
          </property>
          <property name="wordWrap">
           <bool>true</bool>
@@ -286,7 +286,7 @@
        </font>
       </property>
       <property name="text">
-       <string>NOTE: Only running VMs are listed.</string>
+       <string>NOTE: Only running qubes are listed.</string>
       </property>
      </widget>
     </item>
@@ -316,7 +316,7 @@
        <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Cantarell'; font-size:11pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans'; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Sans Serif'; font-size:9pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
      </widget>

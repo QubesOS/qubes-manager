@@ -115,7 +115,7 @@
          <bool>true</bool>
         </property>
         <property name="text">
-         <string>Minimal VM's memory:</string>
+         <string>Minimal qube memory:</string>
         </property>
        </widget>
       </item>
@@ -211,7 +211,7 @@
          <string>Unknown current state</string>
         </property>
         <property name="text">
-         <string>Check for VM updates</string>
+         <string>Check for qube updates</string>
         </property>
        </widget>
       </item>

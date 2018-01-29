@@ -404,17 +404,17 @@ class VmUpdateInfoWidget(QtGui.QWidget):
             icon_path = ":/update-recommended.png"
             tooltip_text = self.tr("Updates pending!")
         elif state == "outdated":
-            label_text = "<font color=\"red\">VM outdated</font>"
+            label_text = "<font color=\"red\">Qube outdated</font>"
             icon_path = ":/outdated.png"
             tooltip_text = self.tr(
-                "The VM must be restarted for its filesystem to reflect the "
+                "The qube must be restarted for its filesystem to reflect the "
                 "template's recent committed changes.")
         elif state == "to-be-outdated":
-            label_text = "<font color=\"#800000\">TemplateVM running</font>"
+            label_text = "<font color=\"#800000\">Template running</font>"
             icon_path = ":/to-be-outdated.png"
             tooltip_text = self.tr(
-                "The TemplateVM must be stopped before changes from its "
-                "current session can be picked up by this VM.")
+                "The Template must be stopped before changes from its "
+                "current session can be picked up by this qube.")
         else:
             label_text = ""
             icon_path = None

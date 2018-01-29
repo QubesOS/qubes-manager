@@ -250,11 +250,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             QtGui.QMessageBox.warning(
                 None,
                 self.tr("Qube configuration problem!"),
-                self.tr("The '{vm}' AppVM is network connected to "
+                self.tr("The '{vm}' qube is network connected to "
                         "'{netvm}', which does not support firewall!<br/>"
-                        "You may edit the '{vm}' VM firewall rules, but these "
-                        "will not take any effect until you connect it to "
-                        "a working Firewall VM.").format(
+                        "You may edit the '{vm}' qube firewall rules, but "
+                        "these will not take any effect until you connect it "
+                        "to a working Firewall qube.").format(
                     vm=self.vm.name, netvm=netvm.name))
 
     def current_tab_changed(self, idx):
@@ -287,7 +287,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         if self.vm.is_running():
             self.delete_vm_button.setText(
-                self.tr('Delete VM (cannot delete a running VM)'))
+                self.tr('Delete qube (cannot delete a running qube)'))
 
         if self.vm.qid == 0:
             self.vmlabel.setVisible(False)
@@ -482,7 +482,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         new_vm_name, ok = QtGui.QInputDialog.getText(
             self,
-            self.tr('Rename VM'),
+            self.tr('Rename qube'),
             self.tr('New name: (WARNING: all other changes will be discarded)'))
 
         if ok:
@@ -504,11 +504,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         answer, ok = QtGui.QInputDialog.getText(
             self,
-            self.tr('Delete VM'),
-            self.tr('Are you absolutely sure you want to delete this VM? '
-                    '<br/> All VM settings and data will be irrevocably'
+            self.tr('Delete qube'),
+            self.tr('Are you absolutely sure you want to delete this qube? '
+                    '<br/> All qube settings and data will be irrevocably'
                     ' deleted. <br/> If you are sure, please enter this '
-                    'VM\'s name below.'))
+                    'qube\'s name below.'))
 
         if ok and answer == self.vm.name:
             self._run_in_thread(self._remove_vm)
@@ -518,7 +518,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             QtGui.QMessageBox.warning(
                 None,
                 self.tr("Removal cancelled"),
-                self.tr("The VM will not be removed."))
+                self.tr("The qube will not be removed."))
 
     def _clone_vm(self, t_monitor, name):
         try:
@@ -535,15 +535,15 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         cloned_vm_name, ok = QtGui.QInputDialog.getText(
             self,
-            self.tr('Clone VM'),
-            self.tr('Name for the cloned VM:'))
+            self.tr('Clone qube'),
+            self.tr('Name for the cloned qube:'))
 
         if ok:
             self._run_in_thread(self._clone_vm, cloned_vm_name)
             QtGui.QMessageBox.warning(
                 None,
                 self.tr("Success"),
-                self.tr("The VM was cloned successfully."))
+                self.tr("The qube was cloned successfully."))
 
     ######### advanced tab
 
@@ -1120,7 +1120,7 @@ def main(args=None):
     qapp = QtGui.QApplication(sys.argv)
     qapp.setOrganizationName('Invisible Things Lab')
     qapp.setOrganizationDomain("https://www.qubes-os.org/")
-    qapp.setApplicationName("Qubes VM Settings")
+    qapp.setApplicationName("Qube Settings")
 
     if not utils.is_debug():
         sys.excepthook = handle_exception

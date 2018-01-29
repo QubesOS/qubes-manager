@@ -215,7 +215,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     # pylint: disable=too-many-instance-attributes
     row_height = 30
     column_width = 200
-    min_visible_rows = 10
     search = ""
     # suppress saving settings while initializing widgets
     settings_loaded = False

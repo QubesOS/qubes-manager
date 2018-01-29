@@ -153,8 +153,8 @@ class QubesBlockDevicesManager():
                 serves_for.append((self.attached_devs[d]['dev'], self.attached_devs[d]['attached_to']['vm']))
 
         if len(serves_for) > 0:
-            msg = "VM <b>" + vm.name + "</b> attaches block devices to other VMs: "
+            msg = "Qube <b>" + vm.name + "</b> attaches block devices to other qubes: "
             msg += ', '.join(["<b>"+v.name+"</b>("+d+")" for (d,v) in serves_for ])
-            msg += ".<br><br> Shutting the VM down will dettach the devices from them."
+            msg += ".<br><br> Shutting the qube down will dettach the devices from them."
 
             QMessageBox.warning (None, "Warning!", msg)

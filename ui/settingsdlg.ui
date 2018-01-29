@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>813</width>
+    <width>917</width>
     <height>573</height>
    </rect>
   </property>
@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>3</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -258,7 +258,7 @@
          <item row="4" column="0">
           <widget class="QLabel" name="label_5">
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#ff0000;&quot;&gt;* &lt;/span&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Cannot be changed while the VM is running&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#ff0000;&quot;&gt;* &lt;/span&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Cannot be changed while the qube is running&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
           </widget>
          </item>
@@ -357,14 +357,7 @@
               <item>
                <widget class="QCheckBox" name="autostart_vm">
                 <property name="text">
-                 <string>Start VM automatically on boot</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="seamless_gui">
-                <property name="text">
-                 <string>Seamless GUI</string>
+                 <string>Start qube automatically on boot</string>
                 </property>
                </widget>
               </item>
@@ -382,14 +375,14 @@ border-style: solid;
 border-width: 1px;</string>
            </property>
            <property name="text">
-            <string>Delete VM</string>
+            <string>Delete qube</string>
            </property>
           </widget>
          </item>
          <item row="5" column="1">
           <widget class="QPushButton" name="clone_vm_button">
            <property name="text">
-            <string>Clone VM</string>
+            <string>Clone qube</string>
            </property>
           </widget>
          </item>
@@ -1196,7 +1189,7 @@ border-width: 1px;</string>
               </font>
              </property>
              <property name="text">
-              <string>To modify PCI devices you have to turn off the VM.</string>
+              <string>To modify PCI devices you have to turn off the qube.</string>
              </property>
             </widget>
            </item>
@@ -1210,7 +1203,7 @@ border-width: 1px;</string>
               </font>
              </property>
              <property name="text">
-              <string>Currently PVH VMs don't support PCI passthrough. Select another virtualization mode if you want to add PCI devices</string>
+              <string>Currently PVH qubes don't support PCI passthrough. Select another virtualization mode if you want to add PCI devices</string>
              </property>
             </widget>
            </item>
@@ -1355,7 +1348,6 @@ border-width: 1px;</string>
   <tabstop>include_in_backups</tabstop>
   <tabstop>run_in_debug_mode</tabstop>
   <tabstop>autostart_vm</tabstop>
-  <tabstop>seamless_gui</tabstop>
   <tabstop>max_priv_storage</tabstop>
   <tabstop>init_mem</tabstop>
   <tabstop>max_mem_size</tabstop>

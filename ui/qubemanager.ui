@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>769</width>
-    <height>385</height>
+    <width>1100</width>
+    <height>600</height>
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Fixed" vsizetype="Maximum">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
@@ -182,7 +182,7 @@
         <string>Name</string>
        </property>
        <property name="toolTip">
-        <string>VM name</string>
+        <string>Qube name</string>
        </property>
       </column>
       <column>
@@ -198,7 +198,7 @@
         <string>Template</string>
        </property>
        <property name="toolTip">
-        <string>VM's template</string>
+        <string>Qube template</string>
        </property>
       </column>
       <column>
@@ -206,7 +206,7 @@
         <string>NetVM</string>
        </property>
        <property name="toolTip">
-        <string>VM's netVM</string>
+        <string>Qube netVM</string>
        </property>
       </column>
       <column>
@@ -243,8 +243,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>769</width>
-     <height>28</height>
+     <width>1100</width>
+     <height>23</height>
     </rect>
    </property>
    <property name="contextMenuPolicy">
@@ -336,6 +336,12 @@
    <addaction name="menu_about"/>
   </widget>
   <widget class="QToolBar" name="toolbar">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
    <property name="contextMenuPolicy">
     <enum>Qt::CustomContextMenu</enum>
    </property>
