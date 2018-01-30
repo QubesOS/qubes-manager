@@ -176,7 +176,7 @@ class VmShutdownMonitor(QtCore.QObject):
         vm_is_running = vm.is_running()
         try:
             vm_start_time = datetime.fromtimestamp(float(vm.start_time))
-        except (AttributeError, TypeError):
+        except (AttributeError, TypeError, ValueError):
             vm_start_time = None
 
         if vm_is_running and vm_start_time \
