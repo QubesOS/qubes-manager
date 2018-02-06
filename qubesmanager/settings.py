@@ -307,9 +307,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 self.vm, 'template',
                 self.vm.app.default_template,
                 (lambda vm: vm.klass == 'TemplateVM'),
-                allow_default=False, allow_none=False,
-                transform=(lambda x: x if x != self.vm.app.default_template
-                           else x + self.tr(' (default)')))
+                allow_default=False, allow_none=False)
         else:
             self.template_name.setEnabled(False)
             self.template_idx = -1
