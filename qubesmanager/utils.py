@@ -60,6 +60,8 @@ def prepare_choice(widget, holder, propname, choice, default,
             oldvalue = qubesadmin.DEFAULT
         else:
             oldvalue = getattr(holder, propname)
+            if transform is not None and oldvalue is not None:
+                oldvalue = transform(oldvalue)
     else:
         oldvalue = object()  # won't match for identity
     idx = 0

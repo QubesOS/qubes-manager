@@ -631,7 +631,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         try:
             if self.virt_mode.currentIndex() != self.virt_mode_idx:
-                self.vm.virt_mode = self.selected_virt_mode().lower()
+                self.vm.virt_mode = self.selected_virt_mode()
         except Exception as ex:  # pylint: disable=broad-except
             msg.append(str(ex))
 
