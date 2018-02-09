@@ -867,6 +867,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_refresh_list_triggered')
     def action_refresh_list_triggered(self):
+        self.qubes_app.domains.clear_cache()
         self.update_table()
 
     # noinspection PyArgumentList
