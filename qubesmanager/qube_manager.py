@@ -395,8 +395,13 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         return [vm for vm in self.qubes_app.domains]
 
     def update_single_row(self, vm):
+        # this fuction should be used to update a row that already exists
+        # to add a row, one needs to use the update_table function - the
+        # whole table needs to be redrawn (and sorted)
         if vm in self.qubes_app.domains:
             self.vms_in_table[vm.qid].update()
+        else:
+            self.update_table()
 
     def fill_table(self):
         # save current selection
