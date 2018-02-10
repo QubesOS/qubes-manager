@@ -230,6 +230,26 @@
         <bool>true</bool>
        </property>
       </widget>
+      <widget class="QLabel" name="label_9">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>60</y>
+         <width>511</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <weight>75</weight>
+         <italic>true</italic>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string>WARNING: password will be saved in dom0 in plain text.</string>
+       </property>
+      </widget>
      </widget>
     </item>
     <item row="2" column="0">
