@@ -570,7 +570,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             self.kernel_groupbox.setVisible(True)
             self.kernel_list, self.kernel_idx = utils.prepare_kernel_choice(
                 self.kernel, self.vm, 'kernel',
-                self.vm.app.default_kernel,
+                None,
                 allow_default=True, allow_none=True)
             self.kernel.currentIndexChanged.connect(self.kernel_changed)
         else:
@@ -586,8 +586,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 utils.prepare_vm_choice(
                     self.default_dispvm,
                     self.vm, 'default_dispvm',
-                    self.vm.app.default_dispvm,
-                    (lambda vm: vm.klass == 'DispVM'),
+                    None,
+                    (lambda vm: getattr(vm, 'template_for_dispvms', False)),
                     allow_default=True, allow_none=True)
 
         self.update_virt_mode_list()
