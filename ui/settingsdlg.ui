@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>917</width>
-    <height>573</height>
+    <width>1587</width>
+    <height>861</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -50,6 +50,9 @@
            <layout class="QFormLayout" name="formLayout_4">
             <property name="fieldGrowthPolicy">
              <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+            </property>
+            <property name="topMargin">
+             <number>15</number>
             </property>
             <item row="0" column="0">
              <widget class="QLabel" name="label_13">
@@ -103,6 +106,9 @@
             <string>Disk storage</string>
            </property>
            <layout class="QGridLayout" name="gridLayout_3">
+            <property name="topMargin">
+             <number>15</number>
+            </property>
             <item row="1" column="1">
              <widget class="QSpinBox" name="root_resize">
               <property name="enabled">
@@ -192,6 +198,9 @@
             <property name="fieldGrowthPolicy">
              <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
             </property>
+            <property name="topMargin">
+             <number>15</number>
+            </property>
             <item row="0" column="0">
              <widget class="QLabel" name="label_10">
               <property name="text">
@@ -268,6 +277,9 @@
             <string>Settings</string>
            </property>
            <layout class="QGridLayout" name="gridLayout_2">
+            <property name="topMargin">
+             <number>15</number>
+            </property>
             <item row="0" column="0">
              <widget class="QLabel" name="label">
               <property name="text">
@@ -422,6 +434,9 @@ border-width: 1px;</string>
               <property name="fieldGrowthPolicy">
                <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
               </property>
+              <property name="topMargin">
+               <number>15</number>
+              </property>
               <item row="0" column="0">
                <widget class="QLabel" name="label_19">
                 <property name="text">
@@ -503,6 +518,9 @@ border-width: 1px;</string>
               <property name="fieldGrowthPolicy">
                <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
               </property>
+              <property name="topMargin">
+               <number>15</number>
+              </property>
               <item row="1" column="0">
                <widget class="QLabel" name="label_27">
                 <property name="text">
@@ -579,6 +597,9 @@ border-width: 1px;</string>
             <string>Other</string>
            </property>
            <layout class="QFormLayout" name="formLayout_2">
+            <property name="topMargin">
+             <number>15</number>
+            </property>
             <item row="1" column="0">
              <widget class="QLabel" name="label_26">
               <property name="text">
@@ -617,6 +638,9 @@ border-width: 1px;</string>
             <string>Memory/CPU</string>
            </property>
            <layout class="QGridLayout" name="gridLayout_4">
+            <property name="topMargin">
+             <number>15</number>
+            </property>
             <item row="0" column="0">
              <widget class="QLabel" name="label_15">
               <property name="enabled">
