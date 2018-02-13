@@ -256,7 +256,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         self.vms_list = []
         self.vms_in_table = {}
-        self.reload_table = False
 
         self.frame_width = 0
         self.frame_height = 0
@@ -395,6 +394,15 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     def get_vms_list(self):
         return [vm for vm in self.qubes_app.domains]
 
+    def update_single_row(self, vm):
+        # this fuction should be used to update a row that already exists
+        # to add a row, one needs to use the update_table function - the
+        # whole table needs to be redrawn (and sorted)
+        if vm in self.qubes_app.domains:
+            self.vms_in_table[vm.qid].update()
+        else:
+            self.update_table()
+
     def fill_table(self):
         # save current selection
         row_index = self.table.currentRow()
@@ -420,7 +428,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.table.setRowCount(row_no)
         self.vms_list = vms_list
         self.vms_in_table = vms_in_table
-        self.reload_table = False
         if selected_qid in vms_in_table.keys():
             self.table.setCurrentItem(
                 self.vms_in_table[selected_qid].name_widget)
@@ -448,9 +455,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     @QtCore.pyqtSlot(name='on_action_search_triggered')
     def action_search_triggered(self):
         self.searchbox.setFocus()
-
-    def mark_table_for_update(self):
-        self.reload_table = True
 
     def update_table(self):
 
@@ -512,6 +516,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             self.action_set_keyboard_layout.setEnabled(
                 vm.qid != 0 and
                 vm.get_power_state() != "Paused" and vm.is_running())
+
+            self.update_single_row(vm)
         else:
             self.action_settings.setEnabled(False)
             self.action_removevm.setEnabled(False)
@@ -703,7 +709,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             return
 
         self.start_vm(vm)
-        self.update_table()
+        self.update_single_row(vm)
 
     def start_vm(self, vm):
         if vm.is_running():
@@ -724,7 +730,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 self.tr("Error starting Qube!"),
                 self.tr("ERROR: {0}").format(t_monitor.error_msg))
 
-        self.update_table()
+        self.update_single_row(vm)
 
     @staticmethod
     def do_start_vm(vm, t_monitor):
@@ -750,7 +756,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         assert vm.is_running()
         try:
             vm.pause()
-            self.update_table()
+            self.update_single_row(vm)
         except exc.QubesException as ex:
             QtGui.QMessageBox.warning(
                 None,
@@ -776,7 +782,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         if reply == QtGui.QMessageBox.Yes:
             self.shutdown_vm(vm)
 
-        self.update_table()
+        self.update_single_row(vm)
 
     def shutdown_vm(self, vm, shutdown_time=vm_shutdown_timeout,
                     check_time=vm_restart_check_timeout, and_restart=False):
@@ -814,7 +820,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         if reply == QtGui.QMessageBox.Yes:
             self.shutdown_vm(vm, and_restart=True)
 
-        self.update_table()
+        self.update_single_row(vm)
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_killvm_triggered')
@@ -852,7 +858,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             settings_window = settings.VMSettingsWindow(
                 vm, self.qt_app, "basic")
             settings_window.exec_()
-            self.update_table()
+            self.update_single_row(vm)
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_appmenus_triggered')
@@ -866,6 +872,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_refresh_list_triggered')
     def action_refresh_list_triggered(self):
+        self.qubes_app.domains.clear_cache()
         self.update_table()
 
     # noinspection PyArgumentList
@@ -912,7 +919,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                     self.tr("Error on Qube update!"),
                     self.tr("ERROR: {0}").format(t_monitor.error_msg))
 
-        self.update_table()
+        self.update_single_row(vm)
 
     @staticmethod
     def do_update_vm(vm, t_monitor):
