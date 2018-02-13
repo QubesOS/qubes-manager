@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -338,7 +338,11 @@
              <widget class="QComboBox" name="template_name"/>
             </item>
             <item row="2" column="1" colspan="2">
-             <widget class="QComboBox" name="netVM"/>
+             <widget class="QComboBox" name="netVM">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&amp;quot;default ([name])&amp;quot; denotes system-wide default - if the default is changed in Global Settings, the networking qube will change. &lt;br/&gt;If you want to keep using a given networking qube regardless of system settings, select &amp;quot;[name]&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
             </item>
             <item row="3" column="0" colspan="3">
              <layout class="QHBoxLayout" name="horizontalLayout">
