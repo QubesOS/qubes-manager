@@ -70,6 +70,8 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
 
         qvm_start.main(['--cdrom', cdrom_location, self.vm.name])
 
+        self.done(0)
+
     def __warn_if_running__(self):
         if self.vm.is_running():
             QtGui.QMessageBox.warning(
