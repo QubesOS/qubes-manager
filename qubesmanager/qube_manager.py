@@ -192,7 +192,7 @@ class VmShutdownMonitor(QtCore.QObject):
                     self.tr("Wait another {0} seconds...").format(
                         self.shutdown_time / 1000))
                 if reply == 0:
-                    vm.force_shutdown()
+                    vm.kill()
                     self.restart_vm_if_needed()
                 else:
                     self.shutdown_started = datetime.now()
@@ -841,7 +841,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         if reply == QtGui.QMessageBox.Yes:
             try:
-                vm.force_shutdown()
+                vm.kill()
             except exc.QubesException as ex:
                 QtGui.QMessageBox.critical(
                     None, self.tr("Error while killing Qube!"),
