@@ -101,8 +101,10 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
             self.qubes_app,
             None,
             self.qubes_app.domains['dom0'],
-            (lambda vm: vm.klass != 'TemplateVM' and vm.is_running()),
-            allow_internal=False,
+            filter_function=(lambda vm:
+                             vm.klass != 'TemplateVM'
+                             and vm.is_running()
+                             and not vm.features.get('internal', False)),
             allow_default=False,
             allow_none=False
         )
@@ -236,7 +238,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
                     None, self.tr("Wait!"),
                     self.tr("Enter backup target location first."))
                 return False
-            if self.appvm_combobox.currentIndex() == 0 \
+            if self.appvm_combobox.currentText() == "dom0" \
                     and not os.path.isdir(backup_location):
                 QtGui.QMessageBox.information(
                     None, self.tr("Wait!"),
