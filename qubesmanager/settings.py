@@ -76,10 +76,12 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             assert idx in range(self.tabWidget.count())
             self.tabWidget.setCurrentIndex(idx)
 
-        self.connect(self.buttonBox,
-                     QtCore.SIGNAL("accepted()"),
-                     self.save_and_apply)
-        self.connect(self.buttonBox, QtCore.SIGNAL("rejected()"), self.reject)
+        self.buttonBox.button(QtGui.QDialogButtonBox.Ok).clicked.connect(
+            self.save_and_apply)
+        self.buttonBox.button(QtGui.QDialogButtonBox.Cancel).clicked.connect(
+            self.reject)
+        self.buttonBox.button(QtGui.QDialogButtonBox.Apply).clicked.connect(
+            self.apply)
 
         self.tabWidget.currentChanged.connect(self.current_tab_changed)
 
@@ -152,7 +154,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
     def accept(self):
         pass
 
-    def save_and_apply(self):
+    def save_changes(self):
         t_monitor = thread_monitor.ThreadMonitor()
         thread = threading.Thread(target=self.__save_changes__,
                                   args=(t_monitor,))
@@ -179,6 +181,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                         ).format(self.vm.name),
                 self.tr("ERROR: {0}").format(t_monitor.error_msg))
 
+    def apply(self):
+        self.save_changes()
+
+    def save_and_apply(self):
+        self.save_changes()
         self.done(0)
 
     def __save_changes__(self, t_monitor):
