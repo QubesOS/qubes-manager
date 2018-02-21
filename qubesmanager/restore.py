@@ -199,17 +199,17 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         self.qvm_collection.unlock_db()
         if self.canceled:
             self.emit(SIGNAL("restore_progress(QString)"),
-                      '<b><font color="red">{0}</font></b>'
+                      u'<b><font color="red">{0}</font></b>'
                       .format(self.tr("Restore aborted!")))
         elif len(err_msg) > 0 or self.error_detected.is_set():
             if len(err_msg) > 0:
                 thread_monitor.set_error_msg('\n'.join(err_msg))
             self.emit(SIGNAL("restore_progress(QString)"),
-                      '<b><font color="red">{0}</font></b>'
+                      u'<b><font color="red">{0}</font></b>'
                       .format(self.tr("Finished with errors!")))
         else:
             self.emit(SIGNAL("restore_progress(QString)"),
-                      '<font color="green">{0}</font>'
+                      u'<font color="green">{0}</font>'
                       .format(self.tr("Finished successfully!")))
 
         thread_monitor.set_finished()
@@ -277,7 +277,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
 
             if self.showFileDialog.isChecked():
                 self.emit(SIGNAL("restore_progress(QString)"),
-                          '<b><font color="black">{0}</font></b>'.format(
+                          u'<b><font color="black">{0}</font></b>'.format(
                               self.tr(
                                   "Please unmount your backup volume and cancel"
                                   " the file selection dialog.")))
@@ -309,7 +309,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
         if self.currentPage() is self.commit_page:
             if backup.backup_cancel():
                 self.emit(SIGNAL("restore_progress(QString)"),
-                          '<font color="red">{0}</font>'
+                          u'<font color="red">{0}</font>'
                           .format(self.tr("Aborting the operation...")))
                 self.button(self.CancelButton).setDisabled(True)
         else:
