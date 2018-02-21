@@ -72,7 +72,7 @@ def get_path_for_vm(vm, service_name):
         return None
 
 def select_path_button_clicked(dialog, select_file = False):
-    backup_location = str(dialog.dir_line_edit.text())
+    backup_location = unicode(dialog.dir_line_edit.text())
     file_dialog = QFileDialog()
     file_dialog.setReadOnly(True)
 
@@ -84,23 +84,22 @@ def select_path_button_clicked(dialog, select_file = False):
     new_appvm = None
     new_path = None
     if dialog.appvm_combobox.currentIndex() != 0:   #An existing appvm chosen
-        new_appvm = str(dialog.appvm_combobox.currentText())
+        new_appvm = unicode(dialog.appvm_combobox.currentText())
         vm = dialog.qvm_collection.get_vm_by_name(new_appvm)
         if vm:
             new_path = get_path_for_vm(vm, "qubes.SelectFile" if select_file
                     else "qubes.SelectDirectory")
     else:
         new_path = file_dialog_function(dialog,
-            dialog.tr("Select backup location."),
+            unicode(dialog.tr("Select backup location.")),
             backup_location if backup_location else '/')
 
     if new_path != None:
-        new_path = unicode(new_path)
         if os.path.basename(new_path) == 'qubes.xml':
             backup_location = os.path.dirname(new_path)
         else:
             backup_location = new_path
-        dialog.dir_line_edit.setText(backup_location)
+        dialog.dir_line_edit.setText(QString.fromUtf8(backup_location))
 
     if (new_path or new_appvm) and len(backup_location) > 0:
         dialog.select_dir_page.emit(SIGNAL("completeChanged()"))
