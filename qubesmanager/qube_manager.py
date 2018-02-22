@@ -500,7 +500,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 and vm.klass != 'AdminVM')
             self.action_restartvm.setEnabled(
                 vm.is_running() and vm.get_power_state() != "Paused"
-                and vm.klass != 'AdminVM' and vm.klass != 'DispVM')
+                and vm.klass != 'AdminVM'
+                and (vm.klass != 'DispVM' or not vm.auto_cleanup))
             self.action_killvm.setEnabled(
                 (vm.get_power_state() == "Paused" or vm.is_running())
                 and vm.klass != 'AdminVM')
