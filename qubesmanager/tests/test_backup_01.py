@@ -22,7 +22,7 @@
 import logging.handlers
 import sys
 import unittest
-# import unittest.mock
+import unittest.mock
 
 from PyQt4 import QtGui, QtTest, QtCore
 from qubesadmin import Qubes
@@ -32,6 +32,12 @@ import qubesmanager.backup as backup_gui
 class BackupTest(unittest.TestCase):
     def setUp(self):
         super(BackupTest, self).setUp()
+
+        # mock up nonexistence of saved backup settings
+        self.patcher = unittest.mock.patch('builtins.open')
+        self.mock_open = self.patcher.start()
+        self.mock_open.side_effect = FileNotFoundError()
+        self.addCleanup(self.patcher.stop)
 
         self.qapp = Qubes()
         self.qtapp = QtGui.QApplication(sys.argv)
@@ -55,6 +61,30 @@ class BackupTest(unittest.TestCase):
 
         self.assertEqual(all_vms, available_vms + selected_vms)
 
+    def test_correct_defaults(self):
+        # backup is compressed
+        self.assertTrue(self.dialog.compress_checkbox.isChecked(),
+                        "Compress backup should be checked by default")
+
+        # correct VMs are selected
+        include_in_backups_no = len([vm for vm in self.qapp.domains
+                                     if not vm.features.get('internal', False)
+                                     and getattr(vm, 'include_in_backups', True)])
+        selected_no = self.dialog.select_vms_widget.selected_list.count()
+        self.assertEqual(include_in_backups_no, selected_no,
+                         "Incorrect VMs selected by default")
+
+        # passphrase is empty
+        self.assertEqual(self.dialog.passphrase_line_edit.text(), "",
+                          "Passphrase should be empty")
+
+        # save defaults
+        self.assertTrue(self.dialog.save_profile_checkbox.isChecked(),
+                        "By default, profile should be saved")
+
+    # Check if target vms are selected
+    # Check if no default file loads correctly - another file??
+    # TODO: make a separate backup testing file to test various backup defaults
 
 if __name__ == "__main__":
     ha_syslog = logging.handlers.SysLogHandler('/dev/log')
