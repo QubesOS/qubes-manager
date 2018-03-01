@@ -33,7 +33,7 @@ def _filter_internal(vm):
 def prepare_choice(widget, holder, propname, choice, default,
         filter_function=None, *,
         icon_getter=None, allow_internal=None, allow_default=False,
-        allow_none=False, transform=None, empty_string_is_none=True):
+        allow_none=False, transform=None):
 
     # for newly created vms, set propname to None
 
