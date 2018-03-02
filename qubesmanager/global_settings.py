@@ -27,7 +27,7 @@ import traceback
 from PyQt4 import QtCore, QtGui  # pylint: disable=import-error
 
 from qubesadmin import Qubes
-from qubesadmin.utils import parse_size, updates_vms_status
+from qubesadmin.utils import parse_size
 
 from . import ui_globalsettingsdlg  # pylint: disable=no-name-in-module
 from . import utils
@@ -36,7 +36,7 @@ from configparser import ConfigParser
 
 qmemman_config_path = '/etc/qubes/qmemman.conf'
 
-
+# pylint: disable=too-many-instance-attributes
 class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                            QtGui.QDialog):
 
