@@ -92,21 +92,32 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
 
     def __apply_system_defaults__(self):
         # upatevm
-        self.qvm_collection.updatevm = \
-            self.update_vm_vmlist[self.update_vm_combo.currentIndex()]
+        if self.qvm_collection.updatevm != \
+                self.update_vm_vmlist[self.update_vm_combo.currentIndex()]:
+            self.qvm_collection.updatevm = \
+                self.update_vm_vmlist[self.update_vm_combo.currentIndex()]
 
         # clockvm
-        self.qvm_collection.clockvm = \
-            self.clock_vm_vmlist[self.clock_vm_combo.currentIndex()]
+        if self.qvm_collection.clockvm !=\
+                self.clock_vm_vmlist[self.clock_vm_combo.currentIndex()]:
+            self.qvm_collection.clockvm = \
+                self.clock_vm_vmlist[self.clock_vm_combo.currentIndex()]
 
         # default netvm
-        self.qvm_collection.default_netvm = \
-            self.default_netvm_vmlist[self.default_netvm_combo.currentIndex()]
+        if self.qvm_collection.default_netvm !=\
+                self.default_netvm_vmlist[
+                    self.default_netvm_combo.currentIndex()]:
+            self.qvm_collection.default_netvm = \
+                self.default_netvm_vmlist[
+                    self.default_netvm_combo.currentIndex()]
 
         # default template
-        self.qvm_collection.default_template = \
-            self.default_template_vmlist[
-                self.default_template_combo.currentIndex()]
+        if self.qvm_collection.default_template != \
+                self.default_template_vmlist[
+                    self.default_template_combo.currentIndex()]:
+            self.qvm_collection.default_template = \
+                self.default_template_vmlist[
+                    self.default_template_combo.currentIndex()]
 
     def __init_kernel_defaults__(self):
         self.kernels_list, self.kernels_idx = utils.prepare_kernel_choice(
@@ -116,8 +127,10 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         )
 
     def __apply_kernel_defaults__(self):
-        self.qvm_collection.default_kernel = \
-            self.kernels_list[self.default_kernel_combo.currentIndex()]
+        if self.qvm_collection.default_kernel != \
+                self.kernels_list[self.default_kernel_combo.currentIndex()]:
+            self.qvm_collection.default_kernel = \
+                self.kernels_list[self.default_kernel_combo.currentIndex()]
 
     def __init_mem_defaults__(self):
         #qmemman settings
