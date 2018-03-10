@@ -754,7 +754,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     @QtCore.pyqtSlot(name='on_action_pausevm_triggered')
     def action_pausevm_triggered(self):
         vm = self.get_selected_vm()
-        assert vm.is_running()
         try:
             vm.pause()
             self.update_single_row(vm)
@@ -769,7 +768,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     @QtCore.pyqtSlot(name='on_action_shutdownvm_triggered')
     def action_shutdownvm_triggered(self):
         vm = self.get_selected_vm()
-        assert vm.is_running()
 
         reply = QtGui.QMessageBox.question(
             None, self.tr("Qube Shutdown Confirmation"),
@@ -807,7 +805,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     @QtCore.pyqtSlot(name='on_action_restartvm_triggered')
     def action_restartvm_triggered(self):
         vm = self.get_selected_vm()
-        assert vm.is_running()
 
         reply = QtGui.QMessageBox.question(
             None, self.tr("Qube Restart Confirmation"),
@@ -819,7 +816,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.qt_app.processEvents()
 
         if reply == QtGui.QMessageBox.Yes:
-            self.shutdown_vm(vm, and_restart=True)
+            # in case the user shut down the VM in the meantime
+            if vm.is_running():
+                self.shutdown_vm(vm, and_restart=True)
+            else:
+                self.start_vm(vm)
 
         self.update_single_row(vm)
 
@@ -827,14 +828,20 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     @QtCore.pyqtSlot(name='on_action_killvm_triggered')
     def action_killvm_triggered(self):
         vm = self.get_selected_vm()
-        assert vm.is_running() or vm.is_paused()
+        if not (vm.is_running() or vm.is_paused()):
+            info = self.tr("Qube <b>'{0}'</b> is not running. Are you "
+                           "absolutely sure you want to try to kill it?<br>"
+                            "<small>This will end <b>(not shutdown!)</b> all "
+                           "the running applications within this "
+                           "Qube.</small>").format(vm.name)
+        else:
+            info = self.tr("Are you sure you want to kill the Qube "
+                           "<b>'{0}'</b>?<br><small>This will end <b>(not "
+                           "shutdown!)</b> all the running applications within "
+                           "this Qube.</small>").format(vm.name)
 
         reply = QtGui.QMessageBox.question(
-            None, self.tr("Qube Kill Confirmation"),
-            self.tr("Are you sure you want to kill the Qube <b>'{0}'</b>?<br>"
-                    "<small>This will end <b>(not shutdown!)</b> all the "
-                    "running applications within this Qube.</small>").format(
-                vm.name),
+            None, self.tr("Qube Kill Confirmation"), info,
             QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel,
             QtGui.QMessageBox.Cancel)
 
