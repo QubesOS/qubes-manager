@@ -244,7 +244,7 @@
      <x>0</x>
      <y>0</y>
      <width>1100</width>
-     <height>23</height>
+     <height>46</height>
     </rect>
    </property>
    <property name="contextMenuPolicy">
@@ -258,6 +258,7 @@
     <addaction name="action_show_network"/>
     <addaction name="action_backup"/>
     <addaction name="action_restore"/>
+    <addaction name="action_exit"/>
    </widget>
    <widget class="QMenu" name="menu_view">
     <property name="title">
@@ -837,6 +838,11 @@
    </property>
    <property name="toolTip">
     <string>Refresh qube list</string>
+   </property>
+  </action>
+  <action name="action_exit">
+   <property name="text">
+    <string>&amp;Exit Qube Manager</string>
    </property>
   </action>
  </widget>
