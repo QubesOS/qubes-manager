@@ -1016,6 +1016,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         backup_window = backup.BackupVMsWindow(self.qt_app, self.qubes_app)
         backup_window.exec_()
 
+    # noinspection PyArgumentList
+    @QtCore.pyqtSlot(name='on_action_exit_triggered')
+    def action_exit_triggered(self):
+        self.close()
+
     def showhide_menubar(self, checked):
         self.menubar.setVisible(checked)
         if not checked:
