@@ -90,6 +90,15 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 filter_function=(lambda vm: vm.klass == 'TemplateVM')
             )
 
+        # default dispvm
+        self.default_dispvm_vmlist, self.default_dispvm_idx = \
+            utils.prepare_vm_choice(
+                self.default_dispvm_combo,
+                self.qvm_collection, 'default_dispvm',
+                None,
+                (lambda vm: getattr(vm, 'template_for_dispvms', False))
+            )
+
     def __apply_system_defaults__(self):
         # upatevm
         if self.qvm_collection.updatevm != \
@@ -118,6 +127,14 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             self.qvm_collection.default_template = \
                 self.default_template_vmlist[
                     self.default_template_combo.currentIndex()]
+
+        # default_dispvm
+        if self.qvm_collection.default_dispvm != \
+                self.default_dispvm_vmlist[
+                    self.default_dispvm_combo.currentIndex()]:
+            self.qvm_collection.default_dispvm = \
+                self.default_dispvm_vmlist[
+                    self.default_dispvm_combo.currentIndex()]
 
     def __init_kernel_defaults__(self):
         self.kernels_list, self.kernels_idx = utils.prepare_kernel_choice(
