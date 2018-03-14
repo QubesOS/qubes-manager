@@ -377,7 +377,7 @@ class VmUpdateInfoWidget(QtGui.QWidget):
         outdated_state = False
 
         try:
-            for vol in vm.volumes:
+            for vol in vm.volumes.values():
                 if vol.is_outdated():
                     outdated_state = "outdated"
                     break
