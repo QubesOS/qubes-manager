@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>678</width>
-    <height>331</height>
+    <width>651</width>
+    <height>386</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -195,6 +195,13 @@
       <string>Updates</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
+      <item row="1" column="1">
+       <widget class="QPushButton" name="disable_updates_all">
+        <property name="text">
+         <string>Disable checking for updates for all VMs</string>
+        </property>
+       </widget>
+      </item>
       <item row="0" column="0">
        <widget class="QCheckBox" name="updates_dom0">
         <property name="text">
@@ -212,6 +219,13 @@
         </property>
         <property name="text">
          <string>Check for qube updates</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QPushButton" name="enable_updates_all">
+        <property name="text">
+         <string>Enable checking for updates for all VMs</string>
         </property>
        </widget>
       </item>

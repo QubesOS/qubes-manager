@@ -27,15 +27,16 @@ import traceback
 from PyQt4 import QtCore, QtGui  # pylint: disable=import-error
 
 from qubesadmin import Qubes
-from qubesadmin.utils import parse_size, updates_vms_status
+from qubesadmin.utils import parse_size
 
 from . import ui_globalsettingsdlg  # pylint: disable=no-name-in-module
+from . import utils
 
 from configparser import ConfigParser
 
 qmemman_config_path = '/etc/qubes/qmemman.conf'
 
-
+# pylint: disable=too-many-instance-attributes
 class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                            QtGui.QDialog):
 
@@ -59,126 +60,77 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.__init_updates__()
 
     def __init_system_defaults__(self):
-        # updatevm and clockvm
-        all_vms = [vm for vm in self.qvm_collection.domains
-                   if (not vm.features.get('internal', False)) and vm.qid != 0]
+        # set up updatevm choice
+        self.update_vm_vmlist, self.update_vm_idx = utils.prepare_vm_choice(
+            self.update_vm_combo, self.qvm_collection, 'updatevm',
+            None, allow_none=True
+        )
 
-        self.updatevm_idx = -1
+        # set up clockvm choice
+        self.clock_vm_vmlist, self.clock_vm_idx = utils.prepare_vm_choice(
+            self.clock_vm_combo, self.qvm_collection, 'clockvm',
+            None, allow_none=True
+        )
 
-        current_update_vm = self.qvm_collection.updatevm
-        for (i, vm) in enumerate(all_vms):
-            text = vm.name
-            if vm is current_update_vm:
-                self.updatevm_idx = i
-                text += self.tr(" (current)")
-            self.update_vm_combo.insertItem(i, text)
-        self.update_vm_combo.insertItem(len(all_vms), "none")
-        if current_update_vm is None:
-            self.updatevm_idx = len(all_vms)
-        self.update_vm_combo.setCurrentIndex(self.updatevm_idx)
+        # set up default netvm
+        self.default_netvm_vmlist, self.default_netvm_idx = \
+            utils.prepare_vm_choice(
+                self.default_netvm_combo,
+                self.qvm_collection, 'default_netvm',
+                None,
+                filter_function=(lambda vm: vm.provides_network),
+                allow_none=True)
 
-        # clockvm
-        self.clockvm_idx = -1
-
-        current_clock_vm = self.qvm_collection.clockvm
-        for (i, vm) in enumerate(all_vms):
-            text = vm.name
-            if vm is current_clock_vm:
-                self.clockvm_idx = i
-                text += self.tr(" (current)")
-            self.clock_vm_combo.insertItem(i, text)
-        self.clock_vm_combo.insertItem(len(all_vms), "none")
-        if current_clock_vm is None:
-            self.clockvm_idx = len(all_vms)
-        self.clock_vm_combo.setCurrentIndex(self.clockvm_idx)
-
-        # default netvm
-        netvms = [vm for vm in all_vms
-                  if getattr(vm, 'provides_network', False)]
-        self.netvm_idx = -1
-
-        current_netvm = self.qvm_collection.default_netvm
-        for (i, vm) in enumerate(netvms):
-            text = vm.name
-            if vm is current_netvm:
-                self.netvm_idx = i
-                text += self.tr(" (current)")
-            self.default_netvm_combo.insertItem(i, text)
-        if current_netvm is not None:
-            self.default_netvm_combo.setCurrentIndex(self.netvm_idx)
-
-        #default template
-        templates = [vm for vm in all_vms if vm.klass == 'TemplateVM']
-        self.template_idx = -1
-
-        current_template = self.qvm_collection.default_template
-        for (i, vm) in enumerate(templates):
-            text = vm.name
-            if vm is current_template:
-                self.template_idx = i
-                text += self.tr(" (current)")
-            self.default_template_combo.insertItem(i, text)
-        if current_template is not None:
-            self.default_template_combo.setCurrentIndex(self.template_idx)
+        # default template
+        self.default_template_vmlist, self.default_template_idx = \
+            utils.prepare_vm_choice(
+                self.default_template_combo,
+                self.qvm_collection, 'default_template',
+                None,
+                filter_function=(lambda vm: vm.klass == 'TemplateVM')
+            )
 
     def __apply_system_defaults__(self):
-        #upatevm
-        if self.update_vm_combo.currentIndex() != self.updatevm_idx:
-            updatevm_name = str(self.update_vm_combo.currentText())
-            updatevm_name = updatevm_name.split(' ')[0]
-            updatevm = self.qvm_collection.domains[updatevm_name]
+        # upatevm
+        if self.qvm_collection.updatevm != \
+                self.update_vm_vmlist[self.update_vm_combo.currentIndex()]:
+            self.qvm_collection.updatevm = \
+                self.update_vm_vmlist[self.update_vm_combo.currentIndex()]
 
-            self.qvm_collection.updatevm = updatevm
+        # clockvm
+        if self.qvm_collection.clockvm !=\
+                self.clock_vm_vmlist[self.clock_vm_combo.currentIndex()]:
+            self.qvm_collection.clockvm = \
+                self.clock_vm_vmlist[self.clock_vm_combo.currentIndex()]
 
-        #clockvm
-        if self.clock_vm_combo.currentIndex() != self.clockvm_idx:
-            clockvm_name = str(self.clock_vm_combo.currentText())
-            clockvm_name = clockvm_name.split(' ')[0]
-            clockvm = self.qvm_collection.domains[clockvm_name]
+        # default netvm
+        if self.qvm_collection.default_netvm !=\
+                self.default_netvm_vmlist[
+                    self.default_netvm_combo.currentIndex()]:
+            self.qvm_collection.default_netvm = \
+                self.default_netvm_vmlist[
+                    self.default_netvm_combo.currentIndex()]
 
-            self.qvm_collection.clockvm = clockvm
-
-        #default netvm
-        if self.default_netvm_combo.currentIndex() != self.netvm_idx:
-            name = str(self.default_netvm_combo.currentText())
-            name = name.split(' ')[0]
-            vm = self.qvm_collection.domains[name]
-
-            self.qvm_collection.default_netvm = vm
-
-        #default template
-        if self.default_template_combo.currentIndex() != self.template_idx:
-            name = str(self.default_template_combo.currentText())
-            name = name.split(' ')[0]
-            vm = self.qvm_collection.domains[name]
-
-            self.qvm_collection.default_template = vm
-
+        # default template
+        if self.qvm_collection.default_template != \
+                self.default_template_vmlist[
+                    self.default_template_combo.currentIndex()]:
+            self.qvm_collection.default_template = \
+                self.default_template_vmlist[
+                    self.default_template_combo.currentIndex()]
 
     def __init_kernel_defaults__(self):
-        kernel_list = []
-        # TODO system_path["qubes_kernels_base_dir"]
-        # idea: qubes.pools['linux-kernel'].volumes
-        for k in os.listdir('/var/lib/qubes/vm-kernels'):
-            kernel_list.append(k)
-
-        self.kernel_idx = 0
-
-        for (i, k) in enumerate(kernel_list):
-            text = k
-            if k == self.qvm_collection.default_kernel:
-                text += self.tr(" (current)")
-                self.kernel_idx = i
-            self.default_kernel_combo.insertItem(i, text)
-        self.default_kernel_combo.setCurrentIndex(self.kernel_idx)
+        self.kernels_list, self.kernels_idx = utils.prepare_kernel_choice(
+            self.default_kernel_combo, self.qvm_collection, 'default_kernel',
+            None,
+            allow_none=True
+        )
 
     def __apply_kernel_defaults__(self):
-        if self.default_kernel_combo.currentIndex() != self.kernel_idx:
-            kernel = str(self.default_kernel_combo.currentText())
-            kernel = kernel.split(' ')[0]
-
-            self.qvm_collection.default_kernel = kernel
-
+        if self.qvm_collection.default_kernel != \
+                self.kernels_list[self.default_kernel_combo.currentIndex()]:
+            self.qvm_collection.default_kernel = \
+                self.kernels_list[self.default_kernel_combo.currentIndex()]
 
     def __init_mem_defaults__(self):
         #qmemman settings
@@ -260,27 +212,62 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 qmemman_config_file.writelines(config_lines)
                 qmemman_config_file.close()
 
-
     def __init_updates__(self):
-        self.updates_val = False
-        # TODO updates_dom0_status(self.qvm_collection)
-        self.updates_dom0_val = True
+
+        # TODO: remove workaround when it is no longer needed
+        self.dom0_updates_file_path = '/var/lib/qubes/updates/disable-updates'
+
+        try:
+            self.updates_dom0_val = self.qvm_collection.check_updates_dom0
+        except AttributeError:
+            self.updates_dom0_val =\
+                not os.path.isfile(self.dom0_updates_file_path)
+
         self.updates_dom0.setChecked(self.updates_dom0_val)
-        updates_vms = updates_vms_status(self.qvm_collection)
-        if updates_vms is None:
-            self.updates_vm.setCheckState(QtCore.Qt.PartiallyChecked)
-        else:
-            self.updates_vm.setCheckState(updates_vms)
+
+        self.updates_vm.setChecked(self.qvm_collection.check_updates_vm)
+        self.enable_updates_all.clicked.connect(self.__enable_updates_all)
+        self.disable_updates_all.clicked.connect(self.__disable_updates_all)
+
+    def __enable_updates_all(self):
+        reply = QtGui.QMessageBox.question(
+            self, self.tr("Change state of all qubes"),
+            self.tr("Are you sure you want to set all qubes to check "
+                    "for updates?"),
+            QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel)
+        if reply == QtGui.QMessageBox.Cancel:
+            return
+
+        self.__set_updates_all(True)
+
+    def __disable_updates_all(self):
+        reply = QtGui.QMessageBox.question(
+            self, self.tr("Change state of all qubes"),
+            self.tr("Are you sure you want to set all qubes to not check "
+                    "for updates?"),
+            QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel)
+        if reply == QtGui.QMessageBox.Cancel:
+            return
+
+        self.__set_updates_all(False)
+
+    def __set_updates_all(self, state):
+        for vm in self.qvm_collection.domains:
+            vm.features['check-updates'] = state
 
     def __apply_updates__(self):
         if self.updates_dom0.isChecked() != self.updates_dom0_val:
-            # TODO updates_dom0_toggle(
-            # self.qvm_collection, self.updates_dom0.isChecked())
-            raise NotImplementedError('Toggle dom0 updates not implemented')
-        if self.updates_vm.checkState() != QtCore.Qt.PartiallyChecked:
-            for vm in self.qvm_collection.domains:
-                vm.features['check-updates'] = \
-                    bool(self.updates_vm.checkState())
+            # TODO: remove workaround when it is no longer needed
+            try:
+                self.qvm_collection.check_updates_dom0 = \
+                    self.updates_dom0.isChecked()
+            except AttributeError:
+                if self.updates_dom0.isChecked():
+                    os.remove(self.dom0_updates_file_path)
+                else:
+                    open(self.dom0_updates_file_path, 'a').close()
+
+        self.qvm_collection.check_updates_vm = self.updates_vm.isChecked()
 
     def reject(self):
         self.done(0)
