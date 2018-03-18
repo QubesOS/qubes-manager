@@ -1,7 +1,5 @@
-%{!?version: %define version %(cat version)}
-
 Name:		qubes-manager
-Version:	%{version}
+Version:	@VERSION@
 Release:	1%{?dist}
 Summary:	The Graphical Qubes VM Manager.
 
@@ -23,10 +21,13 @@ BuildRequires:	python3-devel
 BuildRequires:	qt-devel
 AutoReq:	0
 
-%define _builddir %(pwd)
+Source0: %{name}-%{version}.tar.gz
 
 %description
 The Graphical Qubes VM Manager.
+
+%prep
+%setup -q
 
 %build
 make ui res translations
