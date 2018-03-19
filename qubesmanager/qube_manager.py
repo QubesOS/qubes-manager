@@ -358,9 +358,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         self.load_manager_settings()
 
-        self.fill_table()
-
-        self.counter = 0
         self.update_size_on_disk = False
         self.shutdown_monitor = {}
 
@@ -418,14 +415,16 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         vms_in_table = {}
 
+        self.table.setRowCount(len(vms_list))
+
         row_no = 0
         for vm in vms_list:
             vm_row = VmRowInTable(vm, row_no, self.table)
             vms_in_table[vm.qid] = vm_row
-
             row_no += 1
+            if row_no % 5 == 0:
+                self.qt_app.processEvents()
 
-        self.table.setRowCount(row_no)
         self.vms_list = vms_list
         self.vms_in_table = vms_in_table
         if selected_qid in vms_in_table.keys():
@@ -1202,7 +1201,8 @@ def main():
     manager_window = VmManagerWindow(qubes_app, qt_app)
 
     manager_window.show()
-    manager_window.update_table()
+    timer = QtCore.QTimer()
+    timer.singleShot(1, manager_window.update_table)
     qt_app.exec_()
 
 
