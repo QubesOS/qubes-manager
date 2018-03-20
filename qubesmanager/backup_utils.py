@@ -19,6 +19,8 @@
 #
 #
 import re
+import socket
+
 from PyQt4 import QtGui  # pylint: disable=import-error
 from PyQt4 import QtCore  # pylint: disable=import-error
 
@@ -67,18 +69,29 @@ def select_path_button_clicked(dialog, select_file=False, read_only=False):
     :return:
     """
     backup_location = str(dialog.dir_line_edit.text())
-    file_dialog = QtGui.QFileDialog()
-    file_dialog.setReadOnly(True)
 
     new_path = None
 
     new_appvm = str(dialog.appvm_combobox.currentText())
     vm = dialog.qubes_app.domains[new_appvm]
     try:
-        new_path = utils.get_path_from_vm(
-            vm,
-            "qubes.SelectFile" if select_file
-            else "qubes.SelectDirectory")
+        if vm.name == socket.gethostname():
+            file_dialog = QtGui.QFileDialog()
+            file_dialog.setReadOnly(True)
+
+            if select_file:
+                file_dialog_function = file_dialog.getOpenFileName
+            else:
+                file_dialog_function = file_dialog.getExistingDirectory
+            new_path = file_dialog_function(
+                dialog,
+                dialog.tr("Select backup location."),
+                backup_location if backup_location else '/')
+        else:
+            new_path = utils.get_path_from_vm(
+                vm,
+                "qubes.SelectFile" if select_file
+                else "qubes.SelectDirectory")
     except subprocess.CalledProcessError:
         if not read_only:
             QtGui.QMessageBox.warning(
