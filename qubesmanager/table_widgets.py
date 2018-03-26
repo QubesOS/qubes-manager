@@ -371,6 +371,7 @@ class VmUpdateInfoWidget(QtGui.QWidget):
         self.previous_update_recommended = None
         self.value = None
         self.table_item = VmUpdateInfoWidget.VmUpdateInfoItem(self.value, vm)
+        self.update_outdated(vm)
 
     def update_outdated(self, vm):
 
