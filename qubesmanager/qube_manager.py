@@ -236,7 +236,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                        "Last backup": 10,
                        }
 
-    def __init__(self, qubes_app, qt_app, parent=None):
+    def __init__(self, qt_app, qubes_app, parent=None):
         # pylint: disable=unused-argument
         super(VmManagerWindow, self).__init__()
         self.setupUi(self)
@@ -1203,7 +1203,7 @@ def main():
 
     qubes_app = Qubes()
 
-    manager_window = VmManagerWindow(qubes_app, qt_app)
+    manager_window = VmManagerWindow(qt_app, qubes_app)
 
     manager_window.show()
     timer = QtCore.QTimer()
