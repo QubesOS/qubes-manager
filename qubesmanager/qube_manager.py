@@ -192,7 +192,12 @@ class VmShutdownMonitor(QtCore.QObject):
                     self.tr("Wait another {0} seconds...").format(
                         self.shutdown_time / 1000))
                 if reply == 0:
-                    vm.kill()
+                    try:
+                        vm.kill()
+                    except exc.QubesVMNotStartedError:
+                        # the VM shut down while the user was thinking about
+                        # shutting it down
+                        pass
                     self.restart_vm_if_needed()
                 else:
                     self.shutdown_started = datetime.now()
