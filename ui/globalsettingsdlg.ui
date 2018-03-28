@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>974</width>
-    <height>587</height>
+    <width>651</width>
+    <height>386</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -38,12 +38,16 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>UpdateVM:</string>
+         <string>Dom0 UpdateVM:</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QComboBox" name="update_vm_combo"/>
+       <widget class="QComboBox" name="update_vm_combo">
+        <property name="toolTip">
+         <string>This is updateVM ONLY for dom0; if you want to change updateVMs for other VMs, use /etc/qubes-rpc/policy/qubes.UpdatesProxy</string>
+        </property>
+       </widget>
       </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label_2">
