@@ -45,7 +45,7 @@
       <item row="0" column="1">
        <widget class="QComboBox" name="update_vm_combo">
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This is updateVM ONLY for dom0; if you want to change updateVMs for other VMs, use /etc/qubes-rpc/policy/qubes.UpdatesProxy&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>This is updateVM ONLY for dom0; if you want to change updateVMs for other VMs, use /etc/qubes-rpc/policy/qubes.UpdatesProxy</string>
         </property>
        </widget>
       </item>
