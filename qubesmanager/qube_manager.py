@@ -363,6 +363,13 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         self.load_manager_settings()
 
+        # disabling the table for the duration of filling speeds up the process
+        # immensely. Yes, really.
+
+        self.table.setDisabled(True)
+        self.fill_table()
+        self.table.setEnabled(True)
+
         self.update_size_on_disk = False
         self.shutdown_monitor = {}
 
@@ -461,8 +468,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.searchbox.setFocus()
 
     def update_table(self):
-
+        # disabling the table speeds up the process of filling it
+        self.table.setDisabled(True)
         self.fill_table()
+        self.table.setEnabled(True)
         # TODO: instead of manually refreshing the entire table, use dbus events
 
         # reapply sorting
