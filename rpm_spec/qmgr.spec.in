@@ -121,3 +121,6 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/applications/qubes-backup.desktop
 /usr/share/applications/qubes-backup-restore.desktop
 /usr/share/applications/qubes-qube-manager.desktop
+
+%changelog
+@CHANGELOG@
