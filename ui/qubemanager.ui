@@ -296,15 +296,6 @@
        <normaloff>:/log.png</normaloff>:/log.png</iconset>
      </property>
     </widget>
-    <widget class="QMenu" name="blk_menu">
-     <property name="title">
-      <string>Attach/detach &amp;block devices</string>
-     </property>
-     <property name="icon">
-      <iconset resource="../resources.qrc">
-       <normaloff>:/mount.png</normaloff>:/mount.png</iconset>
-     </property>
-    </widget>
     <addaction name="action_createvm"/>
     <addaction name="action_removevm"/>
     <addaction name="action_clonevm"/>
@@ -323,7 +314,6 @@
     <addaction name="action_set_keyboard_layout"/>
     <addaction name="separator"/>
     <addaction name="logs_menu"/>
-    <addaction name="blk_menu"/>
    </widget>
    <widget class="QMenu" name="menu_about">
     <property name="title">
