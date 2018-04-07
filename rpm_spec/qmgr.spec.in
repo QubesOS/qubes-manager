@@ -1,10 +1,8 @@
-%{!?version: %define version %(cat version)}
-
 Name:		qubes-manager
-Version:	%{version}
+Version:	@VERSION@
 Release:	1%{?dist}
 Summary:	The Graphical Qubes VM Manager.
-
+BuildArch:	noarch
 Group:		Qubes
 Vendor:		Invisible Things Lab
 License:	GPL
@@ -23,10 +21,13 @@ BuildRequires:	python3-devel
 BuildRequires:	qt-devel
 AutoReq:	0
 
-%define _builddir %(pwd)
+Source0: %{name}-%{version}.tar.gz
 
 %description
 The Graphical Qubes VM Manager.
+
+%prep
+%setup -q
 
 %build
 make ui res translations
@@ -120,3 +121,6 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/applications/qubes-backup.desktop
 /usr/share/applications/qubes-backup-restore.desktop
 /usr/share/applications/qubes-qube-manager.desktop
+
+%changelog
+@CHANGELOG@
