@@ -2,7 +2,7 @@ Name:		qubes-manager
 Version:	@VERSION@
 Release:	1%{?dist}
 Summary:	The Graphical Qubes VM Manager.
-
+BuildArch:	noarch
 Group:		Qubes
 Vendor:		Invisible Things Lab
 License:	GPL
