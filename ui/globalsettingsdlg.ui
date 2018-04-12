@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>651</width>
-    <height>386</height>
+    <width>1047</width>
+    <height>599</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -212,7 +212,7 @@
       <item row="1" column="1">
        <widget class="QPushButton" name="disable_updates_all">
         <property name="text">
-         <string>Disable checking for updates for all VMs</string>
+         <string>Disable checking for updates for all qubes</string>
         </property>
        </widget>
       </item>
@@ -229,17 +229,17 @@
       <item row="0" column="1">
        <widget class="QCheckBox" name="updates_vm">
         <property name="toolTip">
-         <string>Unknown current state</string>
+         <string>Default value for new qubes; to change it for existing qubes, use buttons below.</string>
         </property>
         <property name="text">
-         <string>Check for qube updates</string>
+         <string>Check for qube updates by default</string>
         </property>
        </widget>
       </item>
       <item row="2" column="1">
        <widget class="QPushButton" name="enable_updates_all">
         <property name="text">
-         <string>Enable checking for updates for all VMs</string>
+         <string>Enable checking for updates for all qubes</string>
         </property>
        </widget>
       </item>
