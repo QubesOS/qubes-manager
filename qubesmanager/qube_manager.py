@@ -919,20 +919,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         thread.daemon = True
         thread.start()
 
-        progress = QtGui.QProgressDialog(
-                self.tr(
-                    "<b>{0}</b><br>Please wait for the updater to "
-                    "launch...").format(vm.name), "", 0, 0)
-        progress.setCancelButton(None)
-        progress.setModal(True)
-        progress.show()
-
-        while not t_monitor.is_finished():
-            self.qt_app.processEvents()
-            time.sleep(0.2)
-
-        progress.hide()
-
         if vm.qid != 0:
             if not t_monitor.success:
                 QtGui.QMessageBox.warning(
