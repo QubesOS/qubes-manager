@@ -29,6 +29,7 @@ import subprocess
 import time
 from datetime import datetime, timedelta
 import traceback
+from pydbus import SessionBus
 
 from qubesadmin import Qubes
 from qubesadmin import exc
@@ -72,6 +73,7 @@ class VmRowInTable(object):
         self.vm = vm
         # TODO: replace a various different widgets with a more generic
         # VmFeatureWidget or VMPropertyWidget
+
 
         table_widgets.row_height = VmManagerWindow.row_height
         table.setRowHeight(row_no, VmManagerWindow.row_height)
@@ -127,6 +129,19 @@ class VmRowInTable(object):
         table.setItem(row_no, VmManagerWindow.columns_indices[
             'Last backup'], self.last_backup_widget)
 
+        self.table = table
+
+        #Connect dbus events
+        bus = SessionBus()
+        self.dbus = bus.get("org.qubes.DomainManager1" , "/org/qubes/DomainManager1/domains/" + str(vm.qid))
+        self.dbus.PropertiesChanged.connect(self.OnPropertiesChanged)
+
+    def OnPropertiesChanged(self, dbus, properties, dump):
+        for key in properties:
+            if key == 'state':
+                self.update()
+                self.table.update()
+
     def update(self, update_size_on_disk=False):
         """
         Update info in a single VM row
@@ -135,6 +150,8 @@ class VmRowInTable(object):
         :return: None
         """
         self.info_widget.update_vm_state(self.vm)
+        self.template_widget.update()
+        self.netvm_widget.update()
         if update_size_on_disk:
             self.size_widget.update()
 
@@ -366,6 +383,49 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.update_size_on_disk = False
         self.shutdown_monitor = {}
 
+        bus = SessionBus()
+        manager = bus.get("org.qubes.DomainManager1")
+        manager.DomainAdded.connect(self.OnDomainAdded)
+        manager.DomainRemoved.connect(self.OnDomainRemoved)
+
+    def OnDomainAdded(self, manager, domain):
+        #needs to clear cache
+        self.qubes_app.domains.clear_cache()
+        qid = int(domain.split('/')[-1])
+
+        self.table.setSortingEnabled(False)
+
+        row_no = self.table.rowCount()
+        self.table.setRowCount(row_no + 1)
+
+
+        for vm in self.qubes_app.domains:
+            if vm.qid == qid:
+                vm_row = VmRowInTable(vm, row_no, self.table)
+                self.vms_in_table[vm.qid] = vm_row
+                break
+
+        self.table.setSortingEnabled(True)
+        self.table.update()
+
+    def OnDomainRemoved(self, manager, domain):
+        #needs to clear cache
+        self.qubes_app.domains.clear_cache()
+
+        qid = int(domain.split('/')[-1])
+
+        # Find row and remove
+        row_index = 0
+        vm_item = self.table.item(row_index, self.columns_indices["Name"])
+        while vm_item.qid != qid:
+            row_index += 1
+            vm_item = self.table.item(row_index, self.columns_indices["Name"])
+
+
+        self.table.removeRow(row_index)
+        self.table.update()
+        del self.vms_in_table[qid]
+
     def load_manager_settings(self):
         # visible columns
         self.visible_columns_count = 0
@@ -402,12 +462,12 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         # whole table needs to be redrawn (and sorted)
         if vm in self.qubes_app.domains:
             self.vms_in_table[vm.qid].update()
+            self.table.update()
         else:
             self.update_table()
 
     def fill_table(self):
         self.table.setSortingEnabled(False)
-        self.table.clearContents()
         vms_list = self.get_vms_list()
 
         vms_in_table = {}
