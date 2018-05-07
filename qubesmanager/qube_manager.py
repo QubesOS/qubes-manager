@@ -542,8 +542,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             self.action_set_keyboard_layout.setEnabled(
                 vm.qid != 0 and
                 vm.get_power_state() != "Paused" and vm.is_running())
-
-            self.vms_in_table[vm.qid].update()
         else:
             self.action_settings.setEnabled(False)
             self.action_removevm.setEnabled(False)
@@ -726,6 +724,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         if vm.get_power_state() in ["Paused", "Suspended"]:
             try:
                 vm.unpause()
+                self.vms_in_table[vm.qid].update()
             except exc.QubesException as ex:
                 QtGui.QMessageBox.warning(
                     None, self.tr("Error unpausing Qube!"),
@@ -733,7 +732,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             return
 
         self.start_vm(vm)
-        self.vms_in_table[vm.qid].update()
 
     def start_vm(self, vm):
         if vm.is_running():
@@ -754,7 +752,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 self.tr("Error starting Qube!"),
                 self.tr("ERROR: {0}").format(t_monitor.error_msg))
 
-        self.vms_in_table[vm.qid].update()
 
     @staticmethod
     def do_start_vm(vm, t_monitor):
@@ -804,7 +801,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         if reply == QtGui.QMessageBox.Yes:
             self.shutdown_vm(vm)
 
-        self.vms_in_table[vm.qid].update()
 
     def shutdown_vm(self, vm, shutdown_time=vm_shutdown_timeout,
                     check_time=vm_restart_check_timeout, and_restart=False):
@@ -844,8 +840,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 self.shutdown_vm(vm, and_restart=True)
             else:
                 self.start_vm(vm)
-
-        self.vms_in_table[vm.qid].update()
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_killvm_triggered')
@@ -931,7 +925,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                     self.tr("Error on Qube update!"),
                     self.tr("ERROR: {0}").format(t_monitor.error_msg))
 
-        self.vms_in_table[vm.qid].update()
 
     @staticmethod
     def do_update_vm(vm, t_monitor):
