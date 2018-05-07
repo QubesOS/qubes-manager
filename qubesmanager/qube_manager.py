@@ -1200,9 +1200,8 @@ def main():
 
     manager_window = VmManagerWindow(qt_app, qubes_app)
 
+    manager_window.fill_table()
     manager_window.show()
-    timer = QtCore.QTimer()
-    timer.singleShot(1, manager_window.update_table)
     qt_app.exec_()
 
 
