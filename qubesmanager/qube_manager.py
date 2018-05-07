@@ -453,15 +453,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     def get_vms_list(self):
         return [vm for vm in self.qubes_app.domains]
 
-    def update_single_row(self, vm):
-        # this fuction should be used to update a row that already exists
-        # to add a row, one needs to use the update_table function - the
-        # whole table needs to be redrawn (and sorted)
-        if vm in self.qubes_app.domains:
-            self.vms_in_table[vm.qid].update()
-        else:
-            self.update_table()
-
     def fill_table(self):
         self.table.setSortingEnabled(False)
         vms_list = self.get_vms_list()
@@ -500,16 +491,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     @QtCore.pyqtSlot(name='on_action_search_triggered')
     def action_search_triggered(self):
         self.searchbox.setFocus()
-
-    def update_table(self):
-        self.fill_table()
-        # TODO: instead of manually refreshing the entire table, use dbus events
-
-        # reapply sorting
-        if self.sort_by_column:
-            self.table.sortByColumn(self.columns_indices[self.sort_by_column])
-
-        self.table_selection_changed()
 
     # noinspection PyPep8Naming
     def sort_indicator_changed(self, column, order):
@@ -562,7 +543,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 vm.qid != 0 and
                 vm.get_power_state() != "Paused" and vm.is_running())
 
-            self.update_single_row(vm)
+            self.vms_in_table[vm.qid].update()
         else:
             self.action_settings.setEnabled(False)
             self.action_removevm.setEnabled(False)
@@ -752,7 +733,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             return
 
         self.start_vm(vm)
-        self.update_single_row(vm)
+        self.vms_in_table[vm.qid].update()
 
     def start_vm(self, vm):
         if vm.is_running():
@@ -773,7 +754,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 self.tr("Error starting Qube!"),
                 self.tr("ERROR: {0}").format(t_monitor.error_msg))
 
-        self.update_single_row(vm)
+        self.vms_in_table[vm.qid].update()
 
     @staticmethod
     def do_start_vm(vm, t_monitor):
@@ -798,7 +779,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         vm = self.get_selected_vm()
         try:
             vm.pause()
-            self.update_single_row(vm)
+            self.vms_in_table[vm.qid].update()
         except exc.QubesException as ex:
             QtGui.QMessageBox.warning(
                 None,
@@ -823,7 +804,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         if reply == QtGui.QMessageBox.Yes:
             self.shutdown_vm(vm)
 
-        self.update_single_row(vm)
+        self.vms_in_table[vm.qid].update()
 
     def shutdown_vm(self, vm, shutdown_time=vm_shutdown_timeout,
                     check_time=vm_restart_check_timeout, and_restart=False):
@@ -864,7 +845,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             else:
                 self.start_vm(vm)
 
-        self.update_single_row(vm)
+        self.vms_in_table[vm.qid].update()
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_killvm_triggered')
@@ -908,7 +889,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             settings_window = settings.VMSettingsWindow(
                 vm, self.qt_app, "basic")
             settings_window.exec_()
-            self.update_single_row(vm)
+            self.vms_in_table[vm.qid].update()
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_appmenus_triggered')
@@ -950,7 +931,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                     self.tr("Error on Qube update!"),
                     self.tr("ERROR: {0}").format(t_monitor.error_msg))
 
-        self.update_single_row(vm)
+        self.vms_in_table[vm.qid].update()
 
     @staticmethod
     def do_update_vm(vm, t_monitor):
