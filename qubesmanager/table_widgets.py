@@ -110,7 +110,6 @@ class VmTypeWidget(VmIconWidget):
 
 
 class VmLabelWidget(VmIconWidget):
-
     class VmLabelItem(QtGui.QTableWidgetItem):
         def __init__(self, value, vm):
             super(VmLabelWidget.VmLabelItem, self).__init__()
@@ -256,7 +255,7 @@ class VmInfoWidget(QtGui.QWidget):
 
     def update_vm_state(self, vm):
         self.on_icon.update()
-        self.upd_info.update_outdated(vm)
+        self.upd_info.update_outdated()
 
 
 class VmTemplateItem(QtGui.QTableWidgetItem):
@@ -264,18 +263,19 @@ class VmTemplateItem(QtGui.QTableWidgetItem):
         super(VmTemplateItem, self).__init__()
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
         self.vm = vm
+        self.setTextAlignment(QtCore.Qt.AlignVCenter)
+        self.update()
 
-        if getattr(vm, 'template', None) is not None:
-            self.setText(vm.template.name)
+    def update(self):
+        if getattr(self.vm, 'template', None) is not None:
+            self.setText(self.vm.template.name)
         else:
             font = QtGui.QFont()
             font.setStyle(QtGui.QFont.StyleItalic)
             self.setFont(font)
             self.setTextColor(QtGui.QColor("gray"))
 
-            self.setText(vm.klass)
-
-        self.setTextAlignment(QtCore.Qt.AlignVCenter)
+            self.setText(self.vm.klass)
 
     def __lt__(self, other):
         if self.vm.qid == 0:
@@ -292,13 +292,14 @@ class VmNetvmItem(QtGui.QTableWidgetItem):
         super(VmNetvmItem, self).__init__()
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
         self.vm = vm
+        self.setTextAlignment(QtCore.Qt.AlignVCenter)
+        self.update()
 
-        if getattr(vm, 'netvm', None) is None:
+    def update(self):
+        if getattr(self.vm, 'netvm', None) is None:
             self.setText("n/a")
         else:
-            self.setText(vm.netvm.name)
-
-        self.setTextAlignment(QtCore.Qt.AlignVCenter)
+            self.setText(self.vm.netvm.name)
 
     def __lt__(self, other):
         if self.vm.qid == 0:
@@ -330,7 +331,6 @@ class VmInternalItem(QtGui.QTableWidgetItem):
 
 # features man qvm-features
 class VmUpdateInfoWidget(QtGui.QWidget):
-
     class VmUpdateInfoItem(QtGui.QTableWidgetItem):
         def __init__(self, value, vm):
             super(VmUpdateInfoWidget.VmUpdateInfoItem, self).__init__()
@@ -367,32 +367,31 @@ class VmUpdateInfoWidget(QtGui.QWidget):
             layout.addWidget(self.icon, alignment=QtCore.Qt.AlignCenter)
         self.setLayout(layout)
 
+        self.vm = vm
+
         self.previous_outdated_state = None
         self.previous_update_recommended = None
         self.value = None
         self.table_item = VmUpdateInfoWidget.VmUpdateInfoItem(self.value, vm)
-        self.update_outdated(vm)
+        self.update_outdated()
 
-    def update_outdated(self, vm):
+    def update_outdated(self):
+        if self.vm.is_running():
+            outdated_state = False
 
-        outdated_state = False
+            for vol in self.vm.volumes.values():
+                if vol.is_outdated():
+                    outdated_state = "outdated"
+                    break
 
-        for vol in vm.volumes.values():
-            if vol.is_outdated():
-                outdated_state = "outdated"
-                break
-
-        if not outdated_state and getattr(vm, 'template', None)\
-                and vm.template.is_running():
-            outdated_state = "to-be-outdated"
-        if outdated_state != self.previous_outdated_state:
-            self.update_status_widget(outdated_state)
-        self.previous_outdated_state = outdated_state
-
-        updates_available = vm.features.get('updates-available', False)
-        if updates_available != self.previous_update_recommended:
-            self.update_status_widget("update" if updates_available else None)
-        self.previous_update_recommended = updates_available
+            if not outdated_state and getattr(self.vm, 'template', None)\
+                    and self.vm.template.is_running():
+                outdated_state = "to-be-outdated"
+            if outdated_state != self.previous_outdated_state:
+                self.update_status_widget(outdated_state)
+            self.previous_outdated_state = outdated_state
+        else:
+            outdated_state = False
 
     def update_status_widget(self, state):
         self.value = state
