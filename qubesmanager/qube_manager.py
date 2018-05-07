@@ -140,7 +140,6 @@ class VmRowInTable(object):
         for key in properties:
             if key == 'state':
                 self.update()
-                self.table.update()
 
     def update(self, update_size_on_disk=False):
         """
@@ -406,7 +405,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 break
 
         self.table.setSortingEnabled(True)
-        self.table.update()
 
     def OnDomainRemoved(self, manager, domain):
         #needs to clear cache
@@ -423,7 +421,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
 
         self.table.removeRow(row_index)
-        self.table.update()
         del self.vms_in_table[qid]
 
     def load_manager_settings(self):
@@ -462,7 +459,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         # whole table needs to be redrawn (and sorted)
         if vm in self.qubes_app.domains:
             self.vms_in_table[vm.qid].update()
-            self.table.update()
         else:
             self.update_table()
 
