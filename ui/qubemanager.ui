@@ -281,7 +281,6 @@
     <addaction name="separator"/>
     <addaction name="separator"/>
     <addaction name="action_search"/>
-    <addaction name="action_refresh_list"/>
    </widget>
    <widget class="QMenu" name="menu_vm">
     <property name="title">
@@ -369,7 +368,6 @@
    <addaction name="action_backup"/>
    <addaction name="action_restore"/>
    <addaction name="separator"/>
-   <addaction name="action_refresh_list"/>
   </widget>
   <action name="action_createvm">
    <property name="icon">
@@ -816,18 +814,6 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+F</string>
-   </property>
-  </action>
-  <action name="action_refresh_list">
-   <property name="icon">
-    <iconset resource="../resources.qrc">
-     <normaloff>:/outdated.png</normaloff>:/outdated.png</iconset>
-   </property>
-   <property name="text">
-    <string>Refresh qube list</string>
-   </property>
-   <property name="toolTip">
-    <string>Refresh qube list</string>
    </property>
   </action>
   <action name="action_exit">
