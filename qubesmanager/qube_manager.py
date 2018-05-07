@@ -68,10 +68,8 @@ class SearchBox(QtGui.QLineEdit):
 
 class VmRowInTable(object):
     # pylint: disable=too-few-public-methods
-
     def __init__(self, vm, row_no, table):
         self.vm = vm
-        self.row_no = row_no
         # TODO: replace a various different widgets with a more generic
         # VmFeatureWidget or VMPropertyWidget
 
@@ -363,12 +361,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         self.load_manager_settings()
 
-        # disabling the table for the duration of filling speeds up the process
-        # immensely. Yes, really.
-
-        self.table.setDisabled(True)
         self.fill_table()
-        self.table.setEnabled(True)
 
         self.update_size_on_disk = False
         self.shutdown_monitor = {}
@@ -413,14 +406,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             self.update_table()
 
     def fill_table(self):
-        # save current selection
-        row_index = self.table.currentRow()
-        selected_qid = -1
-        if row_index != -1:
-            vm_item = self.table.item(row_index, self.columns_indices["Name"])
-            if vm_item:
-                selected_qid = vm_item.qid
-
         self.table.setSortingEnabled(False)
         self.table.clearContents()
         vms_list = self.get_vms_list()
@@ -434,17 +419,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             vm_row = VmRowInTable(vm, row_no, self.table)
             vms_in_table[vm.qid] = vm_row
             row_no += 1
-            if row_no % 5 == 0:
-                self.qt_app.processEvents()
 
         self.vms_list = vms_list
         self.vms_in_table = vms_in_table
-        if selected_qid in vms_in_table.keys():
-            self.table.setCurrentItem(
-                self.vms_in_table[selected_qid].name_widget)
         self.table.setSortingEnabled(True)
-
-        self.showhide_vms()
 
     def showhide_vms(self):
         if not self.search:
@@ -468,10 +446,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.searchbox.setFocus()
 
     def update_table(self):
-        # disabling the table speeds up the process of filling it
-        self.table.setDisabled(True)
         self.fill_table()
-        self.table.setEnabled(True)
         # TODO: instead of manually refreshing the entire table, use dbus events
 
         # reapply sorting
@@ -640,7 +615,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                                           self.tr("ERROR: {0}").format(
                                               t_monitor.error_msg))
 
-            self.update_table()
 
     @staticmethod
     def do_remove_vm(vm, qubes_app, t_monitor):
@@ -695,7 +669,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 self.tr("Exception while cloning:<br>{0}").format(
                     t_monitor.error_msg))
 
-        self.update_table()
 
     @staticmethod
     def do_clone_vm(src_vm, qubes_app, dst_name, t_monitor):
@@ -890,11 +863,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 vm, self.qt_app, "applications")
             settings_window.exec_()
 
-    # noinspection PyArgumentList
-    @QtCore.pyqtSlot(name='on_action_refresh_list_triggered')
-    def action_refresh_list_triggered(self):
-        self.qubes_app.domains.clear_cache()
-        self.update_table()
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_updatevm_triggered')
@@ -1200,7 +1168,6 @@ def main():
 
     manager_window = VmManagerWindow(qt_app, qubes_app)
 
-    manager_window.fill_table()
     manager_window.show()
     qt_app.exec_()
 
