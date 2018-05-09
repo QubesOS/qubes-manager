@@ -131,16 +131,6 @@ class VmRowInTable(object):
 
         self.table = table
 
-        #Connect dbus events
-        bus = SessionBus()
-        self.dbus = bus.get("org.qubes.DomainManager1" , "/org/qubes/DomainManager1/domains/" + str(vm.qid))
-        self.dbus.PropertiesChanged.connect(self.OnPropertiesChanged)
-
-    def OnPropertiesChanged(self, dbus, properties, dump):
-        for key in properties:
-            if key == 'state':
-                self.update()
-
     def update(self, update_size_on_disk=False):
         """
         Update info in a single VM row
@@ -382,10 +372,16 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.update_size_on_disk = False
         self.shutdown_monitor = {}
 
+        # Connect dbus events
         bus = SessionBus()
         manager = bus.get("org.qubes.DomainManager1")
         manager.DomainAdded.connect(self.OnDomainAdded)
         manager.DomainRemoved.connect(self.OnDomainRemoved)
+        manager.Failed.connect(self.OnFailed)
+        manager.Halted.connect(self.OnHalted)
+        manager.Halting.connect(self.OnHalting)
+        manager.Starting.connect(self.OnStarting)
+        manager.Started.connect(self.OnStarted)
 
     def OnDomainAdded(self, manager, domain):
         #needs to clear cache
@@ -422,6 +418,40 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         self.table.removeRow(row_index)
         del self.vms_in_table[qid]
+
+    def OnFailed(self, manager, domain):
+        qid = int(domain.split('/')[-1])
+        self.vms_in_table[qid].update()
+
+    def OnHalted(self, manager, domain):
+        qid = int(domain.split('/')[-1])
+        self.vms_in_table[qid].update()
+
+        # Check if is TemplatVM and update related AppVMs
+        starting_vm = self.vms_in_table[qid]
+        if starting_vm.vm.klass == 'TemplateVM':
+            for vm in starting_vm.vm.appvms:
+                if vm.klass == 'AppVM':
+                    self.vms_in_table[vm.qid].update()
+
+    def OnHalting(self, manager, domain):
+        qid = int(domain.split('/')[-1])
+        self.vms_in_table[qid].update()
+
+    def OnStarted(self, manager, domain):
+        qid = int(domain.split('/')[-1])
+        self.vms_in_table[qid].update()
+
+    def OnStarting(self, manager, domain):
+        qid = int(domain.split('/')[-1])
+        self.vms_in_table[qid].update()
+
+        # Check if is TemplatVM and update related AppVMs
+        starting_vm = self.vms_in_table[qid]
+        if starting_vm.vm.klass == 'TemplateVM':
+            for vm in starting_vm.vm.appvms:
+                if vm.klass == 'AppVM':
+                    self.vms_in_table[vm.qid].update()
 
     def load_manager_settings(self):
         # visible columns
