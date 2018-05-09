@@ -423,9 +423,15 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         qid = int(domain.split('/')[-1])
         self.vms_in_table[qid].update()
 
+        if self.vms_in_table[qid].vm == self.get_selected_vm():
+            self.table_selection_changed()
+
     def OnHalted(self, manager, domain):
         qid = int(domain.split('/')[-1])
         self.vms_in_table[qid].update()
+
+        if self.vms_in_table[qid].vm == self.get_selected_vm():
+            self.table_selection_changed()
 
         # Check if is TemplatVM and update related AppVMs
         starting_vm = self.vms_in_table[qid]
@@ -438,13 +444,22 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         qid = int(domain.split('/')[-1])
         self.vms_in_table[qid].update()
 
+        if self.vms_in_table[qid].vm == self.get_selected_vm():
+            self.table_selection_changed()
+
     def OnStarted(self, manager, domain):
         qid = int(domain.split('/')[-1])
         self.vms_in_table[qid].update()
 
+        if self.vms_in_table[qid].vm == self.get_selected_vm():
+            self.table_selection_changed()
+
     def OnStarting(self, manager, domain):
         qid = int(domain.split('/')[-1])
         self.vms_in_table[qid].update()
+
+        if self.vms_in_table[qid].vm == self.get_selected_vm():
+            self.table_selection_changed()
 
         # Check if is TemplatVM and update related AppVMs
         starting_vm = self.vms_in_table[qid]
