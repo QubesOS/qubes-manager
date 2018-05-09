@@ -376,24 +376,25 @@ class VmUpdateInfoWidget(QtGui.QWidget):
         self.update_outdated()
 
     def update_outdated(self):
+        outdated_state = False
+
         if self.vm.is_running():
-            outdated_state = False
-
-            for vol in self.vm.volumes.values():
-                if vol.is_outdated():
-                    outdated_state = "outdated"
-                    break
-
-            if not outdated_state and getattr(self.vm, 'template', None)\
-                    and self.vm.template.is_running():
+            if hasattr(self.vm, 'template') and self.vm.template.is_running():
                 outdated_state = "to-be-outdated"
-            if outdated_state != self.previous_outdated_state:
-                self.update_status_widget(outdated_state)
-            self.previous_outdated_state = outdated_state
-        else:
-            outdated_state = False
+
+            if not outdated_state:
+                for vol in self.vm.volumes.values():
+                    if vol.is_outdated():
+                        outdated_state = "outdated"
+                        break
+
+        self.update_status_widget(outdated_state)
 
     def update_status_widget(self, state):
+        if state == self.previous_outdated_state:
+            return
+
+        self.previous_outdated_state = state
         self.value = state
         self.table_item.set_value(state)
         if state == "update":
@@ -413,22 +414,18 @@ class VmUpdateInfoWidget(QtGui.QWidget):
                 "The Template must be stopped before changes from its "
                 "current session can be picked up by this qube.")
         else:
-            label_text = ""
             icon_path = None
-            tooltip_text = None
 
-        if self.show_text:
-            self.label.setText(label_text)
-        else:
+        if hasattr(self, 'icon'):
+            self.icon.setVisible(False)
             self.layout().removeWidget(self.icon)
-            self.icon.deleteLater()
-            if icon_path is not None:
-                self.icon = VmIconWidget(icon_path, True, 0.7)
-                self.icon.setToolTip(tooltip_text)
-            else:
-                self.icon = QtGui.QLabel(label_text)
-            self.layout().addWidget(self.icon, alignment=QtCore.Qt.AlignCenter)
+            del self.icon
 
+        if icon_path is not None:
+            self.icon = VmIconWidget(icon_path, True, 0.7)
+            self.icon.setToolTip(tooltip_text)
+            self.layout().addWidget(self.icon, alignment=QtCore.Qt.AlignCenter)
+            self.icon.setVisible(True)
 
 class VmSizeOnDiskItem(QtGui.QTableWidgetItem):
     def __init__(self, vm):
