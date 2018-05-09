@@ -770,6 +770,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             try:
                 vm.unpause()
                 self.vms_in_table[vm.qid].update()
+                self.table_selection_changed()
             except exc.QubesException as ex:
                 QtGui.QMessageBox.warning(
                     None, self.tr("Error unpausing Qube!"),
@@ -822,6 +823,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         try:
             vm.pause()
             self.vms_in_table[vm.qid].update()
+            self.table_selection_changed()
         except exc.QubesException as ex:
             QtGui.QMessageBox.warning(
                 None,
