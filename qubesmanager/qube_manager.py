@@ -373,8 +373,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.shutdown_monitor = {}
 
         # Connect dbus events
-        bus = SessionBus()
-        manager = bus.get("org.qubes.DomainManager1")
+        self.bus = SessionBus()
+        manager = self.bus.get("org.qubes.DomainManager1")
         manager.DomainAdded.connect(self.OnDomainAdded)
         manager.DomainRemoved.connect(self.OnDomainRemoved)
         manager.Failed.connect(self.OnFailed)
