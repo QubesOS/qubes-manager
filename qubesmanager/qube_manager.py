@@ -389,7 +389,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         timer.start(1000 * 60 * 5) # 5mins
 
     def CheckUpdates(self):
-        print("Checking updates")
         for vm in self.qubes_app.domains:
             if vm.klass == 'TempateVM':
                 self.vms_in_table[vm.qid].update()
