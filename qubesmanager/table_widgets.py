@@ -388,6 +388,9 @@ class VmUpdateInfoWidget(QtGui.QWidget):
                         outdated_state = "outdated"
                         break
 
+        elif self.vm.klass == 'TemplateVM' and self.vm.features.get('updates-available', False):
+            outdated_state = 'update'
+
         self.update_status_widget(outdated_state)
 
     def update_status_widget(self, state):
