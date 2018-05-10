@@ -317,9 +317,12 @@ class VmInternalItem(QtGui.QTableWidgetItem):
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
         self.vm = vm
-        self.internal = vm.features.get('internal', False)
+        self.update()
 
+    def update(self):
+        self.internal = self.vm.features.get('internal', False)
         self.setText("Yes" if self.internal else "")
+
 
     def __lt__(self, other):
         if self.vm.qid == 0:
@@ -464,6 +467,9 @@ class VmIPItem(QtGui.QTableWidgetItem):
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
         self.vm = vm
+        self.update()
+
+    def update(self):
         self.ip = getattr(self.vm, 'ip', None)
         self.setText(self.ip if self.ip is not None else 'n/a')
 
@@ -481,6 +487,9 @@ class VmIncludeInBackupsItem(QtGui.QTableWidgetItem):
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
         self.vm = vm
+        self.update()
+
+    def update(self):
         if getattr(self.vm, 'include_in_backups', None):
             self.setText("Yes")
         else:
@@ -502,6 +511,9 @@ class VmLastBackupItem(QtGui.QTableWidgetItem):
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
         self.vm = vm
+        self.update()
+
+    def update(self):
         self.backup_timestamp = getattr(self.vm, 'backup_timestamp', None)
 
         if self.backup_timestamp:

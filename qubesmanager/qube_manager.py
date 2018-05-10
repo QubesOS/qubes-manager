@@ -141,6 +141,10 @@ class VmRowInTable(object):
         self.info_widget.update_vm_state(self.vm)
         self.template_widget.update()
         self.netvm_widget.update()
+        self.internal_widget.update()
+        self.ip_widget.update()
+        self.include_in_backups_widget.update()
+        self.last_backup_widget.update()
         if update_size_on_disk:
             self.size_widget.update()
 
