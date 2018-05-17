@@ -373,6 +373,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
                 except ValueError:
                     QtGui.QMessageBox.warning(None, self.tr("Invalid address"),
                         self.tr("Address '{0}' is invalid.").format(address))
+                    return
 
             if dialog.tcp_radio.isChecked():
                 rule.proto = 'tcp'
@@ -388,6 +389,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
                         self.tr("Invalid port or service"),
                         self.tr("Port number or service '{0}' is invalid.")
                                         .format(service))
+                    return
             elif service:
                 try:
                     rule.dstports = service
@@ -399,6 +401,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
                             self.tr("Invalid port or service"),
                             self.tr("Port number or service '{0}' is invalid.")
                                             .format(service))
+                        return
 
             if row is not None:
                 self.set_child(row, rule)
