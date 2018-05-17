@@ -148,7 +148,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             self.refresh_apps_button.clicked.connect(
                 self.refresh_apps_button_pressed)
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event):  # pylint: disable=invalid-name
         if event.key() == QtCore.Qt.Key_Enter \
                 or event.key() == QtCore.Qt.Key_Return:
             return
