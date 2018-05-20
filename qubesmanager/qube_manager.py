@@ -380,25 +380,25 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         # Connect dbus events
         self.bus = SessionBus()
         manager = self.bus.get("org.qubes.DomainManager1")
-        manager.DomainAdded.connect(self.onDomainAdded)
-        manager.DomainRemoved.connect(self.onDomainRemoved)
-        manager.Failed.connect(self.onFailed)
-        manager.Halted.connect(self.onHalted)
-        manager.Halting.connect(self.onHalting)
-        manager.Starting.connect(self.onStarting)
-        manager.Started.connect(self.onStarted)
+        manager.DomainAdded.connect(self.on_domain_added)
+        manager.DomainRemoved.connect(self.on_domain_removed)
+        manager.Failed.connect(self.on_failed)
+        manager.Halted.connect(self.on_halted)
+        manager.Halting.connect(self.on_halting)
+        manager.Starting.connect(self.on_starting)
+        manager.Started.connect(self.on_started)
 
         # Check Updates Timer
         timer = QtCore.QTimer(self)
-        timer.timeout.connect(self.checkUpdates)
+        timer.timeout.connect(self.check_updates)
         timer.start(1000 * 30) # 30s
 
-    def checkUpdates(self):
+    def check_updates(self):
         for vm in self.qubes_app.domains:
             if vm.klass == 'TemplateVM':
                 self.vms_in_table[vm.qid].update()
 
-    def onDomainAdded(self, _, domain):
+    def on_domain_added(self, _, domain):
         #needs to clear cache
         self.qubes_app.domains.clear_cache()
         qid = int(domain.split('/')[-1])
@@ -407,6 +407,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         row_no = self.table.rowCount()
         self.table.setRowCount(row_no + 1)
+
 
         for vm in self.qubes_app.domains:
             if vm.qid == qid:
@@ -418,7 +419,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         # Never should reach here
         raise RuntimeError('Added domain not found')
 
-    def onDomainRemoved(self, _, domain):
+    def on_domain_removed(self, _, domain):
         #needs to clear cache
         self.qubes_app.domains.clear_cache()
         qid = int(domain.split('/')[-1])
@@ -436,14 +437,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.table.removeRow(row_index)
         del self.vms_in_table[qid]
 
-    def onFailed(self, _, domain):
+    def on_failed(self, _, domain):
         qid = int(domain.split('/')[-1])
         self.vms_in_table[qid].update()
 
         if self.vms_in_table[qid].vm == self.get_selected_vm():
             self.table_selection_changed()
 
-    def onHalted(self, _, domain):
+    def on_halted(self, _, domain):
         qid = int(domain.split('/')[-1])
         self.vms_in_table[qid].update()
 
@@ -457,21 +458,21 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 if vm.klass == 'AppVM':
                     self.vms_in_table[vm.qid].update()
 
-    def onHalting(self, _, domain):
+    def on_halting(self, _, domain):
         qid = int(domain.split('/')[-1])
         self.vms_in_table[qid].update()
 
         if self.vms_in_table[qid].vm == self.get_selected_vm():
             self.table_selection_changed()
 
-    def onStarted(self, _, domain):
+    def on_started(self, _, domain):
         qid = int(domain.split('/')[-1])
         self.vms_in_table[qid].update()
 
         if self.vms_in_table[qid].vm == self.get_selected_vm():
             self.table_selection_changed()
 
-    def onStarting(self, _, domain):
+    def on_starting(self, _, domain):
         qid = int(domain.split('/')[-1])
         self.vms_in_table[qid].update()
 

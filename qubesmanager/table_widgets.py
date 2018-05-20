@@ -434,7 +434,8 @@ class VmUpdateInfoWidget(QtGui.QWidget):
             if icon_path is not None:
                 self.icon = VmIconWidget(icon_path, True, 0.7)
                 self.icon.setToolTip(tooltip_text)
-                self.layout().addWidget(self.icon, alignment=QtCore.Qt.AlignCenter)
+                self.layout().addWidget(self.icon,\
+                        alignment=QtCore.Qt.AlignCenter)
                 self.icon.setVisible(True)
 
 class VmSizeOnDiskItem(QtGui.QTableWidgetItem):
