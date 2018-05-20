@@ -29,6 +29,8 @@ import subprocess
 import time
 from datetime import datetime, timedelta
 import traceback
+import threading
+
 from pydbus import SessionBus
 
 from qubesadmin import Qubes
@@ -36,6 +38,8 @@ from qubesadmin import exc
 
 from PyQt4 import QtGui  # pylint: disable=import-error
 from PyQt4 import QtCore  # pylint: disable=import-error
+
+from qubesmanager.about import AboutDialog
 
 from . import ui_qubemanager  # pylint: disable=no-name-in-module
 from . import thread_monitor
@@ -45,9 +49,6 @@ from . import global_settings
 from . import restore
 from . import backup
 from . import log_dialog
-import threading
-
-from qubesmanager.about import AboutDialog
 
 
 class SearchBox(QtGui.QLineEdit):
@@ -138,7 +139,7 @@ class VmRowInTable(object):
         widget will extract the data from VM object
         :return: None
         """
-        self.info_widget.update_vm_state(self.vm)
+        self.info_widget.update_vm_state()
         self.template_widget.update()
         self.netvm_widget.update()
         self.internal_widget.update()
@@ -379,25 +380,25 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         # Connect dbus events
         self.bus = SessionBus()
         manager = self.bus.get("org.qubes.DomainManager1")
-        manager.DomainAdded.connect(self.OnDomainAdded)
-        manager.DomainRemoved.connect(self.OnDomainRemoved)
-        manager.Failed.connect(self.OnFailed)
-        manager.Halted.connect(self.OnHalted)
-        manager.Halting.connect(self.OnHalting)
-        manager.Starting.connect(self.OnStarting)
-        manager.Started.connect(self.OnStarted)
+        manager.DomainAdded.connect(self.onDomainAdded)
+        manager.DomainRemoved.connect(self.onDomainRemoved)
+        manager.Failed.connect(self.onFailed)
+        manager.Halted.connect(self.onHalted)
+        manager.Halting.connect(self.onHalting)
+        manager.Starting.connect(self.onStarting)
+        manager.Started.connect(self.onStarted)
 
         # Check Updates Timer
         timer = QtCore.QTimer(self)
-        timer.timeout.connect(self.CheckUpdates)
+        timer.timeout.connect(self.checkUpdates)
         timer.start(1000 * 30) # 30s
 
-    def CheckUpdates(self):
+    def checkUpdates(self):
         for vm in self.qubes_app.domains:
             if vm.klass == 'TemplateVM':
                 self.vms_in_table[vm.qid].update()
 
-    def OnDomainAdded(self, manager, domain):
+    def onDomainAdded(self, _, domain):
         #needs to clear cache
         self.qubes_app.domains.clear_cache()
         qid = int(domain.split('/')[-1])
@@ -416,7 +417,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         self.table.setSortingEnabled(True)
 
-    def OnDomainRemoved(self, manager, domain):
+    def onDomainRemoved(self, _, domain):
         #needs to clear cache
         self.qubes_app.domains.clear_cache()
 
@@ -433,14 +434,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.table.removeRow(row_index)
         del self.vms_in_table[qid]
 
-    def OnFailed(self, manager, domain):
+    def onFailed(self, _, domain):
         qid = int(domain.split('/')[-1])
         self.vms_in_table[qid].update()
 
         if self.vms_in_table[qid].vm == self.get_selected_vm():
             self.table_selection_changed()
 
-    def OnHalted(self, manager, domain):
+    def onHalted(self, _, domain):
         qid = int(domain.split('/')[-1])
         self.vms_in_table[qid].update()
 
@@ -454,21 +455,21 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 if vm.klass == 'AppVM':
                     self.vms_in_table[vm.qid].update()
 
-    def OnHalting(self, manager, domain):
+    def onHalting(self, _, domain):
         qid = int(domain.split('/')[-1])
         self.vms_in_table[qid].update()
 
         if self.vms_in_table[qid].vm == self.get_selected_vm():
             self.table_selection_changed()
 
-    def OnStarted(self, manager, domain):
+    def onStarted(self, _, domain):
         qid = int(domain.split('/')[-1])
         self.vms_in_table[qid].update()
 
         if self.vms_in_table[qid].vm == self.get_selected_vm():
             self.table_selection_changed()
 
-    def OnStarting(self, manager, domain):
+    def onStarting(self, _, domain):
         qid = int(domain.split('/')[-1])
         self.vms_in_table[qid].update()
 

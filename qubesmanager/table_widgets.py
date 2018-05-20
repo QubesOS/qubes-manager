@@ -18,10 +18,10 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
+import datetime
 
 from PyQt4 import QtGui  # pylint: disable=import-error
 from PyQt4 import QtCore  # pylint: disable=import-error
-import datetime
 # pylint: disable=too-few-public-methods
 
 power_order = QtCore.Qt.DescendingOrder
@@ -253,7 +253,7 @@ class VmInfoWidget(QtGui.QWidget):
 
         self.table_item = self.VmInfoItem(self.upd_info.table_item, vm)
 
-    def update_vm_state(self, vm):
+    def update_vm_state(self):
         self.on_icon.update()
         self.upd_info.update_outdated()
 
@@ -391,7 +391,8 @@ class VmUpdateInfoWidget(QtGui.QWidget):
                         outdated_state = "outdated"
                         break
 
-        elif self.vm.klass == 'TemplateVM' and self.vm.features.get('updates-available', False):
+        elif self.vm.klass == 'TemplateVM' and \
+                self.vm.features.get('updates-available', False):
             outdated_state = 'update'
 
         self.update_status_widget(outdated_state)
@@ -427,11 +428,14 @@ class VmUpdateInfoWidget(QtGui.QWidget):
             self.layout().removeWidget(self.icon)
             del self.icon
 
-        if icon_path is not None:
-            self.icon = VmIconWidget(icon_path, True, 0.7)
-            self.icon.setToolTip(tooltip_text)
-            self.layout().addWidget(self.icon, alignment=QtCore.Qt.AlignCenter)
-            self.icon.setVisible(True)
+        if self.show_text:
+            self.label.setText(label_text)
+        else:
+            if icon_path is not None:
+                self.icon = VmIconWidget(icon_path, True, 0.7)
+                self.icon.setToolTip(tooltip_text)
+                self.layout().addWidget(self.icon, alignment=QtCore.Qt.AlignCenter)
+                self.icon.setVisible(True)
 
 class VmSizeOnDiskItem(QtGui.QTableWidgetItem):
     def __init__(self, vm):
