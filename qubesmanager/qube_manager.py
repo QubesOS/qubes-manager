@@ -408,28 +408,30 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         row_no = self.table.rowCount()
         self.table.setRowCount(row_no + 1)
 
-
         for vm in self.qubes_app.domains:
             if vm.qid == qid:
                 vm_row = VmRowInTable(vm, row_no, self.table)
                 self.vms_in_table[vm.qid] = vm_row
-                break
+                self.table.setSortingEnabled(True)
+                return
 
-        self.table.setSortingEnabled(True)
+        # Never should reach here
+        raise RuntimeError('Added domain not found')
 
     def onDomainRemoved(self, _, domain):
         #needs to clear cache
         self.qubes_app.domains.clear_cache()
-
         qid = int(domain.split('/')[-1])
 
         # Find row and remove
-        row_index = 0
-        vm_item = self.table.item(row_index, self.columns_indices["Name"])
-        while vm_item.qid != qid:
-            row_index += 1
+        try:
+            row_index = 0
             vm_item = self.table.item(row_index, self.columns_indices["Name"])
-
+            while vm_item.qid != qid:
+                row_index += 1
+                vm_item = self.table.item(row_index, self.columns_indices["Name"])
+        except:
+            raise RuntimeError('Deleted domain not found')
 
         self.table.removeRow(row_index)
         del self.vms_in_table[qid]
