@@ -430,7 +430,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             vm_item = self.table.item(row_index, self.columns_indices["Name"])
             while vm_item.qid != qid:
                 row_index += 1
-                vm_item = self.table.item(row_index, self.columns_indices["Name"])
+                vm_item = self.table.item(row_index,\
+                        self.columns_indices["Name"])
         except:
             raise RuntimeError('Deleted domain not found')
 
