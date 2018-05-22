@@ -18,10 +18,10 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
+import datetime
 
 from PyQt4 import QtGui  # pylint: disable=import-error
 from PyQt4 import QtCore  # pylint: disable=import-error
-import datetime
 # pylint: disable=too-few-public-methods
 
 power_order = QtCore.Qt.DescendingOrder
@@ -110,7 +110,6 @@ class VmTypeWidget(VmIconWidget):
 
 
 class VmLabelWidget(VmIconWidget):
-
     class VmLabelItem(QtGui.QTableWidgetItem):
         def __init__(self, value, vm):
             super(VmLabelWidget.VmLabelItem, self).__init__()
@@ -254,9 +253,9 @@ class VmInfoWidget(QtGui.QWidget):
 
         self.table_item = self.VmInfoItem(self.upd_info.table_item, vm)
 
-    def update_vm_state(self, vm):
+    def update_vm_state(self):
         self.on_icon.update()
-        self.upd_info.update_outdated(vm)
+        self.upd_info.update_outdated()
 
 
 class VmTemplateItem(QtGui.QTableWidgetItem):
@@ -264,18 +263,19 @@ class VmTemplateItem(QtGui.QTableWidgetItem):
         super(VmTemplateItem, self).__init__()
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
         self.vm = vm
+        self.setTextAlignment(QtCore.Qt.AlignVCenter)
+        self.update()
 
-        if getattr(vm, 'template', None) is not None:
-            self.setText(vm.template.name)
+    def update(self):
+        if getattr(self.vm, 'template', None) is not None:
+            self.setText(self.vm.template.name)
         else:
             font = QtGui.QFont()
             font.setStyle(QtGui.QFont.StyleItalic)
             self.setFont(font)
             self.setTextColor(QtGui.QColor("gray"))
 
-            self.setText(vm.klass)
-
-        self.setTextAlignment(QtCore.Qt.AlignVCenter)
+            self.setText(self.vm.klass)
 
     def __lt__(self, other):
         if self.vm.qid == 0:
@@ -292,13 +292,14 @@ class VmNetvmItem(QtGui.QTableWidgetItem):
         super(VmNetvmItem, self).__init__()
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
         self.vm = vm
+        self.setTextAlignment(QtCore.Qt.AlignVCenter)
+        self.update()
 
-        if getattr(vm, 'netvm', None) is None:
+    def update(self):
+        if getattr(self.vm, 'netvm', None) is None:
             self.setText("n/a")
         else:
-            self.setText(vm.netvm.name)
-
-        self.setTextAlignment(QtCore.Qt.AlignVCenter)
+            self.setText(self.vm.netvm.name)
 
     def __lt__(self, other):
         if self.vm.qid == 0:
@@ -316,9 +317,12 @@ class VmInternalItem(QtGui.QTableWidgetItem):
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
         self.vm = vm
-        self.internal = vm.features.get('internal', False)
+        self.update()
 
+    def update(self):
+        self.internal = self.vm.features.get('internal', False)
         self.setText("Yes" if self.internal else "")
+
 
     def __lt__(self, other):
         if self.vm.qid == 0:
@@ -330,7 +334,6 @@ class VmInternalItem(QtGui.QTableWidgetItem):
 
 # features man qvm-features
 class VmUpdateInfoWidget(QtGui.QWidget):
-
     class VmUpdateInfoItem(QtGui.QTableWidgetItem):
         def __init__(self, value, vm):
             super(VmUpdateInfoWidget.VmUpdateInfoItem, self).__init__()
@@ -367,34 +370,38 @@ class VmUpdateInfoWidget(QtGui.QWidget):
             layout.addWidget(self.icon, alignment=QtCore.Qt.AlignCenter)
         self.setLayout(layout)
 
+        self.vm = vm
+
         self.previous_outdated_state = None
         self.previous_update_recommended = None
         self.value = None
         self.table_item = VmUpdateInfoWidget.VmUpdateInfoItem(self.value, vm)
-        self.update_outdated(vm)
+        self.update_outdated()
 
-    def update_outdated(self, vm):
-
+    def update_outdated(self):
         outdated_state = False
 
-        for vol in vm.volumes.values():
-            if vol.is_outdated():
-                outdated_state = "outdated"
-                break
+        if self.vm.is_running():
+            if hasattr(self.vm, 'template') and self.vm.template.is_running():
+                outdated_state = "to-be-outdated"
 
-        if not outdated_state and getattr(vm, 'template', None)\
-                and vm.template.is_running():
-            outdated_state = "to-be-outdated"
-        if outdated_state != self.previous_outdated_state:
-            self.update_status_widget(outdated_state)
-        self.previous_outdated_state = outdated_state
+            if not outdated_state:
+                for vol in self.vm.volumes.values():
+                    if vol.is_outdated():
+                        outdated_state = "outdated"
+                        break
 
-        updates_available = vm.features.get('updates-available', False)
-        if updates_available != self.previous_update_recommended:
-            self.update_status_widget("update" if updates_available else None)
-        self.previous_update_recommended = updates_available
+        elif self.vm.klass == 'TemplateVM' and \
+                self.vm.features.get('updates-available', False):
+            outdated_state = 'update'
+
+        self.update_status_widget(outdated_state)
 
     def update_status_widget(self, state):
+        if state == self.previous_outdated_state:
+            return
+
+        self.previous_outdated_state = state
         self.value = state
         self.table_item.set_value(state)
         if state == "update":
@@ -414,22 +421,22 @@ class VmUpdateInfoWidget(QtGui.QWidget):
                 "The Template must be stopped before changes from its "
                 "current session can be picked up by this qube.")
         else:
-            label_text = ""
             icon_path = None
-            tooltip_text = None
+
+        if hasattr(self, 'icon'):
+            self.icon.setVisible(False)
+            self.layout().removeWidget(self.icon)
+            del self.icon
 
         if self.show_text:
             self.label.setText(label_text)
         else:
-            self.layout().removeWidget(self.icon)
-            self.icon.deleteLater()
             if icon_path is not None:
                 self.icon = VmIconWidget(icon_path, True, 0.7)
                 self.icon.setToolTip(tooltip_text)
-            else:
-                self.icon = QtGui.QLabel(label_text)
-            self.layout().addWidget(self.icon, alignment=QtCore.Qt.AlignCenter)
-
+                self.layout().addWidget(self.icon,\
+                        alignment=QtCore.Qt.AlignCenter)
+                self.icon.setVisible(True)
 
 class VmSizeOnDiskItem(QtGui.QTableWidgetItem):
     def __init__(self, vm):
@@ -465,6 +472,9 @@ class VmIPItem(QtGui.QTableWidgetItem):
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
         self.vm = vm
+        self.update()
+
+    def update(self):
         self.ip = getattr(self.vm, 'ip', None)
         self.setText(self.ip if self.ip is not None else 'n/a')
 
@@ -482,6 +492,9 @@ class VmIncludeInBackupsItem(QtGui.QTableWidgetItem):
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
         self.vm = vm
+        self.update()
+
+    def update(self):
         if getattr(self.vm, 'include_in_backups', None):
             self.setText("Yes")
         else:
@@ -503,6 +516,9 @@ class VmLastBackupItem(QtGui.QTableWidgetItem):
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
         self.vm = vm
+        self.update()
+
+    def update(self):
         self.backup_timestamp = getattr(self.vm, 'backup_timestamp', None)
 
         if self.backup_timestamp:

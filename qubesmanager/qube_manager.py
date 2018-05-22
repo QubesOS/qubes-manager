@@ -29,12 +29,17 @@ import subprocess
 import time
 from datetime import datetime, timedelta
 import traceback
+import threading
+
+from pydbus import SessionBus
 
 from qubesadmin import Qubes
 from qubesadmin import exc
 
 from PyQt4 import QtGui  # pylint: disable=import-error
 from PyQt4 import QtCore  # pylint: disable=import-error
+
+from qubesmanager.about import AboutDialog
 
 from . import ui_qubemanager  # pylint: disable=no-name-in-module
 from . import thread_monitor
@@ -44,9 +49,6 @@ from . import global_settings
 from . import restore
 from . import backup
 from . import log_dialog
-import threading
-
-from qubesmanager.about import AboutDialog
 
 
 class SearchBox(QtGui.QLineEdit):
@@ -68,12 +70,11 @@ class SearchBox(QtGui.QLineEdit):
 
 class VmRowInTable(object):
     # pylint: disable=too-few-public-methods
-
     def __init__(self, vm, row_no, table):
         self.vm = vm
-        self.row_no = row_no
         # TODO: replace a various different widgets with a more generic
         # VmFeatureWidget or VMPropertyWidget
+
 
         table_widgets.row_height = VmManagerWindow.row_height
         table.setRowHeight(row_no, VmManagerWindow.row_height)
@@ -129,6 +130,8 @@ class VmRowInTable(object):
         table.setItem(row_no, VmManagerWindow.columns_indices[
             'Last backup'], self.last_backup_widget)
 
+        self.table = table
+
     def update(self, update_size_on_disk=False):
         """
         Update info in a single VM row
@@ -136,7 +139,13 @@ class VmRowInTable(object):
         widget will extract the data from VM object
         :return: None
         """
-        self.info_widget.update_vm_state(self.vm)
+        self.info_widget.update_vm_state()
+        self.template_widget.update()
+        self.netvm_widget.update()
+        self.internal_widget.update()
+        self.ip_widget.update()
+        self.include_in_backups_widget.update()
+        self.last_backup_widget.update()
         if update_size_on_disk:
             self.size_widget.update()
 
@@ -363,15 +372,120 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         self.load_manager_settings()
 
-        # disabling the table for the duration of filling speeds up the process
-        # immensely. Yes, really.
-
-        self.table.setDisabled(True)
         self.fill_table()
-        self.table.setEnabled(True)
 
         self.update_size_on_disk = False
         self.shutdown_monitor = {}
+
+        # Connect dbus events
+        self.bus = SessionBus()
+        manager = self.bus.get("org.qubes.DomainManager1")
+        manager.DomainAdded.connect(self.on_domain_added)
+        manager.DomainRemoved.connect(self.on_domain_removed)
+        manager.Failed.connect(self.on_failed)
+        manager.Halted.connect(self.on_halted)
+        manager.Halting.connect(self.on_halting)
+        manager.Starting.connect(self.on_starting)
+        manager.Started.connect(self.on_started)
+
+        # Check Updates Timer
+        timer = QtCore.QTimer(self)
+        timer.timeout.connect(self.check_updates)
+        timer.start(1000 * 30) # 30s
+
+    def check_updates(self):
+        for vm in self.qubes_app.domains:
+            if vm.klass == 'TemplateVM':
+                self.vms_in_table[vm.qid].update()
+
+    def on_domain_added(self, _, domain):
+        #needs to clear cache
+        self.qubes_app.domains.clear_cache()
+        qid = int(domain.split('/')[-1])
+
+        self.table.setSortingEnabled(False)
+
+        row_no = self.table.rowCount()
+        self.table.setRowCount(row_no + 1)
+
+
+        for vm in self.qubes_app.domains:
+            if vm.qid == qid:
+                vm_row = VmRowInTable(vm, row_no, self.table)
+                self.vms_in_table[vm.qid] = vm_row
+                self.table.setSortingEnabled(True)
+                return
+
+        # Never should reach here
+        raise RuntimeError('Added domain not found')
+
+    def on_domain_removed(self, _, domain):
+        #needs to clear cache
+        self.qubes_app.domains.clear_cache()
+        qid = int(domain.split('/')[-1])
+
+        # Find row and remove
+        try:
+            row_index = 0
+            vm_item = self.table.item(row_index, self.columns_indices["Name"])
+            while vm_item.qid != qid:
+                row_index += 1
+                vm_item = self.table.item(row_index,\
+                        self.columns_indices["Name"])
+        except:
+            raise RuntimeError('Deleted domain not found')
+
+        self.table.removeRow(row_index)
+        del self.vms_in_table[qid]
+
+    def on_failed(self, _, domain):
+        qid = int(domain.split('/')[-1])
+        self.vms_in_table[qid].update()
+
+        if self.vms_in_table[qid].vm == self.get_selected_vm():
+            self.table_selection_changed()
+
+    def on_halted(self, _, domain):
+        qid = int(domain.split('/')[-1])
+        self.vms_in_table[qid].update()
+
+        if self.vms_in_table[qid].vm == self.get_selected_vm():
+            self.table_selection_changed()
+
+        # Check if is TemplatVM and update related AppVMs
+        starting_vm = self.vms_in_table[qid]
+        if starting_vm.vm.klass == 'TemplateVM':
+            for vm in starting_vm.vm.appvms:
+                if vm.klass == 'AppVM':
+                    self.vms_in_table[vm.qid].update()
+
+    def on_halting(self, _, domain):
+        qid = int(domain.split('/')[-1])
+        self.vms_in_table[qid].update()
+
+        if self.vms_in_table[qid].vm == self.get_selected_vm():
+            self.table_selection_changed()
+
+    def on_started(self, _, domain):
+        qid = int(domain.split('/')[-1])
+        self.vms_in_table[qid].update()
+
+        if self.vms_in_table[qid].vm == self.get_selected_vm():
+            self.table_selection_changed()
+
+    def on_starting(self, _, domain):
+        qid = int(domain.split('/')[-1])
+        self.vms_in_table[qid].update()
+
+        if self.vms_in_table[qid].vm == self.get_selected_vm():
+            self.table_selection_changed()
+
+        # Check if is TemplatVM and update related AppVMs
+        starting_vm = self.vms_in_table[qid]
+        if starting_vm.vm.klass == 'TemplateVM':
+            for vm in starting_vm.vm.appvms:
+                if vm.klass == 'AppVM':
+                    self.vms_in_table[vm.qid].update()
 
     def load_manager_settings(self):
         # visible columns
@@ -403,26 +517,16 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     def get_vms_list(self):
         return [vm for vm in self.qubes_app.domains]
 
-    def update_single_row(self, vm):
-        # this fuction should be used to update a row that already exists
-        # to add a row, one needs to use the update_table function - the
-        # whole table needs to be redrawn (and sorted)
-        if vm in self.qubes_app.domains:
-            self.vms_in_table[vm.qid].update()
-        else:
-            self.update_table()
-
     def fill_table(self):
-        # save current selection
-        row_index = self.table.currentRow()
-        selected_qid = -1
-        if row_index != -1:
-            vm_item = self.table.item(row_index, self.columns_indices["Name"])
-            if vm_item:
-                selected_qid = vm_item.qid
+        progress = QtGui.QProgressDialog(
+            self.tr(
+                "Loading Qube Manager..."), "", 0, 0)
+        progress.setWindowTitle(self.tr("Qube Manager"))
+        progress.setCancelButton(None)
+        progress.setModal(True)
+        progress.show()
 
         self.table.setSortingEnabled(False)
-        self.table.clearContents()
         vms_list = self.get_vms_list()
 
         vms_in_table = {}
@@ -439,12 +543,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         self.vms_list = vms_list
         self.vms_in_table = vms_in_table
-        if selected_qid in vms_in_table.keys():
-            self.table.setCurrentItem(
-                self.vms_in_table[selected_qid].name_widget)
         self.table.setSortingEnabled(True)
 
-        self.showhide_vms()
+        progress.hide()
 
     def showhide_vms(self):
         if not self.search:
@@ -466,19 +567,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     @QtCore.pyqtSlot(name='on_action_search_triggered')
     def action_search_triggered(self):
         self.searchbox.setFocus()
-
-    def update_table(self):
-        # disabling the table speeds up the process of filling it
-        self.table.setDisabled(True)
-        self.fill_table()
-        self.table.setEnabled(True)
-        # TODO: instead of manually refreshing the entire table, use dbus events
-
-        # reapply sorting
-        if self.sort_by_column:
-            self.table.sortByColumn(self.columns_indices[self.sort_by_column])
-
-        self.table_selection_changed()
 
     # noinspection PyPep8Naming
     def sort_indicator_changed(self, column, order):
@@ -530,8 +618,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             self.action_set_keyboard_layout.setEnabled(
                 vm.qid != 0 and
                 vm.get_power_state() != "Paused" and vm.is_running())
-
-            self.update_single_row(vm)
         else:
             self.action_settings.setEnabled(False)
             self.action_removevm.setEnabled(False)
@@ -640,7 +726,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                                           self.tr("ERROR: {0}").format(
                                               t_monitor.error_msg))
 
-            self.update_table()
 
     @staticmethod
     def do_remove_vm(vm, qubes_app, t_monitor):
@@ -695,7 +780,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 self.tr("Exception while cloning:<br>{0}").format(
                     t_monitor.error_msg))
 
-        self.update_table()
 
     @staticmethod
     def do_clone_vm(src_vm, qubes_app, dst_name, t_monitor):
@@ -716,6 +800,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         if vm.get_power_state() in ["Paused", "Suspended"]:
             try:
                 vm.unpause()
+                self.vms_in_table[vm.qid].update()
+                self.table_selection_changed()
             except exc.QubesException as ex:
                 QtGui.QMessageBox.warning(
                     None, self.tr("Error unpausing Qube!"),
@@ -723,7 +809,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             return
 
         self.start_vm(vm)
-        self.update_single_row(vm)
 
     def start_vm(self, vm):
         if vm.is_running():
@@ -744,7 +829,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 self.tr("Error starting Qube!"),
                 self.tr("ERROR: {0}").format(t_monitor.error_msg))
 
-        self.update_single_row(vm)
 
     @staticmethod
     def do_start_vm(vm, t_monitor):
@@ -769,7 +853,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         vm = self.get_selected_vm()
         try:
             vm.pause()
-            self.update_single_row(vm)
+            self.vms_in_table[vm.qid].update()
+            self.table_selection_changed()
         except exc.QubesException as ex:
             QtGui.QMessageBox.warning(
                 None,
@@ -794,7 +879,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         if reply == QtGui.QMessageBox.Yes:
             self.shutdown_vm(vm)
 
-        self.update_single_row(vm)
 
     def shutdown_vm(self, vm, shutdown_time=vm_shutdown_timeout,
                     check_time=vm_restart_check_timeout, and_restart=False):
@@ -834,8 +918,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 self.shutdown_vm(vm, and_restart=True)
             else:
                 self.start_vm(vm)
-
-        self.update_single_row(vm)
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_killvm_triggered')
@@ -879,7 +961,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             settings_window = settings.VMSettingsWindow(
                 vm, self.qt_app, "basic")
             settings_window.exec_()
-            self.update_single_row(vm)
+            self.vms_in_table[vm.qid].update()
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_appmenus_triggered')
@@ -890,11 +972,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 vm, self.qt_app, "applications")
             settings_window.exec_()
 
-    # noinspection PyArgumentList
-    @QtCore.pyqtSlot(name='on_action_refresh_list_triggered')
-    def action_refresh_list_triggered(self):
-        self.qubes_app.domains.clear_cache()
-        self.update_table()
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_updatevm_triggered')
@@ -940,7 +1017,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                     self.tr("Error on Qube update!"),
                     self.tr("ERROR: {0}").format(t_monitor.error_msg))
 
-        self.update_single_row(vm)
 
     @staticmethod
     def do_update_vm(vm, t_monitor):
@@ -1213,10 +1289,7 @@ def main():
     qubes_app = Qubes()
 
     manager_window = VmManagerWindow(qt_app, qubes_app)
-
     manager_window.show()
-    timer = QtCore.QTimer()
-    timer.singleShot(1, manager_window.update_table)
     qt_app.exec_()
 
 
