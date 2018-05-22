@@ -136,6 +136,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         ####### services tab
         self.__init_services_tab__()
+        self.service_line_edit.returnPressed.connect(self.__add_service__)
         self.add_srv_button.clicked.connect(self.__add_service__)
         self.remove_srv_button.clicked.connect(self.__remove_service__)
 
@@ -146,6 +147,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
             self.refresh_apps_button.clicked.connect(
                 self.refresh_apps_button_pressed)
+
+    def keyPressEvent(self, event):  # pylint: disable=invalid-name
+        if event.key() == QtCore.Qt.Key_Enter \
+                or event.key() == QtCore.Qt.Key_Return:
+            return
+        else:
+            super(VMSettingsWindow, self).keyPressEvent(event)
 
     def reject(self):
         self.done(0)
