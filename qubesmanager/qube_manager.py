@@ -961,7 +961,13 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             settings_window = settings.VMSettingsWindow(
                 vm, self.qt_app, "basic")
             settings_window.exec_()
-            self.vms_in_table[vm.qid].update()
+
+            # vm could be deleted on renaming
+            try:
+                self.vms_in_table[vm.qid].update()
+            except exc.QubesPropertyAccessError:
+                pass
+
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_appmenus_triggered')
