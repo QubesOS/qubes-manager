@@ -403,8 +403,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.qubes_app.domains.clear_cache()
         qid = int(domain.split('/')[-1])
 
-        self.table.setSortingEnabled(False)
-
         row_no = self.table.rowCount()
         self.table.setRowCount(row_no + 1)
 
@@ -413,7 +411,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             if vm.qid == qid:
                 vm_row = VmRowInTable(vm, row_no, self.table)
                 self.vms_in_table[vm.qid] = vm_row
-                self.table.setSortingEnabled(True)
                 return
 
         # Never should reach here
