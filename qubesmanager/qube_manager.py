@@ -1219,31 +1219,34 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
     @QtCore.pyqtSlot('const QPoint&')
     def open_context_menu(self, point):
-        vm = self.get_selected_vm()
+        try:
+            vm = self.get_selected_vm()
 
-        # logs menu
-        self.logs_menu.clear()
+            # logs menu
+            self.logs_menu.clear()
 
-        if vm.qid == 0:
-            logfiles = ["/var/log/xen/console/hypervisor.log"]
-        else:
-            logfiles = [
-                "/var/log/xen/console/guest-" + vm.name + ".log",
-                "/var/log/xen/console/guest-" + vm.name + "-dm.log",
-                "/var/log/qubes/guid." + vm.name + ".log",
-                "/var/log/qubes/qrexec." + vm.name + ".log",
-            ]
+            if vm.qid == 0:
+                logfiles = ["/var/log/xen/console/hypervisor.log"]
+            else:
+                logfiles = [
+                    "/var/log/xen/console/guest-" + vm.name + ".log",
+                    "/var/log/xen/console/guest-" + vm.name + "-dm.log",
+                    "/var/log/qubes/guid." + vm.name + ".log",
+                    "/var/log/qubes/qrexec." + vm.name + ".log",
+                ]
 
-        menu_empty = True
-        for logfile in logfiles:
-            if os.path.exists(logfile):
-                action = self.logs_menu.addAction(QtGui.QIcon(":/log.png"),
-                                                  logfile)
-                action.setData(logfile)
-                menu_empty = False
+            menu_empty = True
+            for logfile in logfiles:
+                if os.path.exists(logfile):
+                    action = self.logs_menu.addAction(QtGui.QIcon(":/log.png"),
+                                                      logfile)
+                    action.setData(logfile)
+                    menu_empty = False
 
-        self.logs_menu.setEnabled(not menu_empty)
-        self.context_menu.exec_(self.table.mapToGlobal(point))
+            self.logs_menu.setEnabled(not menu_empty)
+            self.context_menu.exec_(self.table.mapToGlobal(point))
+        except exc.QubesPropertyAccessError:
+            pass
 
     @QtCore.pyqtSlot('QAction *')
     def show_log(self, action):
