@@ -392,10 +392,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         timer = QtCore.QTimer(self)
         timer.timeout.connect(self.check_updates)
         timer.start(1000 * 30) # 30s
+        self.check_updates()
 
     def check_updates(self):
         for vm in self.qubes_app.domains:
-            if vm.klass == 'TemplateVM':
+            if vm.klass in {'TemplateVM', 'StandaloneVM'}:
                 self.vms_in_table[vm.qid].update()
 
     def on_domain_added(self, _, domain):
