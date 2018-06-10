@@ -75,6 +75,7 @@ class VmTypeWidget(VmIconWidget):
         def set_value(self, value):
             self.value = value
 
+        #pylint: disable=too-many-return-statements
         def __lt__(self, other):
             try:
                 if self.vm.qid == 0:
@@ -124,6 +125,7 @@ class VmLabelWidget(VmIconWidget):
         def set_value(self, value):
             self.value = value
 
+        #pylint: disable=too-many-return-statements
         def __lt__(self, other):
             try:
                 if self.vm.qid == 0:
@@ -156,6 +158,7 @@ class VmNameItem(QtGui.QTableWidgetItem):
         self.setTextAlignment(QtCore.Qt.AlignVCenter)
         self.qid = vm.qid
 
+     #pylint: disable=too-many-return-statements
     def __lt__(self, other):
         try:
             if self.qid == 0:
@@ -562,6 +565,7 @@ class VmLastBackupItem(QtGui.QTableWidgetItem):
         else:
             self.setText("")
 
+    #pylint: disable=too-many-return-statements
     def __lt__(self, other):
         try:
             if self.vm.qid == 0:
