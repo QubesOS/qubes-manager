@@ -34,7 +34,7 @@ import threading
 from pydbus import SessionBus
 
 from qubesadmin import Qubes
-from qubesadmin import exc
+from qubesadmin import exc  # pylint: disable=no-name-in-module
 
 from PyQt4 import QtGui  # pylint: disable=import-error
 from PyQt4 import QtCore  # pylint: disable=import-error

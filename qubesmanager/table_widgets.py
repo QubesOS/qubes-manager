@@ -24,7 +24,7 @@ from PyQt4 import QtGui  # pylint: disable=import-error
 from PyQt4 import QtCore  # pylint: disable=import-error
 # pylint: disable=too-few-public-methods
 
-from qubesadmin import exc
+from qubesadmin import exc  # pylint: disable=no-name-in-module
 
 power_order = QtCore.Qt.DescendingOrder
 update_order = QtCore.Qt.AscendingOrder
