@@ -24,7 +24,7 @@ from PyQt4 import QtGui  # pylint: disable=import-error
 from PyQt4 import QtCore  # pylint: disable=import-error
 # pylint: disable=too-few-public-methods
 
-from qubesadmin import exc  # pylint: disable=no-name-in-module
+from qubesadmin import exc
 
 power_order = QtCore.Qt.DescendingOrder
 update_order = QtCore.Qt.AscendingOrder
@@ -85,7 +85,7 @@ class VmTypeWidget(VmIconWidget):
                 elif self.value == other.value:
                     return self.vm.name < other.vm.name
                 return self.value < other.value
-            except exc.QubesPropertyAccessError:
+            except exc.QubesPropertyAccessError:  # pylint: disable=no-name-in-module
                 return False
 
     def __init__(self, vm, parent=None):
@@ -135,7 +135,7 @@ class VmLabelWidget(VmIconWidget):
                 elif self.value == other.value:
                     return self.vm.name < other.vm.name
                 return self.value < other.value
-            except exc.QubesPropertyAccessError:
+            except exc.QubesPropertyAccessError:  # pylint: disable=no-name-in-module
                 return False
 
     def __init__(self, vm, parent=None):
@@ -166,7 +166,7 @@ class VmNameItem(QtGui.QTableWidgetItem):
             elif other.qid == 0:
                 return False
             return super(VmNameItem, self).__lt__(other)
-        except exc.QubesPropertyAccessError:
+        except exc.QubesPropertyAccessError:  # pylint: disable=no-name-in-module
             return False
 
 
@@ -212,7 +212,7 @@ class VmInfoWidget(QtGui.QWidget):
                     return True
                 elif other.vm.qid == 0:
                     return False
-            except exc.QubesPropertyAccessError:
+            except exc.QubesPropertyAccessError:  # pylint: disable=no-name-in-module
                 return False
 
             self_val = self.upd_info_item.value
@@ -303,7 +303,7 @@ class VmTemplateItem(QtGui.QTableWidgetItem):
             elif self.text() == other.text():
                 return self.vm.name < other.vm.name
             return super(VmTemplateItem, self).__lt__(other)
-        except exc.QubesPropertyAccessError:
+        except exc.QubesPropertyAccessError:  # pylint: disable=no-name-in-module
             return False
 
 
@@ -330,7 +330,7 @@ class VmNetvmItem(QtGui.QTableWidgetItem):
             elif self.text() == other.text():
                 return self.vm.name < other.vm.name
             return super(VmNetvmItem, self).__lt__(other)
-        except exc.QubesPropertyAccessError:
+        except exc.QubesPropertyAccessError:  # pylint: disable=no-name-in-module
             return False
 
 
@@ -354,7 +354,7 @@ class VmInternalItem(QtGui.QTableWidgetItem):
             elif other.vm.qid == 0:
                 return False
             return super(VmInternalItem, self).__lt__(other)
-        except exc.QubesPropertyAccessError:
+        except exc.QubesPropertyAccessError:  # pylint: disable=no-name-in-module
             return False
 
 
@@ -384,7 +384,7 @@ class VmUpdateInfoWidget(QtGui.QWidget):
                 elif self.value == other.value:
                     return self.vm.name < other.vm.name
                 return self.value < other.value
-            except exc.QubesPropertyAccessError:
+            except exc.QubesPropertyAccessError:  # pylint: disable=no-name-in-module
                 return False
 
     def __init__(self, vm, show_text=True, parent=None):
@@ -494,7 +494,7 @@ class VmSizeOnDiskItem(QtGui.QTableWidgetItem):
             elif self.value == other.value:
                 return self.vm.name < other.vm.name
             return self.value < other.value
-        except exc.QubesPropertyAccessError:
+        except exc.QubesPropertyAccessError:  # pylint: disable=no-name-in-module
             return False
 
 
@@ -517,7 +517,7 @@ class VmIPItem(QtGui.QTableWidgetItem):
             elif other.vm.qid == 0:
                 return False
             return super(VmIPItem, self).__lt__(other)
-        except exc.QubesPropertyAccessError:
+        except exc.QubesPropertyAccessError:  # pylint: disable=no-name-in-module
             return False
 
 
@@ -544,7 +544,7 @@ class VmIncludeInBackupsItem(QtGui.QTableWidgetItem):
             elif self.vm.include_in_backups == other.vm.include_in_backups:
                 return self.vm.name < other.vm.name
             return self.vm.include_in_backups < other.vm.include_in_backups
-        except exc.QubesPropertyAccessError:
+        except exc.QubesPropertyAccessError:  # pylint: disable=no-name-in-module
             return False
 
 
@@ -579,5 +579,5 @@ class VmLastBackupItem(QtGui.QTableWidgetItem):
             elif not other.backup_timestamp:
                 return True
             return self.backup_timestamp < other.backup_timestamp
-        except exc.QubesPropertyAccessError:
+        except exc.QubesPropertyAccessError:  # pylint: disable=no-name-in-module
             return False
