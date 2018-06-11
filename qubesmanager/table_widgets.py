@@ -579,5 +579,5 @@ class VmLastBackupItem(QtGui.QTableWidgetItem):
             elif not other.backup_timestamp:
                 return True
             return self.backup_timestamp < other.backup_timestamp
-        except exc.QubesPropertyAccessError:  # pylint: disable=no-name-in-module
+        except exc.QubesPropertyAccessError:  # pylint: disable=no-member
             return False
