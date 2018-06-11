@@ -415,6 +415,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 vm_row = VmRowInTable(vm, row_no, self.table)
                 self.vms_in_table[vm.qid] = vm_row
                 self.table.setSortingEnabled(True)
+                self.showhide_vms()
                 return
 
         # Never should reach here
