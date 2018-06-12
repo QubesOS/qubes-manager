@@ -420,7 +420,7 @@ class VmUpdateInfoWidget(QtGui.QWidget):
                         outdated_state = "outdated"
                         break
 
-        elif self.vm.klass in {'TemplateVM', 'StandaloneVM'} and \
+        if self.vm.klass in {'TemplateVM', 'StandaloneVM'} and \
                 self.vm.features.get('updates-available', False):
             outdated_state = 'update'
 
