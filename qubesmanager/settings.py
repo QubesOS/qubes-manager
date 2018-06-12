@@ -184,7 +184,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         if not t_monitor.success:
             QtGui.QMessageBox.warning(
-                None,
+                self,
                 self.tr("Error while changing settings for {0}!"
                         ).format(self.vm.name),
                 self.tr("ERROR: {0}").format(t_monitor.error_msg))
@@ -251,7 +251,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             not netvm.features.check_with_template('qubes-firewall', False))
         if netvm is None:
             QtGui.QMessageBox.warning(
-                None,
+                self,
                 self.tr("Qube configuration problem!"),
                 self.tr('This qube has networking disabled '
                         '(Basic -> Networking) - network will be disabled. '
@@ -263,7 +263,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                     'qubes-firewall',
                     False):
             QtGui.QMessageBox.warning(
-                None,
+                self,
                 self.tr("Qube configuration problem!"),
                 self.tr("The '{vm}' qube is network connected to "
                         "'{netvm}', which does not support firewall!<br/>"
@@ -446,7 +446,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
     def check_mem_changes(self):
         if self.max_mem_size.value() < self.init_mem.value():
             QtGui.QMessageBox.warning(
-                None,
+                self,
                 self.tr("Warning!"),
                 self.tr("Max memory can not be less than initial memory.<br>"
                         "Setting max memory to equal initial memory."))
@@ -456,7 +456,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         # max_mem_size (or else "add_memory() failed: -17" problem)
         if self.init_mem.value() * 10 < self.max_mem_size.value():
             QtGui.QMessageBox.warning(
-                None,
+                self,
                 self.tr("Warning!"),
                 self.tr("Initial memory can not be less than one tenth "
                         "Max memory.<br>Setting initial memory to the minimum "
@@ -474,7 +474,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             time.sleep(0.1)
 
         if not t_monitor.success:
-            QtGui.QMessageBox.warning(None,
+            QtGui.QMessageBox.warning(self,
                                       self.tr("Error!"),
                                       self.tr("ERROR: {}").format(
                                           t_monitor.error_msg))
@@ -529,7 +529,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         elif ok:
             QtGui.QMessageBox.warning(
-                None,
+                self,
                 self.tr("Removal cancelled"),
                 self.tr("The qube will not be removed."))
 
@@ -554,7 +554,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         if ok:
             self._run_in_thread(self._clone_vm, cloned_vm_name)
             QtGui.QMessageBox.warning(
-                None,
+                self,
                 self.tr("Success"),
                 self.tr("The qube was cloned successfully."))
 
@@ -948,7 +948,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         if srv != "":
             if srv in self.new_srv_dict:
                 QtGui.QMessageBox.information(
-                    None,
+                    self,
                     '',
                     self.tr('Service already on the list!'))
             else:
@@ -964,7 +964,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             return
         if str(item.text()) == 'meminfo-writer':
             QtGui.QMessageBox.information(
-                None,
+                self,
                 self.tr('Service can not be removed'),
                 self.tr('Service meminfo-writer can not '
                         'be removed from the list.'))
