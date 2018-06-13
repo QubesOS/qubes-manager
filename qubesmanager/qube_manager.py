@@ -967,7 +967,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             # vm could be deleted on renaming
             try:
                 self.vms_in_table[vm.qid].update()
-            except exc.QubesPropertyAccessError:  # pylint: disable=no-member
+            except exc.QubesPropertyAccessError(BaseExeption):
                 pass
 
 
@@ -1246,7 +1246,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
             self.logs_menu.setEnabled(not menu_empty)
             self.context_menu.exec_(self.table.mapToGlobal(point))
-        except exc.QubesPropertyAccessError:  # pylint: disable=no-member
+        except exc.QubesPropertyAccessError(BaseExeption):
             pass
 
     @QtCore.pyqtSlot('QAction *')
