@@ -58,7 +58,7 @@ class LogDialog(ui_logdlg.Ui_LogDialog, QtGui.QDialog):
         if log.tell() > LOG_DISPLAY_SIZE:
             self.displayed_text = self.tr(
                 "(Showing only last %d bytes of file)\n") % LOG_DISPLAY_SIZE
-            log.seek(-LOG_DISPLAY_SIZE, os.SEEK_END)
+            log.seek(log.tell()-LOG_DISPLAY_SIZE, os.SEEK_SET)
         else:
             log.seek(0, os.SEEK_SET)
         self.displayed_text += log.read()
