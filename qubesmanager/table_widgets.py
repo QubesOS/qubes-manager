@@ -24,6 +24,8 @@ from PyQt4 import QtGui  # pylint: disable=import-error
 from PyQt4 import QtCore  # pylint: disable=import-error
 # pylint: disable=too-few-public-methods
 
+from qubesadmin import exc
+
 power_order = QtCore.Qt.DescendingOrder
 update_order = QtCore.Qt.AscendingOrder
 
@@ -73,14 +75,18 @@ class VmTypeWidget(VmIconWidget):
         def set_value(self, value):
             self.value = value
 
+        #pylint: disable=too-many-return-statements
         def __lt__(self, other):
-            if self.vm.qid == 0:
-                return True
-            elif other.vm.qid == 0:
+            try:
+                if self.vm.qid == 0:
+                    return True
+                elif other.vm.qid == 0:
+                    return False
+                elif self.value == other.value:
+                    return self.vm.name < other.vm.name
+                return self.value < other.value
+            except exc.QubesPropertyAccessError:
                 return False
-            elif self.value == other.value:
-                return self.vm.name < other.vm.name
-            return self.value < other.value
 
     def __init__(self, vm, parent=None):
         (icon_path, tooltip) = self.get_vm_icon(vm)
@@ -119,14 +125,18 @@ class VmLabelWidget(VmIconWidget):
         def set_value(self, value):
             self.value = value
 
+        #pylint: disable=too-many-return-statements
         def __lt__(self, other):
-            if self.vm.qid == 0:
-                return True
-            elif other.vm.qid == 0:
+            try:
+                if self.vm.qid == 0:
+                    return True
+                elif other.vm.qid == 0:
+                    return False
+                elif self.value == other.value:
+                    return self.vm.name < other.vm.name
+                return self.value < other.value
+            except exc.QubesPropertyAccessError:
                 return False
-            elif self.value == other.value:
-                return self.vm.name < other.vm.name
-            return self.value < other.value
 
     def __init__(self, vm, parent=None):
         icon_path = self.get_vm_icon_path(vm)
@@ -148,12 +158,16 @@ class VmNameItem(QtGui.QTableWidgetItem):
         self.setTextAlignment(QtCore.Qt.AlignVCenter)
         self.qid = vm.qid
 
+     #pylint: disable=too-many-return-statements
     def __lt__(self, other):
-        if self.qid == 0:
-            return True
-        elif other.qid == 0:
+        try:
+            if self.qid == 0:
+                return True
+            elif other.qid == 0:
+                return False
+            return super(VmNameItem, self).__lt__(other)
+        except exc.QubesPropertyAccessError:
             return False
-        return super(VmNameItem, self).__lt__(other)
 
 
 class VmStatusIcon(QtGui.QLabel):
@@ -193,9 +207,12 @@ class VmInfoWidget(QtGui.QWidget):
 
         def __lt__(self, other):
             # pylint: disable=too-many-return-statements
-            if self.vm.qid == 0:
-                return True
-            elif other.vm.qid == 0:
+            try:
+                if self.vm.qid == 0:
+                    return True
+                elif other.vm.qid == 0:
+                    return False
+            except exc.QubesPropertyAccessError:
                 return False
 
             self_val = self.upd_info_item.value
@@ -278,13 +295,16 @@ class VmTemplateItem(QtGui.QTableWidgetItem):
             self.setText(self.vm.klass)
 
     def __lt__(self, other):
-        if self.vm.qid == 0:
-            return True
-        elif other.vm.qid == 0:
+        try:
+            if self.vm.qid == 0:
+                return True
+            elif other.vm.qid == 0:
+                return False
+            elif self.text() == other.text():
+                return self.vm.name < other.vm.name
+            return super(VmTemplateItem, self).__lt__(other)
+        except exc.QubesPropertyAccessError:
             return False
-        elif self.text() == other.text():
-            return self.vm.name < other.vm.name
-        return super(VmTemplateItem, self).__lt__(other)
 
 
 class VmNetvmItem(QtGui.QTableWidgetItem):
@@ -302,13 +322,16 @@ class VmNetvmItem(QtGui.QTableWidgetItem):
             self.setText(self.vm.netvm.name)
 
     def __lt__(self, other):
-        if self.vm.qid == 0:
-            return True
-        elif other.vm.qid == 0:
+        try:
+            if self.vm.qid == 0:
+                return True
+            elif other.vm.qid == 0:
+                return False
+            elif self.text() == other.text():
+                return self.vm.name < other.vm.name
+            return super(VmNetvmItem, self).__lt__(other)
+        except exc.QubesPropertyAccessError:
             return False
-        elif self.text() == other.text():
-            return self.vm.name < other.vm.name
-        return super(VmNetvmItem, self).__lt__(other)
 
 
 class VmInternalItem(QtGui.QTableWidgetItem):
@@ -325,11 +348,14 @@ class VmInternalItem(QtGui.QTableWidgetItem):
 
 
     def __lt__(self, other):
-        if self.vm.qid == 0:
-            return True
-        elif other.vm.qid == 0:
+        try:
+            if self.vm.qid == 0:
+                return True
+            elif other.vm.qid == 0:
+                return False
+            return super(VmInternalItem, self).__lt__(other)
+        except exc.QubesPropertyAccessError:
             return False
-        return super(VmInternalItem, self).__lt__(other)
 
 
 # features man qvm-features
@@ -350,13 +376,16 @@ class VmUpdateInfoWidget(QtGui.QWidget):
                 self.value = 0
 
         def __lt__(self, other):
-            if self.vm.qid == 0:
-                return True
-            elif other.vm.qid == 0:
+            try:
+                if self.vm.qid == 0:
+                    return True
+                elif other.vm.qid == 0:
+                    return False
+                elif self.value == other.value:
+                    return self.vm.name < other.vm.name
+                return self.value < other.value
+            except exc.QubesPropertyAccessError:
                 return False
-            elif self.value == other.value:
-                return self.vm.name < other.vm.name
-            return self.value < other.value
 
     def __init__(self, vm, show_text=True, parent=None):
         super(VmUpdateInfoWidget, self).__init__(parent)
@@ -391,7 +420,7 @@ class VmUpdateInfoWidget(QtGui.QWidget):
                         outdated_state = "outdated"
                         break
 
-        elif self.vm.klass == 'TemplateVM' and \
+        if self.vm.klass in {'TemplateVM', 'StandaloneVM'} and \
                 self.vm.features.get('updates-available', False):
             outdated_state = 'update'
 
@@ -457,13 +486,16 @@ class VmSizeOnDiskItem(QtGui.QTableWidgetItem):
             self.setText(str(self.value) + " MiB")
 
     def __lt__(self, other):
-        if self.vm.qid == 0:
-            return True
-        elif other.vm.qid == 0:
+        try:
+            if self.vm.qid == 0:
+                return True
+            elif other.vm.qid == 0:
+                return False
+            elif self.value == other.value:
+                return self.vm.name < other.vm.name
+            return self.value < other.value
+        except exc.QubesPropertyAccessError:
             return False
-        elif self.value == other.value:
-            return self.vm.name < other.vm.name
-        return self.value < other.value
 
 
 class VmIPItem(QtGui.QTableWidgetItem):
@@ -479,11 +511,14 @@ class VmIPItem(QtGui.QTableWidgetItem):
         self.setText(self.ip if self.ip is not None else 'n/a')
 
     def __lt__(self, other):
-        if self.vm.qid == 0:
-            return True
-        elif other.vm.qid == 0:
+        try:
+            if self.vm.qid == 0:
+                return True
+            elif other.vm.qid == 0:
+                return False
+            return super(VmIPItem, self).__lt__(other)
+        except exc.QubesPropertyAccessError:
             return False
-        return super(VmIPItem, self).__lt__(other)
 
 
 class VmIncludeInBackupsItem(QtGui.QTableWidgetItem):
@@ -501,13 +536,16 @@ class VmIncludeInBackupsItem(QtGui.QTableWidgetItem):
             self.setText("")
 
     def __lt__(self, other):
-        if self.vm.qid == 0:
-            return True
-        elif other.vm.qid == 0:
+        try:
+            if self.vm.qid == 0:
+                return True
+            elif other.vm.qid == 0:
+                return False
+            elif self.vm.include_in_backups == other.vm.include_in_backups:
+                return self.vm.name < other.vm.name
+            return self.vm.include_in_backups < other.vm.include_in_backups
+        except exc.QubesPropertyAccessError:
             return False
-        elif self.vm.include_in_backups == other.vm.include_in_backups:
-            return self.vm.name < other.vm.name
-        return self.vm.include_in_backups < other.vm.include_in_backups
 
 
 class VmLastBackupItem(QtGui.QTableWidgetItem):
@@ -527,15 +565,19 @@ class VmLastBackupItem(QtGui.QTableWidgetItem):
         else:
             self.setText("")
 
+    #pylint: disable=too-many-return-statements
     def __lt__(self, other):
-        if self.vm.qid == 0:
-            return True
-        elif other.vm.qid == 0:
+        try:
+            if self.vm.qid == 0:
+                return True
+            elif other.vm.qid == 0:
+                return False
+            elif self.backup_timestamp == other.backup_timestamp:
+                return self.vm.name < other.vm.name
+            elif not self.backup_timestamp:
+                return False
+            elif not other.backup_timestamp:
+                return True
+            return self.backup_timestamp < other.backup_timestamp
+        except exc.QubesPropertyAccessError:
             return False
-        elif self.backup_timestamp == other.backup_timestamp:
-            return self.vm.name < other.vm.name
-        elif not self.backup_timestamp:
-            return False
-        elif not other.backup_timestamp:
-            return True
-        return self.backup_timestamp < other.backup_timestamp

@@ -392,10 +392,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         timer = QtCore.QTimer(self)
         timer.timeout.connect(self.check_updates)
         timer.start(1000 * 30) # 30s
+        self.check_updates()
 
     def check_updates(self):
         for vm in self.qubes_app.domains:
-            if vm.klass == 'TemplateVM':
+            if vm.klass in {'TemplateVM', 'StandaloneVM'}:
                 self.vms_in_table[vm.qid].update()
 
     def on_domain_added(self, _, domain):
@@ -414,6 +415,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 vm_row = VmRowInTable(vm, row_no, self.table)
                 self.vms_in_table[vm.qid] = vm_row
                 self.table.setSortingEnabled(True)
+                self.showhide_vms()
                 return
 
         # Never should reach here
@@ -961,7 +963,13 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             settings_window = settings.VMSettingsWindow(
                 vm, self.qt_app, "basic")
             settings_window.exec_()
-            self.vms_in_table[vm.qid].update()
+
+            # vm could be deleted on renaming
+            try:
+                self.vms_in_table[vm.qid].update()
+            except exc.QubesPropertyAccessError:
+                pass
+
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_appmenus_triggered')
@@ -1212,31 +1220,34 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
     @QtCore.pyqtSlot('const QPoint&')
     def open_context_menu(self, point):
-        vm = self.get_selected_vm()
+        try:
+            vm = self.get_selected_vm()
 
-        # logs menu
-        self.logs_menu.clear()
+            # logs menu
+            self.logs_menu.clear()
 
-        if vm.qid == 0:
-            logfiles = ["/var/log/xen/console/hypervisor.log"]
-        else:
-            logfiles = [
-                "/var/log/xen/console/guest-" + vm.name + ".log",
-                "/var/log/xen/console/guest-" + vm.name + "-dm.log",
-                "/var/log/qubes/guid." + vm.name + ".log",
-                "/var/log/qubes/qrexec." + vm.name + ".log",
-            ]
+            if vm.qid == 0:
+                logfiles = ["/var/log/xen/console/hypervisor.log"]
+            else:
+                logfiles = [
+                    "/var/log/xen/console/guest-" + vm.name + ".log",
+                    "/var/log/xen/console/guest-" + vm.name + "-dm.log",
+                    "/var/log/qubes/guid." + vm.name + ".log",
+                    "/var/log/qubes/qrexec." + vm.name + ".log",
+                ]
 
-        menu_empty = True
-        for logfile in logfiles:
-            if os.path.exists(logfile):
-                action = self.logs_menu.addAction(QtGui.QIcon(":/log.png"),
-                                                  logfile)
-                action.setData(logfile)
-                menu_empty = False
+            menu_empty = True
+            for logfile in logfiles:
+                if os.path.exists(logfile):
+                    action = self.logs_menu.addAction(QtGui.QIcon(":/log.png"),
+                                                      logfile)
+                    action.setData(logfile)
+                    menu_empty = False
 
-        self.logs_menu.setEnabled(not menu_empty)
-        self.context_menu.exec_(self.table.mapToGlobal(point))
+            self.logs_menu.setEnabled(not menu_empty)
+            self.context_menu.exec_(self.table.mapToGlobal(point))
+        except exc.QubesPropertyAccessError:
+            pass
 
     @QtCore.pyqtSlot('QAction *')
     def show_log(self, action):

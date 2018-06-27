@@ -478,6 +478,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                                       self.tr("Error!"),
                                       self.tr("ERROR: {}").format(
                                           t_monitor.error_msg))
+            return False
+        return True
 
     def _rename_vm(self, t_monitor, name):
         try:
@@ -492,15 +494,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         t_monitor.set_finished()
 
     def rename_vm(self):
-
         new_vm_name, ok = QtGui.QInputDialog.getText(
             self,
             self.tr('Rename qube'),
             self.tr('New name: (WARNING: all other changes will be discarded)'))
 
         if ok:
-            self._run_in_thread(self._rename_vm, new_vm_name)
-            self.done(0)
+            if self._run_in_thread(self._rename_vm, new_vm_name):
+                self.done(0)
 
     def _remove_vm(self, t_monitor):
         try:
