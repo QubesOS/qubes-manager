@@ -24,6 +24,7 @@ if __name__ == '__main__':
                 'qubes-vm-boot-from-device = qubesmanager.bootfromdevice:main',
                 'qubes-backup = qubesmanager.backup:main',
                 'qubes-backup-restore = qubesmanager.restore:main',
-                'qubes-qube-manager = qubesmanager.qube_manager:main'
+                'qubes-qube-manager = qubesmanager.qube_manager:main',
+                'qubes-log-viewer = qubesmanager.log_dialog:main'
             ],
         })

@@ -66,6 +66,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/bin/qubes-backup
 /usr/bin/qubes-backup-restore
 /usr/bin/qubes-qube-manager
+/usr/bin/qubes-log-viewer
 /usr/libexec/qubes-manager/mount_for_backup.sh
 /usr/libexec/qubes-manager/qvm_about.sh
 
