@@ -969,12 +969,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             settings_window = settings.VMSettingsWindow(
                 vm, self.qt_app, "basic")
             settings_window.exec_()
-
-            # vm could be deleted on renaming
-            try:
-                self.vms_in_table[vm.qid].update()
-            except exc.QubesPropertyAccessError:
-                pass
+            self.vms_in_table[vm.qid].update()
 
 
     # noinspection PyArgumentList
