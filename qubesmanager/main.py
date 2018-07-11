@@ -2063,7 +2063,7 @@ def show_manager():
 
 def bring_manager_to_front():
     if manager_window.isVisible():
-        subprocess.check_call(
+        subprocess.call(
             ['/usr/bin/wmctrl', '-R', str(manager_window.windowTitle())])
 
     else:
