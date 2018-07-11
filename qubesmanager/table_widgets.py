@@ -353,6 +353,8 @@ class VmInternalItem(QtGui.QTableWidgetItem):
                 return True
             elif other.vm.qid == 0:
                 return False
+            elif self.internal == other.internal:
+                return self.vm.name < other.vm.name
             return super(VmInternalItem, self).__lt__(other)
         except exc.QubesPropertyAccessError:
             return False
@@ -516,6 +518,8 @@ class VmIPItem(QtGui.QTableWidgetItem):
                 return True
             elif other.vm.qid == 0:
                 return False
+            elif self.ip == other.ip:
+                return self.vm.name < other.vm.name
             return super(VmIPItem, self).__lt__(other)
         except exc.QubesPropertyAccessError:
             return False
