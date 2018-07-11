@@ -24,8 +24,6 @@ from PyQt4 import QtGui  # pylint: disable=import-error
 from PyQt4 import QtCore  # pylint: disable=import-error
 # pylint: disable=too-few-public-methods
 
-from qubesadmin import exc
-
 power_order = QtCore.Qt.DescendingOrder
 update_order = QtCore.Qt.AscendingOrder
 
@@ -70,23 +68,21 @@ class VmTypeWidget(VmIconWidget):
         def __init__(self, value, vm):
             super(VmTypeWidget.VmTypeItem, self).__init__()
             self.value = value
-            self.vm = vm
+            self.qid = vm.qid
+            self.name = vm.name
 
         def set_value(self, value):
             self.value = value
 
         #pylint: disable=too-many-return-statements
         def __lt__(self, other):
-            try:
-                if self.vm.qid == 0:
-                    return True
-                elif other.vm.qid == 0:
-                    return False
-                elif self.value == other.value:
-                    return self.vm.name < other.vm.name
-                return self.value < other.value
-            except exc.QubesPropertyAccessError:
+            if self.qid == 0:
+                return True
+            elif other.qid == 0:
                 return False
+            elif self.value == other.value:
+                return self.name < other.name
+            return self.value < other.value
 
     def __init__(self, vm, parent=None):
         (icon_path, tooltip) = self.get_vm_icon(vm)
@@ -120,23 +116,21 @@ class VmLabelWidget(VmIconWidget):
         def __init__(self, value, vm):
             super(VmLabelWidget.VmLabelItem, self).__init__()
             self.value = value
-            self.vm = vm
+            self.qid = vm.qid
+            self.name = vm.name
 
         def set_value(self, value):
             self.value = value
 
         #pylint: disable=too-many-return-statements
         def __lt__(self, other):
-            try:
-                if self.vm.qid == 0:
-                    return True
-                elif other.vm.qid == 0:
-                    return False
-                elif self.value == other.value:
-                    return self.vm.name < other.vm.name
-                return self.value < other.value
-            except exc.QubesPropertyAccessError:
+            if self.qid == 0:
+                return True
+            elif other.qid == 0:
                 return False
+            elif self.value == other.value:
+                return self.name < other.name
+            return self.value < other.value
 
     def __init__(self, vm, parent=None):
         icon_path = self.get_vm_icon_path(vm)
@@ -158,16 +152,13 @@ class VmNameItem(QtGui.QTableWidgetItem):
         self.setTextAlignment(QtCore.Qt.AlignVCenter)
         self.qid = vm.qid
 
-     #pylint: disable=too-many-return-statements
     def __lt__(self, other):
-        try:
-            if self.qid == 0:
-                return True
-            elif other.qid == 0:
-                return False
-            return super(VmNameItem, self).__lt__(other)
-        except exc.QubesPropertyAccessError:
+        if self.qid == 0:
+            return True
+        elif other.qid == 0:
             return False
+        else:
+            return super(VmNameItem, self).__lt__(other)
 
 
 class VmStatusIcon(QtGui.QLabel):
@@ -185,12 +176,16 @@ class VmStatusIcon(QtGui.QLabel):
     def set_on_icon(self):
         if self.vm.get_power_state() == "Running":
             icon = QtGui.QIcon(":/on.png")
+            self.status = 3
         elif self.vm.get_power_state() in ["Paused", "Suspended"]:
             icon = QtGui.QIcon(":/paused.png")
+            self.status = 2
         elif self.vm.get_power_state() in ["Transient", "Halting", "Dying"]:
             icon = QtGui.QIcon(":/transient.png")
+            self.status = 1
         else:
             icon = QtGui.QIcon(":/off.png")
+            self.status = 0
 
         icon_sz = QtCore.QSize(row_height * 0.5, row_height * 0.5)
         icon_pixmap = icon.pixmap(icon_sz)
@@ -200,19 +195,19 @@ class VmStatusIcon(QtGui.QLabel):
 
 class VmInfoWidget(QtGui.QWidget):
     class VmInfoItem(QtGui.QTableWidgetItem):
-        def __init__(self, upd_info_item, vm):
+        def __init__(self, on_icon, upd_info_item, vm):
             super(VmInfoWidget.VmInfoItem, self).__init__()
+            self.on_icon = on_icon 
             self.upd_info_item = upd_info_item
             self.vm = vm
+            self.qid = vm.qid
+            self.name = vm.name
 
         def __lt__(self, other):
             # pylint: disable=too-many-return-statements
-            try:
-                if self.vm.qid == 0:
-                    return True
-                elif other.vm.qid == 0:
-                    return False
-            except exc.QubesPropertyAccessError:
+            if self.qid == 0:
+                return True
+            elif other.qid == 0:
                 return False
 
             self_val = self.upd_info_item.value
@@ -221,21 +216,17 @@ class VmInfoWidget(QtGui.QWidget):
             if self.tableWidget().\
                     horizontalHeader().sortIndicatorOrder() == update_order:
                 # the result will be sorted by upd, sorting order: Ascending
-                self_val += 1 if self.vm.is_running() else 0
-                other_val += 1 if other.vm.is_running() else 0
+                self_val += 1 if self.on_icon.status > 0 else 0
+                other_val += 1 if other.on_icon.status > 0 else 0
                 if self_val == other_val:
-                    return self.vm.name < other.vm.name
+                    return self.name < other.name
                 return self_val > other_val
             elif self.tableWidget().\
                     horizontalHeader().sortIndicatorOrder() == power_order:
                 # the result will be sorted by power state,
                 # sorting order: Descending
-                self_val = -(self_val/10 +
-                             10*(1 if self.vm.is_running() else 0))
-                other_val = -(other_val/10 +
-                              10*(1 if other.vm.is_running() else 0))
-                if self_val == other_val:
-                    return self.vm.name < other.vm.name
+                if self.on_icon.status == other.on_icon.status:
+                    return self.name < other.name
                 return self_val > other_val
             else:
                 # it would be strange if this happened
@@ -268,7 +259,7 @@ class VmInfoWidget(QtGui.QWidget):
         self.blk_icon.setVisible(False)
         self.error_icon.setVisible(False)
 
-        self.table_item = self.VmInfoItem(self.upd_info.table_item, vm)
+        self.table_item = self.VmInfoItem(self.on_icon, self.upd_info.table_item, vm)
 
     def update_vm_state(self):
         self.on_icon.update()
@@ -280,6 +271,8 @@ class VmTemplateItem(QtGui.QTableWidgetItem):
         super(VmTemplateItem, self).__init__()
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
         self.vm = vm
+        self.qid = vm.qid
+        self.name = vm.name
         self.setTextAlignment(QtCore.Qt.AlignVCenter)
         self.update()
 
@@ -295,16 +288,13 @@ class VmTemplateItem(QtGui.QTableWidgetItem):
             self.setText(self.vm.klass)
 
     def __lt__(self, other):
-        try:
-            if self.vm.qid == 0:
-                return True
-            elif other.vm.qid == 0:
-                return False
-            elif self.text() == other.text():
-                return self.vm.name < other.vm.name
-            return super(VmTemplateItem, self).__lt__(other)
-        except exc.QubesPropertyAccessError:
+        if self.qid == 0:
+            return True
+        elif other.qid == 0:
             return False
+        elif self.text() == other.text():
+            return self.name < other.name
+        return super(VmTemplateItem, self).__lt__(other)
 
 
 class VmNetvmItem(QtGui.QTableWidgetItem):
@@ -312,6 +302,8 @@ class VmNetvmItem(QtGui.QTableWidgetItem):
         super(VmNetvmItem, self).__init__()
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
         self.vm = vm
+        self.qid = vm.qid
+        self.name = vm.name
         self.setTextAlignment(QtCore.Qt.AlignVCenter)
         self.update()
 
@@ -322,16 +314,13 @@ class VmNetvmItem(QtGui.QTableWidgetItem):
             self.setText(self.vm.netvm.name)
 
     def __lt__(self, other):
-        try:
-            if self.vm.qid == 0:
+            if self.qid == 0:
                 return True
-            elif other.vm.qid == 0:
+            elif other.qid == 0:
                 return False
             elif self.text() == other.text():
-                return self.vm.name < other.vm.name
+                return self.name < other.name
             return super(VmNetvmItem, self).__lt__(other)
-        except exc.QubesPropertyAccessError:
-            return False
 
 
 class VmInternalItem(QtGui.QTableWidgetItem):
@@ -340,6 +329,7 @@ class VmInternalItem(QtGui.QTableWidgetItem):
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
         self.vm = vm
+        self.qid = vm.qid
         self.update()
 
     def update(self):
@@ -348,14 +338,11 @@ class VmInternalItem(QtGui.QTableWidgetItem):
 
 
     def __lt__(self, other):
-        try:
-            if self.vm.qid == 0:
-                return True
-            elif other.vm.qid == 0:
-                return False
-            return super(VmInternalItem, self).__lt__(other)
-        except exc.QubesPropertyAccessError:
+        if self.qid == 0:
+            return True
+        elif other.qid == 0:
             return False
+        return super(VmInternalItem, self).__lt__(other)
 
 
 # features man qvm-features
@@ -365,6 +352,8 @@ class VmUpdateInfoWidget(QtGui.QWidget):
             super(VmUpdateInfoWidget.VmUpdateInfoItem, self).__init__()
             self.value = 0
             self.vm = vm
+            self.qid = vm.qid
+            self.name = vm.name
             self.set_value(value)
 
         def set_value(self, value):
@@ -376,16 +365,13 @@ class VmUpdateInfoWidget(QtGui.QWidget):
                 self.value = 0
 
         def __lt__(self, other):
-            try:
-                if self.vm.qid == 0:
-                    return True
-                elif other.vm.qid == 0:
-                    return False
-                elif self.value == other.value:
-                    return self.vm.name < other.vm.name
-                return self.value < other.value
-            except exc.QubesPropertyAccessError:
+            if self.qid == 0:
+                return True
+            elif other.qid == 0:
                 return False
+            elif self.value == other.value:
+                return self.name < other.name
+            return self.value < other.value
 
     def __init__(self, vm, show_text=True, parent=None):
         super(VmUpdateInfoWidget, self).__init__(parent)
@@ -473,6 +459,8 @@ class VmSizeOnDiskItem(QtGui.QTableWidgetItem):
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
         self.vm = vm
+        self.qid = vm.qid
+        self.name = vm.name
         self.value = 0
         self.update()
         self.setTextAlignment(QtCore.Qt.AlignVCenter)
@@ -486,16 +474,13 @@ class VmSizeOnDiskItem(QtGui.QTableWidgetItem):
             self.setText(str(self.value) + " MiB")
 
     def __lt__(self, other):
-        try:
-            if self.vm.qid == 0:
-                return True
-            elif other.vm.qid == 0:
-                return False
-            elif self.value == other.value:
-                return self.vm.name < other.vm.name
-            return self.value < other.value
-        except exc.QubesPropertyAccessError:
+        if self.qid == 0:
+            return True
+        elif other.qid == 0:
             return False
+        elif self.value == other.value:
+            return self.name < other.name
+        return self.value < other.value
 
 
 class VmIPItem(QtGui.QTableWidgetItem):
@@ -504,6 +489,7 @@ class VmIPItem(QtGui.QTableWidgetItem):
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
         self.vm = vm
+        self.qid = vm.qid
         self.update()
 
     def update(self):
@@ -511,14 +497,11 @@ class VmIPItem(QtGui.QTableWidgetItem):
         self.setText(self.ip if self.ip is not None else 'n/a')
 
     def __lt__(self, other):
-        try:
-            if self.vm.qid == 0:
-                return True
-            elif other.vm.qid == 0:
-                return False
-            return super(VmIPItem, self).__lt__(other)
-        except exc.QubesPropertyAccessError:
+        if self.qid == 0:
+            return True
+        elif other.qid == 0:
             return False
+        return super(VmIPItem, self).__lt__(other)
 
 
 class VmIncludeInBackupsItem(QtGui.QTableWidgetItem):
@@ -527,25 +510,26 @@ class VmIncludeInBackupsItem(QtGui.QTableWidgetItem):
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
         self.vm = vm
+        self.name = vm.name
+        self.qid = vm.qid
         self.update()
 
     def update(self):
         if getattr(self.vm, 'include_in_backups', None):
             self.setText("Yes")
+            self.include_in_backups = True
         else:
             self.setText("")
+            self.include_in_backups = False
 
     def __lt__(self, other):
-        try:
-            if self.vm.qid == 0:
-                return True
-            elif other.vm.qid == 0:
-                return False
-            elif self.vm.include_in_backups == other.vm.include_in_backups:
-                return self.vm.name < other.vm.name
-            return self.vm.include_in_backups < other.vm.include_in_backups
-        except exc.QubesPropertyAccessError:
+        if self.vm.qid == 0:
+            return True
+        elif other.qid == 0:
             return False
+        elif self.include_in_backups == other.include_in_backups:
+            return self.name < other.name
+        return self.include_in_backups < other.include_in_backups
 
 
 class VmLastBackupItem(QtGui.QTableWidgetItem):
@@ -554,6 +538,8 @@ class VmLastBackupItem(QtGui.QTableWidgetItem):
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
         self.vm = vm
+        self.qid = vm.qid
+        self.name = vm.name
         self.update()
 
     def update(self):
@@ -567,17 +553,14 @@ class VmLastBackupItem(QtGui.QTableWidgetItem):
 
     #pylint: disable=too-many-return-statements
     def __lt__(self, other):
-        try:
-            if self.vm.qid == 0:
-                return True
-            elif other.vm.qid == 0:
-                return False
-            elif self.backup_timestamp == other.backup_timestamp:
-                return self.vm.name < other.vm.name
-            elif not self.backup_timestamp:
-                return False
-            elif not other.backup_timestamp:
-                return True
-            return self.backup_timestamp < other.backup_timestamp
-        except exc.QubesPropertyAccessError:
+        if self.qid == 0:
+            return True
+        elif other.qid == 0:
             return False
+        elif self.backup_timestamp == other.backup_timestamp:
+            return self.name < other.name
+        elif not self.backup_timestamp:
+            return False
+        elif not other.backup_timestamp:
+            return True
+        return self.backup_timestamp < other.backup_timestamp
