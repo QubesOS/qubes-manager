@@ -313,9 +313,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             QtGui.QHeaderView.Interactive)
         self.table.horizontalHeader().setStretchLastSection(True)
 
-        self.table.sortItems(self.columns_indices[self.sort_by_column],
-                             self.sort_order)
-
         self.context_menu = QtGui.QMenu(self)
 
         self.context_menu.addAction(self.action_settings)
