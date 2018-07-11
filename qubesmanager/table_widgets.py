@@ -330,18 +330,20 @@ class VmInternalItem(QtGui.QTableWidgetItem):
 
         self.vm = vm
         self.qid = vm.qid
+        self.name = vm.name
         self.update()
 
     def update(self):
         self.internal = self.vm.features.get('internal', False)
         self.setText("Yes" if self.internal else "")
 
-
     def __lt__(self, other):
         if self.qid == 0:
             return True
         elif other.qid == 0:
             return False
+        elif self.internal == other.internal:
+            return self.name < other.name
         return super(VmInternalItem, self).__lt__(other)
 
 
@@ -490,6 +492,7 @@ class VmIPItem(QtGui.QTableWidgetItem):
 
         self.vm = vm
         self.qid = vm.qid
+        self.name = vm.name
         self.update()
 
     def update(self):
@@ -501,6 +504,8 @@ class VmIPItem(QtGui.QTableWidgetItem):
             return True
         elif other.qid == 0:
             return False
+        elif self.ip == other.ip:
+            return self.name < other.name
         return super(VmIPItem, self).__lt__(other)
 
 

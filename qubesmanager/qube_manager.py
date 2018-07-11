@@ -527,6 +527,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             self.tr(
                 "Loading Qube Manager..."), "", 0, 0)
         progress.setWindowTitle(self.tr("Qube Manager"))
+        progress.setWindowFlags(QtCore.Qt.Window |
+                                QtCore.Qt.WindowTitleHint |
+                                QtCore.Qt.CustomizeWindowHint)
         progress.setCancelButton(None)
         progress.setModal(True)
         progress.show()
@@ -713,6 +716,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             progress = QtGui.QProgressDialog(
                 self.tr(
                     "Removing Qube: <b>{0}</b>...").format(vm.name), "", 0, 0)
+            progress.setWindowFlags(QtCore.Qt.Window |
+                                    QtCore.Qt.WindowTitleHint |
+                                    QtCore.Qt.CustomizeWindowHint)
             progress.setCancelButton(None)
             progress.setModal(True)
             progress.show()
@@ -767,6 +773,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         progress = QtGui.QProgressDialog(
             self.tr("Cloning Qube <b>{0}</b> to <b>{1}</b>...").format(
                 vm.name, clone_name), "", 0, 0)
+        progress.setWindowFlags(QtCore.Qt.Window |
+                                QtCore.Qt.WindowTitleHint |
+                                QtCore.Qt.CustomizeWindowHint)
         progress.setCancelButton(None)
         progress.setModal(True)
         progress.show()
@@ -1005,6 +1014,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 self.tr(
                     "<b>{0}</b><br>Please wait for the updater to "
                     "launch...").format(vm.name), "", 0, 0)
+        progress.setWindowFlags(QtCore.Qt.Window |
+                                QtCore.Qt.WindowTitleHint |
+                                QtCore.Qt.CustomizeWindowHint)
         progress.setCancelButton(None)
         progress.setModal(True)
         progress.show()
