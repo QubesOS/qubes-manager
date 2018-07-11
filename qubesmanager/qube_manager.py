@@ -546,8 +546,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             vm_row = VmRowInTable(vm, row_no, self.table)
             vms_in_table[vm.qid] = vm_row
             row_no += 1
-            if row_no % 5 == 0:
-                self.qt_app.processEvents()
+            self.qt_app.processEvents()
 
         self.vms_list = vms_list
         self.vms_in_table = vms_in_table
