@@ -523,7 +523,7 @@ class VmIncludeInBackupsItem(QtGui.QTableWidgetItem):
             self.include_in_backups = False
 
     def __lt__(self, other):
-        if self.vm.qid == 0:
+        if self.qid == 0:
             return True
         elif other.qid == 0:
             return False
