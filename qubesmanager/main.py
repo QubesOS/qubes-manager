@@ -2126,9 +2126,12 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 def sighup_handler(signum, frame):
     os.execl("/usr/bin/qubes-manager", "qubes-manager")
 
+def sigint_handler(signum, frame):
+    exit_app()
 
 def main():
     signal.signal(signal.SIGHUP, sighup_handler)
+    signal.signal(signal.SIGINT, sigint_handler)
 
     global system_bus
     system_bus = QDBusConnection.systemBus()
