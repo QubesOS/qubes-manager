@@ -63,13 +63,15 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         # set up updatevm choice
         self.update_vm_vmlist, self.update_vm_idx = utils.prepare_vm_choice(
             self.update_vm_combo, self.qvm_collection, 'updatevm',
-            None, allow_none=True
+            None, allow_none=True,
+            filter_function=(lambda vm: vm.klass != 'TemplateVM')
         )
 
         # set up clockvm choice
         self.clock_vm_vmlist, self.clock_vm_idx = utils.prepare_vm_choice(
             self.clock_vm_combo, self.qvm_collection, 'clockvm',
-            None, allow_none=True
+            None, allow_none=True,
+            filter_function=(lambda vm: vm.klass != 'TemplateVM')
         )
 
         # set up default netvm
