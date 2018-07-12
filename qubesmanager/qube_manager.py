@@ -1254,9 +1254,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
             self.logs_menu.setEnabled(not menu_empty)
             if vm.qid == 0:
-                self.dom0_context_menu.exec_(self.table.mapToGlobal(point))
+                self.dom0_context_menu.exec_(self.table.mapToGlobal(
+                    point + QtCore.QPoint(10, 0)))
             else:
-                self.context_menu.exec_(self.table.mapToGlobal(point))
+                self.context_menu.exec_(self.table.mapToGlobal(
+                    point + QtCore.QPoint(10, 0)))
         except exc.QubesPropertyAccessError:
             pass
 
