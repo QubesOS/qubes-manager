@@ -348,6 +348,12 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
             self.button(self.FinishButton).setEnabled(True)
             self.showFileDialog.setEnabled(False)
             self.cleanup_temporary_files()
+
+            # turn off only when backup was successful
+            if self.thread_monitor.success and \
+                    self.turn_off_checkbox.isChecked():
+                os.system('systemctl poweroff')
+                
         signal.signal(signal.SIGCHLD, old_sigchld_handler)
 
     def reject(self):
