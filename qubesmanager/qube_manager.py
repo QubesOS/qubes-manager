@@ -339,6 +339,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.tools_context_menu.addAction(self.action_toolbar)
         self.tools_context_menu.addAction(self.action_menubar)
 
+        self.dom0_context_menu = QtGui.QMenu(self)
+        self.dom0_context_menu.addAction(self.action_global_settings)
+        self.dom0_context_menu.addAction(self.action_updatevm)
+        self.dom0_context_menu.addSeparator()
+
+        self.dom0_context_menu.addMenu(self.logs_menu)
+        self.dom0_context_menu.addSeparator()
+
         self.connect(
             self.table.horizontalHeader(),
             QtCore.SIGNAL("sortIndicatorChanged(int, Qt::SortOrder)"),
@@ -1257,7 +1265,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                     menu_empty = False
 
             self.logs_menu.setEnabled(not menu_empty)
-            self.context_menu.exec_(self.table.mapToGlobal(point))
+            if vm.qid == 0:
+                self.dom0_context_menu.exec_(self.table.mapToGlobal(point))
+            else:
+                self.context_menu.exec_(self.table.mapToGlobal(point))
         except exc.QubesPropertyAccessError:
             pass
 
