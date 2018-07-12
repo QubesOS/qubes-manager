@@ -157,8 +157,7 @@ class VmNameItem(QtGui.QTableWidgetItem):
             return True
         elif other.qid == 0:
             return False
-        else:
-            return super(VmNameItem, self).__lt__(other)
+        return super(VmNameItem, self).__lt__(other)
 
 
 class VmStatusIcon(QtGui.QLabel):
@@ -197,7 +196,7 @@ class VmInfoWidget(QtGui.QWidget):
     class VmInfoItem(QtGui.QTableWidgetItem):
         def __init__(self, on_icon, upd_info_item, vm):
             super(VmInfoWidget.VmInfoItem, self).__init__()
-            self.on_icon = on_icon 
+            self.on_icon = on_icon
             self.upd_info_item = upd_info_item
             self.vm = vm
             self.qid = vm.qid
@@ -259,7 +258,8 @@ class VmInfoWidget(QtGui.QWidget):
         self.blk_icon.setVisible(False)
         self.error_icon.setVisible(False)
 
-        self.table_item = self.VmInfoItem(self.on_icon, self.upd_info.table_item, vm)
+        self.table_item = self.VmInfoItem(self.on_icon,\
+                self.upd_info.table_item, vm)
 
     def update_vm_state(self):
         self.on_icon.update()
@@ -314,13 +314,13 @@ class VmNetvmItem(QtGui.QTableWidgetItem):
             self.setText(self.vm.netvm.name)
 
     def __lt__(self, other):
-            if self.qid == 0:
-                return True
-            elif other.qid == 0:
-                return False
-            elif self.text() == other.text():
-                return self.name < other.name
-            return super(VmNetvmItem, self).__lt__(other)
+        if self.qid == 0:
+            return True
+        elif other.qid == 0:
+            return False
+        elif self.text() == other.text():
+            return self.name < other.name
+        return super(VmNetvmItem, self).__lt__(other)
 
 
 class VmInternalItem(QtGui.QTableWidgetItem):
