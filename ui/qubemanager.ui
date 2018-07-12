@@ -423,7 +423,7 @@
     <string>&amp;Pause qube</string>
    </property>
    <property name="toolTip">
-    <string>Pause selected qube</string>
+    <string>&lt;p&gt;Pause selected qube&lt;/p&gt;&lt;p&gt;Stops all CPU activity in the selected VM until the VM is unpaused. This action does not change how much memory is allocated to the VM. (EXPERIMENTAL)&lt;/p&gt;</string>
    </property>
   </action>
   <action name="action_shutdownvm">
