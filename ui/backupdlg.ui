@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>737</width>
-    <height>420</height>
+    <height>618</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -156,28 +156,21 @@
       <property name="title">
        <string>Backup destination directory</string>
       </property>
-      <layout class="QGridLayout" name="gridLayout">
-       <item row="3" column="2">
-        <widget class="QLineEdit" name="dir_line_edit"/>
-       </item>
-       <item row="3" column="3">
-        <widget class="QToolButton" name="select_path_button">
-         <property name="text">
-          <string>...</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="2">
-        <widget class="QComboBox" name="appvm_combobox"/>
-       </item>
-       <item row="1" column="0">
+      <property name="alignment">
+       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+      </property>
+      <layout class="QFormLayout" name="formLayout_2">
+       <item row="0" column="0">
         <widget class="QLabel" name="label_5">
          <property name="text">
           <string>Target qube:</string>
          </property>
         </widget>
        </item>
-       <item row="3" column="0">
+       <item row="0" column="1">
+        <widget class="QComboBox" name="appvm_combobox"/>
+       </item>
+       <item row="1" column="0">
         <widget class="QLabel" name="label_2">
          <property name="text">
           <string>Backup directory or command:</string>
@@ -187,69 +180,69 @@
          </property>
         </widget>
        </item>
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="dir_line_edit"/>
+       </item>
+       <item row="2" column="1">
+        <widget class="QToolButton" name="select_path_button">
+         <property name="text">
+          <string>...</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
     </item>
     <item row="3" column="0">
      <widget class="QGroupBox" name="groupBox_3">
       <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+       <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>100</height>
+       </size>
+      </property>
       <property name="title">
        <string>Save backup profile</string>
       </property>
-      <widget class="QLabel" name="label_8">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>30</y>
-         <width>267</width>
-         <height>25</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Save settings as default backup profile:</string>
-       </property>
-      </widget>
-      <widget class="QCheckBox" name="save_profile_checkbox">
-       <property name="geometry">
-        <rect>
-         <x>270</x>
-         <y>30</y>
-         <width>539</width>
-         <height>25</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string/>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_9">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>60</y>
-         <width>511</width>
-         <height>16</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <weight>75</weight>
-         <italic>true</italic>
-         <bold>true</bold>
-        </font>
-       </property>
-       <property name="text">
-        <string>WARNING: password will be saved in dom0 in plain text.</string>
-       </property>
-      </widget>
+      <layout class="QFormLayout" name="formLayout_3">
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_8">
+         <property name="text">
+          <string>Save settings as default backup profile:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QCheckBox" name="save_profile_checkbox">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0" colspan="2">
+        <widget class="QLabel" name="label_9">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <italic>true</italic>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>WARNING: password will be saved in dom0 in plain text.</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </widget>
     </item>
     <item row="2" column="0">
@@ -321,7 +314,10 @@
       <property name="title">
        <string>Other</string>
       </property>
-      <layout class="QGridLayout" name="gridLayout_4">
+      <property name="alignment">
+       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+      </property>
+      <layout class="QFormLayout" name="formLayout_4">
        <item row="0" column="0">
         <widget class="QCheckBox" name="turn_off_checkbox">
          <property name="text">
