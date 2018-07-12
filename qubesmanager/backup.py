@@ -353,7 +353,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
             if self.thread_monitor.success and \
                     self.turn_off_checkbox.isChecked():
                 os.system('systemctl poweroff')
-                
+
         signal.signal(signal.SIGCHLD, old_sigchld_handler)
 
     def reject(self):
