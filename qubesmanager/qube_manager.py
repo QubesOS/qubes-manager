@@ -139,15 +139,21 @@ class VmRowInTable(object):
         widget will extract the data from VM object
         :return: None
         """
-        self.info_widget.update_vm_state()
-        self.template_widget.update()
-        self.netvm_widget.update()
-        self.internal_widget.update()
-        self.ip_widget.update()
-        self.include_in_backups_widget.update()
-        self.last_backup_widget.update()
-        if update_size_on_disk:
-            self.size_widget.update()
+        try:
+            self.info_widget.update_vm_state()
+            self.template_widget.update()
+            self.netvm_widget.update()
+            self.internal_widget.update()
+            self.ip_widget.update()
+            self.include_in_backups_widget.update()
+            self.last_backup_widget.update()
+            if update_size_on_disk:
+                self.size_widget.update()
+        except exc.QubesPropertyAccessError:
+            pass
+
+        #force re-sorting
+        self.table.setSortingEnabled(True)
 
 
 vm_shutdown_timeout = 20000  # in msec
@@ -306,9 +312,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.table.horizontalHeader().setResizeMode(
             QtGui.QHeaderView.Interactive)
         self.table.horizontalHeader().setStretchLastSection(True)
-
-        self.table.sortItems(self.columns_indices[self.sort_by_column],
-                             self.sort_order)
 
         self.context_menu = QtGui.QMenu(self)
 
@@ -551,8 +554,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             vm_row = VmRowInTable(vm, row_no, self.table)
             vms_in_table[vm.qid] = vm_row
             row_no += 1
-            if row_no % 5 == 0:
-                self.qt_app.processEvents()
+            self.qt_app.processEvents()
 
         self.vms_list = vms_list
         self.vms_in_table = vms_in_table
@@ -980,12 +982,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             settings_window = settings.VMSettingsWindow(
                 vm, self.qt_app, "basic")
             settings_window.exec_()
-
-            # vm could be deleted on renaming
-            try:
-                self.vms_in_table[vm.qid].update()
-            except exc.QubesPropertyAccessError:
-                pass
+            self.vms_in_table[vm.qid].update()
 
 
     # noinspection PyArgumentList
