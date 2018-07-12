@@ -1701,7 +1701,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         return menu
 
     def open_tools_context_menu(self, widget, point):
-        self.tools_context_menu.exec_(widget.mapToGlobal(point))
+        self.tools_context_menu.exec_(widget.mapToGlobal(point + QPoint(10,0)))
 
     @pyqtSlot('const QPoint&')
     def open_context_menu(self, point):
