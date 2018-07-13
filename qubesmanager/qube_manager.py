@@ -263,7 +263,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         self.searchbox = SearchBox()
         self.searchbox.setValidator(QtGui.QRegExpValidator(
-            QtCore.QRegExp("[a-zA-Z0-9-]*", QtCore.Qt.CaseInsensitive), None))
+            QtCore.QRegExp("[a-zA-Z0-9_-]*", QtCore.Qt.CaseInsensitive), None))
         self.searchContainer.addWidget(self.searchbox)
 
         self.connect(self.table, QtCore.SIGNAL("itemSelectionChanged()"),

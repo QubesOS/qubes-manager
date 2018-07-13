@@ -294,7 +294,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         self.vmname.setText(self.vm.name)
         self.vmname.setValidator(
             QtGui.QRegExpValidator(
-                QtCore.QRegExp("[a-zA-Z0-9-]*",
+                QtCore.QRegExp("[a-zA-Z0-9_-]*",
                                QtCore.Qt.CaseInsensitive), None))
         self.vmname.setEnabled(False)
         self.rename_vm_button.setEnabled(not self.vm.is_running())
