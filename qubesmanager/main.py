@@ -1732,7 +1732,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.logs_menu.setEnabled(not menu_empty)
 
         # blk menu
-        if not running:
+        if not running or vm.qid == 0:
             self.blk_menu.setEnabled(False)
         else:
             self.blk_menu.clear()
