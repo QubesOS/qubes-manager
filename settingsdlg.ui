@@ -655,7 +655,11 @@
              </widget>
             </item>
             <item row="1" column="1">
-             <widget class="QComboBox" name="dispvm_netvm"/>
+             <widget class="QComboBox" name="dispvm_netvm">
+              <property name="toolTip">
+               <string>Sets NetVM for DispVMs started from this VM. Does not affect DispVMs launched in any other way.</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
