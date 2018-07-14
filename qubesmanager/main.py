@@ -1210,7 +1210,8 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
 	self.start_vm(vm)
 
     def start_vm(self, vm):
-        assert not vm.is_running()
+        if vm.is_running():
+            return
         thread_monitor = ThreadMonitor()
         thread = threading.Thread(target=self.do_start_vm,
                                   args=(vm, thread_monitor))
