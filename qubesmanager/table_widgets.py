@@ -311,7 +311,11 @@ class VmNetvmItem(QtGui.QTableWidgetItem):
         if getattr(self.vm, 'netvm', None) is None:
             self.setText("n/a")
         else:
-            self.setText(self.vm.netvm.name)
+            if self.vm.property_is_default('netvm'):
+                text = 'default (' + self.vm.netvm.name +')'
+            else:
+                text = self.vm.netvm.name
+            self.setText(text)
 
     def __lt__(self, other):
         if self.qid == 0:
