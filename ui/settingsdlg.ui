@@ -1275,51 +1275,44 @@ border-width: 1px;</string>
          <string>Services</string>
         </attribute>
         <layout class="QGridLayout" name="gridLayout_5">
-         <item row="0" column="0">
-          <widget class="QLineEdit" name="service_line_edit"/>
-         </item>
-         <item row="0" column="1">
-          <widget class="QPushButton" name="add_srv_button">
-           <property name="text">
-            <string/>
+         <item row="6" column="1">
+          <spacer name="verticalSpacer_5">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
            </property>
-           <property name="icon">
-            <iconset resource="../resources.qrc">
-             <normaloff>:/add.png</normaloff>:/add.png</iconset>
-           </property>
-           <property name="iconSize">
+           <property name="sizeHint" stdset="0">
             <size>
-             <width>24</width>
-             <height>24</height>
+             <width>20</width>
+             <height>40</height>
             </size>
            </property>
-          </widget>
+          </spacer>
          </item>
-         <item row="4" column="0" rowspan="2">
+         <item row="5" column="0" rowspan="2">
           <widget class="QListWidget" name="services_list"/>
          </item>
-         <item row="6" column="0" colspan="2">
+         <item row="7" column="0" colspan="2">
           <widget class="QLabel" name="label_7">
            <property name="text">
             <string>Checked services will be turned on.</string>
            </property>
           </widget>
          </item>
-         <item row="7" column="0" colspan="2">
+         <item row="8" column="0" colspan="2">
           <widget class="QLabel" name="label_8">
            <property name="text">
             <string>Unchecked services will be turned off.</string>
            </property>
           </widget>
          </item>
-         <item row="8" column="0" colspan="2">
+         <item row="9" column="0" colspan="2">
           <widget class="QLabel" name="label_9">
            <property name="text">
             <string>Unlisted services will follow default settings.</string>
            </property>
           </widget>
          </item>
-         <item row="4" column="1">
+         <item row="5" column="1">
           <widget class="QPushButton" name="remove_srv_button">
            <property name="text">
             <string/>
@@ -1336,18 +1329,32 @@ border-width: 1px;</string>
            </property>
           </widget>
          </item>
-         <item row="5" column="1">
-          <spacer name="verticalSpacer_5">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
+         <item row="1" column="0">
+          <widget class="QComboBox" name="service_line_edit">
+           <property name="toolTip">
+            <string>Services listed here are only base Qubes services - other services may be installed and implemented.</string>
            </property>
-           <property name="sizeHint" stdset="0">
+           <property name="editable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QPushButton" name="add_srv_button">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="../resources.qrc">
+             <normaloff>:/add.png</normaloff>:/add.png</iconset>
+           </property>
+           <property name="iconSize">
             <size>
-             <width>20</width>
-             <height>40</height>
+             <width>24</width>
+             <height>24</height>
             </size>
            </property>
-          </spacer>
+          </widget>
          </item>
         </layout>
        </widget>

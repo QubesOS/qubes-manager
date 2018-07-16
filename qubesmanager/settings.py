@@ -136,7 +136,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         ####### services tab
         self.__init_services_tab__()
-        self.service_line_edit.returnPressed.connect(self.__add_service__)
+        self.service_line_edit.lineEdit().returnPressed.connect(
+            self.__add_service__)
         self.add_srv_button.clicked.connect(self.__add_service__)
         self.remove_srv_button.clicked.connect(self.__remove_service__)
 
@@ -943,8 +944,25 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             QtCore.SIGNAL("itemClicked(QListWidgetItem *)"),
             self.services_item_clicked)
 
+        # add suggested services
+        self.service_line_edit.addItem('clocksync')
+        self.service_line_edit.addItem('crond')
+        self.service_line_edit.addItem('cups')
+        self.service_line_edit.addItem('disable-default-route')
+        self.service_line_edit.addItem('disable-dns-server')
+        self.service_line_edit.addItem('meminfo-writer')
+        self.service_line_edit.addItem('network-manager')
+        self.service_line_edit.addItem('qubes-firewall')
+        self.service_line_edit.addItem('qubes-network')
+        self.service_line_edit.addItem('qubes-update-check')
+        self.service_line_edit.addItem('qubes-updates-proxy')
+        self.service_line_edit.addItem('qubes-yum-proxy')
+        self.service_line_edit.addItem('updates-proxy-setup')
+        self.service_line_edit.addItem('yum-proxy-setup')
+        self.service_line_edit.setEditText("")
+
     def __add_service__(self):
-        srv = str(self.service_line_edit.text()).strip()
+        srv = str(self.service_line_edit.currentText()).strip()
         if srv != "":
             if srv in self.new_srv_dict:
                 QtGui.QMessageBox.information(
