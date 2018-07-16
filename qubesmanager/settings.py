@@ -152,8 +152,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         if event.key() == QtCore.Qt.Key_Enter \
                 or event.key() == QtCore.Qt.Key_Return:
             return
-        else:
-            super(VMSettingsWindow, self).keyPressEvent(event)
+        super(VMSettingsWindow, self).keyPressEvent(event)
 
     def reject(self):
         self.done(0)
@@ -1079,8 +1078,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             self.fw_model.run_rule_dialog(dialog, row)
 
     def delete_rule_button_pressed(self):
-        for i in set([index.row() for index
-                      in self.rulesTreeView.selectedIndexes()]):
+        for i in {index.row() for index
+                  in self.rulesTreeView.selectedIndexes()}:
             self.fw_model.remove_child(i)
 
 

@@ -68,7 +68,7 @@ class SearchBox(QtGui.QLineEdit):
             self.focusing = False
 
 
-class VmRowInTable(object):
+class VmRowInTable:
     # pylint: disable=too-few-public-methods
     def __init__(self, vm, row_no, table):
         self.vm = vm
@@ -667,12 +667,12 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             assert self.vms_in_table[qid] is not None
             vm = self.vms_in_table[qid].vm
             return vm
-        else:
-            return None
+        return None
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_removevm_triggered')
     def action_removevm_triggered(self):
+        # pylint: disable=no-else-return
 
         vm = self.get_selected_vm()
 
@@ -703,7 +703,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             # user clicked cancel
             return
 
-        elif requested_name != vm.name:
+        if requested_name != vm.name:
             # name did not match
             QtGui.QMessageBox.warning(
                 None,
@@ -743,7 +743,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 QtGui.QMessageBox.warning(None, self.tr("Error removing Qube!"),
                                           self.tr("ERROR: {0}").format(
                                               t_monitor.error_msg))
-
 
     @staticmethod
     def do_remove_vm(vm, qubes_app, t_monitor):

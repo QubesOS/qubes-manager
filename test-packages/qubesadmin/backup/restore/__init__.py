@@ -13,7 +13,7 @@ class BackupRestore(object):
         pass
 
     def restore_info_verify(self, *args):
-        pass
+        return 'test'
 
     def get_restore_summary(self, *args):
-        pass
+        return 'test'

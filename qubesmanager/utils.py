@@ -169,5 +169,4 @@ def get_path_from_vm(vm, service_name):
         assert '../' not in untrusted_path
         assert '\0' not in untrusted_path
         return untrusted_path.strip()
-    else:
-        raise ValueError('Unexpected characters in path.')
+    raise ValueError('Unexpected characters in path.')
