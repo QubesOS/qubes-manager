@@ -74,7 +74,8 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
         self.fill_template_list()
         self.fill_netvm_list()
 
-        self.vmname.setValidator(QRegExpValidator(QRegExp("[a-zA-Z0-9_-.]*", Qt.CaseInsensitive), None))
+        self.vmname.setValidator(QRegExpValidator(
+            QRegExp("[a-zA-Z0-9_.-]*", Qt.CaseInsensitive), None))
         self.vmname.selectAll()
         self.vmname.setFocus()
 

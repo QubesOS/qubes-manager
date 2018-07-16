@@ -206,7 +206,7 @@ class VMSettingsWindow(Ui_SettingsDialog, QDialog):
 
     def __init_basic_tab__(self):
         self.vmname.setText(self.vm.name)
-        self.vmname.setValidator(QRegExpValidator(QRegExp("[a-zA-Z0-9_-.]*", Qt.CaseInsensitive), None))
+        self.vmname.setValidator(QRegExpValidator(QRegExp("[a-zA-Z0-9_.-]*", Qt.CaseInsensitive), None))
         self.vmname.setEnabled(not self.vm.is_running())
 
         #self.qvm_collection.lock_db_for_reading()
