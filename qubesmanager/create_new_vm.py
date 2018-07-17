@@ -57,7 +57,7 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
             from qubes.qubes import QubesHVm
         except ImportError:
             pass
-        else: 
+        else:
             self.hvm_radio.setEnabled(True)
             self.hvmtpl_radio.setEnabled(True)
 
@@ -74,7 +74,8 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
         self.fill_template_list()
         self.fill_netvm_list()
 
-        self.vmname.setValidator(QRegExpValidator(QRegExp("[a-zA-Z0-9-]*", Qt.CaseInsensitive), None))
+        self.vmname.setValidator(QRegExpValidator(
+            QRegExp("[a-zA-Z0-9_.-]*", Qt.CaseInsensitive), None))
         self.vmname.selectAll()
         self.vmname.setFocus()
 
@@ -132,7 +133,7 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
         if checked:
             self.fill_netvm_list()
             self.netvm_name.setEnabled(True)
-        else:    
+        else:
             self.netvm_name.clear()
             self.netvm_name.setEnabled(False)
 
@@ -194,7 +195,7 @@ class NewVmDlg (QDialog, Ui_NewVMDlg):
             return
 
         label = self.label_list[self.vmlabel.currentIndex()]
-        
+
         template_vm = None
         if self.template_name.isEnabled():
             if len(self.template_vm_list) == 0:

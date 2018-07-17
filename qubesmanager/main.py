@@ -368,7 +368,7 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
         self.blk_watch_thread.start()
 
         self.searchbox = SearchBox()
-        self.searchbox.setValidator(QRegExpValidator(QRegExp("[a-zA-Z0-9-]*", Qt.CaseInsensitive), None))
+        self.searchbox.setValidator(QRegExpValidator(QRegExp("[a-zA-Z0-9_.-]*", Qt.CaseInsensitive), None))
         self.searchContainer.addWidget(self.searchbox)
 
         self.connect(self.table, SIGNAL("itemSelectionChanged()"),
