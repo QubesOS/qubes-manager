@@ -280,8 +280,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.frame_width = 0
         self.frame_height = 0
 
-        self.move(self.x(), 0)
-
         self.columns_actions = {
             self.columns_indices["Type"]: self.action_vm_type,
             self.columns_indices["Label"]: self.action_label,
@@ -405,6 +403,12 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         timer.start(1000 * 30) # 30s
         self.check_updates()
 
+    def closeEvent(self, event):
+        # pylint: disable=invalid-name
+        # save window size at close
+        self.manager_settings.setValue("window_size", self.size())
+        event.accept()
+
     def check_updates(self):
         for vm in self.qubes_app.domains:
             if vm.klass in {'TemplateVM', 'StandaloneVM'}:
@@ -525,6 +529,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         if not self.manager_settings.value("view/toolbar_visible",
                                            defaultValue=True):
             self.action_toolbar.setChecked(False)
+
+        # load last window size
+        self.resize(self.manager_settings.value("window_size",
+                                                QtCore.QSize(1100, 600)))
+
         self.settings_loaded = True
 
     def get_vms_list(self):
