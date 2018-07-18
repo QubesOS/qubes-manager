@@ -35,6 +35,7 @@ from pydbus import SessionBus
 
 from qubesadmin import Qubes
 from qubesadmin import exc
+from qubesadmin import utils
 
 from PyQt4 import QtGui  # pylint: disable=import-error
 from PyQt4 import QtCore  # pylint: disable=import-error
@@ -685,21 +686,31 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         vm = self.get_selected_vm()
 
-        if vm.klass == 'TemplateVM':
-            dependent_vms = 0
-            for single_vm in self.qubes_app.domains:
-                if getattr(single_vm, 'template', None) == vm:
-                    dependent_vms += 1
-            if dependent_vms > 0:
-                QtGui.QMessageBox.warning(
-                    None, self.tr("Warning!"),
-                    self.tr("This Template Qube cannot be removed, "
-                            "because there is at least one Qube that is based "
-                            "on it.<br><small>If you want to remove this "
-                            "Template Qube and all the Qubes based on it, you "
-                            "should first remove each individual Qube that "
-                            "uses this template.</small>"))
-                return
+        dependencies = utils.vm_usage(self.qubes_app, vm)
+
+        if dependencies:
+            list_text = "<br>"
+            for (holder, prop) in dependencies:
+                if holder is None:
+                    list_text += "- Global property <b>{}</b> <br>".format(prop)
+                else:
+                    list_text += "- <b>{}</b> for qube <b>{}</b> <br>".format(
+                        prop, holder.name)
+            list_text += "<br>"
+
+            info_dialog = QtGui.QMessageBox(self)
+            info_dialog.setWindowTitle(self.tr("Warning!"))
+            info_dialog.setText(
+                self.tr("This qube cannot be removed. It is used as:"
+                        " <br>" + list_text + "<small>If you want to "
+                        " remove this qube, you should remove or change "
+                        " settings of each qube or setting that uses"
+                                              " it.</small>"))
+            info_dialog.setModal(False)
+            info_dialog.show()
+            self.qt_app.processEvents()
+
+            return
 
         (requested_name, ok) = QtGui.QInputDialog.getText(
             None, self.tr("Qube Removal Confirmation"),
