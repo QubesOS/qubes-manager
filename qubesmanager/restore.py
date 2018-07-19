@@ -134,6 +134,7 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
             if self.verify_only.isChecked():
                 self.backup_restore.options.verify_only = True
 
+            # pylint: disable=assignment-from-no-return
             self.vms_to_restore = self.backup_restore.get_restore_info()
 
             for vmname in self.vms_to_restore:
@@ -182,7 +183,7 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
             self.__fill_vms_list__()
 
         elif self.currentPage() is self.confirm_page:
-
+            # pylint: disable=assignment-from-no-return
             self.vms_to_restore = self.backup_restore.get_restore_info()
 
             for i in range(self.select_vms_widget.available_list.count()):

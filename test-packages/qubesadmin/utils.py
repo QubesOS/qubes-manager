@@ -8,3 +8,6 @@ def updates_vms_status(*args, **kwargs):
 
 def size_to_human(*args, **kwargs):
     return args[0]
+
+def vm_dependencies(*args):
+    return args[0]
