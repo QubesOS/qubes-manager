@@ -50,6 +50,7 @@ from . import global_settings
 from . import restore
 from . import backup
 from . import log_dialog
+from . import utils as manager_utils
 
 
 class SearchBox(QtGui.QLineEdit):
@@ -413,7 +414,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     def check_updates(self):
         for vm in self.qubes_app.domains:
             if vm.klass in {'TemplateVM', 'StandaloneVM'}:
-                self.vms_in_table[vm.qid].update()
+                try:
+                    self.vms_in_table[vm.qid].update()
+                except exc.QubesException:
+                    # the VM might have vanished in the meantime
+                    pass
 
     def on_domain_added(self, _, domain):
         #needs to clear cache
@@ -686,26 +691,20 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         vm = self.get_selected_vm()
 
-        dependencies = utils.vm_usage(self.qubes_app, vm)
+        dependencies = utils.vm_dependencies(self.qubes_app, vm)
 
         if dependencies:
-            list_text = "<br>"
-            for (holder, prop) in dependencies:
-                if holder is None:
-                    list_text += "- Global property <b>{}</b> <br>".format(prop)
-                else:
-                    list_text += "- <b>{}</b> for qube <b>{}</b> <br>".format(
-                        prop, holder.name)
-            list_text += "<br>"
+            list_text = "<br>" + \
+                        manager_utils.format_dependencies_list(dependencies) + \
+                        "<br>"
 
             info_dialog = QtGui.QMessageBox(self)
             info_dialog.setWindowTitle(self.tr("Warning!"))
             info_dialog.setText(
                 self.tr("This qube cannot be removed. It is used as:"
-                        " <br>" + list_text + "<small>If you want to "
-                        " remove this qube, you should remove or change "
-                        " settings of each qube or setting that uses"
-                                              " it.</small>"))
+                        " <br> {} <small>If you want to  remove this qube, "
+                        "you should remove or change settings of each qube "
+                        "or setting that uses it.</small>".format(list_text)))
             info_dialog.setModal(False)
             info_dialog.show()
             self.qt_app.processEvents()
@@ -1001,8 +1000,24 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             settings_window = settings.VMSettingsWindow(
                 vm, self.qt_app, "basic")
             settings_window.exec_()
-            self.vms_in_table[vm.qid].update()
 
+            vm_deleted = False
+
+            try:
+                # the VM might not exist after running Settings - it might
+                # have been cloned or removed
+                self.vms_in_table[vm.qid].update()
+            except exc.QubesException:
+                # TODO: this will be replaced by proper signal handling once
+                # settings are migrated to AdminAPI
+                vm_deleted = True
+
+            if vm_deleted:
+                for row in self.vms_in_table:
+                    try:
+                        self.vms_in_table[row].update()
+                    except exc.QubesException:
+                        pass
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_appmenus_triggered')

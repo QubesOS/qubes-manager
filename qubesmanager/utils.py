@@ -172,3 +172,18 @@ def get_path_from_vm(vm, service_name):
         assert '\0' not in untrusted_path
         return untrusted_path.strip()
     raise ValueError('Unexpected characters in path.')
+
+
+def format_dependencies_list(dependencies):
+    """Given a list of tuples representing properties, formats them in
+    a readable list."""
+
+    list_text = ""
+    for (holder, prop) in dependencies:
+        if holder is None:
+            list_text += "- Global property <b>{}</b> <br>".format(prop)
+        else:
+            list_text += "- <b>{}</b> for qube <b>{}</b> <br>".format(
+                prop, holder.name)
+
+    return list_text
