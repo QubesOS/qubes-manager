@@ -34,6 +34,7 @@ import traceback
 import sys
 from qubesadmin.tools import QubesArgumentParser
 from qubesadmin import devices
+from qubesadmin import utils as admin_utils
 import qubesadmin.exc
 
 from . import utils
@@ -481,10 +482,35 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             return False
         return True
 
-    def _rename_vm(self, t_monitor, name):
+    def _rename_vm(self, t_monitor, name, dependencies):
         try:
-            self.vm.app.clone_vm(self.vm, name)
-            del self.vm.app.domains[self.vm.name]
+            new_vm = self.vm.app.clone_vm(self.vm, name)
+
+            failed_props = []
+
+            for (holder, prop) in dependencies:
+                try:
+                    if holder is None:
+                        setattr(self.vm.app, prop, new_vm)
+                    else:
+                        setattr(holder, prop, new_vm)
+                except qubesadmin.exc.QubesException as qex:
+                    failed_props += [(holder, prop)]
+
+            if not failed_props:
+                del self.vm.app.domains[self.vm.name]
+            else:
+                list_text = utils.format_dependencies_list(failed_props)
+
+                QtGui.QMessageBox.warning(
+                    self,
+                    self.tr("Warning: rename partially unsuccessful"),
+                    self.tr("Some properties could not be changed to the new "
+                            "name. The system has now both {} and {} qubes. "
+                            "To resolve this, please check and change the "
+                            "following properties and remove the qube {} "
+                            "manually.<br> ").format(
+                                self.vm.name, name, self.vm.name) + list_text)
 
         except qubesadmin.exc.QubesException as qex:
             t_monitor.set_error_msg(str(qex))
@@ -494,13 +520,31 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         t_monitor.set_finished()
 
     def rename_vm(self):
+
+        dependencies = admin_utils.vm_dependencies(self.vm.app, self.vm)
+
+        running_dependencies = [vm.name for (vm, prop) in dependencies
+                                if vm and prop == 'template'
+                                and vm.is_running()]
+
+        if running_dependencies:
+            QtGui.QMessageBox.warning(
+                self,
+                self.tr("Qube cannot be renamed!"),
+                self.tr(
+                    "The following qubes using this qube as a template are "
+                    "running: <br> {}. <br> In order to rename this qube, you "
+                    "must first shut them down.").format(
+                        ", ".join(running_dependencies)))
+            return
+
         new_vm_name, ok = QtGui.QInputDialog.getText(
             self,
             self.tr('Rename qube'),
             self.tr('New name: (WARNING: all other changes will be discarded)'))
 
         if ok:
-            if self._run_in_thread(self._rename_vm, new_vm_name):
+            if self._run_in_thread(self._rename_vm, new_vm_name, dependencies):
                 self.done(0)
 
     def _remove_vm(self, t_monitor):
@@ -515,6 +559,21 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         t_monitor.set_finished()
 
     def remove_vm(self):
+
+        dependencies = admin_utils.vm_dependencies(self.vm.app, self.vm)
+
+        if dependencies:
+            list_text = utils.format_dependencies_list(dependencies)
+            QtGui.QMessageBox.warning(
+                self,
+                self.tr("Qube cannot be removed!"),
+                self.tr("This qube cannot be removed. It is used as:"
+                        " <br> {} <small>If you want to  remove this qube, "
+                        "you should remove or change settings of each qube "
+                        "or setting that uses it.</small>").format(list_text))
+
+            return
+
 
         answer, ok = QtGui.QInputDialog.getText(
             self,
