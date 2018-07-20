@@ -299,19 +299,16 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         self.visible_columns_count = len(self.columns_indices)
 
+        # Other columns get sensible default sizes, but those have only
+        # icon content, and thus PyQt makes them too wide
         self.table.setColumnWidth(self.columns_indices["State"], 80)
-        self.table.setColumnWidth(self.columns_indices["Name"], 150)
         self.table.setColumnWidth(self.columns_indices["Label"], 40)
         self.table.setColumnWidth(self.columns_indices["Type"], 40)
-        self.table.setColumnWidth(self.columns_indices["Size"], 100)
-        self.table.setColumnWidth(self.columns_indices["Internal"], 60)
-        self.table.setColumnWidth(self.columns_indices["IP"], 100)
-        self.table.setColumnWidth(self.columns_indices["Backups"], 60)
-        self.table.setColumnWidth(self.columns_indices["Last backup"], 90)
 
         self.table.horizontalHeader().setResizeMode(
             QtGui.QHeaderView.Interactive)
         self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.horizontalHeader().setMinimumSectionSize(40)
 
         self.context_menu = QtGui.QMenu(self)
 
