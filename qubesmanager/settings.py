@@ -495,7 +495,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                     else:
                         setattr(holder, prop, new_vm)
                 except qubesadmin.exc.QubesException as qex:
-                    failed_props += (holder, prop)
+                    failed_props += [(holder, prop)]
 
             if not failed_props:
                 del self.vm.app.domains[self.vm.name]
@@ -509,8 +509,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                             "name. The system has now both {} and {} qubes. "
                             "To resolve this, please check and change the "
                             "following properties and remove the qube {} "
-                            "manually.<br> ".format(
-                                self.vm.name, name, self.vm.name) + list_text))
+                            "manually.<br> ").format(
+                                self.vm.name, name, self.vm.name) + list_text)
 
         except qubesadmin.exc.QubesException as qex:
             t_monitor.set_error_msg(str(qex))
@@ -534,8 +534,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 self.tr(
                     "The following qubes using this qube as a template are "
                     "running: <br> {}. <br> In order to rename this qube, you "
-                    "must first shut them down.".format(
-                        ", ".join(running_dependencies))))
+                    "must first shut them down.").format(
+                        ", ".join(running_dependencies)))
             return
 
         new_vm_name, ok = QtGui.QInputDialog.getText(
@@ -570,7 +570,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 self.tr("This qube cannot be removed. It is used as:"
                         " <br> {} <small>If you want to  remove this qube, "
                         "you should remove or change settings of each qube "
-                        "or setting that uses it.</small>".format(list_text)))
+                        "or setting that uses it.</small>").format(list_text))
 
             return
 

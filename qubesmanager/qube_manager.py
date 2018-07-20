@@ -704,7 +704,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 self.tr("This qube cannot be removed. It is used as:"
                         " <br> {} <small>If you want to  remove this qube, "
                         "you should remove or change settings of each qube "
-                        "or setting that uses it.</small>".format(list_text)))
+                        "or setting that uses it.</small>").format(list_text))
             info_dialog.setModal(False)
             info_dialog.show()
             self.qt_app.processEvents()
