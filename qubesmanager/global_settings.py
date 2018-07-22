@@ -98,7 +98,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 self.default_dispvm_combo,
                 self.qvm_collection, 'default_dispvm',
                 None,
-                (lambda vm: getattr(vm, 'template_for_dispvms', False))
+                (lambda vm: getattr(vm, 'template_for_dispvms', False)),
+                allow_none=True
             )
 
     def __apply_system_defaults__(self):
