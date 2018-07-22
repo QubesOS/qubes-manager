@@ -89,7 +89,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 self.default_template_combo,
                 self.qvm_collection, 'default_template',
                 None,
-                filter_function=(lambda vm: vm.klass == 'TemplateVM')
+                filter_function=(lambda vm: vm.klass == 'TemplateVM'),
+                allow_none=True
             )
 
         # default dispvm
