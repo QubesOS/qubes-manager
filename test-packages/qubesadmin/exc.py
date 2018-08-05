@@ -10,3 +10,6 @@ class QubesVMNotStartedError(BaseException):
 
 class QubesPropertyAccessError(BaseException):
     pass
+
+class QubesDaemonNoResponseError(BaseException):
+    pass

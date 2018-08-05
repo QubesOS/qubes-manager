@@ -153,6 +153,10 @@ class VmRowInTable:
                 self.size_widget.update()
         except exc.QubesPropertyAccessError:
             pass
+        except exc.QubesDaemonNoResponseError:
+            # TODO: this will be fixed by a rewrite moving the event system to
+            # AdminAPI
+            pass
 
         #force re-sorting
         self.table.setSortingEnabled(True)
