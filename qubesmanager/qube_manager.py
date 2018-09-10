@@ -21,7 +21,6 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #
-
 import sys
 import os
 import os.path
@@ -30,12 +29,14 @@ import time
 from datetime import datetime, timedelta
 import traceback
 import threading
-
-from pydbus import SessionBus
+import quamash
+import asyncio
+from contextlib import suppress
 
 from qubesadmin import Qubes
 from qubesadmin import exc
 from qubesadmin import utils
+from qubesadmin import events
 
 from PyQt4 import QtGui  # pylint: disable=import-error
 from PyQt4 import QtCore  # pylint: disable=import-error
@@ -257,7 +258,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                        "Last backup": 10,
                        }
 
-    def __init__(self, qt_app, qubes_app, parent=None):
+    def __init__(self, qt_app, qubes_app, dispatcher, parent=None):
         # pylint: disable=unused-argument
         super(VmManagerWindow, self).__init__()
         self.setupUi(self)
@@ -390,15 +391,24 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.shutdown_monitor = {}
 
         # Connect dbus events
-        self.bus = SessionBus()
-        manager = self.bus.get("org.qubes.DomainManager1")
-        manager.DomainAdded.connect(self.on_domain_added)
-        manager.DomainRemoved.connect(self.on_domain_removed)
-        manager.Failed.connect(self.on_failed)
-        manager.Halted.connect(self.on_halted)
-        manager.Halting.connect(self.on_halting)
-        manager.Starting.connect(self.on_starting)
-        manager.Started.connect(self.on_started)
+        self.dispatcher = dispatcher
+        dispatcher.add_handler('domain-pre-start',
+                               self.on_domain_status_changed)
+        dispatcher.add_handler('domain-start', self.on_domain_status_changed)
+        dispatcher.add_handler('domain-start-failed',
+                               self.on_domain_status_changed)
+        dispatcher.add_handler('domain-stopped', self.on_domain_status_changed)
+        dispatcher.add_handler('domain-shutdown', self.on_domain_status_changed)
+
+        dispatcher.add_handler('domain-add', self.on_domain_added)
+        dispatcher.add_handler('domain-delete', self.on_domain_removed)
+
+        dispatcher.add_handler('property-set:*',
+                               self.on_domain_changed)
+        dispatcher.add_handler('property-del:*',
+                               self.on_domain_changed)
+        dispatcher.add_handler('property-load',
+                               self.on_domain_changed)
 
         # Check Updates Timer
         timer = QtCore.QTimer(self)
@@ -421,19 +431,15 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                     # the VM might have vanished in the meantime
                     pass
 
-    def on_domain_added(self, _, domain):
-        #needs to clear cache
-        self.qubes_app.domains.clear_cache()
-        qid = int(domain.split('/')[-1])
+    def on_domain_added(self, submitter, event, **kwargs):
 
         self.table.setSortingEnabled(False)
 
         row_no = self.table.rowCount()
         self.table.setRowCount(row_no + 1)
 
-
         for vm in self.qubes_app.domains:
-            if vm.qid == qid:
+            if vm == kwargs['vm']:
                 vm_row = VmRowInTable(vm, row_no, self.table)
                 self.vms_in_table[vm.qid] = vm_row
                 self.table.setSortingEnabled(True)
@@ -443,73 +449,33 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         # Never should reach here
         raise RuntimeError('Added domain not found')
 
-    def on_domain_removed(self, _, domain):
-        #needs to clear cache
-        self.qubes_app.domains.clear_cache()
-        qid = int(domain.split('/')[-1])
+    def on_domain_removed(self, submitter, event, **kwargs):
 
-        # Find row and remove
-        try:
-            row_index = 0
-            vm_item = self.table.item(row_index, self.columns_indices["Name"])
-            while vm_item.qid != qid:
-                row_index += 1
-                vm_item = self.table.item(row_index,\
-                        self.columns_indices["Name"])
-        except:
-            raise RuntimeError('Deleted domain not found')
+        row_to_delete = None
+        qid_to_delete = None
+        for qid, row in self.vms_in_table.items():
+            if row.vm.name == kwargs['vm']:
+                row_to_delete = row
+                qid_to_delete = qid
+        if not row_to_delete:
+            return # for some reason, the VM was removed in some other way
 
-        self.table.removeRow(row_index)
-        del self.vms_in_table[qid]
+        del self.vms_in_table[qid_to_delete]
+        self.table.removeRow(row_to_delete.name_widget.row())
 
-    def on_failed(self, _, domain):
-        qid = int(domain.split('/')[-1])
-        self.vms_in_table[qid].update()
+    def on_domain_status_changed(self, vm, event, **kwargs):
+        self.vms_in_table[vm.qid].info_widget.update_vm_state()
 
-        if self.vms_in_table[qid].vm == self.get_selected_vm():
+        if vm == self.get_selected_vm():
             self.table_selection_changed()
 
-    def on_halted(self, _, domain):
-        qid = int(domain.split('/')[-1])
-        self.vms_in_table[qid].update()
+        if vm.klass == 'TemplateVM':
+            for row in self.vms_in_table:
+                if row.vm.template == vm:
+                    row.info_widget.update_vm_state()
 
-        if self.vms_in_table[qid].vm == self.get_selected_vm():
-            self.table_selection_changed()
-
-        # Check if is TemplatVM and update related AppVMs
-        starting_vm = self.vms_in_table[qid]
-        if starting_vm.vm.klass == 'TemplateVM':
-            for vm in starting_vm.vm.appvms:
-                if vm.klass == 'AppVM':
-                    self.vms_in_table[vm.qid].update()
-
-    def on_halting(self, _, domain):
-        qid = int(domain.split('/')[-1])
-        self.vms_in_table[qid].update()
-
-        if self.vms_in_table[qid].vm == self.get_selected_vm():
-            self.table_selection_changed()
-
-    def on_started(self, _, domain):
-        qid = int(domain.split('/')[-1])
-        self.vms_in_table[qid].update()
-
-        if self.vms_in_table[qid].vm == self.get_selected_vm():
-            self.table_selection_changed()
-
-    def on_starting(self, _, domain):
-        qid = int(domain.split('/')[-1])
-        self.vms_in_table[qid].update()
-
-        if self.vms_in_table[qid].vm == self.get_selected_vm():
-            self.table_selection_changed()
-
-        # Check if is TemplatVM and update related AppVMs
-        starting_vm = self.vms_in_table[qid]
-        if starting_vm.vm.klass == 'TemplateVM':
-            for vm in starting_vm.vm.appvms:
-                if vm.klass == 'AppVM':
-                    self.vms_in_table[vm.qid].update()
+    def on_domain_changed(self, vm, event, **kwargs):
+        self.vms_in_table[vm.qid].update()
 
     def load_manager_settings(self):
         # visible columns
@@ -1345,20 +1311,39 @@ def handle_exception(exc_type, exc_value, exc_traceback):
     msg_box.exec_()
 
 
+def loop_shutdown():
+    pending = asyncio.Task.all_tasks()
+    for task in pending:
+        with suppress(asyncio.CancelledError):
+            task.cancel()
+
+
 def main():
     qt_app = QtGui.QApplication(sys.argv)
     qt_app.setOrganizationName("The Qubes Project")
     qt_app.setOrganizationDomain("http://qubes-os.org")
     qt_app.setApplicationName("Qube Manager")
     qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
-
-    sys.excepthook = handle_exception
+    qt_app.lastWindowClosed.connect(loop_shutdown)
 
     qubes_app = Qubes()
 
-    manager_window = VmManagerWindow(qt_app, qubes_app)
+    loop = quamash.QEventLoop(qt_app)
+    asyncio.set_event_loop(loop)
+    dispatcher = events.EventsDispatcher(qubes_app)
+
+    manager_window = VmManagerWindow(qt_app, qubes_app, dispatcher)
     manager_window.show()
-    qt_app.exec_()
+
+    try:
+        done, _ = loop.run_until_complete(
+            asyncio.ensure_future(dispatcher.listen_for_events()))
+    except asyncio.CancelledError:
+        pass
+    except Exception:
+        loop_shutdown()
+        exc_type, exc_value, exc_traceback = sys.exc_info()[:3]
+        handle_exception(exc_type, exc_value, exc_traceback)
 
 
 if __name__ == "__main__":
