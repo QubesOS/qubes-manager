@@ -432,6 +432,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                     pass
 
     def on_domain_added(self, submitter, event, **kwargs):
+        # pylint: disable=unused-argument
 
         self.table.setSortingEnabled(False)
 
@@ -450,6 +451,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         raise RuntimeError('Added domain not found')
 
     def on_domain_removed(self, submitter, event, **kwargs):
+        # pylint: disable=unused-argument
 
         row_to_delete = None
         qid_to_delete = None
@@ -464,6 +466,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.table.removeRow(row_to_delete.name_widget.row())
 
     def on_domain_status_changed(self, vm, event, **kwargs):
+        # pylint: disable=unused-argument
+
         self.vms_in_table[vm.qid].info_widget.update_vm_state()
 
         if vm == self.get_selected_vm():
@@ -475,6 +479,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                     row.info_widget.update_vm_state()
 
     def on_domain_changed(self, vm, event, **kwargs):
+        # pylint: disable=unused-argument
+
         self.vms_in_table[vm.qid].update()
 
     def load_manager_settings(self):
@@ -1336,11 +1342,11 @@ def main():
     manager_window.show()
 
     try:
-        done, _ = loop.run_until_complete(
+        loop.run_until_complete(
             asyncio.ensure_future(dispatcher.listen_for_events()))
     except asyncio.CancelledError:
         pass
-    except Exception:
+    except Exception: # pylint: disable=broad-except
         loop_shutdown()
         exc_type, exc_value, exc_traceback = sys.exc_info()[:3]
         handle_exception(exc_type, exc_value, exc_traceback)
