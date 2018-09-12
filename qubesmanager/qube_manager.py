@@ -390,7 +390,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.update_size_on_disk = False
         self.shutdown_monitor = {}
 
-        # Connect dbus events
+        # Connect events
         self.dispatcher = dispatcher
         dispatcher.add_handler('domain-pre-start',
                                self.on_domain_status_changed)

@@ -15,7 +15,6 @@ Requires:	qubes-artwork
 Requires:	pmount
 Requires:	cryptsetup
 Requires:	wmctrl
-Requires:	dbus
 BuildRequires:	python3-PyQt4-devel
 BuildRequires:	python3-devel
 BuildRequires:	qt-devel
