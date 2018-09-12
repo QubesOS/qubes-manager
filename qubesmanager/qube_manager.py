@@ -431,18 +431,16 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                     # the VM might have vanished in the meantime
                     pass
 
-    def on_domain_added(self, submitter, event, **kwargs):
-        # pylint: disable=unused-argument
-
+    def on_domain_added(self, _submitter, _event, vm, **_kwargs):
         self.table.setSortingEnabled(False)
 
         row_no = self.table.rowCount()
         self.table.setRowCount(row_no + 1)
 
-        for vm in self.qubes_app.domains:
-            if vm == kwargs['vm']:
-                vm_row = VmRowInTable(vm, row_no, self.table)
-                self.vms_in_table[vm.qid] = vm_row
+        for domain in self.qubes_app.domains:
+            if domain == vm:
+                vm_row = VmRowInTable(domain, row_no, self.table)
+                self.vms_in_table[domain.qid] = vm_row
                 self.table.setSortingEnabled(True)
                 self.showhide_vms()
                 return
@@ -450,9 +448,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         # Never should reach here
         raise RuntimeError('Added domain not found')
 
-    def on_domain_removed(self, submitter, event, **kwargs):
-        # pylint: disable=unused-argument
-
+    def on_domain_removed(self, _submitter, _event, **kwargs):
         row_to_delete = None
         qid_to_delete = None
         for qid, row in self.vms_in_table.items():
@@ -465,9 +461,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         del self.vms_in_table[qid_to_delete]
         self.table.removeRow(row_to_delete.name_widget.row())
 
-    def on_domain_status_changed(self, vm, event, **kwargs):
-        # pylint: disable=unused-argument
-
+    def on_domain_status_changed(self, vm, _event, **_kwargs):
         self.vms_in_table[vm.qid].info_widget.update_vm_state()
 
         if vm == self.get_selected_vm():
@@ -478,9 +472,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 if row.vm.template == vm:
                     row.info_widget.update_vm_state()
 
-    def on_domain_changed(self, vm, event, **kwargs):
-        # pylint: disable=unused-argument
-
+    def on_domain_changed(self, vm, _event, **_kwargs):
         self.vms_in_table[vm.qid].update()
 
     def load_manager_settings(self):
