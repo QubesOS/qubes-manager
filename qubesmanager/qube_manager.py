@@ -468,8 +468,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             self.table_selection_changed()
 
         if vm.klass == 'TemplateVM':
-            for row in self.vms_in_table:
-                if row.vm.template == vm:
+            for row in self.vms_in_table.values():
+                if getattr(row.vm, 'template', None) == vm:
                     row.info_widget.update_vm_state()
 
     def on_domain_changed(self, vm, _event, **_kwargs):
@@ -882,7 +882,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         if reply == QtGui.QMessageBox.Yes:
             self.shutdown_vm(vm)
-
 
     def shutdown_vm(self, vm, shutdown_time=vm_shutdown_timeout,
                     check_time=vm_restart_check_timeout, and_restart=False):
