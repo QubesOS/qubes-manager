@@ -113,6 +113,12 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/i18n/qubesmanager_*.qm
 %{python3_sitelib}/qubesmanager/i18n/qubesmanager_*.ts
 
+%{python3_sitelib}/qubesmanager/tests/__pycache__
+%{python3_sitelib}/qubesmanager/tests/__init__.py
+%{python3_sitelib}/qubesmanager/tests/test_backup_01.py
+%{python3_sitelib}/qubesmanager/tests/test_global_settings.py
+%{python3_sitelib}/qubesmanager/tests/test_qube_manager.py
+
 %dir %{python3_sitelib}/qubesmanager-*.egg-info
 %{python3_sitelib}/qubesmanager-*.egg-info/*
 

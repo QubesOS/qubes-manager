@@ -2,8 +2,8 @@
 #
 # The Qubes OS Project, https://www.qubes-os.org/
 #
-# Copyright (C) 2016 Marek Marczykowski-Górecki
-#                                       <marmarek@invisiblethingslab.com>
+# Copyright (C) 2016 Marta Marczykowska-Górecka
+#                                       <marmarta@invisiblethingslab.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -100,8 +100,6 @@ class QubeManagerTest(unittest.TestCase):
     @unittest.mock.patch('qubesmanager.qubesadmin.vm.QubesVM.pause')
     @unittest.mock.patch('qubesmanager.qubesadmin.vm.QubesVM.is_running')
     @unittest.mock.patch('qubesmanager.qubesadmin.vm.QubesVM.get_power_state')
-
-
     def _select_non_admin_vm(self):
         for row in range(self.dialog.table.rowCount()):
             template = self.dialog.table.item(

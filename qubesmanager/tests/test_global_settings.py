@@ -2,8 +2,8 @@
 #
 # The Qubes OS Project, https://www.qubes-os.org/
 #
-# Copyright (C) 2016 Marek Marczykowski-Górecki
-#                                       <marmarek@invisiblethingslab.com>
+# Copyright (C) 2016 Marta Marczykowska-Górecka
+#                                       <marmarta@invisiblethingslab.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -231,7 +231,7 @@ class GlobalSettingsTest(SystemTestCase):
         self.assertEqual(self.app.default_template.name, new_def_template_name)
 
     @wrap_in_loop
-    def test__50_set_default_kernel(self):
+    def test_50_set_default_kernel(self):
         new_def_kernel_name = self.__set_noncurrent(
             self.dialog.default_kernel_combo)
         self.__click_ok()

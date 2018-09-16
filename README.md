@@ -19,3 +19,15 @@ This will keep translated strings, but will add new ones.
 ### Updating translations
 
 Commit updated `.ts` files into `i18n` directory.
+
+
+Tests
+----------------------
+
+Located in the tests/ directory.
+
+To run qube manager and backup tests:
+    python3 test_name.py -v
+
+To run global settings tests:
+    sudo systemctl stop qubesd; sudo -E python3 test_global_settings.py -v ; sudo systemctl start qubesd

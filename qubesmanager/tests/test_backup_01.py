@@ -2,8 +2,8 @@
 #
 # The Qubes OS Project, https://www.qubes-os.org/
 #
-# Copyright (C) 2016 Marek Marczykowski-Górecki
-#                                       <marmarek@invisiblethingslab.com>
+# Copyright (C) 2016 Marta Marczykowska-Górecka
+#                                       <marmarta@invisiblethingslab.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -49,10 +49,10 @@ class BackupTest(unittest.TestCase):
         del self.qapp
         super(BackupTest, self).tearDown()
 
-    def test_window_loads(self):
+    def test_00_window_loads(self):
         self.assertTrue(self.dialog.select_vms_widget is not None)
 
-    def test_vms_load_correctly(self):
+    def test_01_vms_load_correctly(self):
         all_vms = len([vm for vm in self.qapp.domains
                        if not vm.features.get('internal', False)])
 
@@ -61,7 +61,7 @@ class BackupTest(unittest.TestCase):
 
         self.assertEqual(all_vms, available_vms + selected_vms)
 
-    def test_correct_defaults(self):
+    def test_02_correct_defaults(self):
         # backup is compressed
         self.assertTrue(self.dialog.compress_checkbox.isChecked(),
                         "Compress backup should be checked by default")
@@ -85,6 +85,7 @@ class BackupTest(unittest.TestCase):
     # Check if target vms are selected
     # Check if no default file loads correctly - another file??
     # TODO: make a separate backup testing file to test various backup defaults
+
 
 if __name__ == "__main__":
     ha_syslog = logging.handlers.SysLogHandler('/dev/log')
