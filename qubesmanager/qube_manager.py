@@ -462,7 +462,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.table.removeRow(row_to_delete.name_widget.row())
 
     def on_domain_status_changed(self, vm, _event, **_kwargs):
-        self.vms_in_table[vm.qid].info_widget.update_vm_state()
+        try:
+            self.vms_in_table[vm.qid].info_widget.update_vm_state()
+        except exc.QubesPropertyAccessError:
+            return  # the VM was deleted before its status could be updated
 
         if vm == self.get_selected_vm():
             self.table_selection_changed()
@@ -473,7 +476,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                     row.info_widget.update_vm_state()
 
     def on_domain_changed(self, vm, _event, **_kwargs):
-        self.vms_in_table[vm.qid].update()
+        try:
+            self.vms_in_table[vm.qid].update()
+        except exc.QubesPropertyAccessError:
+            return  # the VM was deleted before its status could be updated
 
     def load_manager_settings(self):
         # visible columns
