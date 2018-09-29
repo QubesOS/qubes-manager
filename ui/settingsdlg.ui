@@ -483,6 +483,7 @@ border-width: 1px;</string>
                 <property name="font">
                  <font>
                   <weight>50</weight>
+                  <italic>true</italic>
                   <bold>false</bold>
                  </font>
                 </property>

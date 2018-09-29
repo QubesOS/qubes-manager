@@ -648,6 +648,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 None,
                 allow_default=True, allow_none=True)
             self.kernel.currentIndexChanged.connect(self.kernel_changed)
+            self.kernel_opts.setText(getattr(self.vm, 'kernelopts', '-'))
         else:
             self.kernel_groupbox.setVisible(False)
 
