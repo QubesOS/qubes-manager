@@ -46,9 +46,9 @@ class LogDialog(Ui_LogDialog, QDialog):
 
         self.setupUi(self)
         self.setWindowTitle(log_path)
- 
+
         self.connect(self.copy_to_qubes_clipboard, SIGNAL("clicked()"), self.copy_to_qubes_clipboard_triggered)
-       
+
         self.__init_log_text__()
 
     def __init_log_text__(self):
@@ -60,7 +60,7 @@ class LogDialog(Ui_LogDialog, QDialog):
             log.seek(-LOG_DISPLAY_SIZE, os.SEEK_END)
         else:
             log.seek(0, os.SEEK_SET)
-        self.displayed_text += log.read()
+        self.displayed_text += log.read().decode(errors='ignore')
         log.close()
         self.log_text.setPlainText(self.displayed_text)
 
