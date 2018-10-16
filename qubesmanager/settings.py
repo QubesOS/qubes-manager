@@ -944,22 +944,35 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
     ######## applications tab
 
-    def refresh_apps_in_vm(self, t_monitor):
-        try:
-            target_vm = self.vm.template
-        except AttributeError:
-            target_vm = self.vm
+    @staticmethod
+    def _do_refresh_apps_in_vm(vm):
+        is_running = vm.is_running()
 
-        if not target_vm.is_running():
-            not_running = True
-            target_vm.start()
-        else:
-            not_running = False
+        if not is_running:
+            vm.start()
 
-        subprocess.check_call(['qvm-sync-appmenus', target_vm.name])
+        subprocess.check_call(['qvm-sync-appmenus', vm.name])
 
-        if not_running:
-            target_vm.shutdown()
+        if not is_running:
+            vm.shutdown()
+
+    def refresh_apps(self, t_monitor):
+
+        vms_to_refresh = [self.vm]
+        template = getattr(self.vm, 'template', None)
+        if template:
+            vms_to_refresh.append(template)
+
+        for vm in vms_to_refresh:
+            self.refresh_apps_button.setText(
+                self.tr('Refresh in progress (refreshing applications '
+                        'from {})').format(vm.name))
+            try:
+                self._do_refresh_apps_in_vm(vm)
+            except (qubesadmin.exc.QubesException,
+                    subprocess.CalledProcessError) as ex:
+                t_monitor.set_error_msg(
+                    self.tr("Refresh failed: {}").format(str(ex)))
 
         t_monitor.set_finished()
 
@@ -970,7 +983,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         t_monitor = thread_monitor.ThreadMonitor()
         thread = threading.Thread(
-            target=self.refresh_apps_in_vm,
+            target=self.refresh_apps,
             args=(t_monitor,))
         thread.daemon = True
         thread.start()
@@ -978,6 +991,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         while not t_monitor.is_finished():
             self.qapp.processEvents()
             time.sleep(0.1)
+
+        if not t_monitor.success:
+            QtGui.QMessageBox.warning(self,
+                                      self.tr("Error refreshing applications!"),
+                                      t_monitor.error_msg)
 
         self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
 
