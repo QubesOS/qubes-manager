@@ -492,6 +492,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         timer.start(1000 * 30) # 30s
         self.check_updates()
 
+    def clear_threads(self):
+        for thread in self.threads_list:
+            if thread.isFinished():
+                self.threads_list.remove(thread)
+
     def closeEvent(self, event):
         # pylint: disable=invalid-name
         # save window size at close
@@ -785,11 +790,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             self.connect(thread, QtCore.SIGNAL("show_error(QString, QString)"), self.show_error)
             thread.finished.connect(self.clear_threads)
             thread.start()
-
-    def clear_threads(self):
-        for thread in self.threads_list:
-            if thread.isFinished():
-                self.threads_list.remove(thread)
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_clonevm_triggered')
