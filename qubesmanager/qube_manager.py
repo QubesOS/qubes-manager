@@ -28,7 +28,6 @@ import subprocess
 import time
 from datetime import datetime, timedelta
 import traceback
-import threading
 import quamash
 import asyncio
 from contextlib import suppress
@@ -44,7 +43,6 @@ from PyQt4 import QtCore  # pylint: disable=import-error
 from qubesmanager.about import AboutDialog
 
 from . import ui_qubemanager  # pylint: disable=no-name-in-module
-from . import thread_monitor
 from . import table_widgets
 from . import settings
 from . import global_settings
@@ -238,6 +236,81 @@ class VmShutdownMonitor(QtCore.QObject):
             self.restart_vm_if_needed()
 
 
+class StartVMThread(QtCore.QThread):
+    def __init__(self, vm):
+        QtCore.QThread.__init__(self)
+        self.vm = vm
+
+    def run(self):
+        try:
+            self.vm.start()
+        except exc.QubesException as ex:
+            self.emit(QtCore.SIGNAL('show_error(QString, QString)'),\
+                   "Error starting Qube!", str(ex))
+
+
+class RemoveVMThread(QtCore.QThread):
+    def __init__(self, vm, qubes_app):
+        QtCore.QThread.__init__(self)
+        self.vm = vm
+        self.qubes_app = qubes_app
+
+    def run(self):
+        try:
+            del self.qubes_app.domains[self.vm.name]
+        except exc.QubesException as ex:
+            self.emit(QtCore.SIGNAL('show_error(QString, QString)'),\
+                   "Error removing Qube!", str(ex))
+
+class UpdateVMThread(QtCore.QThread):
+    def __init__(self, vm):
+        QtCore.QThread.__init__(self)
+        self.vm = vm
+
+    def run(self):
+        try:
+            if self.vm.qid == 0:
+                subprocess.check_call(
+                    ["/usr/bin/qubes-dom0-update", "--clean", "--gui"])
+            else:
+                if not self.vm.is_running():
+                    self.vm.start()
+                self.vm.run_service("qubes.InstallUpdatesGUI",\
+                        user="root", wait=False)
+        except (ChildProcessError, exc.QubesException) as ex:
+            self.emit(QtCore.SIGNAL('show_error(QString, QString)'),\
+                    "Error on Qube update!", str(ex))
+
+
+class CloneVMThread(QtCore.QThread):
+    def __init__(self, src_vm, qubes_app, dst_name):
+        QtCore.QThread.__init__(self)
+        self.src_vm = src_vm
+        self.qubes_app = qubes_app
+        self.dst_name = dst_name
+
+    def run(self):
+        try:
+            dst_vm = self.qubes_app.clone_vm(self.src_vm, self.dst_name)
+        except exc.QubesException as ex:
+            self.emit(QtCore.SIGNAL('show_error(QString, QString)'),\
+                    "Error while cloning Qube!", str(ex))
+
+
+class RunCommandThread(QtCore.QThread):
+    def __init__(self, vm, command_to_run):
+        QtCore.QThread.__init__(self)
+        self.vm = vm
+        self.command_to_run = command_to_run
+
+    def run(self):
+        try:
+            self.vm.run(self.command_to_run)
+        except (ChildProcessError, exc.QubesException) as ex:
+            self.emit(QtCore.SIGNAL('show_error(QString, QString)'),\
+                    "Error while running command!", str(ex))
+
+
 class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     # pylint: disable=too-many-instance-attributes
     row_height = 30
@@ -409,6 +482,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                                self.on_domain_changed)
         dispatcher.add_handler('property-load',
                                self.on_domain_changed)
+
+        # It needs to store threads until they finish
+        self.threads_list = []
 
         # Check Updates Timer
         timer = QtCore.QTimer(self)
@@ -585,7 +661,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         vm = self.get_selected_vm()
 
         if vm is not None and vm in self.qubes_app.domains:
-
             #  TODO: add boot from device to menu and add windows tools there
             # Update available actions:
             self.action_settings.setEnabled(vm.klass != 'AdminVM')
@@ -705,43 +780,16 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         else:
             # remove the VM
-            t_monitor = thread_monitor.ThreadMonitor()
-            thread = threading.Thread(target=self.do_remove_vm,
-                                      args=(vm, self.qubes_app, t_monitor))
-            thread.daemon = True
+            thread = RemoveVMThread(vm, self.qubes_app)
+            self.threads_list.append(thread)
+            self.connect(thread, QtCore.SIGNAL("show_error(QString, QString)"), self.show_error)
+            thread.finished.connect(self.clear_threads)
             thread.start()
 
-            progress = QtGui.QProgressDialog(
-                self.tr(
-                    "Removing Qube: <b>{0}</b>...").format(vm.name), "", 0, 0)
-            progress.setWindowFlags(QtCore.Qt.Window |
-                                    QtCore.Qt.WindowTitleHint |
-                                    QtCore.Qt.CustomizeWindowHint)
-            progress.setCancelButton(None)
-            progress.setModal(True)
-            progress.show()
-
-            while not t_monitor.is_finished():
-                self.qt_app.processEvents()
-                time.sleep(0.1)
-
-            progress.hide()
-
-            if t_monitor.success:
-                pass
-            else:
-                QtGui.QMessageBox.warning(None, self.tr("Error removing Qube!"),
-                                          self.tr("ERROR: {0}").format(
-                                              t_monitor.error_msg))
-
-    @staticmethod
-    def do_remove_vm(vm, qubes_app, t_monitor):
-        try:
-            del qubes_app.domains[vm.name]
-        except exc.QubesException as ex:
-            t_monitor.set_error_msg(str(ex))
-
-        t_monitor.set_finished()
+    def clear_threads(self):
+        for thread in self.threads_list:
+            if thread.isFinished():
+                self.threads_list.remove(thread)
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_clonevm_triggered')
@@ -760,12 +808,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         if not ok or clone_name == "":
             return
 
-        t_monitor = thread_monitor.ThreadMonitor()
-        thread = threading.Thread(target=self.do_clone_vm,
-                                  args=(vm, self.qubes_app,
-                                        clone_name, t_monitor))
-        thread.daemon = True
-        thread.start()
+        self.thread = CloneVMThread(vm, self.qubes_app, clone_name)
+        self.thread.start()
+        return
 
         progress = QtGui.QProgressDialog(
             self.tr("Cloning Qube <b>{0}</b> to <b>{1}</b>...").format(
@@ -776,31 +821,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         progress.setCancelButton(None)
         progress.setModal(True)
         progress.show()
-
-        while not t_monitor.is_finished():
-            self.qt_app.processEvents()
-            time.sleep(0.2)
-
-        progress.hide()
-
-        if not t_monitor.success:
-            QtGui.QMessageBox.warning(
-                None,
-                self.tr("Error while cloning Qube"),
-                self.tr("Exception while cloning:<br>{0}").format(
-                    t_monitor.error_msg))
-
-
-    @staticmethod
-    def do_clone_vm(src_vm, qubes_app, dst_name, t_monitor):
-        dst_vm = None
-        try:
-            dst_vm = qubes_app.clone_vm(src_vm, dst_name)
-        except exc.QubesException as ex:
-            t_monitor.set_error_msg(str(ex))
-            if dst_vm:
-                pass
-        t_monitor.set_finished()
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_resumevm_triggered')
@@ -823,33 +843,18 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     def start_vm(self, vm):
         if vm.is_running():
             return
-        t_monitor = thread_monitor.ThreadMonitor()
-        thread = threading.Thread(target=self.do_start_vm,
-                                  args=(vm, t_monitor))
-        thread.daemon = True
+
+        thread = StartVMThread(vm)
+        self.threads_list.append(thread)
+        self.connect(thread, QtCore.SIGNAL("show_error(QString, QString)"), self.show_error)
+        thread.finished.connect(self.clear_threads)
         thread.start()
 
-        while not t_monitor.is_finished():
-            self.qt_app.processEvents()
-            time.sleep(0.1)
-
-        if not t_monitor.success:
-            QtGui.QMessageBox.warning(
-                None,
-                self.tr("Error starting Qube!"),
-                self.tr("ERROR: {0}").format(t_monitor.error_msg))
-
-
-    @staticmethod
-    def do_start_vm(vm, t_monitor):
-        try:
-            vm.start()
-        except exc.QubesException as ex:
-            t_monitor.set_error_msg(str(ex))
-            t_monitor.set_finished()
-            return
-
-        t_monitor.set_finished()
+    def show_error(self, error, error_msg):
+        QtGui.QMessageBox.warning(
+            None,
+            self.tr(error),
+            self.tr("ERROR: {0}").format(error_msg))
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_startvm_tools_install_triggered')
@@ -1014,55 +1019,12 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             if reply != QtGui.QMessageBox.Yes:
                 return
 
-        self.qt_app.processEvents()
-
-        t_monitor = thread_monitor.ThreadMonitor()
-        thread = threading.Thread(target=self.do_update_vm,
-                                  args=(vm, t_monitor))
-        thread.daemon = True
+        thread = UpdateVMThread(vm)
+        self.threads_list.append(thread)
+        self.connect(thread, QtCore.SIGNAL("show_error(QString, QString)"), self.show_error)
+        thread.finished.connect(self.clear_threads)
         thread.start()
 
-        progress = QtGui.QProgressDialog(
-                self.tr(
-                    "<b>{0}</b><br>Please wait for the updater to "
-                    "launch...").format(vm.name), "", 0, 0)
-        progress.setWindowFlags(QtCore.Qt.Window |
-                                QtCore.Qt.WindowTitleHint |
-                                QtCore.Qt.CustomizeWindowHint)
-        progress.setCancelButton(None)
-        progress.setModal(True)
-        progress.show()
-
-        while not t_monitor.is_finished():
-            self.qt_app.processEvents()
-            time.sleep(0.2)
-
-        progress.hide()
-
-        if vm.qid != 0:
-            if not t_monitor.success:
-                QtGui.QMessageBox.warning(
-                    None,
-                    self.tr("Error on Qube update!"),
-                    self.tr("ERROR: {0}").format(t_monitor.error_msg))
-
-
-    @staticmethod
-    def do_update_vm(vm, t_monitor):
-        try:
-            if vm.qid == 0:
-                subprocess.check_call(
-                    ["/usr/bin/qubes-dom0-update", "--clean", "--gui"])
-            else:
-                if not vm.is_running():
-                    vm.start()
-                vm.run_service("qubes.InstallUpdatesGUI",
-                               user="root", wait=False)
-        except (ChildProcessError, exc.QubesException) as ex:
-            t_monitor.set_error_msg(str(ex))
-            t_monitor.set_finished()
-            return
-        t_monitor.set_finished()
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_run_command_in_vm_triggered')
@@ -1075,29 +1037,13 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             self.tr('Run command in <b>{}</b>:').format(vm.name))
         if not ok or command_to_run == "":
             return
-        t_monitor = thread_monitor.ThreadMonitor()
-        thread = threading.Thread(target=self.do_run_command_in_vm, args=(
-            vm, command_to_run, t_monitor))
-        thread.daemon = True
+
+        thread = RunCommandThread(vm, command_to_run)
+        self.threads_list.append(thread)
+        self.connect(thread, QtCore.SIGNAL("show_error(QString, QString)"), self.show_error)
+        thread.finished.connect(self.clear_threads)
         thread.start()
 
-        while not t_monitor.is_finished():
-            self.qt_app.processEvents()
-            time.sleep(0.2)
-
-        if not t_monitor.success:
-            QtGui.QMessageBox.warning(
-                None, self.tr("Error while running command"),
-                self.tr("Exception while running command:<br>{0}").format(
-                    t_monitor.error_msg))
-
-    @staticmethod
-    def do_run_command_in_vm(vm, command_to_run, t_monitor):
-        try:
-            vm.run(command_to_run)
-        except (ChildProcessError, exc.QubesException) as ex:
-            t_monitor.set_error_msg(str(ex))
-        t_monitor.set_finished()
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_set_keyboard_layout_triggered')
