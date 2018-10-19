@@ -476,6 +476,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                     row.info_widget.update_vm_state()
 
     def on_domain_changed(self, vm, _event, **_kwargs):
+        if not vm:  # change of global properties occured
+            return
         try:
             self.vms_in_table[vm.qid].update()
         except exc.QubesPropertyAccessError:
