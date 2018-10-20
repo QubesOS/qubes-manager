@@ -595,17 +595,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 self.tr("Removal cancelled"),
                 self.tr("The qube will not be removed."))
 
-    def _clone_vm(self, t_monitor, name):
-        try:
-            self.vm.app.clone_vm(self.vm, name)
-
-        except qubesadmin.exc.QubesException as qex:
-            t_monitor.set_error_msg(str(qex))
-        except Exception as ex:  # pylint: disable=broad-except
-            t_monitor.set_error_msg(repr(ex))
-
-        t_monitor.set_finished()
-
     def clone_vm(self):
 
         cloned_vm_name, ok = QtGui.QInputDialog.getText(
