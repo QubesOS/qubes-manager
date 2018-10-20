@@ -35,7 +35,39 @@ import qubesadmin.exc
 from . import utils
 
 from .ui_newappvmdlg import Ui_NewVMDlg  # pylint: disable=import-error
-from .thread_monitor import ThreadMonitor
+
+class CreateVMThread(QtCore.QThread):
+    def __init__(self, app, vmclass, name, label, template, properties):
+        QtCore.QThread.__init__(self)
+        self.app = app
+        self.vmclass = vmclass
+        self.name = name
+        self.label = label
+        self.template = template
+        self.properties = properties
+        self.error = None
+
+    def run(self):
+        try:
+            if self.vmclass == 'StandaloneVM' and self.template is not None:
+                if self.template is qubesadmin.DEFAULT:
+                    src_vm = self.app.default_template
+                else:
+                    src_vm = self.template
+                vm = self.app.clone_vm(src_vm, self.name, self.vmclass)
+                vm.label = self.label
+                for k, v in self.properties.items():
+                    setattr(vm, k, v)
+            else:
+                vm = self.app.add_new_vm(self.vmclass,
+                    name=self.name, label=self.label, template=self.template)
+                for k, v in self.properties.items():
+                    setattr(vm, k, v)
+
+        except qubesadmin.exc.QubesException as qex:
+            self.error = str(qex)
+        except Exception as ex:  # pylint: disable=broad-except
+            self.error = repr(ex)
 
 
 class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
@@ -125,67 +157,36 @@ class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
             properties['virt_mode'] = 'hvm'
             properties['kernel'] = None
 
-        thread_monitor = ThreadMonitor()
-        thread = threading.Thread(target=self.do_create_vm,
-            args=(self.app, vmclass, name, label, template, properties,
-                 thread_monitor))
-        thread.daemon = True
-        thread.start()
+        self.thread = CreateVMThread(self.app, vmclass, name, label,
+                template, properties)
+        self.thread.finished.connect(self.create_finished)
+        self.thread.start()
 
-        progress = QtGui.QProgressDialog(
+        self.progress = QtGui.QProgressDialog(
             self.tr("Creating new qube <b>{}</b>...").format(name), "", 0, 0)
-        progress.setCancelButton(None)
-        progress.setModal(True)
-        progress.show()
+        self.progress.setCancelButton(None)
+        self.progress.setModal(True)
+        self.progress.show()
 
-        while not thread_monitor.is_finished():
-            self.qtapp.processEvents()
-            time.sleep(0.1)
+    def create_finished(self):
+        self.progress.hide()
 
-        progress.hide()
-
-        if not thread_monitor.success:
+        if self.thread.error:
             QtGui.QMessageBox.warning(None,
                 self.tr("Error creating the qube!"),
-                self.tr("ERROR: {}").format(thread_monitor.error_msg))
+                self.tr("ERROR: {}").format(thread.error))
 
         self.done(0)
 
-        if thread_monitor.success:
+        if not self.thread.error:
             if self.launch_settings.isChecked():
-                subprocess.check_call(['qubes-vm-settings', name])
+                subprocess.check_call(['qubes-vm-settings', str(self.name)])
             if self.install_system.isChecked():
                 subprocess.check_call(
-                    ['qubes-vm-boot-from-device', name])
+                    ['qubes-vm-boot-from-device', srt(self.name)])
 
-    @staticmethod
-    def do_create_vm(app, vmclass, name, label, template, properties,
-            thread_monitor):
-        try:
-            if vmclass == 'StandaloneVM' and template is not None:
-                if template is qubesadmin.DEFAULT:
-                    src_vm = app.default_template
-                else:
-                    src_vm = template
-                vm = app.clone_vm(src_vm, name, vmclass)
-                vm.label = label
-                for k, v in properties.items():
-                    setattr(vm, k, v)
-            else:
-                vm = app.add_new_vm(vmclass,
-                    name=name, label=label, template=template)
-                for k, v in properties.items():
-                    setattr(vm, k, v)
-
-        except qubesadmin.exc.QubesException as qex:
-            thread_monitor.set_error_msg(str(qex))
-        except Exception as ex:  # pylint: disable=broad-except
-            thread_monitor.set_error_msg(repr(ex))
-
-        thread_monitor.set_finished()
 
     def type_change(self):
-
         # AppVM
         if self.vm_type.currentIndex() == 0:
             self.template_vm.setEnabled(True)

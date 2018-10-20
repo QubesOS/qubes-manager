@@ -23,9 +23,11 @@
 import traceback
 
 import signal
+import quamash
 
 from qubesadmin import Qubes, exc
 from qubesadmin import utils as admin_utils
+from qubesadmin import events
 from qubes.storage.file import get_disk_usage
 
 from PyQt4 import QtCore  # pylint: disable=import-error
@@ -35,18 +37,38 @@ from . import multiselectwidget
 
 from . import backup_utils
 from . import utils
+
 import grp
 import pwd
 import sys
 import os
-from . import thread_monitor
-import threading
+import asyncio
+from contextlib import suppress
 import time
+
+class BackupThread(QtCore.QThread):
+    def __init__(self, vm):
+        QtCore.QThread.__init__(self)
+        self.vm = vm
+        self.msg = None
+
+    def run(self):
+        msg = []
+        try:
+            if not self.vm.is_running():
+                self.vm.start()
+            self.vm.app.qubesd_call(
+                'dom0', 'admin.backup.Execute',
+                backup_utils.get_profile_name(True))
+        except Exception as ex:  # pylint: disable=broad-except
+            msg.append(str(ex))
+
+        if msg:
+            self.msg = '\n'.join(msg)
 
 
 class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
-
-    def __init__(self, qt_app, qubes_app, parent=None):
+    def __init__(self, qt_app, qubes_app, dispatcher, parent=None):
         super(BackupVMsWindow, self).__init__(parent)
 
         self.qt_app = qt_app
@@ -54,8 +76,6 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
         self.backup_settings = QtCore.QSettings()
 
         self.selected_vms = []
-        self.canceled = False
-        self.thread_monitor = None
 
         self.setupUi(self)
 
@@ -111,6 +131,17 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
 
         selected = self.load_settings()
         self.__fill_vms_list__(selected)
+
+        # Connect backup events for progress_bar
+        self.progress_bar.setMinimum(0)
+        self.progress_bar.setMaximum(100)
+        self.dispatcher = dispatcher
+        dispatcher.add_handler('backup-progress', self.on_backup_progress)
+
+    def on_backup_progress(self, __submitter, _event, **kwargs):
+        print(kwargs['progress'])
+        self.progress_bar.setValue(int(float(kwargs['progress'])))
+
 
     def load_settings(self):
         """
@@ -260,24 +291,6 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
 
         return True
 
-    def __do_backup__(self, t_monitor):
-        msg = []
-
-        try:
-            vm = self.qubes_app.domains[
-                self.appvm_combobox.currentText()]
-            if not vm.is_running():
-                vm.start()
-            self.qubes_app.qubesd_call(
-                'dom0', 'admin.backup.Execute',
-                backup_utils.get_profile_name(True))
-        except Exception as ex:  # pylint: disable=broad-except
-            msg.append(str(ex))
-
-        if msg:
-            t_monitor.set_error_msg('\n'.join(msg))
-
-        t_monitor.set_finished()
 
     @staticmethod
     def cleanup_temporary_files():
@@ -310,33 +323,27 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
             self.showFileDialog.setChecked(self.showFileDialog.isEnabled()
                                            and str(self.dir_line_edit.text())
                                            .count("media/") > 0)
-            self.thread_monitor = thread_monitor.ThreadMonitor()
-            thread = threading.Thread(
-                target=self.__do_backup__,
-                args=(self.thread_monitor,))
-            thread.daemon = True
-            thread.start()
 
-            while not self.thread_monitor.is_finished():
-                self.qt_app.processEvents()
-                time.sleep(0.1)
+            vm = self.qubes_app.domains[
+                self.appvm_combobox.currentText()]
 
-            if not self.thread_monitor.success:
-                if self.canceled:
-                    self.progress_status.setText(
-                        self.tr(
-                            "Backup aborted. "
-                            "Temporary file may be left at backup location."))
-                else:
-                    self.progress_status.setText(self.tr("Backup error."))
-                    QtGui.QMessageBox.warning(
-                        self, self.tr("Backup error!"),
-                        self.tr("ERROR: {}").format(
-                            self.thread_monitor.error_msg))
-            else:
-                self.progress_bar.setMaximum(100)
-                self.progress_bar.setValue(100)
-                self.progress_status.setText(self.tr("Backup finished."))
+            self.thread = BackupThread(vm)
+            self.thread.finished.connect(self.backup_finished)
+            self.thread.start()
+
+        signal.signal(signal.SIGCHLD, old_sigchld_handler)
+
+    def backup_finished(self):
+        if self.thread.msg:
+            self.progress_status.setText(self.tr("Backup error."))
+            QtGui.QMessageBox.warning(
+                self, self.tr("Backup error!"),
+                self.tr("ERROR: {}").format(
+                    self.thread.msg))
+        else:
+            self.progress_bar.setValue(100)
+            self.progress_status.setText(self.tr("Backup finished."))
+
             if self.showFileDialog.isChecked():
                 orig_text = self.progress_status.text
                 self.progress_status.setText(
@@ -344,31 +351,28 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
                         " Please unmount your backup volume and cancel "
                         "the file selection dialog."))
                 backup_utils.select_path_button_clicked(self, False, True)
+
             self.button(self.CancelButton).setEnabled(False)
             self.button(self.FinishButton).setEnabled(True)
             self.showFileDialog.setEnabled(False)
             self.cleanup_temporary_files()
 
             # turn off only when backup was successful
-            if self.thread_monitor.success and \
-                    self.turn_off_checkbox.isChecked():
+            if self.turn_off_checkbox.isChecked():
                 os.system('systemctl poweroff')
-
-        signal.signal(signal.SIGCHLD, old_sigchld_handler)
 
     def reject(self):
         if self.currentPage() is self.commit_page:
-            self.canceled = True
+            self.thread.terminate()
             self.qubes_app.qubesd_call(
                 'dom0', 'admin.backup.Cancel',
                 backup_utils.get_profile_name(True))
-            self.progress_bar.setMaximum(100)
-            self.progress_bar.setValue(0)
-            self.button(self.CancelButton).setDisabled(True)
-            self.cleanup_temporary_files()
-        else:
-            self.cleanup_temporary_files()
-            self.done(0)
+            QtGui.QMessageBox.warning(
+                self, self.tr("Backup aborted!"),
+                self.tr("ERROR: {}").format("Aborted!"))
+
+        self.cleanup_temporary_files()
+        self.done(0)
 
     def has_selected_vms(self):
         return self.select_vms_widget.selected_list.count() > 0
@@ -402,9 +406,14 @@ def handle_exception(exc_type, exc_value, exc_traceback):
         error + "at <b>line %d</b> of file <b>%s</b>.<br/><br/>"
         % (line, filename))
 
+def loop_shutdown():
+    pending = asyncio.Task.all_tasks()
+    for task in pending:
+        with suppress(asyncio.CancelledError):
+            task.cancel()
+
 
 def main():
-
     qt_app = QtGui.QApplication(sys.argv)
     qt_app.setOrganizationName("The Qubes Project")
     qt_app.setOrganizationDomain("http://qubes-os.org")
@@ -412,14 +421,24 @@ def main():
 
     sys.excepthook = handle_exception
 
-    app = Qubes()
+    qubes_app = Qubes()
 
-    backup_window = BackupVMsWindow(qt_app, app)
+    loop = quamash.QEventLoop(qt_app)
+    asyncio.set_event_loop(loop)
+    dispatcher = events.EventsDispatcher(qubes_app)
 
+    backup_window = BackupVMsWindow(qt_app, qubes_app, dispatcher)
     backup_window.show()
 
-    qt_app.exec_()
-    qt_app.exit()
+    try:
+        loop.run_until_complete(
+            asyncio.ensure_future(dispatcher.listen_for_events()))
+    except asyncio.CancelledError:
+        pass
+    except Exception: # pylint: disable=broad-except
+        loop_shutdown()
+        exc_type, exc_value, exc_traceback = sys.exc_info()[:3]
+        handle_exception(exc_type, exc_value, exc_traceback)
 
 
 if __name__ == "__main__":

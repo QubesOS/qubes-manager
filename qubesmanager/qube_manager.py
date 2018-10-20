@@ -25,12 +25,13 @@ import sys
 import os
 import os.path
 import subprocess
-import time
 from datetime import datetime, timedelta
 import traceback
+from contextlib import suppress
+import time
+
 import quamash
 import asyncio
-from contextlib import suppress
 
 from qubesadmin import Qubes
 from qubesadmin import exc
@@ -51,6 +52,7 @@ from . import backup
 from . import create_new_vm
 from . import log_dialog
 from . import utils as manager_utils
+from . import common_threads
 
 
 class SearchBox(QtGui.QLineEdit):
@@ -241,32 +243,20 @@ class StartVMThread(QtCore.QThread):
     def __init__(self, vm):
         QtCore.QThread.__init__(self)
         self.vm = vm
+        self.error = None
 
     def run(self):
         try:
             self.vm.start()
         except exc.QubesException as ex:
-            self.emit(QtCore.SIGNAL('show_error(QString, QString)'),\
-                   "Error starting Qube!", str(ex))
+            self.error = ("Error starting Qube!", str(ex))
 
-
-class RemoveVMThread(QtCore.QThread):
-    def __init__(self, vm, qubes_app):
-        QtCore.QThread.__init__(self)
-        self.vm = vm
-        self.qubes_app = qubes_app
-
-    def run(self):
-        try:
-            del self.qubes_app.domains[self.vm.name]
-        except exc.QubesException as ex:
-            self.emit(QtCore.SIGNAL('show_error(QString, QString)'),\
-                   "Error removing Qube!", str(ex))
 
 class UpdateVMThread(QtCore.QThread):
     def __init__(self, vm):
         QtCore.QThread.__init__(self)
         self.vm = vm
+        self.error = None
 
     def run(self):
         try:
@@ -279,23 +269,7 @@ class UpdateVMThread(QtCore.QThread):
                 self.vm.run_service("qubes.InstallUpdatesGUI",\
                         user="root", wait=False)
         except (ChildProcessError, exc.QubesException) as ex:
-            self.emit(QtCore.SIGNAL('show_error(QString, QString)'),\
-                    "Error on Qube update!", str(ex))
-
-
-class CloneVMThread(QtCore.QThread):
-    def __init__(self, src_vm, qubes_app, dst_name):
-        QtCore.QThread.__init__(self)
-        self.src_vm = src_vm
-        self.qubes_app = qubes_app
-        self.dst_name = dst_name
-
-    def run(self):
-        try:
-            dst_vm = self.qubes_app.clone_vm(self.src_vm, self.dst_name)
-        except exc.QubesException as ex:
-            self.emit(QtCore.SIGNAL('show_error(QString, QString)'),\
-                    "Error while cloning Qube!", str(ex))
+            self.error = ("Error on Qube update!", str(ex))
 
 
 class RunCommandThread(QtCore.QThread):
@@ -308,8 +282,7 @@ class RunCommandThread(QtCore.QThread):
         try:
             self.vm.run(self.command_to_run)
         except (ChildProcessError, exc.QubesException) as ex:
-            self.emit(QtCore.SIGNAL('show_error(QString, QString)'),\
-                    "Error while running command!", str(ex))
+            self.error = ("Error while running command!", str(ex))
 
 
 class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
@@ -330,7 +303,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                        "IP": 8,
                        "Backups": 9,
                        "Last backup": 10,
-                       }
+                      }
 
     def __init__(self, qt_app, qubes_app, dispatcher, parent=None):
         # pylint: disable=unused-argument
@@ -472,7 +445,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         dispatcher.add_handler('domain-start-failed',
                                self.on_domain_status_changed)
         dispatcher.add_handler('domain-stopped', self.on_domain_status_changed)
+        dispatcher.add_handler('domain-pre-shutdown', self.on_domain_status_changed)
         dispatcher.add_handler('domain-shutdown', self.on_domain_status_changed)
+        dispatcher.add_handler('domain-paused', self.on_domain_status_changed)
+        dispatcher.add_handler('domain-unpaused', self.on_domain_status_changed)
 
         dispatcher.add_handler('domain-add', self.on_domain_added)
         dispatcher.add_handler('domain-delete', self.on_domain_removed)
@@ -496,6 +472,12 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     def clear_threads(self):
         for thread in self.threads_list:
             if thread.isFinished():
+                if thread.error:
+                    (title, msg) = thread.error
+                    QtGui.QMessageBox.warning(
+                        None,
+                        self.tr(title),
+                        self.tr("ERROR: {0}").format(msg))
                 self.threads_list.remove(thread)
 
     def closeEvent(self, event):
@@ -659,7 +641,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             self.manager_settings.sync()
 
     def table_selection_changed(self):
-
         vm = self.get_selected_vm()
 
         if vm is not None and vm in self.qubes_app.domains:
@@ -783,7 +764,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         else:
             # remove the VM
-            thread = RemoveVMThread(vm, self.qubes_app)
+            thread = common_threads.RemoveVMThread(vm)
             self.threads_list.append(thread)
             self.connect(thread, QtCore.SIGNAL("show_error(QString, QString)"), self.show_error)
             thread.finished.connect(self.clear_threads)
@@ -806,16 +787,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         if not ok or clone_name == "":
             return
 
-        self.thread = CloneVMThread(vm, self.qubes_app, clone_name)
-        self.thread.start()
-        return
-
-        progress = QtGui.QProgressDialog(
-            self.tr("Cloning Qube <b>{0}</b> to <b>{1}</b>...").format(
-                vm.name, clone_name), "", 0, 0)
-        progress.setCancelButton(None)
-        progress.setModal(True)
-        progress.show()
+        thread = common_threads.CloneVMThread(vm, clone_name)
+        thread.finished.connect(self.clear_threads)
+        self.threads_list.append(thread)
+        thread.start()
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_resumevm_triggered')
@@ -825,8 +800,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         if vm.get_power_state() in ["Paused", "Suspended"]:
             try:
                 vm.unpause()
-                self.vms_in_table[vm.qid].update()
-                self.table_selection_changed()
             except exc.QubesException as ex:
                 QtGui.QMessageBox.warning(
                     None, self.tr("Error unpausing Qube!"),
@@ -841,7 +814,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         thread = StartVMThread(vm)
         self.threads_list.append(thread)
-        self.connect(thread, QtCore.SIGNAL("show_error(QString, QString)"), self.show_error)
         thread.finished.connect(self.clear_threads)
         thread.start()
 
@@ -1016,7 +988,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         thread = UpdateVMThread(vm)
         self.threads_list.append(thread)
-        self.connect(thread, QtCore.SIGNAL("show_error(QString, QString)"), self.show_error)
         thread.finished.connect(self.clear_threads)
         thread.start()
 
@@ -1035,10 +1006,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         thread = RunCommandThread(vm, command_to_run)
         self.threads_list.append(thread)
-        self.connect(thread, QtCore.SIGNAL("show_error(QString, QString)"), self.show_error)
         thread.finished.connect(self.clear_threads)
         thread.start()
-
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_set_keyboard_layout_triggered')
@@ -1079,7 +1048,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_backup_triggered')
     def action_backup_triggered(self):
-        backup_window = backup.BackupVMsWindow(self.qt_app, self.qubes_app)
+        backup_window = backup.BackupVMsWindow(self.qt_app, self.qubes_app, self.dispatcher)
         backup_window.show()
 
     # noinspection PyArgumentList
