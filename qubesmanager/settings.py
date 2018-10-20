@@ -33,7 +33,7 @@ import sys
 from qubesadmin.tools import QubesArgumentParser
 from qubesadmin import devices
 from qubesadmin import utils as admin_utils
-from qubesadmin import exc
+import qubesadmin.ecx
 
 from . import utils
 from . import multiselectwidget
@@ -67,7 +67,7 @@ class RenameVMThread(QtCore.QThread):
                         setattr(self.vm.app, prop, new_vm)
                     else:
                         setattr(holder, prop, new_vm)
-                except exc.QubesException:
+                except qubesadmin.exc.QubesException:
                     failed_props += [(holder, prop)]
 
             if not failed_props:
@@ -85,7 +85,7 @@ class RenameVMThread(QtCore.QThread):
                             "manually.<br> ").format(
                                 self.vm.name, self.vm.name, self.vm.name) + list_text)
 
-        except exc.QubesException as ex:
+        except qubesadmin.exc.QubesException as ex:
             self.error = ("Rename error!", str(ex))
         except Exception as ex:  # pylint: disable=broad-except
             self.error = ("Rename error!", repr(ex))
@@ -288,7 +288,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             ret_tmp = self.__apply_services_tab__()
             if ret_tmp:
                 ret += ["Sevices tab:"] + ret_tmp
-        except exc.QubesException as qex:
+        except qubesadmin.exc.QubesException as qex:
             ret.append(self.tr('Error while saving changes: ') + str(qex))
         except Exception as ex:  # pylint: disable=broad-except
             ret.append(repr(ex))
@@ -299,7 +299,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                     self.policy_allow_radio_button.isChecked(),
                     self.temp_full_access.isChecked(),
                     self.temp_full_access_time.value())
-        except exc.QubesException as qex:
+        except qubesadmin.exc.QubesException as qex:
             ret += [self.tr("Firewall tab:"), str(qex)]
         except Exception as ex:  # pylint: disable=broad-except
             ret += [self.tr("Firewall tab:"), repr(ex)]
@@ -307,7 +307,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         try:
             if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
                 self.app_list_manager.save_appmenu_select_changes()
-        except exc.QubesException as qex:
+        except qubesadmin.exc.QubesException as qex:
             ret += [self.tr("Applications tab:"), str(qex)]
         except Exception as ex:  # pylint: disable=broad-except
             ret += [self.tr("Applications tab:"), repr(ex)]
@@ -455,7 +455,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 if self.vmlabel.currentIndex() != self.label_idx:
                     label = self.label_list[self.vmlabel.currentIndex()]
                     self.vm.label = label
-        except exc.QubesException as ex:
+        except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
         # vm template changed
@@ -463,14 +463,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             if self.template_name.currentIndex() != self.template_idx:
                 self.vm.template = \
                     self.template_list[self.template_name.currentIndex()]
-        except exc.QubesException as ex:
+        except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
         # vm netvm changed
         try:
             if self.netVM.currentIndex() != self.netvm_idx:
                 self.vm.netvm = self.netvm_list[self.netVM.currentIndex()]
-        except exc.QubesException as ex:
+        except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
         # include in backups
@@ -478,7 +478,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             if self.vm.include_in_backups != \
                     self.include_in_backups.isChecked():
                 self.vm.include_in_backups = self.include_in_backups.isChecked()
-        except exc.QubesException as ex:
+        except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
         # run_in_debug_mode
@@ -486,7 +486,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             if self.run_in_debug_mode.isVisible():
                 if self.vm.debug != self.run_in_debug_mode.isChecked():
                     self.vm.debug = self.run_in_debug_mode.isChecked()
-        except exc.QubesException as ex:
+        except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
         # autostart_vm
@@ -494,7 +494,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             if self.autostart_vm.isVisible():
                 if self.vm.autostart != self.autostart_vm.isChecked():
                     self.vm.autostart = self.autostart_vm.isChecked()
-        except exc.QubesException as ex:
+        except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
         # max priv storage
@@ -502,7 +502,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         if self.priv_img_size != priv_size:
             try:
                 self.vm.volumes['private'].resize(priv_size * 1024**2)
-            except exc.QubesException as ex:
+            except qubesadmin.exc.QubesException as ex:
                 msg.append(str(ex))
 
         # max sys storage
@@ -510,7 +510,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         if self.root_img_size != sys_size:
             try:
                 self.vm.volumes['root'].resize(sys_size * 1024**2)
-            except exc.QubesException as ex:
+            except qubesadmin.exc.QubesException as ex:
                 msg.append(str(ex))
 
         return msg
@@ -695,7 +695,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
             if self.vcpus.value() != int(self.vm.vcpus):
                 self.vm.vcpus = self.vcpus.value()
-        except besadmin.exc.QubesException as ex:
+        except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
         # include_in_memory_balancing applied in services tab
@@ -706,7 +706,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 if self.kernel.currentIndex() != self.kernel_idx:
                     self.vm.kernel = self.kernel_list[
                         self.kernel.currentIndex()]
-            except exc.QubesException as ex:
+            except qubesadmin.exc.QubesException as ex:
                 msg.append(str(ex))
 
         # vm default_dispvm changed
@@ -714,7 +714,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             if self.default_dispvm.currentIndex() != self.default_dispvm_idx:
                 self.vm.default_dispvm = \
                     self.default_dispvm_list[self.default_dispvm.currentIndex()]
-        except exc.QubesException as ex:
+        except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
         try:
@@ -902,7 +902,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 if ass.ident.replace('_', ':') not in new:
                     self.vm.devices['pci'].detach(ass)
 
-        except exc.QubesException as ex:
+        except qubesadmin.exc.QubesException as ex:
             if utils.is_debug():
                 traceback.print_exc()
             msg.append(str(ex))
@@ -1081,7 +1081,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 service = feature[len('service.'):]
                 if service not in self.new_srv_dict:
                     del self.vm.features[feature]
-        except exc.QubesException as ex:
+        except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
         return msg
