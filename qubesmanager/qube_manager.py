@@ -815,9 +815,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         progress = QtGui.QProgressDialog(
             self.tr("Cloning Qube <b>{0}</b> to <b>{1}</b>...").format(
                 vm.name, clone_name), "", 0, 0)
-        progress.setWindowFlags(QtCore.Qt.Window |
-                                QtCore.Qt.WindowTitleHint |
-                                QtCore.Qt.CustomizeWindowHint)
         progress.setCancelButton(None)
         progress.setModal(True)
         progress.show()
