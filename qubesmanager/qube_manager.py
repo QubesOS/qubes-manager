@@ -598,17 +598,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         return [vm for vm in self.qubes_app.domains]
 
     def fill_table(self):
-        progress = QtGui.QProgressDialog(
-            self.tr(
-                "Loading Qube Manager..."), "", 0, 0)
-        progress.setWindowTitle(self.tr("Qube Manager"))
-        progress.setWindowFlags(QtCore.Qt.Window |
-                                QtCore.Qt.WindowTitleHint |
-                                QtCore.Qt.CustomizeWindowHint)
-        progress.setCancelButton(None)
-        progress.setModal(True)
-        progress.show()
-
         self.table.setSortingEnabled(False)
         vms_list = self.get_vms_list()
 
@@ -616,18 +605,25 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         self.table.setRowCount(len(vms_list))
 
+        progress = QtGui.QProgressDialog(
+            self.tr(
+                "Loading Qube Manager..."), "", 0, len(vms_list))
+        progress.setWindowTitle(self.tr("Qube Manager"))
+        progress.setMinimumDuration(1000)
+        progress.setCancelButton(None)
+
         row_no = 0
         for vm in vms_list:
+            progress.setValue(row_no)
             vm_row = VmRowInTable(vm, row_no, self.table)
             vms_in_table[vm.qid] = vm_row
             row_no += 1
-            self.qt_app.processEvents()
+
+        progress.setValue(row_no)
 
         self.vms_list = vms_list
         self.vms_in_table = vms_in_table
         self.table.setSortingEnabled(True)
-
-        progress.hide()
 
     def showhide_vms(self):
         if not self.search:
