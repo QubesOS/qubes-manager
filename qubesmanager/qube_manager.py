@@ -71,6 +71,11 @@ class SearchBox(QtGui.QLineEdit):
             self.selectAll()
             self.focusing = False
 
+    def keyPressEvent(self, event):  # pylint: disable=invalid-name
+        if event.key() == QtCore.Qt.Key_Escape:
+            self.clear()
+        super(SearchBox, self).keyPressEvent(event)
+
 
 class VmRowInTable:
     # pylint: disable=too-few-public-methods
