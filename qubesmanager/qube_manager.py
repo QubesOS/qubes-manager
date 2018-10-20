@@ -467,6 +467,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         # It needs to store threads until they finish
         self.threads_list = []
+        self.progress = None
 
         # Check Updates Timer
         timer = QtCore.QTimer(self)
@@ -477,12 +478,17 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     def clear_threads(self):
         for thread in self.threads_list:
             if thread.isFinished():
+                if self.progress:
+                    self.progress.hide()
+                    self.progress = None
+
                 if thread.error:
                     (title, msg) = thread.error
                     QtGui.QMessageBox.warning(
                         None,
                         self.tr(title),
-                        self.tr("ERROR: {0}").format(msg))
+                        self.tr(msg))
+
                 self.threads_list.remove(thread)
 
     def closeEvent(self, event):
@@ -791,6 +797,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             text=(name_format % name_number))
         if not ok or clone_name == "":
             return
+
+        self.progress = QtGui.QProgressDialog(
+            self.tr(
+                "Cloning Qube..."), "", 0, 0)
+        self.progress.setCancelButton(None)
+        self.progress.setModal(True)
+        self.thread_closes = True
+        self.progress.show()
 
         thread = common_threads.CloneVMThread(vm, clone_name)
         thread.finished.connect(self.clear_threads)

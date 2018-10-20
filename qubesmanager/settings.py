@@ -55,6 +55,7 @@ class RenameVMThread(QtCore.QThread):
         self.vm = vm
         self.new_vm_name = new_vm_name
         self.dependencies = dependencies
+        self.error = None
 
     def run(self):
         try:
@@ -95,8 +96,8 @@ class RenameVMThread(QtCore.QThread):
 class RefreshAppsVMThread(QtCore.QThread):
     def __init__(self, vm):
         QtCore.QThread.__init__(self)
-        self.error = None
         self.vm = vm
+        self.error = None
 
     def run(self):
         try:
@@ -137,6 +138,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         self.vm = vm
         self.qapp = qapp
         self.threads_list = []
+        self.progress = None
+        self.thread_closes = False
         try:
             self.source_vm = self.vm.template
         except AttributeError:
@@ -225,14 +228,21 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
     def clear_threads(self):
         for thread in self.threads_list:
             if thread.isFinished():
+                if self.progress:
+                    self.progress.hide()
+                    self.progress = None
+
                 if thread.error:
                     (title, msg) = thread.error
                     QtGui.QMessageBox.warning(
                         None,
                         self.tr(title),
-                        self.tr("ERROR: {0}").format(msg))
+                        self.tr(msg))
 
                 self.threads_list.remove(thread)
+
+                if self.thread_closes:
+                    self.done(0)
 
     def keyPressEvent(self, event):  # pylint: disable=invalid-name
         if event.key() == QtCore.Qt.Key_Enter \
@@ -555,9 +565,16 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             thread = RenameVMThread(self.vm, new_vm_name, dependencies)
             self.threads_list.append(thread)
             thread.finished.connect(self.clear_threads) 
+
+            self.progress = QtGui.QProgressDialog(
+                self.tr(
+                    "Renaming Qube..."), "", 0, 0)
+            self.progress.setCancelButton(None)
+            self.progress.setModal(True)
+            self.thread_closes = True
+            self.progress.show()
+
             thread.start()
-            thread.wait()
-            #self.done(0)
 
     def remove_vm(self):
 
@@ -606,6 +623,15 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             thread = common_threads.CloneVMThread(self.vm, cloned_vm_name)
             thread.finished.connect(self.clear_threads) 
             self.threads_list.append(thread)
+
+            self.progress = QtGui.QProgressDialog(
+                self.tr(
+                    "Cloning Qube..."), "", 0, 0)
+            self.progress.setCancelButton(None)
+            self.progress.setModal(True)
+            self.thread_closes = True
+            self.progress.show()
+
             thread.start()
 
     ######### advanced tab
