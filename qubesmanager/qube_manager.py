@@ -48,6 +48,7 @@ from . import settings
 from . import global_settings
 from . import restore
 from . import backup
+from . import create_new_vm
 from . import log_dialog
 from . import utils as manager_utils
 
@@ -713,7 +714,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_createvm_triggered')
     def action_createvm_triggered(self):  # pylint: disable=no-self-use
-        subprocess.check_call('qubes-vm-create')
+        create_window = create_new_vm.NewVmDlg(self.qt_app, self.qubes_app)
+        create_window.exec_()
 
     def get_selected_vm(self):
         # vm selection relies on the VmInfo widget's value used
