@@ -17,6 +17,7 @@ SOURCES = \
           qubesmanager/block.py \
           qubesmanager/clipboard.py \
           qubesmanager/create_new_vm.py \
+          qubesmanager/common_threads.py \
           qubesmanager/firewall.py \
           qubesmanager/global_settings.py \
           qubesmanager/log_dialog.py \
@@ -27,7 +28,6 @@ SOURCES = \
           qubesmanager/restore.py \
           qubesmanager/settings.py \
           qubesmanager/table_widgets.py \
-          qubesmanager/thread_monitor.py \
           qubesmanager/ui_about.py \
           qubesmanager/ui_backupdlg.py \
           qubesmanager/ui_globalsettingsdlg.py \

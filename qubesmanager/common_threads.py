@@ -42,10 +42,11 @@ class CloneVMThread(QtCore.QThread):
         QtCore.QThread.__init__(self)
         self.src_vm = src_vm
         self.dst_name = dst_name
+        self.error = None
 
     def run(self):
         try:
-            dst_vm = self.src_vm.app.clone_vm(self.src_vm, self.dst_name)
+            self.src_vm.app.clone_vm(self.src_vm, self.dst_name)
             self.error = ("Sucess", "The qube was cloned sucessfully.")
         except exc.QubesException as ex:
             self.error = ("Error while cloning Qube!", str(ex))

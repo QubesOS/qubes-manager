@@ -44,7 +44,6 @@ import sys
 import os
 import asyncio
 from contextlib import suppress
-import time
 
 class BackupThread(QtCore.QThread):
     def __init__(self, vm):
@@ -76,6 +75,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
         self.backup_settings = QtCore.QSettings()
 
         self.selected_vms = []
+        self.thread = None
 
         self.setupUi(self)
 

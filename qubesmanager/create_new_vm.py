@@ -22,8 +22,6 @@
 #
 
 import sys
-import threading
-import time
 import subprocess
 
 from PyQt4 import QtCore, QtGui  # pylint: disable=import-error
@@ -77,6 +75,9 @@ class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
 
         self.qtapp = qtapp
         self.app = app
+
+        self.thread = None
+        self.progress = None
 
         # Theoretically we should be locking for writing here and unlock
         # only after the VM creation finished. But the code would be
@@ -174,7 +175,7 @@ class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
         if self.thread.error:
             QtGui.QMessageBox.warning(None,
                 self.tr("Error creating the qube!"),
-                self.tr("ERROR: {}").format(thread.error))
+                self.tr("ERROR: {}").format(self.thread.error))
 
         self.done(0)
 
@@ -183,7 +184,7 @@ class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
                 subprocess.check_call(['qubes-vm-settings', str(self.name)])
             if self.install_system.isChecked():
                 subprocess.check_call(
-                    ['qubes-vm-boot-from-device', srt(self.name)])
+                    ['qubes-vm-boot-from-device', str(self.name)])
 
 
     def type_change(self):

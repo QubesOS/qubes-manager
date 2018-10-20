@@ -28,8 +28,6 @@ import os.path
 import os
 import re
 import subprocess
-import threading
-import time
 import traceback
 import sys
 from qubesadmin.tools import QubesArgumentParser
@@ -85,9 +83,9 @@ class RenameVMThread(QtCore.QThread):
                             "To resolve this, please check and change the "
                             "following properties and remove the qube {} "
                             "manually.<br> ").format(
-                                self.vm.name, name, self.vm.name) + list_text)
+                                self.vm.name, self.vm.name, self.vm.name) + list_text)
 
-        except exc.QubesException as qex:
+        except exc.QubesException as ex:
             self.error = ("Rename error!", str(ex))
         except Exception as ex:  # pylint: disable=broad-except
             self.error = ("Rename error!", repr(ex))
@@ -117,7 +115,7 @@ class RefreshAppsVMThread(QtCore.QThread):
             if not_running:
                 target_vm.shutdown()
 
-        except Exception as ex:
+        except Exception as ex:  # pylint: disable=broad-except
             self.error = ("Refresh failed!", str(ex))
 
 
@@ -265,7 +263,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 self,
                 self.tr("Error while changing settings for {0}!"
                         ).format(self.vm.name),
-                self.tr("ERROR: {0}").format('\n'.join(ret)))
+                self.tr("ERROR: {0}").format('\n'.join(error)))
 
     def apply(self):
         self.save_changes()
@@ -564,7 +562,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         if ok:
             thread = RenameVMThread(self.vm, new_vm_name, dependencies)
             self.threads_list.append(thread)
-            thread.finished.connect(self.clear_threads) 
+            thread.finished.connect(self.clear_threads)
 
             self.progress = QtGui.QProgressDialog(
                 self.tr(
@@ -621,7 +619,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         if ok:
             thread = common_threads.CloneVMThread(self.vm, cloned_vm_name)
-            thread.finished.connect(self.clear_threads) 
+            thread.finished.connect(self.clear_threads)
             self.threads_list.append(thread)
 
             self.progress = QtGui.QProgressDialog(
@@ -966,8 +964,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         self.refresh_apps_button.setText(self.tr('Refresh in progress...'))
 
         thread = RefreshAppsVMThread(self.vm)
-        thread.finished.connect(self.clear_threads) 
-        thread.finished.connect(self.refresh_finished) 
+        thread.finished.connect(self.clear_threads)
+        thread.finished.connect(self.refresh_finished)
         self.threads_list.append(thread)
         thread.start()
 

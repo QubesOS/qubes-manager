@@ -23,8 +23,6 @@
 import sys
 from PyQt4 import QtCore  # pylint: disable=import-error
 from PyQt4 import QtGui  # pylint: disable=import-error
-import threading
-import time
 import os
 import os.path
 import traceback
@@ -39,7 +37,7 @@ from . import ui_restoredlg  # pylint: disable=no-name-in-module
 from . import multiselectwidget
 from . import backup_utils
 
-from multiprocessing import Queue, Event
+from multiprocessing import Queue
 from multiprocessing.queues import Empty
 from qubesadmin import Qubes, exc
 from qubesadmin.backup import restore
@@ -52,6 +50,7 @@ class RestoreThread(QtCore.QThread):
         self.vms_to_restore = vms_to_restore
         self.error = None
         self.msg = None
+        self.canceled = None
 
     def run(self):
         err_msg = []
@@ -84,6 +83,9 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
 
         self.vms_to_restore = None
         self.func_output = []
+
+        self.thread = None
+        self.old_sigchld_handler = None
 
         # Set up logging
         self.feedback_queue = Queue()
@@ -206,13 +208,14 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
                                            and str(self.dir_line_edit.text())
                                            .count("media/") > 0)
 
-            self.thread = RestoreThread(self.backup_restore, self.vms_to_restore)
+            self.thread = RestoreThread(self.backup_restore,
+                                        self.vms_to_restore)
             self.thread.finished.connect(self.thread_finished)
 
             # Start log timer
             timer = QtCore.QTimer(self)
             timer.timeout.connect(self.update_log)
-            timer.start(1000) 
+            timer.start(1000)
 
             self.thread.start()
 

@@ -28,7 +28,6 @@ import subprocess
 from datetime import datetime, timedelta
 import traceback
 from contextlib import suppress
-import time
 
 import quamash
 import asyncio
@@ -282,6 +281,7 @@ class RunCommandThread(QtCore.QThread):
         QtCore.QThread.__init__(self)
         self.vm = vm
         self.command_to_run = command_to_run
+        self.error = None
 
     def run(self):
         try:
@@ -450,7 +450,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         dispatcher.add_handler('domain-start-failed',
                                self.on_domain_status_changed)
         dispatcher.add_handler('domain-stopped', self.on_domain_status_changed)
-        dispatcher.add_handler('domain-pre-shutdown', self.on_domain_status_changed)
+        dispatcher.add_handler('domain-pre-shutdown',
+                                self.on_domain_status_changed)
         dispatcher.add_handler('domain-shutdown', self.on_domain_status_changed)
         dispatcher.add_handler('domain-paused', self.on_domain_status_changed)
         dispatcher.add_handler('domain-unpaused', self.on_domain_status_changed)
@@ -777,7 +778,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             # remove the VM
             thread = common_threads.RemoveVMThread(vm)
             self.threads_list.append(thread)
-            self.connect(thread, QtCore.SIGNAL("show_error(QString, QString)"), self.show_error)
+            self.connect(thread, QtCore.SIGNAL("show_error(QString, QString)"),
+                            self.show_error)
             thread.finished.connect(self.clear_threads)
             thread.start()
 
@@ -803,7 +805,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 "Cloning Qube..."), "", 0, 0)
         self.progress.setCancelButton(None)
         self.progress.setModal(True)
-        self.thread_closes = True
         self.progress.show()
 
         thread = common_threads.CloneVMThread(vm, clone_name)
@@ -871,7 +872,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             self.tr("Are you sure you want to power down the Qube"
                     " <b>'{0}'</b>?<br><small>This will shutdown all the "
                     "running applications within this Qube.</small>").format(
-                        vm.name), QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel)
+                     vm.name), QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel)
 
         self.qt_app.processEvents()
 
