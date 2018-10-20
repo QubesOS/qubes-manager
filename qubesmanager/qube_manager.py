@@ -208,7 +208,7 @@ class VmShutdownMonitor(QtCore.QObject):
                     self.tr(
                         "The Qube <b>'{0}'</b> hasn't shutdown within the last "
                         "{1} seconds, do you want to kill it?<br>").format(
-                        vm.name, self.shutdown_time / 1000),
+                            vm.name, self.shutdown_time / 1000),
                     self.tr("Kill it!"),
                     self.tr("Wait another {0} seconds...").format(
                         self.shutdown_time / 1000))
@@ -882,7 +882,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             self.tr("Are you sure you want to power down the Qube"
                     " <b>'{0}'</b>?<br><small>This will shutdown all the "
                     "running applications within this Qube.</small>").format(
-                vm.name), QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel)
+                        vm.name), QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel)
 
         self.qt_app.processEvents()
 
@@ -935,7 +935,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         if not (vm.is_running() or vm.is_paused()):
             info = self.tr("Qube <b>'{0}'</b> is not running. Are you "
                            "absolutely sure you want to try to kill it?<br>"
-                            "<small>This will end <b>(not shutdown!)</b> all "
+                           "<small>This will end <b>(not shutdown!)</b> all "
                            "the running applications within this "
                            "Qube.</small>").format(vm.name)
         else:
