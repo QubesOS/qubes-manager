@@ -835,8 +835,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         vm = self.get_selected_vm()
         try:
             vm.pause()
-            self.vms_in_table[vm.qid].update()
-            self.table_selection_changed()
         except exc.QubesException as ex:
             QtGui.QMessageBox.warning(
                 None,

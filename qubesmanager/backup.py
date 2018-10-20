@@ -139,7 +139,6 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
         dispatcher.add_handler('backup-progress', self.on_backup_progress)
 
     def on_backup_progress(self, __submitter, _event, **kwargs):
-        print(kwargs['progress'])
         self.progress_bar.setValue(int(float(kwargs['progress'])))
 
 
