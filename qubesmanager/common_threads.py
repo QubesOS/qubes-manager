@@ -34,7 +34,7 @@ class RemoveVMThread(QtCore.QThread):
         try:
             del self.vm.app.domains[self.vm.name]
         except exc.QubesException as ex:
-            self.error("Error removing Qube!", str(ex))
+            self.error = ("Error removing Qube!", str(ex))
 
 
 class CloneVMThread(QtCore.QThread):

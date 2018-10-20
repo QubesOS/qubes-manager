@@ -89,7 +89,7 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/releasenotes.py
 %{python3_sitelib}/qubesmanager/informationnotes.py
 %{python3_sitelib}/qubesmanager/create_new_vm.py
-%{python3_sitelib}/qubesmanager/thread_monitor.py
+%{python3_sitelib}/qubesmanager/common_threads.py
 %{python3_sitelib}/qubesmanager/qube_manager.py
 %{python3_sitelib}/qubesmanager/utils.py
 %{python3_sitelib}/qubesmanager/bootfromdevice.py

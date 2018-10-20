@@ -1066,7 +1066,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_backup_triggered')
     def action_backup_triggered(self):
-        backup_window = backup.BackupVMsWindow(self.qt_app, self.qubes_app, self.dispatcher)
+        backup_window = backup.BackupVMsWindow(self.qt_app, self.qubes_app,
+                                                self.dispatcher)
         backup_window.show()
 
     # noinspection PyArgumentList
