@@ -33,7 +33,7 @@ import sys
 from qubesadmin.tools import QubesArgumentParser
 from qubesadmin import devices
 from qubesadmin import utils as admin_utils
-import qubesadmin.ecx
+import qubesadmin.exc
 
 from . import utils
 from . import multiselectwidget
