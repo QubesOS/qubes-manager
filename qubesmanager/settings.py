@@ -122,12 +122,12 @@ class RefreshAppsVMThread(QtCore.QThread):
 # pylint: disable=too-many-instance-attributes
 class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
     tabs_indices = collections.OrderedDict((
-            ('basic', 0),
-            ('advanced', 1),
-            ('firewall', 2),
-            ('devices', 3),
-            ('applications', 4),
-            ('services', 5),
+        ('basic', 0),
+        ('advanced', 1),
+        ('firewall', 2),
+        ('devices', 3),
+        ('applications', 4),
+        ('services', 5),
         ))
 
     def __init__(self, vm, qapp, init_page="basic", parent=None):
@@ -261,8 +261,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         if error:
             QtGui.QMessageBox.warning(
                 self,
-                self.tr("Error while changing settings for {0}!"
-                        ).format(self.vm.name),
+                self.tr("Error while changing settings for {0}!"\
+                        ).format(self.vm.name),\
                 self.tr("ERROR: {0}").format('\n'.join(error)))
 
     def apply(self):
@@ -331,18 +331,17 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                         'please enable networking.')
             )
         if netvm is not None and \
-                not netvm.features.check_with_template(
-                    'qubes-firewall',
-                    False):
+                not netvm.features.check_with_template(\
+                    'qubes-firewall', False):
             QtGui.QMessageBox.warning(
                 self,
                 self.tr("Qube configuration problem!"),
-                self.tr("The '{vm}' qube is network connected to "
-                        "'{netvm}', which does not support firewall!<br/>"
-                        "You may edit the '{vm}' qube firewall rules, but "
-                        "these will not take any effect until you connect it "
-                        "to a working Firewall qube.").format(
-                    vm=self.vm.name, netvm=netvm.name))
+                self.tr("The '{vm}' qube is network connected to "\
+                        "'{netvm}', which does not support firewall!<br/>"\
+                        "You may edit the '{vm}' qube firewall rules, but "\
+                        "these will not take any effect until you connect it "\
+                        "to a working Firewall qube.").format(\
+                        vm=self.vm.name, netvm=netvm.name))
 
     def current_tab_changed(self, idx):
         if idx == self.tabs_indices["firewall"]:
@@ -766,8 +765,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         self.virt_mode.clear()
 
         # pylint: disable=attribute-defined-outside-init
-        self.virt_mode_list, self.virt_mode_idx = utils.prepare_choice(
-                self.virt_mode, self.vm, 'virt_mode', choices, None,
+        self.virt_mode_list, self.virt_mode_idx = utils.prepare_choice(\
+                self.virt_mode, self.vm, 'virt_mode', choices, None,\
                 allow_default=True, transform=(lambda x: str(x).upper()))
 
         if old_mode is not None:
