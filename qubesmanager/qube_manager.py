@@ -781,8 +781,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             # remove the VM
             thread = common_threads.RemoveVMThread(vm)
             self.threads_list.append(thread)
-            self.connect(thread, QtCore.SIGNAL("show_error(QString, QString)"),
-                            self.show_error)
             thread.finished.connect(self.clear_threads)
             thread.start()
 
@@ -839,12 +837,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.threads_list.append(thread)
         thread.finished.connect(self.clear_threads)
         thread.start()
-
-    def show_error(self, error, error_msg):
-        QtGui.QMessageBox.warning(
-            None,
-            self.tr(error),
-            self.tr("ERROR: {0}").format(error_msg))
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_startvm_tools_install_triggered')
