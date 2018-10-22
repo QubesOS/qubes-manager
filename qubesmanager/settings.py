@@ -53,7 +53,7 @@ class RenameVMThread(QtCore.QThread):
         self.vm = vm
         self.new_vm_name = new_vm_name
         self.dependencies = dependencies
-        self.error = None
+        self.msg = None
 
     def run(self):
         try:
@@ -87,9 +87,9 @@ class RenameVMThread(QtCore.QThread):
                                         + list_text)
 
         except qubesadmin.exc.QubesException as ex:
-            self.error = ("Rename error!", str(ex))
+            self.msg = ("Rename error!", str(ex))
         except Exception as ex:  # pylint: disable=broad-except
-            self.error = ("Rename error!", repr(ex))
+            self.msg = ("Rename error!", repr(ex))
 
 
 # pylint: disable=too-few-public-methods
@@ -97,7 +97,7 @@ class RefreshAppsVMThread(QtCore.QThread):
     def __init__(self, vm):
         QtCore.QThread.__init__(self)
         self.vm = vm
-        self.error = None
+        self.msg = None
 
     def run(self):
         try:
@@ -118,7 +118,7 @@ class RefreshAppsVMThread(QtCore.QThread):
                 target_vm.shutdown()
 
         except Exception as ex:  # pylint: disable=broad-except
-            self.error = ("Refresh failed!", str(ex))
+            self.msg = ("Refresh failed!", str(ex))
 
 
 # pylint: disable=too-many-instance-attributes
@@ -232,8 +232,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                     self.progress.hide()
                     self.progress = None
 
-                if thread.error:
-                    (title, msg) = thread.error
+                if thread.msg:
+                    (title, msg) = thread.msg
                     QtGui.QMessageBox.warning(
                         None,
                         self.tr(title),

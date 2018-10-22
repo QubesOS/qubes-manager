@@ -49,7 +49,6 @@ class RestoreThread(QtCore.QThread):
         QtCore.QThread.__init__(self)
         self.backup_restore = backup_restore
         self.vms_to_restore = vms_to_restore
-        self.error = None
         self.msg = None
         self.canceled = None
 
@@ -67,7 +66,7 @@ class RestoreThread(QtCore.QThread):
                 self.tr("Partially restored files left in /var/tmp/restore_*, "
                         "investigate them and/or clean them up"))
         if err_msg:
-            self.error = '\n'.join(err_msg)
+            self.msg = '\n'.join(err_msg)
             self.msg = '<b><font color="red">{0}</font></b>'.format(
                 self.tr("Finished with errors!"))
         else:
@@ -224,12 +223,12 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
         self.progress_bar.setMaximum(100)
         self.progress_bar.setValue(100)
 
-        if self.thread.error:
+        if self.thread.msg:
             QtGui.QMessageBox.warning(
                 None,
-                self.tr("Backup error!"),
+                self.tr("Backup msg!"),
                 self.tr("ERROR: {0}").format(
-                    self.thread.error))
+                    self.thread.msg))
 
         if self.thread.msg:
             self.append_output(self.thread.msg)

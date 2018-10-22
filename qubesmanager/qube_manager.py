@@ -248,13 +248,13 @@ class StartVMThread(QtCore.QThread):
     def __init__(self, vm):
         QtCore.QThread.__init__(self)
         self.vm = vm
-        self.error = None
+        self.msg = None
 
     def run(self):
         try:
             self.vm.start()
         except exc.QubesException as ex:
-            self.error = ("Error starting Qube!", str(ex))
+            self.msg = ("Error starting Qube!", str(ex))
 
 
 # pylint: disable=too-few-public-methods
@@ -262,7 +262,7 @@ class UpdateVMThread(QtCore.QThread):
     def __init__(self, vm):
         QtCore.QThread.__init__(self)
         self.vm = vm
-        self.error = None
+        self.msg = None
 
     def run(self):
         try:
@@ -275,7 +275,7 @@ class UpdateVMThread(QtCore.QThread):
                 self.vm.run_service("qubes.InstallUpdatesGUI",\
                         user="root", wait=False)
         except (ChildProcessError, exc.QubesException) as ex:
-            self.error = ("Error on Qube update!", str(ex))
+            self.msg = ("Error on Qube update!", str(ex))
 
 
 # pylint: disable=too-few-public-methods
@@ -284,13 +284,13 @@ class RunCommandThread(QtCore.QThread):
         QtCore.QThread.__init__(self)
         self.vm = vm
         self.command_to_run = command_to_run
-        self.error = None
+        self.msg = None
 
     def run(self):
         try:
             self.vm.run(self.command_to_run)
         except (ChildProcessError, exc.QubesException) as ex:
-            self.error = ("Error while running command!", str(ex))
+            self.msg = ("Error while running command!", str(ex))
 
 
 class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
@@ -486,8 +486,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                     self.progress.hide()
                     self.progress = None
 
-                if thread.error:
-                    (title, msg) = thread.error
+                if thread.msg:
+                    (title, msg) = thread.msg
                     QtGui.QMessageBox.warning(
                         None,
                         self.tr(title),

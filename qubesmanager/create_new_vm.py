@@ -44,7 +44,7 @@ class CreateVMThread(QtCore.QThread):
         self.label = label
         self.template = template
         self.properties = properties
-        self.error = None
+        self.msg = None
 
     def run(self):
         try:
@@ -64,9 +64,9 @@ class CreateVMThread(QtCore.QThread):
                     setattr(vm, k, v)
 
         except qubesadmin.exc.QubesException as qex:
-            self.error = str(qex)
+            self.msg = str(qex)
         except Exception as ex:  # pylint: disable=broad-except
-            self.error = repr(ex)
+            self.msg = repr(ex)
 
 
 class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
@@ -173,14 +173,14 @@ class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
     def create_finished(self):
         self.progress.hide()
 
-        if self.thread.error:
+        if self.thread.msg:
             QtGui.QMessageBox.warning(None,
                 self.tr("Error creating the qube!"),
-                self.tr("ERROR: {}").format(self.thread.error))
+                self.tr("ERROR: {}").format(self.thread.msg))
 
         self.done(0)
 
-        if not self.thread.error:
+        if not self.thread.msg:
             if self.launch_settings.isChecked():
                 subprocess.check_call(['qubes-vm-settings', str(self.name)])
             if self.install_system.isChecked():
