@@ -171,6 +171,7 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
                 self.select_vms_widget.available_list.addItem(vmname)
         except exc.QubesException as ex:
             QtGui.QMessageBox.warning(None, self.tr("Restore error!"), str(ex))
+            self.restart()
 
     def append_output(self, text):
         self.commit_text_edit.append(text)
