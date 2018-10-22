@@ -43,6 +43,7 @@ from qubesadmin import Qubes, exc
 from qubesadmin.backup import restore
 
 
+# pylint: disable=too-few-public-methods
 class RestoreThread(QtCore.QThread):
     def __init__(self, backup_restore, vms_to_restore):
         QtCore.QThread.__init__(self)

@@ -46,7 +46,7 @@ from PyQt4 import QtCore, QtGui  # pylint: disable=import-error
 
 from . import ui_settingsdlg  # pylint: disable=no-name-in-module
 
-
+# pylint: disable=too-few-public-methods
 class RenameVMThread(QtCore.QThread):
     def __init__(self, vm, new_vm_name, dependencies):
         QtCore.QThread.__init__(self)
@@ -92,6 +92,7 @@ class RenameVMThread(QtCore.QThread):
             self.error = ("Rename error!", repr(ex))
 
 
+# pylint: disable=too-few-public-methods
 class RefreshAppsVMThread(QtCore.QThread):
     def __init__(self, vm):
         QtCore.QThread.__init__(self)

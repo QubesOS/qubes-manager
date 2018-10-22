@@ -45,6 +45,7 @@ import os
 import asyncio
 from contextlib import suppress
 
+# pylint: disable=too-few-public-methods
 class BackupThread(QtCore.QThread):
     def __init__(self, vm):
         QtCore.QThread.__init__(self)

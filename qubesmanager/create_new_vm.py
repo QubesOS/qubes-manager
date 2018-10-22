@@ -34,6 +34,7 @@ from . import utils
 
 from .ui_newappvmdlg import Ui_NewVMDlg  # pylint: disable=import-error
 
+# pylint: disable=too-few-public-methods
 class CreateVMThread(QtCore.QThread):
     def __init__(self, app, vmclass, name, label, template, properties):
         QtCore.QThread.__init__(self)

@@ -24,6 +24,7 @@ from PyQt4 import QtCore  # pylint: disable=import-error
 from qubesadmin import exc
 
 
+# pylint: disable=too-few-public-methods
 class RemoveVMThread(QtCore.QThread):
     def __init__(self, vm):
         QtCore.QThread.__init__(self)
@@ -37,6 +38,7 @@ class RemoveVMThread(QtCore.QThread):
             self.error = ("Error removing Qube!", str(ex))
 
 
+# pylint: disable=too-few-public-methods
 class CloneVMThread(QtCore.QThread):
     def __init__(self, src_vm, dst_name):
         QtCore.QThread.__init__(self)

@@ -243,6 +243,7 @@ class VmShutdownMonitor(QtCore.QObject):
             self.restart_vm_if_needed()
 
 
+# pylint: disable=too-few-public-methods
 class StartVMThread(QtCore.QThread):
     def __init__(self, vm):
         QtCore.QThread.__init__(self)
@@ -256,6 +257,7 @@ class StartVMThread(QtCore.QThread):
             self.error = ("Error starting Qube!", str(ex))
 
 
+# pylint: disable=too-few-public-methods
 class UpdateVMThread(QtCore.QThread):
     def __init__(self, vm):
         QtCore.QThread.__init__(self)
@@ -276,6 +278,7 @@ class UpdateVMThread(QtCore.QThread):
             self.error = ("Error on Qube update!", str(ex))
 
 
+# pylint: disable=too-few-public-methods
 class RunCommandThread(QtCore.QThread):
     def __init__(self, vm, command_to_run):
         QtCore.QThread.__init__(self)
