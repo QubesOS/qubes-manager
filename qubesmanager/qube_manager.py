@@ -752,7 +752,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                         "or setting that uses it.</small>").format(list_text))
             info_dialog.setModal(False)
             info_dialog.show()
-            self.qt_app.processEvents()
 
             return
 
@@ -869,8 +868,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                     "running applications within this Qube.</small>").format(
                      vm.name), QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel)
 
-        self.qt_app.processEvents()
-
         if reply == QtGui.QMessageBox.Yes:
             self.shutdown_vm(vm)
 
@@ -904,8 +901,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                     "applications within this Qube.</small>").format(vm.name),
             QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel)
 
-        self.qt_app.processEvents()
-
         if reply == QtGui.QMessageBox.Yes:
             # in case the user shut down the VM in the meantime
             if vm.is_running():
@@ -933,8 +928,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             None, self.tr("Qube Kill Confirmation"), info,
             QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel,
             QtGui.QMessageBox.Cancel)
-
-        self.qt_app.processEvents()
 
         if reply == QtGui.QMessageBox.Yes:
             try:
