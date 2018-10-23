@@ -17,7 +17,7 @@
    <iconset resource="../resources.qrc">
     <normaloff>:/root.png</normaloff>:/root.png</iconset>
   </property>
-  <layout class="QGridLayout" name="gridLayout">
+  <layout class="QGridLayout" name="gridLayout" rowstretch="0" columnstretch="0">
    <item row="0" column="0">
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>4</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -596,38 +596,6 @@ border-width: 1px;</string>
            </item>
           </layout>
          </item>
-         <item row="2" column="0">
-          <widget class="QGroupBox" name="other_groupbox">
-           <property name="title">
-            <string>Other</string>
-           </property>
-           <layout class="QFormLayout" name="formLayout_2">
-            <property name="topMargin">
-             <number>15</number>
-            </property>
-            <item row="1" column="0">
-             <widget class="QLabel" name="label_26">
-              <property name="text">
-               <string>Default DispVM:</string>
-              </property>
-              <property name="buddy">
-               <cstring>default_dispvm</cstring>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
-             <widget class="QComboBox" name="default_dispvm"/>
-            </item>
-            <item row="2" column="0" colspan="2">
-             <widget class="QPushButton" name="boot_from_device_button">
-              <property name="text">
-               <string>Boot qube from CDROM</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
          <item row="0" column="0" rowspan="2">
           <widget class="QGroupBox" name="groupBox_2">
            <property name="enabled">
@@ -798,6 +766,67 @@ border-width: 1px;</string>
             </size>
            </property>
           </spacer>
+         </item>
+         <item row="2" column="0">
+          <widget class="QGroupBox" name="other_groupbox">
+           <property name="title">
+            <string>Other</string>
+           </property>
+           <layout class="QFormLayout" name="formLayout_2">
+            <property name="fieldGrowthPolicy">
+             <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+            </property>
+            <property name="topMargin">
+             <number>15</number>
+            </property>
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_26">
+              <property name="text">
+               <string>Default DispVM:</string>
+              </property>
+              <property name="buddy">
+               <cstring>default_dispvm</cstring>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QComboBox" name="default_dispvm"/>
+            </item>
+            <item row="2" column="0" colspan="2">
+             <widget class="QPushButton" name="boot_from_device_button">
+              <property name="text">
+               <string>Boot qube from CDROM</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0" colspan="2">
+             <layout class="QHBoxLayout" name="horizontalLayout_8">
+              <item>
+               <widget class="QPushButton" name="seamless_on_button">
+                <property name="toolTip">
+                 <string>Windows (with Qubes Windows Tools installed) only.
+The qube must be running to enable seamless mode;  this setting is not persistent.</string>
+                </property>
+                <property name="text">
+                 <string>Enable seamless mode</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="seamless_off_button">
+                <property name="toolTip">
+                 <string>Windows (with Qubes Windows Tools installed) only.
+The qube must be running to disable seamless mode; this setting is not persistent.</string>
+                </property>
+                <property name="text">
+                 <string>Disable seamless mode</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
          </item>
         </layout>
        </widget>
