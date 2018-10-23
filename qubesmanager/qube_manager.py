@@ -511,21 +511,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                     pass
 
     def on_domain_added(self, _submitter, _event, vm, **_kwargs):
+        domain = self.qubes_app.domains[vm]
         self.table.setSortingEnabled(False)
-
         row_no = self.table.rowCount()
         self.table.setRowCount(row_no + 1)
-
-        for domain in self.qubes_app.domains:
-            if domain == vm:
-                vm_row = VmRowInTable(domain, row_no, self.table)
-                self.vms_in_table[domain.qid] = vm_row
-                self.table.setSortingEnabled(True)
-                self.showhide_vms()
-                return
-
-        # Never should reach here
-        raise RuntimeError('Added domain not found')
+        vm_row = VmRowInTable(domain, row_no, self.table)
+        self.vms_in_table[domain.qid] = vm_row
+        self.table.setSortingEnabled(True)
+        self.showhide_vms()
 
     def on_domain_removed(self, _submitter, _event, **kwargs):
         row_to_delete = None
