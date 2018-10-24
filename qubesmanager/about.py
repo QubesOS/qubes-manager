@@ -38,11 +38,9 @@ class AboutDialog(ui_about.Ui_AboutDialog, QDialog):
         with open('/etc/qubes-release', 'r') as release_file:
             self.release.setText(release_file.read())
 
-        self.connect(self.ok, SIGNAL("clicked()"), SLOT("accept()"))
-        self.connect(self.releaseNotes, SIGNAL("clicked()"),
-                     self.on_release_notes_clicked)
-        self.connect(self.informationNotes, SIGNAL("clicked()"),
-                     self.on_information_notes_clicked)
+        self.ok.clicked.connect(self.accept)
+        self.releaseNotes.clicked.connect(self.on_release_notes_clicked)
+        self.informationNotes.clicked.connect(self.on_information_notes_clicked)
 
     def on_release_notes_clicked(self):
         release_notes_dialog = ReleaseNotesDialog()
