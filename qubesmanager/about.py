@@ -47,9 +47,7 @@ class AboutDialog(ui_about.Ui_AboutDialog, QDialog):
     def on_release_notes_clicked(self):
         release_notes_dialog = ReleaseNotesDialog()
         release_notes_dialog.exec_()
-        self.accept()
 
     def on_information_notes_clicked(self):
         information_notes_dialog = InformationNotesDialog()
         information_notes_dialog.exec_()
-        self.accept()
