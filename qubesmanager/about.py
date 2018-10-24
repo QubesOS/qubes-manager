@@ -20,7 +20,6 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #
-from PyQt4.QtCore import SIGNAL, SLOT  # pylint: disable=import-error
 from PyQt4.QtGui import QDialog, QIcon  # pylint: disable=import-error
 from qubesmanager.releasenotes import ReleaseNotesDialog
 from qubesmanager.informationnotes import InformationNotesDialog
