@@ -1050,8 +1050,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     @QtCore.pyqtSlot(name='on_action_backup_triggered')
     def action_backup_triggered(self):
         if not self.backup_window:
-            self.backup_window = backup.BackupVMsWindow(self.qt_app, self.qubes_app,
-                                                self.dispatcher, self)
+            self.backup_window = backup.BackupVMsWindow(self.qt_app,
+                                        self.qubes_app, self.dispatcher, self)
             self.backup_window.finished.connect(self._backup_finished)
 
         self.backup_window.show()

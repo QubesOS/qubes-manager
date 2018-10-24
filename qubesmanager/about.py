@@ -38,13 +38,13 @@ class AboutDialog(ui_about.Ui_AboutDialog, QDialog):
             self.release.setText(release_file.read())
 
         self.ok.clicked.connect(self.accept)
-        self.releaseNotes.clicked.connect(self.on_release_notes_clicked)
-        self.informationNotes.clicked.connect(self.on_information_notes_clicked)
+        self.releaseNotes.clicked.connect(on_release_notes_clicked)
+        self.informationNotes.clicked.connect(on_information_notes_clicked)
 
-    def on_release_notes_clicked(self):
-        release_notes_dialog = ReleaseNotesDialog()
-        release_notes_dialog.exec_()
+def on_release_notes_clicked():
+    release_notes_dialog = ReleaseNotesDialog()
+    release_notes_dialog.exec_()
 
-    def on_information_notes_clicked(self):
-        information_notes_dialog = InformationNotesDialog()
-        information_notes_dialog.exec_()
+def on_information_notes_clicked():
+    information_notes_dialog = InformationNotesDialog()
+    information_notes_dialog.exec_()
