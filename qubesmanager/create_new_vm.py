@@ -182,7 +182,8 @@ class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
 
         if not self.thread.msg:
             if self.launch_settings.isChecked():
-                subprocess.check_call(['qubes-vm-settings', str(self.name.text())])
+                subprocess.check_call(['qubes-vm-settings',
+                    str(self.name.text())])
             if self.install_system.isChecked():
                 subprocess.check_call(
                     ['qubes-vm-boot-from-device', str(self.name.text())])

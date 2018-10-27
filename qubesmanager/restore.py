@@ -228,7 +228,7 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
             QtGui.QMessageBox.warning(
                 None,
                 self.tr("Restore qubes"),
-                self.tr(self.thread.msg)
+                self.tr(self.thread.msg))
 
         if self.thread.msg:
             self.append_output(self.thread.msg)
