@@ -275,8 +275,6 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
             self.append_output('<font color="red">{0}</font>'.format(
                 self.tr("Aborting the operation...")))
             self.button(self.CancelButton).setDisabled(True)
-
-            self.thread.terminate()
         else:
             self.done(0)
 
