@@ -427,8 +427,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             if vm.klass in {'TemplateVM', 'StandaloneVM'}:
                 try:
                     self.vms_in_table[vm.qid].update()
-                except exc.QubesException:
-                    # the VM might have vanished in the meantime
+                except (exc.QubesException, KeyError):
+                    # the VM might have vanished in the meantime or
+                    # the signal might have been handled in the wrong order
                     pass
 
     def on_domain_added(self, _submitter, _event, vm, **_kwargs):
