@@ -29,8 +29,6 @@ import traceback
 import logging
 import logging.handlers
 
-import signal
-
 from qubes import backup
 
 from . import ui_restoredlg  # pylint: disable=no-name-in-module
@@ -85,7 +83,6 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
         self.func_output = []
 
         self.thread = None
-        self.old_sigchld_handler = None
 
         # Set up logging
         self.feedback_queue = Queue()
@@ -177,7 +174,6 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
         self.commit_text_edit.append(text)
 
     def current_page_changed(self, page_id):  # pylint: disable=unused-argument
-        self.old_sigchld_handler = signal.signal(signal.SIGCHLD, signal.SIG_DFL)
         if self.currentPage() is self.select_vms_page:
             self.__fill_vms_list__()
 
@@ -243,7 +239,6 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
         self.button(self.FinishButton).setEnabled(True)
         self.button(self.CancelButton).setEnabled(False)
         self.showFileDialog.setEnabled(False)
-        signal.signal(signal.SIGCHLD, self.old_sigchld_handler)
 
     def update_log(self):
         try:
