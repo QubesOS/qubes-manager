@@ -37,7 +37,7 @@ from PyQt4 import QtCore  # pylint: disable=import-error
 from PyQt4 import Qt  # pylint: disable=import-error
 
 
-from . import ui_templatemanager  # pylint: disable=no-name-in-module
+import ui_templatemanager  # pylint: disable=no-name-in-module
 
 column_names = ['Qube', 'State', 'Current template', 'New template']
 
