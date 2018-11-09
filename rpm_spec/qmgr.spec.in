@@ -47,6 +47,7 @@ cp qubes-vm-create.desktop $RPM_BUILD_ROOT/usr/share/applications/
 cp qubes-backup.desktop $RPM_BUILD_ROOT/usr/share/applications/
 cp qubes-backup-restore.desktop $RPM_BUILD_ROOT/usr/share/applications/
 cp qubes-qube-manager.desktop $RPM_BUILD_ROOT/usr/share/applications/
+cp qubes-template-manager.desktop $RPM_BUILD_ROOT/usr/share/applications/
 
 %post
 update-desktop-database &> /dev/null || :
@@ -67,6 +68,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/bin/qubes-backup-restore
 /usr/bin/qubes-qube-manager
 /usr/bin/qubes-log-viewer
+/usr/bin/qubes-template-manager
 /usr/libexec/qubes-manager/mount_for_backup.sh
 /usr/libexec/qubes-manager/qvm_about.sh
 
@@ -94,6 +96,7 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/utils.py
 %{python3_sitelib}/qubesmanager/bootfromdevice.py
 %{python3_sitelib}/qubesmanager/device_list.py
+%{python3_sitelib}/qubesmanager/template_manager.py
 
 %{python3_sitelib}/qubesmanager/resources_rc.py
 
@@ -111,6 +114,7 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/ui_informationnotes.py
 %{python3_sitelib}/qubesmanager/ui_qubemanager.py
 %{python3_sitelib}/qubesmanager/ui_devicelist.py
+%{python3_sitelib}/qubesmanager/ui_templatemanager.py
 %{python3_sitelib}/qubesmanager/i18n/qubesmanager_*.qm
 %{python3_sitelib}/qubesmanager/i18n/qubesmanager_*.ts
 
@@ -128,6 +132,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/applications/qubes-backup.desktop
 /usr/share/applications/qubes-backup-restore.desktop
 /usr/share/applications/qubes-qube-manager.desktop
+/usr/share/applications/qubes-template-manager.desktop
 
 %changelog
 @CHANGELOG@
