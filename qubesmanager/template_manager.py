@@ -34,10 +34,10 @@ from qubesadmin import events
 
 from PyQt4 import QtGui  # pylint: disable=import-error
 from PyQt4 import QtCore  # pylint: disable=import-error
-from PyQt4 import Qt
+from PyQt4 import Qt  # pylint: disable=import-error
 
 
-from . import ui_templatemanager
+from . import ui_templatemanager  # pylint: disable=no-name-in-module
 
 column_names = ['Qube', 'State', 'Current template', 'New template']
 
@@ -202,6 +202,7 @@ class TemplateManagerWindow(
 
 
 class VMNameItem(QtGui.QTableWidgetItem):
+    # pylint: disable=too-few-public-methods
     def __init__(self, vm):
         super(VMNameItem, self).__init__()
         self.vm = vm
@@ -234,6 +235,7 @@ class StatusItem(QtGui.QTableWidgetItem):
 
 
 class CurrentTemplateItem(QtGui.QTableWidgetItem):
+    # pylint: disable=too-few-public-methods
     def __init__(self, vm):
         super(CurrentTemplateItem, self).__init__()
         self.vm = vm
@@ -253,8 +255,8 @@ class NewTemplateItem(QtGui.QComboBox):
         self.table_widget = table_widget
         self.changed = False
 
-        for t in templates:
-            self.addItem(t)
+        for template in templates:
+            self.addItem(template)
         self.setCurrentIndex(self.findText(vm.template.name))
         self.start_value = self.currentText()
 
@@ -282,6 +284,7 @@ class NewTemplateItem(QtGui.QComboBox):
 
 
 class VMRow:
+    # pylint: disable=too-few-public-methods
     def __init__(self, vm, row_no, table_widget, columns, templates):
         self.vm = vm
 

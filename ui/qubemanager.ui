@@ -244,7 +244,7 @@
      <x>0</x>
      <y>0</y>
      <width>1100</width>
-     <height>46</height>
+     <height>28</height>
     </rect>
    </property>
    <property name="contextMenuPolicy">
@@ -256,6 +256,7 @@
     </property>
     <addaction name="action_global_settings"/>
     <addaction name="action_show_network"/>
+    <addaction name="action_manage_templates"/>
     <addaction name="action_backup"/>
     <addaction name="action_restore"/>
     <addaction name="action_exit"/>
@@ -819,6 +820,14 @@
   <action name="action_exit">
    <property name="text">
     <string>&amp;Exit Qube Manager</string>
+   </property>
+  </action>
+  <action name="action_manage_templates">
+   <property name="text">
+    <string>Manage templates for qubes</string>
+   </property>
+   <property name="toolTip">
+    <string>Launch a tool that allows multiple templates to be changed at once</string>
    </property>
   </action>
  </widget>
