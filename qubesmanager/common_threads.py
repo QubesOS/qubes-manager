@@ -51,4 +51,4 @@ class CloneVMThread(QtCore.QThread):
             self.src_vm.app.clone_vm(self.src_vm, self.dst_name)
             self.msg = ("Sucess", "The qube was cloned sucessfully.")
         except exc.QubesException as ex:
-            self.msg = ("Error while cloning Qube!", str(ex))
+            self.msg = ("Error while cloning qube!", str(ex))
