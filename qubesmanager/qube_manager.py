@@ -336,8 +336,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.sort_by_column = "Type"
         self.sort_order = QtCore.Qt.AscendingOrder
 
-        self.backup_window = None
-
         self.vms_list = []
         self.vms_in_table = {}
 
@@ -1049,17 +1047,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_backup_triggered')
     def action_backup_triggered(self):
-        if not self.backup_window:
-            self.backup_window = backup.BackupVMsWindow(self.qt_app,
-                                        self.qubes_app, self.dispatcher, self)
-            self.backup_window.finished.connect(self._backup_finished)
-
-        self.backup_window.show()
-        self.backup_window.activateWindow()
-
-    def _backup_finished(self):
-        self.backup_window.deleteLater()
-        self.backup_window = None
+        backup_window = backup.BackupVMsWindow(self.qt_app, self.qubes_app,
+                                            self.dispatcher, self)
+        backup_window.show()
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_exit_triggered')
