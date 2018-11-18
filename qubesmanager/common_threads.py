@@ -1,8 +1,8 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 #
 # The Qubes OS Project, http://www.qubes-os.org
 #
-# Copyright (C) 2011  Marek Marczykowski <marmarek@mimuw.edu.pl>
+# Copyright (C) 2018  Donoban <donoban@riseup.net>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
