@@ -34,8 +34,8 @@ class RemoveVMThread(QtCore.QThread):
     def run(self):
         try:
             del self.vm.app.domains[self.vm.name]
-        except exc.QubesException as ex:
-            self.msg = ("Error removing Qube!", str(ex))
+        except (exc.QubesException, KeyError) as ex:
+            self.msg = ("Error removing qube!", str(ex))
 
 
 # pylint: disable=too-few-public-methods
