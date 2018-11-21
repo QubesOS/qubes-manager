@@ -77,7 +77,7 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
             QtGui.QMessageBox.warning(
                 None,
                 self.tr("Warning!"),
-                self.tr("Qube must be turned off before booting it from"
+                self.tr("Qube must be turned off before booting it from "
                         "device. Please turn off the qube.")
             )
 
