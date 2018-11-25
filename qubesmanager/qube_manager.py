@@ -70,11 +70,6 @@ class SearchBox(QtGui.QLineEdit):
             self.selectAll()
             self.focusing = False
 
-    def keyPressEvent(self, event):  # pylint: disable=invalid-name
-        if event.key() == QtCore.Qt.Key_Escape:
-            self.clear()
-        super(SearchBox, self).keyPressEvent(event)
-
 
 class VmRowInTable:
     # pylint: disable=too-few-public-methods
@@ -478,6 +473,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         timer.timeout.connect(self.check_updates)
         timer.start(1000 * 30) # 30s
         self.check_updates()
+
+    def keyPressEvent(self, event):  # pylint: disable=invalid-name
+        if event.key() == QtCore.Qt.Key_Escape:
+            self.searchbox.clear()
+        super(VmManagerWindow, self).keyPressEvent(event)
 
     def clear_threads(self):
         for thread in self.threads_list:
