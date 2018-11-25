@@ -366,6 +366,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
             self.qubes_app.qubesd_call(
                 'dom0', 'admin.backup.Cancel',
                 backup_utils.get_profile_name(True))
+            self.thread.wait()
             QtGui.QMessageBox.warning(
                 self, self.tr("Backup aborted!"),
                 self.tr("ERROR: {}").format("Aborted!"))
