@@ -275,7 +275,7 @@ class UpdateVMThread(QtCore.QThread):
                 self.vm.run_service("qubes.InstallUpdatesGUI",\
                         user="root", wait=False)
         except (ChildProcessError, exc.QubesException) as ex:
-            self.msg = ("Error on Qube update!", str(ex))
+            self.msg = ("Error on qube update!", str(ex))
 
 
 # pylint: disable=too-few-public-methods
