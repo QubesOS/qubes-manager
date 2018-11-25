@@ -363,7 +363,6 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
 
     def reject(self):
         if self.currentPage() is self.commit_page:
-            self.thread.terminate()
             self.qubes_app.qubesd_call(
                 'dom0', 'admin.backup.Cancel',
                 backup_utils.get_profile_name(True))
