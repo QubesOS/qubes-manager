@@ -514,12 +514,17 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                     pass
 
     def on_domain_added(self, _submitter, _event, vm, **_kwargs):
-        domain = self.qubes_app.domains[vm]
+        row_no = 0
         self.table.setSortingEnabled(False)
-        row_no = self.table.rowCount()
-        self.table.setRowCount(row_no + 1)
-        vm_row = VmRowInTable(domain, row_no, self.table)
-        self.vms_in_table[domain.qid] = vm_row
+        try:
+            domain = self.qubes_app.domains[vm]
+            row_no = self.table.rowCount()
+            self.table.setRowCount(row_no + 1)
+            vm_row = VmRowInTable(domain, row_no, self.table)
+            self.vms_in_table[domain.qid] = vm_row
+        except (exc.QubesException, KeyError):
+            if row_no != 0:
+                self.table.removeRow(row_no)
         self.table.setSortingEnabled(True)
         self.showhide_vms()
 
