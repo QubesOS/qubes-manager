@@ -494,6 +494,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                         self.tr(msg))
 
                 self.threads_list.remove(thread)
+                return
+
+        raise RuntimeError('No finished thread found')
 
     def closeEvent(self, event):
         # pylint: disable=invalid-name

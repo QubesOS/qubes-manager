@@ -240,9 +240,12 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                         self.tr(msg))
 
                 self.threads_list.remove(thread)
+                return
 
                 if self.thread_closes:
                     self.done(0)
+
+        raise RuntimeError('No finished thread found')
 
     def keyPressEvent(self, event):  # pylint: disable=invalid-name
         if event.key() == QtCore.Qt.Key_Enter \
