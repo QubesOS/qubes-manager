@@ -240,10 +240,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                         self.tr(msg))
 
                 self.threads_list.remove(thread)
-                return
 
                 if self.thread_closes:
                     self.done(0)
+
+                return
 
         raise RuntimeError('No finished thread found')
 
