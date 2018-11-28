@@ -27,8 +27,6 @@ import os.path
 import os
 import re
 import subprocess
-import threading
-import time
 import traceback
 import sys
 from qubesadmin.tools import QubesArgumentParser
@@ -38,7 +36,7 @@ import qubesadmin.exc
 
 from . import utils
 from . import multiselectwidget
-from . import thread_monitor
+from . import common_threads
 from . import device_list
 
 from .appmenu_select import AppmenuSelectManager
@@ -47,16 +45,90 @@ from PyQt4 import QtCore, QtGui  # pylint: disable=import-error
 
 from . import ui_settingsdlg  # pylint: disable=no-name-in-module
 
+# pylint: disable=too-few-public-methods
+class RenameVMThread(QtCore.QThread):
+    def __init__(self, vm, new_vm_name, dependencies):
+        QtCore.QThread.__init__(self)
+        self.vm = vm
+        self.new_vm_name = new_vm_name
+        self.dependencies = dependencies
+        self.msg = None
+
+    def run(self):
+        try:
+            new_vm = self.vm.app.clone_vm(self.vm, self.new_vm_name)
+
+            failed_props = []
+
+            for (holder, prop) in self.dependencies:
+                try:
+                    if holder is None:
+                        setattr(self.vm.app, prop, new_vm)
+                    else:
+                        setattr(holder, prop, new_vm)
+                except qubesadmin.exc.QubesException:
+                    failed_props += [(holder, prop)]
+
+            if not failed_props:
+                del self.vm.app.domains[self.vm.name]
+            else:
+                list_text = utils.format_dependencies_list(failed_props)
+
+                QtGui.QMessageBox.warning(
+                    self,
+                    self.tr("Warning: rename partially unsuccessful"),
+                    self.tr("Some properties could not be changed to the new "
+                            "name. The system has now both {} and {} qubes. "
+                            "To resolve this, please check and change the "
+                            "following properties and remove the qube {} "
+                            "manually.<br> ").format(
+                                self.vm.name, self.vm.name, self.vm.name)\
+                                        + list_text)
+
+        except qubesadmin.exc.QubesException as ex:
+            self.msg = ("Rename error!", str(ex))
+        except Exception as ex:  # pylint: disable=broad-except
+            self.msg = ("Rename error!", repr(ex))
+
+
+# pylint: disable=too-few-public-methods
+class RefreshAppsVMThread(QtCore.QThread):
+    def __init__(self, vm):
+        QtCore.QThread.__init__(self)
+        self.vm = vm
+        self.msg = None
+
+    def run(self):
+        try:
+            try:
+                target_vm = self.vm.template
+            except AttributeError:
+                target_vm = self.vm
+
+            if not target_vm.is_running():
+                not_running = True
+                target_vm.start()
+            else:
+                not_running = False
+
+            subprocess.check_call(['qvm-sync-appmenus', target_vm.name])
+
+            if not_running:
+                target_vm.shutdown()
+
+        except Exception as ex:  # pylint: disable=broad-except
+            self.msg = ("Refresh failed!", str(ex))
+
 
 # pylint: disable=too-many-instance-attributes
 class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
     tabs_indices = collections.OrderedDict((
-            ('basic', 0),
-            ('advanced', 1),
-            ('firewall', 2),
-            ('devices', 3),
-            ('applications', 4),
-            ('services', 5),
+        ('basic', 0),
+        ('advanced', 1),
+        ('firewall', 2),
+        ('devices', 3),
+        ('applications', 4),
+        ('services', 5),
         ))
 
     def __init__(self, vm, qapp, init_page="basic", parent=None):
@@ -64,6 +136,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         self.vm = vm
         self.qapp = qapp
+        self.threads_list = []
+        self.progress = None
+        self.thread_closes = False
         try:
             self.source_vm = self.vm.template
         except AttributeError:
@@ -149,6 +224,29 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             self.refresh_apps_button.clicked.connect(
                 self.refresh_apps_button_pressed)
 
+    def clear_threads(self):
+        for thread in self.threads_list:
+            if thread.isFinished():
+                if self.progress:
+                    self.progress.hide()
+                    self.progress = None
+
+                if thread.msg:
+                    (title, msg) = thread.msg
+                    QtGui.QMessageBox.warning(
+                        None,
+                        self.tr(title),
+                        self.tr(msg))
+
+                self.threads_list.remove(thread)
+
+                if self.thread_closes:
+                    self.done(0)
+
+                return
+
+        raise RuntimeError('No finished thread found')
+
     def keyPressEvent(self, event):  # pylint: disable=invalid-name
         if event.key() == QtCore.Qt.Key_Enter \
                 or event.key() == QtCore.Qt.Key_Return:
@@ -163,31 +261,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         pass
 
     def save_changes(self):
-        t_monitor = thread_monitor.ThreadMonitor()
-        thread = threading.Thread(target=self.__save_changes__,
-                                  args=(t_monitor,))
-        thread.daemon = True
-        thread.start()
+        error = self.__save_changes__()
 
-        progress = QtGui.QProgressDialog(
-            self.tr("Applying settings to <b>{0}</b>...").format(self.vm.name),
-            "", 0, 0)
-        progress.setCancelButton(None)
-        progress.setModal(True)
-        progress.show()
-
-        while not t_monitor.is_finished():
-            self.qapp.processEvents()
-            time.sleep(0.1)
-
-        progress.hide()
-
-        if not t_monitor.success:
+        if error:
             QtGui.QMessageBox.warning(
                 self,
-                self.tr("Error while changing settings for {0}!"
-                        ).format(self.vm.name),
-                self.tr("ERROR: {0}").format(t_monitor.error_msg))
+                self.tr("Error while changing settings for {0}!"\
+                        ).format(self.vm.name),\
+                self.tr("ERROR: {0}").format('\n'.join(error)))
 
     def apply(self):
         self.save_changes()
@@ -196,9 +277,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         self.save_changes()
         self.done(0)
 
-    def __save_changes__(self, t_monitor):
-
+    def __save_changes__(self):
         ret = []
+
         try:
             ret_tmp = self.__apply_basic_tab__()
             if ret_tmp:
@@ -236,12 +317,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         except Exception as ex:  # pylint: disable=broad-except
             ret += [self.tr("Applications tab:"), repr(ex)]
 
-        if ret:
-            t_monitor.set_error_msg('\n'.join(ret))
-
         utils.debug('\n'.join(ret))
-
-        t_monitor.set_finished()
+        return ret
 
     def check_network_availability(self):
         netvm = self.vm.netvm
@@ -259,18 +336,17 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                         'please enable networking.')
             )
         if netvm is not None and \
-                not netvm.features.check_with_template(
-                    'qubes-firewall',
-                    False):
+                not netvm.features.check_with_template(\
+                    'qubes-firewall', False):
             QtGui.QMessageBox.warning(
                 self,
                 self.tr("Qube configuration problem!"),
-                self.tr("The '{vm}' qube is network connected to "
-                        "'{netvm}', which does not support firewall!<br/>"
-                        "You may edit the '{vm}' qube firewall rules, but "
-                        "these will not take any effect until you connect it "
-                        "to a working Firewall qube.").format(
-                    vm=self.vm.name, netvm=netvm.name))
+                self.tr("The '{vm}' qube is network connected to "\
+                        "'{netvm}', which does not support firewall!<br/>"\
+                        "You may edit the '{vm}' qube firewall rules, but "\
+                        "these will not take any effect until you connect it "\
+                        "to a working Firewall qube.").format(\
+                        vm=self.vm.name, netvm=netvm.name))
 
     def current_tab_changed(self, idx):
         if idx == self.tabs_indices["firewall"]:
@@ -463,61 +539,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                         "allowed value."))
             self.init_mem.setValue(self.max_mem_size.value() / 10)
 
-    def _run_in_thread(self, func, *args):
-        t_monitor = thread_monitor.ThreadMonitor()
-        thread = threading.Thread(target=func, args=(t_monitor, *args,))
-        thread.daemon = True
-        thread.start()
-
-        while not t_monitor.is_finished():
-            self.qapp.processEvents()
-            time.sleep(0.1)
-
-        if not t_monitor.success:
-            QtGui.QMessageBox.warning(self,
-                                      self.tr("Error!"),
-                                      self.tr("ERROR: {}").format(
-                                          t_monitor.error_msg))
-            return False
-        return True
-
-    def _rename_vm(self, t_monitor, name, dependencies):
-        try:
-            new_vm = self.vm.app.clone_vm(self.vm, name)
-
-            failed_props = []
-
-            for (holder, prop) in dependencies:
-                try:
-                    if holder is None:
-                        setattr(self.vm.app, prop, new_vm)
-                    else:
-                        setattr(holder, prop, new_vm)
-                except qubesadmin.exc.QubesException as qex:
-                    failed_props += [(holder, prop)]
-
-            if not failed_props:
-                del self.vm.app.domains[self.vm.name]
-            else:
-                list_text = utils.format_dependencies_list(failed_props)
-
-                QtGui.QMessageBox.warning(
-                    self,
-                    self.tr("Warning: rename partially unsuccessful"),
-                    self.tr("Some properties could not be changed to the new "
-                            "name. The system has now both {} and {} qubes. "
-                            "To resolve this, please check and change the "
-                            "following properties and remove the qube {} "
-                            "manually.<br> ").format(
-                                self.vm.name, name, self.vm.name) + list_text)
-
-        except qubesadmin.exc.QubesException as qex:
-            t_monitor.set_error_msg(str(qex))
-        except Exception as ex:  # pylint: disable=broad-except
-            t_monitor.set_error_msg(repr(ex))
-
-        t_monitor.set_finished()
-
     def rename_vm(self):
 
         dependencies = admin_utils.vm_dependencies(self.vm.app, self.vm)
@@ -543,19 +564,19 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             self.tr('New name: (WARNING: all other changes will be discarded)'))
 
         if ok:
-            if self._run_in_thread(self._rename_vm, new_vm_name, dependencies):
-                self.done(0)
+            thread = RenameVMThread(self.vm, new_vm_name, dependencies)
+            self.threads_list.append(thread)
+            thread.finished.connect(self.clear_threads)
 
-    def _remove_vm(self, t_monitor):
-        try:
-            del self.vm.app.domains[self.vm.name]
+            self.progress = QtGui.QProgressDialog(
+                self.tr(
+                    "Renaming Qube..."), "", 0, 0)
+            self.progress.setCancelButton(None)
+            self.progress.setModal(True)
+            self.thread_closes = True
+            self.progress.show()
 
-        except qubesadmin.exc.QubesException as qex:
-            t_monitor.set_error_msg(str(qex))
-        except Exception as ex:  # pylint: disable=broad-except
-            t_monitor.set_error_msg(repr(ex))
-
-        t_monitor.set_finished()
+            thread.start()
 
     def remove_vm(self):
 
@@ -583,7 +604,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                     'qube\'s name below.'))
 
         if ok and answer == self.vm.name:
-            self._run_in_thread(self._remove_vm)
+            thread = common_threads.RemoveVMThread(self.vm)
+            thread.start()
             self.done(0)
 
         elif ok:
@@ -591,17 +613,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 self,
                 self.tr("Removal cancelled"),
                 self.tr("The qube will not be removed."))
-
-    def _clone_vm(self, t_monitor, name):
-        try:
-            self.vm.app.clone_vm(self.vm, name)
-
-        except qubesadmin.exc.QubesException as qex:
-            t_monitor.set_error_msg(str(qex))
-        except Exception as ex:  # pylint: disable=broad-except
-            t_monitor.set_error_msg(repr(ex))
-
-        t_monitor.set_finished()
 
     def clone_vm(self):
 
@@ -611,11 +622,19 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             self.tr('Name for the cloned qube:'))
 
         if ok:
-            self._run_in_thread(self._clone_vm, cloned_vm_name)
-            QtGui.QMessageBox.warning(
-                self,
-                self.tr("Success"),
-                self.tr("The qube was cloned successfully."))
+            thread = common_threads.CloneVMThread(self.vm, cloned_vm_name)
+            thread.finished.connect(self.clear_threads)
+            self.threads_list.append(thread)
+
+            self.progress = QtGui.QProgressDialog(
+                self.tr(
+                    "Cloning Qube..."), "", 0, 0)
+            self.progress.setCancelButton(None)
+            self.progress.setModal(True)
+            self.thread_closes = True
+            self.progress.show()
+
+            thread.start()
 
     ######### advanced tab
 
@@ -766,8 +785,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         self.virt_mode.clear()
 
         # pylint: disable=attribute-defined-outside-init
-        self.virt_mode_list, self.virt_mode_idx = utils.prepare_choice(
-                self.virt_mode, self.vm, 'virt_mode', choices, None,
+        self.virt_mode_list, self.virt_mode_idx = utils.prepare_choice(\
+                self.virt_mode, self.vm, 'virt_mode', choices, None,\
                 allow_default=True, transform=(lambda x: str(x).upper()))
 
         if old_mode is not None:
@@ -958,43 +977,19 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
     ######## applications tab
 
-    def refresh_apps_in_vm(self, t_monitor):
-        try:
-            target_vm = self.vm.template
-        except AttributeError:
-            target_vm = self.vm
-
-        if not target_vm.is_running():
-            not_running = True
-            target_vm.start()
-        else:
-            not_running = False
-
-        subprocess.check_call(['qvm-sync-appmenus', target_vm.name])
-
-        if not_running:
-            target_vm.shutdown()
-
-        t_monitor.set_finished()
-
     def refresh_apps_button_pressed(self):
 
         self.refresh_apps_button.setEnabled(False)
         self.refresh_apps_button.setText(self.tr('Refresh in progress...'))
 
-        t_monitor = thread_monitor.ThreadMonitor()
-        thread = threading.Thread(
-            target=self.refresh_apps_in_vm,
-            args=(t_monitor,))
-        thread.daemon = True
+        thread = RefreshAppsVMThread(self.vm)
+        thread.finished.connect(self.clear_threads)
+        thread.finished.connect(self.refresh_finished)
+        self.threads_list.append(thread)
         thread.start()
 
-        while not t_monitor.is_finished():
-            self.qapp.processEvents()
-            time.sleep(0.1)
-
+    def refresh_finished(self):
         self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
-
         self.refresh_apps_button.setEnabled(True)
         self.refresh_apps_button.setText(self.tr('Refresh Applications'))
 

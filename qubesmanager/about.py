@@ -20,7 +20,6 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #
-from PyQt4.QtCore import SIGNAL, SLOT  # pylint: disable=import-error
 from PyQt4.QtGui import QDialog, QIcon  # pylint: disable=import-error
 from qubesmanager.releasenotes import ReleaseNotesDialog
 from qubesmanager.informationnotes import InformationNotesDialog
@@ -28,6 +27,7 @@ from qubesmanager.informationnotes import InformationNotesDialog
 from . import ui_about  # pylint: disable=no-name-in-module
 
 
+# pylint: disable=too-few-public-methods
 class AboutDialog(ui_about.Ui_AboutDialog, QDialog):
     def __init__(self):
         super(AboutDialog, self).__init__()
@@ -38,18 +38,14 @@ class AboutDialog(ui_about.Ui_AboutDialog, QDialog):
         with open('/etc/qubes-release', 'r') as release_file:
             self.release.setText(release_file.read())
 
-        self.connect(self.ok, SIGNAL("clicked()"), SLOT("accept()"))
-        self.connect(self.releaseNotes, SIGNAL("clicked()"),
-                     self.on_release_notes_clicked)
-        self.connect(self.informationNotes, SIGNAL("clicked()"),
-                     self.on_information_notes_clicked)
+        self.ok.clicked.connect(self.accept)
+        self.releaseNotes.clicked.connect(on_release_notes_clicked)
+        self.informationNotes.clicked.connect(on_information_notes_clicked)
 
-    def on_release_notes_clicked(self):
-        release_notes_dialog = ReleaseNotesDialog()
-        release_notes_dialog.exec_()
-        self.accept()
+def on_release_notes_clicked():
+    release_notes_dialog = ReleaseNotesDialog()
+    release_notes_dialog.exec_()
 
-    def on_information_notes_clicked(self):
-        information_notes_dialog = InformationNotesDialog()
-        information_notes_dialog.exec_()
-        self.accept()
+def on_information_notes_clicked():
+    information_notes_dialog = InformationNotesDialog()
+    information_notes_dialog.exec_()

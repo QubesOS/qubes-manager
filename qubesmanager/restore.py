@@ -23,31 +23,56 @@
 import sys
 from PyQt4 import QtCore  # pylint: disable=import-error
 from PyQt4 import QtGui  # pylint: disable=import-error
-import threading
-import time
 import os
 import os.path
 import traceback
 import logging
 import logging.handlers
 
-import signal
-
 from qubes import backup
 
 from . import ui_restoredlg  # pylint: disable=no-name-in-module
 from . import multiselectwidget
 from . import backup_utils
-from . import thread_monitor
 
-from multiprocessing import Queue, Event
+from multiprocessing import Queue
 from multiprocessing.queues import Empty
 from qubesadmin import Qubes, exc
 from qubesadmin.backup import restore
 
 
-class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
+# pylint: disable=too-few-public-methods
+class RestoreThread(QtCore.QThread):
+    def __init__(self, backup_restore, vms_to_restore):
+        QtCore.QThread.__init__(self)
+        self.backup_restore = backup_restore
+        self.vms_to_restore = vms_to_restore
+        self.msg = None
+        self.canceled = None
 
+    def run(self):
+        err_msg = []
+        try:
+            self.backup_restore.restore_do(self.vms_to_restore)
+
+        except backup.BackupCanceledError as ex:
+            self.canceled = True
+            err_msg.append(str(ex))
+        except Exception as ex:  # pylint: disable=broad-except
+            err_msg.append(str(ex))
+            err_msg.append(
+                self.tr("Partially restored files left in /var/tmp/restore_*, "
+                        "investigate them and/or clean them up"))
+        if err_msg:
+            self.msg = '\n'.join(err_msg)
+            self.msg = '<b><font color="red">{0}</font></b>'.format(
+                self.tr("Finished with errors!"))
+        else:
+            self.msg = '<font color="green">{0}</font>'.format(
+                self.tr("Finished successfully!"))
+
+
+class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
     def __init__(self, qt_app, qubes_app, parent=None):
         super(RestoreVMsWindow, self).__init__(parent)
 
@@ -57,6 +82,8 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
         self.vms_to_restore = None
         self.func_output = []
 
+        self.thread = None
+
         # Set up logging
         self.feedback_queue = Queue()
         handler = logging.handlers.QueueHandler(self.feedback_queue)
@@ -64,9 +91,6 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
         logger.addHandler(handler)
         logger.setLevel(logging.INFO)
 
-        self.canceled = False
-        self.error_detected = Event()
-        self.thread_monitor = None
         self.backup_restore = None
         self.target_appvm = None
 
@@ -144,41 +168,12 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
                 self.select_vms_widget.available_list.addItem(vmname)
         except exc.QubesException as ex:
             QtGui.QMessageBox.warning(None, self.tr("Restore error!"), str(ex))
+            self.restart()
 
     def append_output(self, text):
         self.commit_text_edit.append(text)
 
-    def __do_restore__(self, t_monitor):
-        err_msg = []
-        try:
-            self.backup_restore.restore_do(self.vms_to_restore)
-
-        except backup.BackupCanceledError as ex:
-            self.canceled = True
-            err_msg.append(str(ex))
-        except Exception as ex:  # pylint: disable=broad-except
-            err_msg.append(str(ex))
-            err_msg.append(
-                self.tr("Partially restored files left in /var/tmp/restore_*, "
-                        "investigate them and/or clean them up"))
-
-        if self.canceled:
-            self.append_output('<b><font color="red">{0}</font></b>'.format(
-                self.tr("Restore aborted!")))
-        elif err_msg or self.error_detected.is_set():
-            if err_msg:
-                t_monitor.set_error_msg('\n'.join(err_msg))
-            self.append_output('<b><font color="red">{0}</font></b>'.format(
-                self.tr("Finished with errors!")))
-        else:
-            self.append_output('<font color="green">{0}</font>'.format(
-                self.tr("Finished successfully!")))
-
-        t_monitor.set_finished()
-
     def current_page_changed(self, page_id):  # pylint: disable=unused-argument
-
-        old_sigchld_handler = signal.signal(signal.SIGCHLD, signal.SIG_DFL)
         if self.currentPage() is self.select_vms_page:
             self.__fill_vms_list__()
 
@@ -210,51 +205,56 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
                                            and str(self.dir_line_edit.text())
                                            .count("media/") > 0)
 
-            self.thread_monitor = thread_monitor.ThreadMonitor()
-            thread = threading.Thread(target=self.__do_restore__,
-                                      args=(self.thread_monitor,))
-            thread.daemon = True
-            thread.start()
-            while not self.thread_monitor.is_finished():
-                self.qt_app.processEvents()
-                time.sleep(0.1)
-                try:
-                    log_record = self.feedback_queue.get_nowait()
-                    while log_record:
-                        if log_record.levelno == logging.ERROR or\
-                                        log_record.levelno == logging.CRITICAL:
-                            output = '<font color="red">{0}</font>'.format(
-                                log_record.getMessage())
-                        else:
-                            output = log_record.getMessage()
-                        self.append_output(output)
-                        log_record = self.feedback_queue.get_nowait()
-                except Empty:
-                    pass
+            self.thread = RestoreThread(self.backup_restore,
+                                        self.vms_to_restore)
+            self.thread.finished.connect(self.thread_finished)
 
-            if not self.thread_monitor.success:
-                if not self.canceled:
-                    QtGui.QMessageBox.warning(
-                        None,
-                        self.tr("Backup error!"),
-                        self.tr("ERROR: {0}").format(
-                            self.thread_monitor.error_msg))
-            self.progress_bar.setMaximum(100)
-            self.progress_bar.setValue(100)
+            # Start log timer
+            timer = QtCore.QTimer(self)
+            timer.timeout.connect(self.update_log)
+            timer.start(1000)
 
-            if self.showFileDialog.isChecked():
-                self.append_output(
-                    '<b><font color="black">{0}</font></b>'.format(
-                        self.tr("Please unmount your backup volume and cancel "
-                                "the file selection dialog.")))
-                self.qt_app.processEvents()
-                backup_utils.select_path_button_clicked(self, False, True)
+            self.thread.start()
 
-            self.button(self.FinishButton).setEnabled(True)
-            self.button(self.CancelButton).setEnabled(False)
-            self.showFileDialog.setEnabled(False)
+    def thread_finished(self):
+        self.progress_bar.setMaximum(100)
+        self.progress_bar.setValue(100)
 
-        signal.signal(signal.SIGCHLD, old_sigchld_handler)
+        if self.thread.msg:
+            QtGui.QMessageBox.warning(
+                None,
+                self.tr("Restore qubes"),
+                self.tr(self.thread.msg))
+
+        if self.thread.msg:
+            self.append_output(self.thread.msg)
+
+        if self.showFileDialog.isChecked():
+            self.append_output(
+                '<b><font color="black">{0}</font></b>'.format(
+                    self.tr("Please unmount your backup volume and cancel "
+                            "the file selection dialog.")))
+            backup_utils.select_path_button_clicked(self, False, True)
+
+        self.button(self.FinishButton).setEnabled(True)
+        self.button(self.CancelButton).setEnabled(False)
+        self.showFileDialog.setEnabled(False)
+
+    def update_log(self):
+        try:
+            log_record = self.feedback_queue.get_nowait()
+            while log_record:
+                if log_record.levelno == logging.ERROR or\
+                                log_record.levelno == logging.CRITICAL:
+                    output = '<font color="red">{0}</font>'.format(
+                        log_record.getMessage())
+                else:
+                    output = log_record.getMessage()
+                self.append_output(output)
+                log_record = self.feedback_queue.get_nowait()
+        except Empty:
+            pass
+
 
     def all_vms_good(self):
         for vm_info in self.vms_to_restore.values():
@@ -265,7 +265,7 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
         return True
 
     def reject(self):
-        if self.currentPage() is self.commit_page:
+        if self.currentPage() is self.commit_page and self.thread.isRunning():
             self.backup_restore.canceled = True
             self.append_output('<font color="red">{0}</font>'.format(
                 self.tr("Aborting the operation...")))
