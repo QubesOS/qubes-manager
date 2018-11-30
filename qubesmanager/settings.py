@@ -93,31 +93,35 @@ class RenameVMThread(QtCore.QThread):
 
 # pylint: disable=too-few-public-methods
 class RefreshAppsVMThread(QtCore.QThread):
-    def __init__(self, vm):
+    def __init__(self, vm, button):
         QtCore.QThread.__init__(self)
         self.vm = vm
+        self.button = button
         self.msg = None
 
     def run(self):
-        try:
+        vms_to_refresh = [self.vm]
+        template = getattr(self.vm, 'template', None)
+        if template:
+            vms_to_refresh.append(template)
+
+        for vm in vms_to_refresh:
+            self.button.setText(
+                self.tr('Refresh in progress (refreshing applications '
+                        'from {})').format(vm.name))
             try:
-                target_vm = self.vm.template
-            except AttributeError:
-                target_vm = self.vm
+                if not vm.is_running():
+                    not_running = True
+                    vm.start()
+                else:
+                    not_running = False
 
-            if not target_vm.is_running():
-                not_running = True
-                target_vm.start()
-            else:
-                not_running = False
+                subprocess.check_call(['qvm-sync-appmenus', vm.name])
 
-            subprocess.check_call(['qvm-sync-appmenus', target_vm.name])
-
-            if not_running:
-                target_vm.shutdown()
-
-        except Exception as ex:  # pylint: disable=broad-except
-            self.msg = ("Refresh failed!", str(ex))
+                if not_running:
+                    vm.shutdown()
+            except Exception as ex:  # pylint: disable=broad-except
+                self.msg = ("Refresh failed!", str(ex))
 
 
 # pylint: disable=too-many-instance-attributes
@@ -982,7 +986,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         self.refresh_apps_button.setEnabled(False)
         self.refresh_apps_button.setText(self.tr('Refresh in progress...'))
 
-        thread = RefreshAppsVMThread(self.vm)
+        thread = RefreshAppsVMThread(self.vm, self.refresh_apps_button)
         thread.finished.connect(self.clear_threads)
         thread.finished.connect(self.refresh_finished)
         self.threads_list.append(thread)
