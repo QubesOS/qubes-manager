@@ -37,9 +37,9 @@ from PyQt4 import QtCore  # pylint: disable=import-error
 from PyQt4 import Qt  # pylint: disable=import-error
 
 
-import ui_templatemanager  # pylint: disable=no-name-in-module
+from . import ui_templatemanager  # pylint: disable=no-name-in-module
 
-column_names = ['Qube', 'State', 'Current template', 'New template']
+column_names = ['State', 'Qube', 'Current template', 'New template']
 
 
 class TemplateManagerWindow(
@@ -58,7 +58,7 @@ class TemplateManagerWindow(
         self.templates = []
         self.timers = []
 
-        self.prepare_vm_list()
+        self.prepare_lists()
         self.initialize_table_events()
 
         self.buttonBox.button(QtGui.QDialogButtonBox.Ok).clicked.connect(
@@ -68,11 +68,20 @@ class TemplateManagerWindow(
         self.buttonBox.button(QtGui.QDialogButtonBox.Reset).clicked.connect(
             self.reset)
 
+        self.change_all_combobox.currentIndexChanged.connect(
+            self.change_all_changed)
+        self.clear_selection_button.clicked.connect(self.clear_selection)
+
         self.vm_list.show()
 
-    def prepare_vm_list(self):
+    def prepare_lists(self):
         self.templates = [vm.name for vm in self.qubes_app.domains
-                     if vm.klass == 'TemplateVM']
+                          if vm.klass == 'TemplateVM']
+
+        self.change_all_combobox.addItem('(select template)')
+        for template in self.templates:
+            self.change_all_combobox.addItem(template)
+
         vms_with_templates = [vm for vm in self.qubes_app.domains
                               if getattr(vm, 'template', None)]
 
@@ -86,11 +95,13 @@ class TemplateManagerWindow(
             self.rows_in_table[vm.name] = row
             row_count += 1
 
-        self.vm_list.setHorizontalHeaderLabels(['Qube', '', 'Current', 'New'])
+        self.vm_list.setHorizontalHeaderLabels(['', 'Qube', 'Current', 'New'])
         self.vm_list.resizeColumnsToContents()
 
     def initialize_table_events(self):
         self.vm_list.cellDoubleClicked.connect(self.table_double_click)
+        self.vm_list.cellClicked.connect(self.table_click)
+
         self.vm_list.horizontalHeader().sortIndicatorChanged.connect(
             self.sorting_changed)
 
@@ -153,10 +164,26 @@ class TemplateManagerWindow(
     def sorting_changed(self, index, _order):
         # this is very much not perfect, but QTableWidget does not
         # want to be sorted on custom widgets
-        # possible fix - try to set data of dummy items.
-        if index == column_names.index('New template'):
+        if index == column_names.index('New template') or \
+                index == column_names.index('State'):
             self.vm_list.horizontalHeader().setSortIndicator(
                 -1, QtCore.Qt.AscendingOrder)
+
+    def clear_selection(self):
+        for row in self.rows_in_table.values():
+            row.checkbox.setChecked(False)
+
+    def change_all_changed(self):
+        if self.change_all_combobox.currentIndex() == 0:
+            return
+        selected_template = self.change_all_combobox.currentText()
+
+        for row in self.rows_in_table.values():
+            if row.checkbox.isChecked():
+                row.new_item.setCurrentIndex(
+                    row.new_item.findText(selected_template))
+
+        self.change_all_combobox.setCurrentIndex(0)
 
     def table_double_click(self, row, column):
         template_column = column_names.index('Current template')
@@ -166,16 +193,33 @@ class TemplateManagerWindow(
 
         template_name = self.vm_list.item(row, column).text()
 
-        self.vm_list.clearSelection()
-
         for row_number in range(0, self.vm_list.rowCount()):
             if self.vm_list.item(
                     row_number, template_column).text() == template_name:
-                self.vm_list.selectRow(row_number)
+                checkbox = self.vm_list.cellWidget(
+                    row_number, column_names.index('State'))
+                if checkbox:
+                    if row_number == row:
+                        # this is because double click registers as a
+                        # single click and a double click
+                        checkbox.setChecked(False)
+                    else:
+                        checkbox.setChecked(True)
+
+    def table_click(self, row, column):
+        if column == column_names.index('New template'):
+            return
+
+        checkbox = self.vm_list.cellWidget(row, column_names.index('State'))
+        if not checkbox:
+            return
+
+        checkbox.setChecked(not checkbox.isChecked())
 
     def reset(self):
         for row in self.rows_in_table.values():
             row.new_item.reset_choice()
+            row.checkbox.setChecked(False)
 
     def cancel(self):
         self.close()
@@ -197,7 +241,6 @@ class TemplateManagerWindow(
                 self.tr(
                     "Errors encountered on template change in the following "
                     "qubes: <br> {}.").format("<br> ".join(error_messages)))
-
         self.close()
 
 
@@ -270,15 +313,6 @@ class NewTemplateItem(QtGui.QComboBox):
             self.changed = False
             self.setStyleSheet('font-weight: normal')
 
-        for row_index in self.table_widget.selectionModel().selectedRows():
-            widget = self.table_widget.cellWidget(
-                row_index.row(), column_names.index('New template'))
-            if widget.isEnabled() and widget.currentText() !=\
-                    self.currentText():
-                widget.setCurrentIndex(widget.findText(self.currentText()))
-
-        self.table_widget.clearSelection()
-
     def reset_choice(self):
         self.setCurrentIndex(self.findText(self.start_value))
 
@@ -287,14 +321,17 @@ class VMRow:
     # pylint: disable=too-few-public-methods
     def __init__(self, vm, row_no, table_widget, columns, templates):
         self.vm = vm
-
-        # icon and name
-        self.name_item = VMNameItem(self.vm)
-        table_widget.setItem(row_no, columns.index('Qube'), self.name_item)
+        self.table_widget = table_widget
+        self.templates = templates
 
         # state
         self.state_item = StatusItem(self.vm)
         table_widget.setItem(row_no, columns.index('State'), self.state_item)
+        self.checkbox = QtGui.QCheckBox()
+
+        # icon and name
+        self.name_item = VMNameItem(self.vm)
+        table_widget.setItem(row_no, columns.index('Qube'), self.name_item)
 
         # current template
         self.current_item = CurrentTemplateItem(self.vm)
@@ -302,29 +339,48 @@ class VMRow:
                              self.current_item)
 
         # new template
-        # this is needed to make the cell correctly selectable/non-selectable
-        self.dummy_new_item = QtGui.QTableWidgetItem()
+        self.dummy_new_item = QtGui.QTableWidgetItem("qube is running")
         self.new_item = NewTemplateItem(self.vm, templates, table_widget)
 
-        table_widget.setCellWidget(row_no, columns.index('New template'),
-                                   self.new_item)
         table_widget.setItem(row_no, columns.index('New template'),
                              self.dummy_new_item)
 
-        self.vm_state_change(self.vm.is_running())
+        self.vm_state_change(self.vm.is_running(), row_no)
 
-    def vm_state_change(self, is_running):
-        self.new_item.setEnabled(not is_running)
+    def vm_state_change(self, is_running, row=None):
         self.state_item.set_state(is_running)
 
-        items = [self.name_item, self.state_item, self.current_item,
-                 self.dummy_new_item]
+        if not row:
+            row = 0
+            while row < self.table_widget.rowCount():
+                if self.table_widget.item(
+                        row, column_names.index('Qube')).text() == \
+                        self.name_item.text():
+                    break
+                row += 1
 
-        for item in items:
-            if is_running:
-                item.setFlags(item.flags() & ~QtCore.Qt.ItemIsSelectable)
-            else:
-                item.setFlags(item.flags() | QtCore.Qt.ItemIsSelectable)
+        # hiding cellWidgets does not work in a qTableWidget
+        if not is_running:
+            self.new_item = NewTemplateItem(self.vm, self.templates,
+                                            self.table_widget)
+            self.checkbox = QtGui.QCheckBox()
+
+            self.table_widget.setCellWidget(
+                row, column_names.index('New template'), self.new_item)
+            self.table_widget.setCellWidget(
+                row, column_names.index('State'), self.checkbox)
+        else:
+            new_template = self.table_widget.cellWidget(
+                row, column_names.index('New template'))
+            if new_template:
+                self.table_widget.removeCellWidget(
+                    row, column_names.index('New template'))
+
+            checkbox = self.table_widget.cellWidget(
+                row, column_names.index('State'))
+            if checkbox:
+                self.table_widget.removeCellWidget(
+                    row, column_names.index('State'))
 
 # Bases on the original code by:
 # Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
