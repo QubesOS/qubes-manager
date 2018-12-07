@@ -171,7 +171,8 @@ class TemplateManagerWindow(
 
     def clear_selection(self):
         for row in self.rows_in_table.values():
-            row.checkbox.setChecked(False)
+            if row.checkbox:
+                row.checkbox.setChecked(False)
 
     def change_all_changed(self):
         if self.change_all_combobox.currentIndex() == 0:
@@ -179,7 +180,7 @@ class TemplateManagerWindow(
         selected_template = self.change_all_combobox.currentText()
 
         for row in self.rows_in_table.values():
-            if row.checkbox.isChecked():
+            if row.checkbox and row.checkbox.isChecked():
                 row.new_item.setCurrentIndex(
                     row.new_item.findText(selected_template))
 
@@ -218,8 +219,10 @@ class TemplateManagerWindow(
 
     def reset(self):
         for row in self.rows_in_table.values():
-            row.new_item.reset_choice()
-            row.checkbox.setChecked(False)
+            if row.new_item:
+                row.new_item.reset_choice()
+            if row.checkbox:
+                row.checkbox.setChecked(False)
 
     def cancel(self):
         self.close()
@@ -227,7 +230,7 @@ class TemplateManagerWindow(
     def apply(self):
         errors = {}
         for vm, row in self.rows_in_table.items():
-            if row.new_item.changed:
+            if row.new_item and row.new_item.changed:
                 try:
                     setattr(self.qubes_app.domains[vm],
                             'template', row.new_item.currentText())
@@ -375,12 +378,14 @@ class VMRow:
             if new_template:
                 self.table_widget.removeCellWidget(
                     row, column_names.index('New template'))
+                self.new_item = None
 
             checkbox = self.table_widget.cellWidget(
                 row, column_names.index('State'))
             if checkbox:
                 self.table_widget.removeCellWidget(
                     row, column_names.index('State'))
+                self.checkbox = None
 
 # Bases on the original code by:
 # Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
