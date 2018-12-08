@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Exec=qubes-template-manager
+Icon=qubes-manager
+Terminal=false
+Name=Qubes Template Manager
+GenericName=Qubes Template Manager
+StartupNotify=false
+Categories=System;
