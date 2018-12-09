@@ -53,7 +53,8 @@ class CreateVMThread(QtCore.QThread):
                     src_vm = self.app.default_template
                 else:
                     src_vm = self.template
-                vm = self.app.clone_vm(src_vm, self.name, self.vmclass)
+                vm = self.app.clone_vm(src_vm, self.name, self.vmclass,
+                                       ignore_volumes=['private'])
                 vm.label = self.label
                 for k, v in self.properties.items():
                     setattr(vm, k, v)
