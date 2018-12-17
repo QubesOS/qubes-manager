@@ -644,22 +644,22 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
     def __init_advanced_tab__(self):
 
-        # mem/cpu
-#       qubes_memory = QubesHost().memory_total/1024
-
         self.init_mem.setValue(int(self.vm.memory))
-#       self.init_mem.setMaximum(qubes_memory)
 
-        self.max_mem_size.setValue(int(self.vm.maxmem))
-#       self.max_mem_size.setMaximum(qubes_memory)
+        if self.vm.maxmem > 0:
+            self.max_mem_size.setValue(int(self.vm.maxmem))
+        else:
+            maxmem = self.vm.property_get_default('maxmem')
+            if maxmem == 0:
+                maxmem = self.vm.memory
+            self.max_mem_size.setValue(int(
+                self.vm.features.get('qubesmanager.maxmem_value', maxmem)))
 
         self.vcpus.setMinimum(1)
-#       self.vcpus.setMaximum(QubesHost().no_cpus)
         self.vcpus.setValue(int(self.vm.vcpus))
 
         self.include_in_balancing.setEnabled(True)
-        self.include_in_balancing.setChecked(
-            bool(self.vm.features.get('service.meminfo-writer', True)))
+        self.include_in_balancing.setChecked(int(self.vm.maxmem) > 0)
         self.max_mem_size.setEnabled(self.include_in_balancing.isChecked())
 
         # in case VM is HVM
@@ -713,15 +713,23 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             if self.init_mem.value() != int(self.vm.memory):
                 self.vm.memory = self.init_mem.value()
 
-            if self.max_mem_size.value() != int(self.vm.maxmem):
-                self.vm.maxmem = self.max_mem_size.value()
+            curr_maxmem = int(self.vm.maxmem)
+
+            if not self.include_in_balancing.isChecked():
+                maxmem = 0
+            else:
+                maxmem = self.max_mem_size.value()
+
+            if maxmem != curr_maxmem:
+                if curr_maxmem > 0:
+                    self.vm.features['qubesmanager.maxmem_value'] = curr_maxmem
+                self.vm.maxmem = maxmem
 
             if self.vcpus.value() != int(self.vm.vcpus):
                 self.vm.vcpus = self.vcpus.value()
+
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
-
-        # include_in_memory_balancing applied in services tab
 
         # in case VM is not Linux
         if hasattr(self.vm, "kernel") and self.kernel_groupbox.isVisible():
@@ -747,6 +755,16 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             msg.append(str(ex))
 
         return msg
+
+    def include_in_balancing_changed(self, state):
+        if self.dev_list.selected_list.count() > 0:
+            if state == ui_settingsdlg.QtCore.Qt.Checked:
+                self.dmm_warning_adv.show()
+                self.dmm_warning_dev.show()
+            else:
+                self.dmm_warning_adv.hide()
+                self.dmm_warning_dev.hide()
+        self.max_mem_size.setEnabled(self.include_in_balancing.isChecked())
 
     def boot_from_cdrom_button_pressed(self):
         self.save_and_apply()
@@ -932,22 +950,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         return msg
 
-    def include_in_balancing_changed(self, state):
-        for i in range(self.services_list.count()):
-            item = self.services_list.item(i)
-            if str(item.text()) == 'meminfo-writer':
-                item.setCheckState(state)
-                break
-
-        if self.dev_list.selected_list.count() > 0:
-            if state == ui_settingsdlg.QtCore.Qt.Checked:
-                self.dmm_warning_adv.show()
-                self.dmm_warning_dev.show()
-            else:
-                self.dmm_warning_adv.hide()
-                self.dmm_warning_dev.hide()
-        self.max_mem_size.setEnabled(self.include_in_balancing.isChecked())
-
     def devices_selection_changed(self):
         if self.include_in_balancing.isChecked():
             if self.dev_list.selected_list.count() > 0:
@@ -1012,18 +1014,12 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             self.services_list.addItem(item)
             self.new_srv_dict[service] = self.vm.features[feature]
 
-        self.connect(
-            self.services_list,
-            QtCore.SIGNAL("itemClicked(QListWidgetItem *)"),
-            self.services_item_clicked)
-
         # add suggested services
         self.service_line_edit.addItem('clocksync')
         self.service_line_edit.addItem('crond')
         self.service_line_edit.addItem('cups')
         self.service_line_edit.addItem('disable-default-route')
         self.service_line_edit.addItem('disable-dns-server')
-        self.service_line_edit.addItem('meminfo-writer')
         self.service_line_edit.addItem('network-manager')
         self.service_line_edit.addItem('qubes-firewall')
         self.service_line_edit.addItem('qubes-network')
@@ -1053,26 +1049,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         if not item:
             return
-        if str(item.text()) == 'meminfo-writer':
-            QtGui.QMessageBox.information(
-                self,
-                self.tr('Service can not be removed'),
-                self.tr('Service meminfo-writer can not '
-                        'be removed from the list.'))
-            return
 
         row = self.services_list.currentRow()
         item = self.services_list.takeItem(row)
         del self.new_srv_dict[str(item.text())]
-
-    def services_item_clicked(self, item):
-        if str(item.text()) == 'meminfo-writer':
-            if item.checkState() == ui_settingsdlg.QtCore.Qt.Checked:
-                if not self.include_in_balancing.isChecked():
-                    self.include_in_balancing.setChecked(True)
-            elif item.checkState() == ui_settingsdlg.QtCore.Qt.Unchecked:
-                if self.include_in_balancing.isChecked():
-                    self.include_in_balancing.setChecked(False)
 
     def __apply_services_tab__(self):
         msg = []
@@ -1082,16 +1062,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 item = self.services_list.item(i)
                 self.new_srv_dict[str(item.text())] = \
                     (item.checkState() == ui_settingsdlg.QtCore.Qt.Checked)
-
-            balancing_was_checked = self.vm.features.get(
-                'service.meminfo-writer', True)
-            balancing_is_checked = self.include_in_balancing.isChecked()
-            meminfo_writer_checked = self.new_srv_dict.get(
-                'meminfo-writer', True)
-
-            if balancing_is_checked != meminfo_writer_checked:
-                if balancing_is_checked != balancing_was_checked:
-                    self.new_srv_dict['meminfo-writer'] = balancing_is_checked
 
             for service, v in self.new_srv_dict.items():
                 feature = 'service.' + service
