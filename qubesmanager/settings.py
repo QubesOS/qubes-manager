@@ -452,6 +452,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         self.root_resize.setValue(self.root_img_size)
         self.root_resize.setMinimum(self.root_img_size)
         self.root_resize.setEnabled(self.vm.volumes['root'].save_on_stop)
+        if not self.root_resize.isEnabled():
+            self.root_resize.setToolTip(
+                self.tr("To change system storage size, change properties "
+                        "of the underlying template."))
         self.root_resize_label.setEnabled(self.root_resize.isEnabled())
 
     def __apply_basic_tab__(self):
