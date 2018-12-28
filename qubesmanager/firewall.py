@@ -138,6 +138,7 @@ class NewFwRuleDlg(QtGui.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
         if checked:
             self.serviceComboBox.setEnabled(False)
 
+
 class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
     def __init__(self, parent=None):
         QtCore.QAbstractItemModel.__init__(self, parent)
@@ -148,7 +149,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
             r"(?P<name>[a-z][a-z0-9-]+)\s+(?P<port>[0-9]+)/"
             r"(?P<protocol>[a-z]+)",
             re.IGNORECASE)
-        with open('/etc/services', 'r') as file:
+        with open('/etc/services', 'r', encoding='utf-8') as file:
             for line in file:
                 match = pattern.match(line)
                 if match is not None:
