@@ -135,22 +135,31 @@ class VmRowInTable:
 
         self.table = table
 
-    def update(self, update_size_on_disk=False):
+    def update(self, update_size_on_disk=False, event=None):
         """
         Update info in a single VM row
         :param update_size_on_disk: should disk utilization be updated? the
         widget will extract the data from VM object
+        :param event: name of the event that caused the update, to avoid
+        updating unnecessary properties; if event is none, update everything
         :return: None
         """
         try:
-            self.label_widget.update()
             self.info_widget.update_vm_state()
-            self.template_widget.update()
-            self.netvm_widget.update()
-            self.internal_widget.update()
-            self.ip_widget.update()
-            self.include_in_backups_widget.update()
-            self.last_backup_widget.update()
+            if not event or event.endswith(':label'):
+                self.label_widget.update()
+            if not event or event.endswith(':template'):
+                self.template_widget.update()
+            if not event or event.endswith(':netvm'):
+                self.netvm_widget.update()
+            if not event or event.endswith(':internal'):
+                self.internal_widget.update()
+            if not event or event.endswith(':ip'):
+                self.ip_widget.update()
+            if not event or event.endswith(':include_in_backups'):
+                self.include_in_backups_widget.update()
+            if not event or event.endswith(':backup_timestamp'):
+                self.last_backup_widget.update()
             if update_size_on_disk:
                 self.size_widget.update()
         except exc.QubesPropertyAccessError:
@@ -509,7 +518,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         for vm in self.qubes_app.domains:
             if vm.klass in {'TemplateVM', 'StandaloneVM'}:
                 try:
-                    self.vms_in_table[vm.qid].update()
+                    self.vms_in_table[vm.qid].info_widget.update_vm_state()
                 except (exc.QubesException, KeyError):
                     # the VM might have vanished in the meantime or
                     # the signal might have been handled in the wrong order
@@ -557,11 +566,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 if getattr(row.vm, 'template', None) == vm:
                     row.info_widget.update_vm_state()
 
-    def on_domain_changed(self, vm, _event, **_kwargs):
+    def on_domain_changed(self, vm, event, **_kwargs):
         if not vm:  # change of global properties occured
             return
         try:
-            self.vms_in_table[vm.qid].update()
+            self.vms_in_table[vm.qid].update(event=event)
         except exc.QubesPropertyAccessError:
             return  # the VM was deleted before its status could be updated
 
