@@ -143,6 +143,7 @@ class VmRowInTable:
         :return: None
         """
         try:
+            self.label_widget.update()
             self.info_widget.update_vm_state()
             self.template_widget.update()
             self.netvm_widget.update()

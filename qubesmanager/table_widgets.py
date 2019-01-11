@@ -33,21 +33,15 @@ row_height = 30
 
 class VmIconWidget(QtGui.QWidget):
     def __init__(self, icon_path, enabled=True, size_multiplier=0.7,
-                 tooltip=None, parent=None, icon_sz=(32, 32)):
+                 tooltip=None, parent=None,
+                 icon_sz=(32, 32)):   # pylint: disable=unused-argument
         super(VmIconWidget, self).__init__(parent)
 
+        self.enabled = enabled
+        self.size_multiplier = size_multiplier
         self.label_icon = QtGui.QLabel()
-        if icon_path[0] in ':/':
-            icon = QtGui.QIcon(icon_path)
-        else:
-            icon = QtGui.QIcon.fromTheme(icon_path)
-        icon_sz = QtCore.QSize(row_height * size_multiplier,
-                               row_height * size_multiplier)
-        icon_pixmap = icon.pixmap(
-            icon_sz,
-            QtGui.QIcon.Disabled if not enabled else QtGui.QIcon.Normal)
-        self.label_icon.setPixmap(icon_pixmap)
-        self.label_icon.setFixedSize(icon_sz)
+        self.set_icon(icon_path)
+
         if tooltip is not None:
             self.label_icon.setToolTip(tooltip)
 
@@ -61,6 +55,21 @@ class VmIconWidget(QtGui.QWidget):
             self.label_icon.setToolTip(tooltip)
         else:
             self.label_icon.setToolTip('')
+
+    def set_icon(self, icon_path):
+
+        if icon_path[0] in ':/':
+            icon = QtGui.QIcon(icon_path)
+        else:
+            icon = QtGui.QIcon.fromTheme(icon_path)
+        icon_sz = QtCore.QSize(row_height * self.size_multiplier,
+                               row_height * self.size_multiplier)
+        icon_pixmap = icon.pixmap(
+            icon_sz,
+            QtGui.QIcon.Disabled if not self.enabled else QtGui.QIcon.Normal)
+        self.label_icon.setPixmap(icon_pixmap)
+        self.label_icon.setFixedSize(icon_sz)
+
 
 
 class VmTypeWidget(VmIconWidget):
@@ -133,8 +142,9 @@ class VmLabelWidget(VmIconWidget):
             return self.value < other.value
 
     def __init__(self, vm, parent=None):
-        icon_path = self.get_vm_icon_path(vm)
-        super(VmLabelWidget, self).__init__(icon_path, True, 0.8, None, parent)
+        self.icon_path = self.get_vm_icon_path(vm)
+        super(VmLabelWidget, self).__init__(self.icon_path,
+                                            True, 0.8, None, parent)
         self.vm = vm
         self.table_item = self.VmLabelItem(self.value, vm)
         self.value = None
@@ -142,6 +152,12 @@ class VmLabelWidget(VmIconWidget):
     def get_vm_icon_path(self, vm):
         self.value = vm.label.index
         return vm.label.icon
+
+    def update(self):
+        icon_path = self.get_vm_icon_path(self.vm)
+        if icon_path != self.icon_path:
+            self.icon_path = icon_path
+            self.set_icon(icon_path)
 
 
 class VmNameItem(QtGui.QTableWidgetItem):
