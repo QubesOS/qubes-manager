@@ -83,7 +83,8 @@ class TemplateManagerWindow(
             self.change_all_combobox.addItem(template)
 
         vms_with_templates = [vm for vm in self.qubes_app.domains
-                              if getattr(vm, 'template', None)]
+                              if getattr(vm, 'template', None) and
+                              vm.klass != 'DispVM']
 
         self.vm_list.setColumnCount(len(column_names))
         self.vm_list.setRowCount(len(vms_with_templates))
@@ -127,7 +128,7 @@ class TemplateManagerWindow(
         self.timers.remove(timer)
         try:
             vm = self.qubes_app.domains[vm_name]
-            if not getattr(vm, 'template', None):
+            if not getattr(vm, 'template', None) or vm.klass == 'DispVM':
                 return
         except (exc.QubesException, KeyError):
             return  # it was a dispVM that crashed on start
