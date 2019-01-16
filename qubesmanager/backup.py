@@ -130,7 +130,10 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
             allow_none=False
         )
 
-        selected = self.load_settings()
+        self.unrecognized_config_label.setVisible(False)
+        self.load_settings()
+
+        selected = self.vms_to_include()
         self.__fill_vms_list__(selected)
 
         # Connect backup events for progress_bar
@@ -142,14 +145,28 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
     def on_backup_progress(self, __submitter, _event, **kwargs):
         self.progress_bar.setValue(int(float(kwargs['progress'])))
 
+    def vms_to_include(self):
+        """
+        Helper function that returns list of VMs with 'include_in_backups'
+        attribute set to True.
+        :return: list of VM names
+        """
+
+        result = []
+
+        for domain in self.qubes_app.domains:
+            if getattr(domain, 'include_in_backups', None):
+                result.append(domain.name)
+
+        return result
 
     def load_settings(self):
         """
         Helper function that tries to load existing backup profile
         (default path: /etc/qubes/backup/qubes-manager-backup.conf )
         and then apply its contents to the Backup window.
-        :return: list of vms to include in backup, if it exists in the profile,
-        or None if it does not
+        Ignores listed VMs, to prioritize include_in_backups feature.
+        :return: None
         """
         try:
             profile_data = backup_utils.load_backup_profile()
@@ -168,6 +185,8 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
             dest_vm_idx = self.appvm_combobox.findText(dest_vm_name)
             if dest_vm_idx > -1:
                 self.appvm_combobox.setCurrentIndex(dest_vm_idx)
+            else:
+                self.unrecognized_config_label.setVisible(True)
 
         if 'destination_path' in profile_data:
             dest_path = profile_data['destination_path']
@@ -180,11 +199,6 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
 
         if 'compression' in profile_data:
             self.compress_checkbox.setChecked(profile_data['compression'])
-
-        if 'include' in profile_data:
-            return profile_data['include']
-
-        return None
 
     def save_settings(self, use_temp):
         """
@@ -231,9 +245,6 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
         self.select_vms_widget.available_list.sortItems()
         self.select_vms_widget.selected_list.sortItems()
 
-        self.unrecognized_config_label.setVisible(
-            selected is not None and
-            len(selected) != len(self.select_vms_widget.selected_list))
         self.total_size_label.setText(
             admin_utils.size_to_human(self.total_size))
 
