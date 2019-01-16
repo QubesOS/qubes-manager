@@ -418,6 +418,7 @@ def main():
     qt_app.setOrganizationName("The Qubes Project")
     qt_app.setOrganizationDomain("http://qubes-os.org")
     qt_app.setApplicationName("Qubes Backup VMs")
+    qt_app.lastWindowClosed.connect(loop_shutdown)
 
     sys.excepthook = handle_exception
 
