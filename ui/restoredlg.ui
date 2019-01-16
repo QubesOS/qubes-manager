@@ -265,6 +265,13 @@ p, li { white-space: pre-wrap; }
       </property>
      </widget>
     </item>
+    <item>
+     <widget class="QLabel" name="dom0_restored_label">
+      <property name="text">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;WARNING: restored dom0 files are located in ~/backup-restore-&amp;lt;timestamp&amp;gt; directory&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
  </widget>
