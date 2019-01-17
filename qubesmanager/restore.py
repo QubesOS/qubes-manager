@@ -96,6 +96,8 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
 
         self.setupUi(self)
 
+        self.dom0_restored_label.setVisible(False)
+
         self.select_vms_widget = multiselectwidget.MultiSelectWidget(self)
         self.select_vms_layout.insertWidget(1, self.select_vms_widget)
 
@@ -184,6 +186,9 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
             for i in range(self.select_vms_widget.available_list.count()):
                 vmname = self.select_vms_widget.available_list.item(i).text()
                 del self.vms_to_restore[str(vmname)]
+
+            if 'dom0' in self.vms_to_restore.keys():
+                self.dom0_restored_label.setVisible(True)
 
             self.vms_to_restore = self.backup_restore.restore_info_verify(
                 self.vms_to_restore)
