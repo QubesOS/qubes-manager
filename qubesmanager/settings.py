@@ -75,7 +75,7 @@ class RenameVMThread(QtCore.QThread):
                 list_text = utils.format_dependencies_list(failed_props)
 
                 QtGui.QMessageBox.warning(
-                    self,
+                    None,
                     self.tr("Warning: rename partially unsuccessful"),
                     self.tr("Some properties could not be changed to the new "
                             "name. The system has now both {} and {} qubes. "
