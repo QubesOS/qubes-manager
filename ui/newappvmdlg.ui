@@ -140,7 +140,13 @@
  </widget>
  <tabstops>
   <tabstop>name</tabstop>
+  <tabstop>label</tabstop>
+  <tabstop>vm_type</tabstop>
   <tabstop>template_vm</tabstop>
+  <tabstop>netvm</tabstop>
+  <tabstop>provides_network</tabstop>
+  <tabstop>launch_settings</tabstop>
+  <tabstop>install_system</tabstop>
   <tabstop>buttonBox</tabstop>
  </tabstops>
  <resources/>

@@ -77,6 +77,10 @@
    </property>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>device_list</tabstop>
+  <tabstop>buttonBox</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

@@ -144,6 +144,11 @@
   </layout>
  </widget>
  <tabstops>
+  <tabstop>addressComboBox</tabstop>
+  <tabstop>serviceComboBox</tabstop>
+  <tabstop>tcp_radio</tabstop>
+  <tabstop>udp_radio</tabstop>
+  <tabstop>any_radio</tabstop>
   <tabstop>buttonBox</tabstop>
  </tabstops>
  <resources/>

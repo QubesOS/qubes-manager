@@ -1411,8 +1411,8 @@ The qube must be running to disable seamless mode; this setting is not persisten
   </layout>
  </widget>
  <tabstops>
-  <tabstop>tabWidget</tabstop>
   <tabstop>vmname</tabstop>
+  <tabstop>rename_vm_button</tabstop>
   <tabstop>vmlabel</tabstop>
   <tabstop>template_name</tabstop>
   <tabstop>netVM</tabstop>
@@ -1420,20 +1420,35 @@ The qube must be running to disable seamless mode; this setting is not persisten
   <tabstop>run_in_debug_mode</tabstop>
   <tabstop>autostart_vm</tabstop>
   <tabstop>max_priv_storage</tabstop>
+  <tabstop>root_resize</tabstop>
+  <tabstop>delete_vm_button</tabstop>
+  <tabstop>clone_vm_button</tabstop>
   <tabstop>init_mem</tabstop>
   <tabstop>max_mem_size</tabstop>
   <tabstop>vcpus</tabstop>
   <tabstop>include_in_balancing</tabstop>
+  <tabstop>default_dispvm</tabstop>
+  <tabstop>boot_from_device_button</tabstop>
+  <tabstop>seamless_on_button</tabstop>
+  <tabstop>seamless_off_button</tabstop>
   <tabstop>kernel</tabstop>
-  <tabstop>new_rule_button</tabstop>
+  <tabstop>virt_mode</tabstop>
+  <tabstop>policy_allow_radio_button</tabstop>
+  <tabstop>policy_deny_radio_button</tabstop>
   <tabstop>rulesTreeView</tabstop>
+  <tabstop>new_rule_button</tabstop>
   <tabstop>edit_rule_button</tabstop>
   <tabstop>delete_rule_button</tabstop>
+  <tabstop>temp_full_access</tabstop>
+  <tabstop>temp_full_access_time</tabstop>
+  <tabstop>no_strict_reset_button</tabstop>
+  <tabstop>refresh_apps_button</tabstop>
   <tabstop>service_line_edit</tabstop>
   <tabstop>add_srv_button</tabstop>
-  <tabstop>services_list</tabstop>
   <tabstop>remove_srv_button</tabstop>
+  <tabstop>services_list</tabstop>
   <tabstop>buttonBox</tabstop>
+  <tabstop>tabWidget</tabstop>
  </tabstops>
  <resources>
   <include location="../resources.qrc"/>
