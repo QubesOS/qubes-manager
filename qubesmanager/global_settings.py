@@ -182,8 +182,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         if current_min_vm_mem*1024*1024 != self.vm_min_mem_val \
                 or current_dom0_mem_boost*1024*1024 != self.dom0_mem_boost_val:
 
-            current_min_vm_mem = str(current_min_vm_mem)+'M'
-            current_dom0_mem_boost = str(current_dom0_mem_boost)+'M'
+            current_min_vm_mem = str(current_min_vm_mem)+'MiB'
+            current_dom0_mem_boost = str(current_dom0_mem_boost)+'MiB'
 
             if not self.qmemman_config.has_section('global'):
                 #add the whole section
