@@ -248,6 +248,21 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>update_vm_combo</tabstop>
+  <tabstop>clock_vm_combo</tabstop>
+  <tabstop>default_netvm_combo</tabstop>
+  <tabstop>default_template_combo</tabstop>
+  <tabstop>default_dispvm_combo</tabstop>
+  <tabstop>min_vm_mem</tabstop>
+  <tabstop>dom0_mem_boost</tabstop>
+  <tabstop>default_kernel_combo</tabstop>
+  <tabstop>updates_dom0</tabstop>
+  <tabstop>updates_vm</tabstop>
+  <tabstop>disable_updates_all</tabstop>
+  <tabstop>enable_updates_all</tabstop>
+  <tabstop>buttonBox</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

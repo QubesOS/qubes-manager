@@ -268,6 +268,19 @@ p, li { white-space: pre-wrap; }
    </layout>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>appvm_combobox</tabstop>
+  <tabstop>dir_line_edit</tabstop>
+  <tabstop>select_path_button</tabstop>
+  <tabstop>ignore_missing</tabstop>
+  <tabstop>verify_only</tabstop>
+  <tabstop>ignore_uname_mismatch</tabstop>
+  <tabstop>encryption_checkbox</tabstop>
+  <tabstop>passphrase_line_edit</tabstop>
+  <tabstop>confirm_text_edit</tabstop>
+  <tabstop>commit_text_edit</tabstop>
+  <tabstop>showFileDialog</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

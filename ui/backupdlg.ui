@@ -421,6 +421,18 @@ p, li { white-space: pre-wrap; }
    </layout>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>compress_checkbox</tabstop>
+  <tabstop>appvm_combobox</tabstop>
+  <tabstop>dir_line_edit</tabstop>
+  <tabstop>select_path_button</tabstop>
+  <tabstop>passphrase_line_edit</tabstop>
+  <tabstop>passphrase_line_edit_verify</tabstop>
+  <tabstop>save_profile_checkbox</tabstop>
+  <tabstop>turn_off_checkbox</tabstop>
+  <tabstop>textEdit</tabstop>
+  <tabstop>showFileDialog</tabstop>
+ </tabstops>
  <resources>
   <include location="../resources.qrc"/>
  </resources>
