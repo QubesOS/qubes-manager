@@ -1,0 +1,131 @@
+#!/bin/bash
+
+# Log everthing to stdout.
+# Use qrexc output only to communicate success/failure
+exec {qrexec_output}>&1
+exec 1>&2
+
+set -eu -o pipefail
+
+tmp=
+
+error() {
+    printf "Error: $1\n" "${@:2}"
+    exit
+}
+
+exit_ok() {
+    printf "Ok: $2\n" "${@:3}"
+    printf "$1\n" >&$qrexec_output
+    exit
+}
+
+cleanup() {
+    if [ -n "$tmp" ]; then
+        rm -rf "$tmp"
+    fi
+}
+
+check_apt_version() {
+    local pkg="$1"
+    local fixed_version="$2"
+    if [ -z "$fixed_version" ] || [ -z "$pkg" ]; then
+        error "Bug: Invalid argument!"
+    fi
+
+    installed_version="$(dpkg -s $pkg | grep '^Version: ' | cut -d ' ' -f 2)"
+    if [ -z "$installed_version" ]; then
+        error "Failed to get apt version."
+    fi
+
+    rc=0
+    dpkg --compare-versions "$installed_version" ge "$fixed_version" || rc=$?
+
+    if [ "$rc" -gt 1 ]; then
+        error "Bug: Failed to compare versions!"
+    fi
+
+    return $rc
+}
+
+main() {
+    if [ ! -e /etc/debian_version ]; then
+        exit_ok 'changed=no' 'Not a Debian.'
+    fi
+
+    trap cleanup EXIT
+    tmp="$(mktemp -d --tmpdir)"
+
+    codename="$(cat /etc/debian_version)"
+    case "$codename" in
+        */sid)
+            # We will treat testing as sid here. This hopefully won't break
+            # anything ...
+            codename="sid"
+            pkg="libapt-pkg5.0"
+            fixed_version="1.8.0~alpha3.1"
+            ;;
+        8.*)
+            codename="jessie"
+            pkg="libapt-pkg4.12"
+            fixed_version="1.0.9.8.5"
+            ;;
+        9.*)
+            codename="stretch"
+            pkg="libapt-pkg5.0"
+            fixed_version="1.4.9"
+            ;;
+        *)
+            error 'Error: Could not determine Debian release!'
+    esac
+
+    if check_apt_version "$pkg" "$fixed_version"; then
+        exit_ok 'changed=no' 'Nothing to do, apt already fixed.'
+    fi
+
+    : > "$tmp/sources.list"
+    mkdir "$tmp/sources.list.d"
+
+    # Make sure that any old (maybe bogus) list is removed.
+    apt-get \
+        -o "Acquire::http::AllowRedirect=false" \
+        -o "Dir::Etc::SourceList=$tmp/sources.list" \
+        -o "Dir::Etc::SourceParts=$tmp/sources.list.d" \
+        --list-cleanup \
+        update
+
+    printf 'deb http://cdn-fastly.deb.debian.org/debian %s main\n' "$codename" > "$tmp/sources.list"
+    if [ "$codename" != "sid" ]; then
+        printf 'deb http://cdn-fastly.deb.debian.org/debian-security %s/updates main\n' "$codename" >> "$tmp/sources.list"
+    fi
+
+    # Don't fetch Translation and Contents file. We don't need them and we will
+    # throw them away later anyway.
+    apt-get \
+        -o "Acquire::http::AllowRedirect=false" \
+        -o "Acquire::Languages=none" \
+        -o "Acquire::IndexTargets::deb::Contents-deb::DefaultEnabled=false" \
+        -o "Dir::Etc::SourceList=$tmp/sources.list" \
+        -o "Dir::Etc::SourceParts=$tmp/sources.list.d" \
+        update
+
+    apt-get \
+        -o "Acquire::http::AllowRedirect=false" \
+        -o "Dir::Etc::SourceList=$tmp/sources.list" \
+        -o "Dir::Etc::SourceParts=$tmp/sources.list.d" \
+        --no-remove \
+        --only-upgrade \
+        -y \
+        install "$pkg"
+
+    if ! check_apt_version "$pkg" "$fixed_version"; then
+        error 'apt version is still not fixed!'
+    fi
+
+    # Run update again to restore normal package sources.
+    apt-get update
+
+    exit_ok 'changed=yes' "Done."
+}
+
+main

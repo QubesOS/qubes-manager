@@ -41,6 +41,7 @@ make python_install \
 mkdir -p $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 cp qubesmanager/mount_for_backup.sh $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 cp qubesmanager/qvm_about.sh $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
+cp qubesmanager/dsa-4371-update $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 
 mkdir -p $RPM_BUILD_ROOT/usr/share/applications
 cp qubes-global-settings.desktop $RPM_BUILD_ROOT/usr/share/applications/
@@ -72,6 +73,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/bin/qubes-template-manager
 /usr/libexec/qubes-manager/mount_for_backup.sh
 /usr/libexec/qubes-manager/qvm_about.sh
+/usr/libexec/qubes-manager/dsa-4371-update
 
 %dir %{python3_sitelib}/qubesmanager
 %{python3_sitelib}/qubesmanager/__pycache__
