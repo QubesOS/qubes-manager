@@ -1499,6 +1499,24 @@ class VmManagerWindow(Ui_VmManagerWindow, QMainWindow):
                         "Starting the '{0}' VM...".format(vm.name),
                         msecs=3000)
                     vm.start()
+                # apply DSA-4371
+                with open('/usr/libexec/qubes-manager/dsa-4371-update') \
+                        as dsa4371update:
+                    p = vm.run_service(
+                            "qubes.VMShell",
+                            user="root",
+                            passio_popen=True)
+                    stdout, stderr = p.communicate(dsa4371update.read())
+                if stdout == 'changed=yes\n':
+                    subprocess.call(['notify-send', '-i', 'dialog-information',
+                            'Debian DSA-4371 fix installed in {}'.format(
+                                vm.name)])
+                elif stdout == 'changed=no\n':
+                    pass
+                else:
+                    raise QubesException(
+                            "Failed to apply DSA-4371 fix: {}".format(
+                                stderr))
                 vm.run_service("qubes.InstallUpdatesGUI", gui=True,
                                user="root", wait=False)
         except Exception as ex:

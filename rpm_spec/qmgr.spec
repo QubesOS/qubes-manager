@@ -39,6 +39,7 @@ cp qubesmanager/qvm_about.sh $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 cp qubesmanager/qvm_net.py $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 cp qubesmanager/qvm_net.pyo $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 cp qubesmanager/qvm_net.pyc $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
+cp qubesmanager/dsa-4371-update $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
 
 mkdir -p $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager/
 cp qubesmanager/main.py{,c,o} $RPM_BUILD_ROOT%{python_sitearch}/qubesmanager
@@ -106,6 +107,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/libexec/qubes-manager/qvm_net.py
 /usr/libexec/qubes-manager/qvm_net.pyo
 /usr/libexec/qubes-manager/qvm_net.pyc
+/usr/libexec/qubes-manager/dsa-4371-update
 %dir %{python_sitearch}/qubesmanager
 %{python_sitearch}/qubesmanager/__init__.py
 %{python_sitearch}/qubesmanager/__init__.pyo
