@@ -281,7 +281,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
                 self.selected_vms.append(self.select_vms_widget.selected_list.item(i).vm)
 
         elif self.currentPage() is self.select_dir_page:
-            backup_location = str(self.dir_line_edit.text())
+            backup_location = unicode(self.dir_line_edit.text())
             if not backup_location:
                 QMessageBox.information(None, self.tr("Wait!"),
                     self.tr("Enter backup target location first."))
@@ -367,7 +367,7 @@ class BackupVMsWindow(Ui_Backup, QWizard):
             self.showFileDialog.setEnabled(
                 self.appvm_combobox.currentIndex() != 0)
             self.showFileDialog.setChecked(self.showFileDialog.isEnabled()
-                                           and str(self.dir_line_edit.text())
+                                           and unicode(self.dir_line_edit.text())
                                            .count("media/") > 0)
             self.thread_monitor = ThreadMonitor()
             thread = threading.Thread (target= self.__do_backup__ , args=(self.thread_monitor,))

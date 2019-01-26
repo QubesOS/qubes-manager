@@ -244,7 +244,7 @@ class RestoreVMsWindow(Ui_Restore, QWizard):
             self.button(self.FinishButton).setDisabled(True)
             self.showFileDialog.setEnabled(True)
             self.showFileDialog.setChecked(self.showFileDialog.isEnabled()
-                                           and str(self.dir_line_edit.text())
+                                           and unicode(self.dir_line_edit.text())
                                            .count("media/") > 0)
 
             self.thread_monitor = ThreadMonitor()
