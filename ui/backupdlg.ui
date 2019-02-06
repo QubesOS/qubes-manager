@@ -238,7 +238,7 @@
           </font>
          </property>
          <property name="text">
-          <string>WARNING: password will be saved in dom0 in plain text.</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;WARNING: password will be saved in dom0 in plain text.&lt;br/&gt;The file is located in dom0 in /etc/qubes/backup/qubes-manager-backup .&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
