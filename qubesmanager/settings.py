@@ -704,6 +704,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         self.seamless_on_button.clicked.connect(self.enable_seamless)
         self.seamless_off_button.clicked.connect(self.disable_seamless)
 
+        if hasattr(self.vm, "template_for_dispvms"):
+            self.dvm_template_checkbox.setChecked(self.vm.template_for_dispvms)
+        else:
+            self.dvm_template_checkbox.setVisible(False)
+
     def enable_seamless(self):
         self.vm.run_service_for_stdio("qubes.SetGuiMode", input=b'SEAMLESS')
 
@@ -758,6 +763,18 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 self.vm.virt_mode = self.selected_virt_mode()
         except Exception as ex:  # pylint: disable=broad-except
             msg.append(str(ex))
+
+        if getattr(self.vm, "template_for_dispvms", False) != \
+                self.dvm_template_checkbox.isChecked():
+            try:
+                self.vm.template_for_dispvms = \
+                    self.dvm_template_checkbox.isChecked()
+                if self.dvm_template_checkbox.isChecked():
+                    self.vm.features["appmenus-dispvm"] = True
+                else:
+                    del self.vm.features["appmenus-dispvm"]
+            except Exception as ex:  # pylint: disable=broad-except
+                msg.append(str(ex))
 
         return msg
 
