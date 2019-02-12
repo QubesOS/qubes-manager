@@ -694,8 +694,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         self.update_virt_mode_list()
 
-        windows_running = self.vm.features.get('os', None) == 'Windows' and \
-            self.vm.is_running()
+        windows_running = \
+            self.vm.features.check_with_template('os', None) == 'Windows' \
+            and self.vm.is_running()
 
         self.seamless_on_button.setEnabled(windows_running)
         self.seamless_off_button.setEnabled(windows_running)
