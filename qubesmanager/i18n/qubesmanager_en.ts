@@ -1018,7 +1018,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../qubesmanager/ui_settingsdlg.py" line="676"/>
-        <source>Allow network access except...</source>
+        <source>Allow TCP/UDP access except...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1028,7 +1028,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../qubesmanager/ui_settingsdlg.py" line="678"/>
-        <source>Deny network access except...</source>
+        <source>Deny TCP/UDP access except...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
