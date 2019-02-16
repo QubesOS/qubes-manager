@@ -155,10 +155,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             assert idx in range(self.tabWidget.count())
             self.tabWidget.setCurrentIndex(idx)
 
-        self.buttonBox.button(QtGui.QDialogButtonBox.Ok).clicked.connect(
-            self.save_and_apply)
-        self.buttonBox.button(QtGui.QDialogButtonBox.Cancel).clicked.connect(
-            self.reject)
         self.buttonBox.button(QtGui.QDialogButtonBox.Apply).clicked.connect(
             self.apply)
 
@@ -257,12 +253,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             return
         super(VMSettingsWindow, self).keyPressEvent(event)
 
-    def reject(self):
-        self.done(0)
-
-    # needed not to close the dialog before applying changes
     def accept(self):
-        pass
+        self.save_and_apply()
 
     def save_changes(self):
         error = self.__save_changes__()
