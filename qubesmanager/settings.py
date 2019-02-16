@@ -276,23 +276,38 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
     def __save_changes__(self):
         ret = []
 
+        self.progress = QtGui.QProgressDialog(
+            self.tr( # Last param should match last setValue()
+                "Saving changes..."), "", 0, 6)
+        self.progress.setMinimumDuration(1000)
+        self.progress.setCancelButton(None)
+        self.progress.setModal(True)
+        self.progress.show()
+        self.progress.setValue(0)
+
         try:
             ret_tmp = self.__apply_basic_tab__()
+            self.progress.setValue(1)
             if ret_tmp:
                 ret += ["Basic tab:"] + ret_tmp
             ret_tmp = self.__apply_advanced_tab__()
+            self.progress.setValue(2)
             if ret_tmp:
                 ret += ["Advanced tab:"] + ret_tmp
             ret_tmp = self.__apply_devices_tab__()
+            self.progress.setValue(3)
             if ret_tmp:
                 ret += ["Devices tab:"] + ret_tmp
             ret_tmp = self.__apply_services_tab__()
+            self.progress.setValue(4)
             if ret_tmp:
                 ret += ["Sevices tab:"] + ret_tmp
         except qubesadmin.exc.QubesException as qex:
             ret.append(self.tr('Error while saving changes: ') + str(qex))
         except Exception as ex:  # pylint: disable=broad-except
             ret.append(repr(ex))
+
+        self.progress.setValue(4)
 
         try:
             if self.policy_allow_radio_button.isEnabled():
@@ -305,6 +320,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         except Exception as ex:  # pylint: disable=broad-except
             ret += [self.tr("Firewall tab:"), repr(ex)]
 
+        self.progress.setValue(5)
+
         try:
             if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
                 self.app_list_manager.save_appmenu_select_changes()
@@ -312,6 +329,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             ret += [self.tr("Applications tab:"), str(qex)]
         except Exception as ex:  # pylint: disable=broad-except
             ret += [self.tr("Applications tab:"), repr(ex)]
+
+        self.progress.setValue(6) # match progress constructor
 
         utils.debug('\n'.join(ret))
         return ret
