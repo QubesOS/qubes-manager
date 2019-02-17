@@ -279,7 +279,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         self.progress = QtGui.QProgressDialog(
             self.tr( # Last param should match last setValue()
                 "Saving changes..."), "", 0, 6)
-        self.progress.setMinimumDuration(1000)
+        self.progress.setMinimumDuration(2000)
         self.progress.setCancelButton(None)
         self.progress.setModal(True)
         self.progress.show()
