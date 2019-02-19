@@ -414,6 +414,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             (lambda vm: vm.provides_network),
             allow_default=True, allow_none=True)
 
+        self.netVM.currentIndexChanged.connect(self.check_warn_dispvmnetvm)
+
         self.include_in_backups.setChecked(self.vm.include_in_backups)
 
         try:
@@ -546,6 +548,27 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                         "Max memory.<br>Setting initial memory to the minimum "
                         "allowed value."))
             self.init_mem.setValue(self.max_mem_size.value() / 10)
+
+    def check_warn_dispvmnetvm(self):
+        if not hasattr(self.vm, 'default_dispvm'):
+            self.warn_netvm_dispvm.setVisible(False)
+            return
+        dispvm = self.default_dispvm_list[
+            self.default_dispvm.currentIndex()]
+        own_netvm = self.netvm_list[self.netVM.currentIndex()]
+
+        if dispvm == qubesadmin.DEFAULT:
+            dispvm = self.vm.property_get_default('default_dispvm')
+        dispvm_netvm = getattr(dispvm, 'netvm', None)
+
+        if own_netvm == qubesadmin.DEFAULT:
+            own_netvm = self.vm.property_get_default('netvm')
+
+        if dispvm_netvm and dispvm_netvm != own_netvm:
+            self.warn_netvm_dispvm.setVisible(True)
+        else:
+            self.warn_netvm_dispvm.setVisible(False)
+
 
     def rename_vm(self):
 
@@ -691,7 +714,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                     None,
                     (lambda vm: getattr(vm, 'template_for_dispvms', False)),
                     allow_default=True, allow_none=True)
+            self.default_dispvm.currentIndexChanged.connect(
+                self.check_warn_dispvmnetvm)
 
+        self.check_warn_dispvmnetvm()
         self.update_virt_mode_list()
 
         windows_running = \

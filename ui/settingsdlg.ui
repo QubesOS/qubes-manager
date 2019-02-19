@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -378,6 +378,19 @@
                </widget>
               </item>
              </layout>
+            </item>
+            <item row="2" column="3">
+             <widget class="QLabel" name="warn_netvm_dispvm">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Caution: default DispVM template has a different Networking setting than this qube. Unexpected network access may occur!&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="pixmap">
+               <pixmap resource="../resources.qrc">:/warning.png</pixmap>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
