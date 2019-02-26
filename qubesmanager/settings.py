@@ -559,6 +559,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         if dispvm == qubesadmin.DEFAULT:
             dispvm = self.vm.property_get_default('default_dispvm')
+
+        if dispvm == self.vm:
+            self.warn_netvm_dispvm.setVisible(False)
+            return
+
         dispvm_netvm = getattr(dispvm, 'netvm', None)
 
         if own_netvm == qubesadmin.DEFAULT:
