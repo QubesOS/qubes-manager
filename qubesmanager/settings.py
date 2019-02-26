@@ -164,6 +164,17 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         self.tabWidget.currentChanged.connect(self.current_tab_changed)
 
+        # Initialize several auxillary variables for pylint's sake
+        self.netvm_idx = None
+        self.kernel_idx = None
+        self.label_idx = None
+        self.template_idx = None
+        self.root_img_size = None
+        self.priv_img_size = None
+        self.default_dispvm_idx = None
+        self.virt_mode_idx = None
+        self.virt_mode_list = None
+
         ###### basic tab
         self.__init_basic_tab__()
         self.rename_vm_button.clicked.connect(self.rename_vm)
@@ -469,6 +480,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 if self.vmlabel.currentIndex() != self.label_idx:
                     label = self.label_list[self.vmlabel.currentIndex()]
                     self.vm.label = label
+                    self.label_idx = self.vmlabel.currentIndex()
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
@@ -477,6 +489,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             if self.template_name.currentIndex() != self.template_idx:
                 self.vm.template = \
                     self.template_list[self.template_name.currentIndex()]
+                self.template_idx = self.template_name.currentIndex()
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
@@ -484,6 +497,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         try:
             if self.netVM.currentIndex() != self.netvm_idx:
                 self.vm.netvm = self.netvm_list[self.netVM.currentIndex()]
+                self.netvm_idx = self.netVM.currentIndex()
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
@@ -516,6 +530,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         if self.priv_img_size != priv_size:
             try:
                 self.vm.volumes['private'].resize(priv_size * 1024**2)
+                self.priv_img_size = priv_size
             except qubesadmin.exc.QubesException as ex:
                 msg.append(str(ex))
 
@@ -524,6 +539,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         if self.root_img_size != sys_size:
             try:
                 self.vm.volumes['root'].resize(sys_size * 1024**2)
+                self.root_img_size = sys_size
             except qubesadmin.exc.QubesException as ex:
                 msg.append(str(ex))
 
@@ -773,6 +789,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 if self.kernel.currentIndex() != self.kernel_idx:
                     self.vm.kernel = self.kernel_list[
                         self.kernel.currentIndex()]
+                    self.kernel_idx = self.kernel.currentIndex()
             except qubesadmin.exc.QubesException as ex:
                 msg.append(str(ex))
 
@@ -781,12 +798,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             if self.default_dispvm.currentIndex() != self.default_dispvm_idx:
                 self.vm.default_dispvm = \
                     self.default_dispvm_list[self.default_dispvm.currentIndex()]
+                self.default_dispvm_idx = self.default_dispvm.currentIndex()
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
         try:
             if self.virt_mode.currentIndex() != self.virt_mode_idx:
                 self.vm.virt_mode = self.selected_virt_mode()
+                self.virt_mode_idx = self.virt_mode.currentIndex()
         except Exception as ex:  # pylint: disable=broad-except
             msg.append(str(ex))
 
@@ -854,7 +873,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         self.virt_mode.clear()
 
-        # pylint: disable=attribute-defined-outside-init
         self.virt_mode_list, self.virt_mode_idx = utils.prepare_choice(\
                 self.virt_mode, self.vm, 'virt_mode', choices, None,\
                 allow_default=True, transform=(lambda x: str(x).upper()))
