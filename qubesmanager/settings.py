@@ -68,22 +68,18 @@ class RenameVMThread(QtCore.QThread):
                         setattr(holder, prop, new_vm)
                 except qubesadmin.exc.QubesException:
                     failed_props += [(holder, prop)]
-
             if not failed_props:
                 del self.vm.app.domains[self.vm.name]
             else:
                 list_text = utils.format_dependencies_list(failed_props)
-
-                QtGui.QMessageBox.warning(
-                    None,
-                    self.tr("Warning: rename partially unsuccessful"),
-                    self.tr("Some properties could not be changed to the new "
-                            "name. The system has now both {} and {} qubes. "
-                            "To resolve this, please check and change the "
-                            "following properties and remove the qube {} "
-                            "manually.<br> ").format(
-                                self.vm.name, self.vm.name, self.vm.name)\
-                                        + list_text)
+                self.msg = (self.tr("Warning: rename partially unsuccessful!"),
+                            self.tr("Some properties could not be changed to "
+                                    "the new name. The system has now both {} "
+                                    "and {} qubes. To resolve this, please "
+                                    "check and change the following properties "
+                                    "and remove the qube {} manually.<br>"
+                                    ).format(self.vm.name, self.vm.name,
+                                             self.vm.name) + list_text)
 
         except qubesadmin.exc.QubesException as ex:
             self.msg = ("Rename error!", str(ex))
