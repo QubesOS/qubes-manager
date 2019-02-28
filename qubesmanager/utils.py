@@ -167,7 +167,7 @@ def get_path_from_vm(vm, service_name):
 
     if not untrusted_path:
         return None
-    if path_re.match(untrusted_path):
+    if path_re.fullmatch(untrusted_path):
         assert '../' not in untrusted_path
         assert '\0' not in untrusted_path
         return untrusted_path.strip()
