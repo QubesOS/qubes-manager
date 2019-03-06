@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -378,6 +378,19 @@
                </widget>
               </item>
              </layout>
+            </item>
+            <item row="2" column="3">
+             <widget class="QLabel" name="warn_netvm_dispvm">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Caution: default DispVM template has a different Networking setting than this qube. Unexpected network access may occur!&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="pixmap">
+               <pixmap resource="../resources.qrc">:/warning.png</pixmap>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -779,7 +792,7 @@ border-width: 1px;</string>
             <property name="topMargin">
              <number>15</number>
             </property>
-            <item row="1" column="0">
+            <item row="2" column="0">
              <widget class="QLabel" name="label_26">
               <property name="text">
                <string>Default DispVM:</string>
@@ -789,17 +802,17 @@ border-width: 1px;</string>
               </property>
              </widget>
             </item>
-            <item row="1" column="1">
+            <item row="2" column="1">
              <widget class="QComboBox" name="default_dispvm"/>
             </item>
-            <item row="2" column="0" colspan="2">
+            <item row="3" column="0" colspan="2">
              <widget class="QPushButton" name="boot_from_device_button">
               <property name="text">
                <string>Boot qube from CDROM</string>
               </property>
              </widget>
             </item>
-            <item row="3" column="0" colspan="2">
+            <item row="4" column="0" colspan="2">
              <layout class="QHBoxLayout" name="horizontalLayout_8">
               <item>
                <widget class="QPushButton" name="seamless_on_button">
@@ -824,6 +837,16 @@ The qube must be running to disable seamless mode; this setting is not persisten
                </widget>
               </item>
              </layout>
+            </item>
+            <item row="1" column="0" colspan="2">
+             <widget class="QCheckBox" name="dvm_template_checkbox">
+              <property name="toolTip">
+               <string/>
+              </property>
+              <property name="text">
+               <string>Allow starting DisposableVMs from this qube</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>

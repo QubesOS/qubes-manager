@@ -68,22 +68,18 @@ class RenameVMThread(QtCore.QThread):
                         setattr(holder, prop, new_vm)
                 except qubesadmin.exc.QubesException:
                     failed_props += [(holder, prop)]
-
             if not failed_props:
                 del self.vm.app.domains[self.vm.name]
             else:
                 list_text = utils.format_dependencies_list(failed_props)
-
-                QtGui.QMessageBox.warning(
-                    None,
-                    self.tr("Warning: rename partially unsuccessful"),
-                    self.tr("Some properties could not be changed to the new "
-                            "name. The system has now both {} and {} qubes. "
-                            "To resolve this, please check and change the "
-                            "following properties and remove the qube {} "
-                            "manually.<br> ").format(
-                                self.vm.name, self.vm.name, self.vm.name)\
-                                        + list_text)
+                self.msg = (self.tr("Warning: rename partially unsuccessful!"),
+                            self.tr("Some properties could not be changed to "
+                                    "the new name. The system has now both {} "
+                                    "and {} qubes. To resolve this, please "
+                                    "check and change the following properties "
+                                    "and remove the qube {} manually.<br>"
+                                    ).format(self.vm.name, self.vm.name,
+                                             self.vm.name) + list_text)
 
         except qubesadmin.exc.QubesException as ex:
             self.msg = ("Rename error!", str(ex))
@@ -161,6 +157,17 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             self.apply)
 
         self.tabWidget.currentChanged.connect(self.current_tab_changed)
+
+        # Initialize several auxillary variables for pylint's sake
+        self.netvm_idx = None
+        self.kernel_idx = None
+        self.label_idx = None
+        self.template_idx = None
+        self.root_img_size = None
+        self.priv_img_size = None
+        self.default_dispvm_idx = None
+        self.virt_mode_idx = None
+        self.virt_mode_list = None
 
         ###### basic tab
         self.__init_basic_tab__()
@@ -414,6 +421,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             (lambda vm: vm.provides_network),
             allow_default=True, allow_none=True)
 
+        self.netVM.currentIndexChanged.connect(self.check_warn_dispvmnetvm)
+
         self.include_in_backups.setChecked(self.vm.include_in_backups)
 
         try:
@@ -467,6 +476,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 if self.vmlabel.currentIndex() != self.label_idx:
                     label = self.label_list[self.vmlabel.currentIndex()]
                     self.vm.label = label
+                    self.label_idx = self.vmlabel.currentIndex()
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
@@ -475,6 +485,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             if self.template_name.currentIndex() != self.template_idx:
                 self.vm.template = \
                     self.template_list[self.template_name.currentIndex()]
+                self.template_idx = self.template_name.currentIndex()
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
@@ -482,6 +493,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         try:
             if self.netVM.currentIndex() != self.netvm_idx:
                 self.vm.netvm = self.netvm_list[self.netVM.currentIndex()]
+                self.netvm_idx = self.netVM.currentIndex()
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
@@ -514,6 +526,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         if self.priv_img_size != priv_size:
             try:
                 self.vm.volumes['private'].resize(priv_size * 1024**2)
+                self.priv_img_size = priv_size
             except qubesadmin.exc.QubesException as ex:
                 msg.append(str(ex))
 
@@ -522,6 +535,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         if self.root_img_size != sys_size:
             try:
                 self.vm.volumes['root'].resize(sys_size * 1024**2)
+                self.root_img_size = sys_size
             except qubesadmin.exc.QubesException as ex:
                 msg.append(str(ex))
 
@@ -546,6 +560,32 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                         "Max memory.<br>Setting initial memory to the minimum "
                         "allowed value."))
             self.init_mem.setValue(self.max_mem_size.value() / 10)
+
+    def check_warn_dispvmnetvm(self):
+        if not hasattr(self.vm, 'default_dispvm'):
+            self.warn_netvm_dispvm.setVisible(False)
+            return
+        dispvm = self.default_dispvm_list[
+            self.default_dispvm.currentIndex()]
+        own_netvm = self.netvm_list[self.netVM.currentIndex()]
+
+        if dispvm == qubesadmin.DEFAULT:
+            dispvm = self.vm.property_get_default('default_dispvm')
+
+        if dispvm == self.vm:
+            self.warn_netvm_dispvm.setVisible(False)
+            return
+
+        dispvm_netvm = getattr(dispvm, 'netvm', None)
+
+        if own_netvm == qubesadmin.DEFAULT:
+            own_netvm = self.vm.property_get_default('netvm')
+
+        if dispvm_netvm and dispvm_netvm != own_netvm:
+            self.warn_netvm_dispvm.setVisible(True)
+        else:
+            self.warn_netvm_dispvm.setVisible(False)
+
 
     def rename_vm(self):
 
@@ -691,7 +731,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                     None,
                     (lambda vm: getattr(vm, 'template_for_dispvms', False)),
                     allow_default=True, allow_none=True)
+            self.default_dispvm.currentIndexChanged.connect(
+                self.check_warn_dispvmnetvm)
 
+        self.check_warn_dispvmnetvm()
         self.update_virt_mode_list()
 
         windows_running = \
@@ -703,6 +746,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         self.seamless_on_button.clicked.connect(self.enable_seamless)
         self.seamless_off_button.clicked.connect(self.disable_seamless)
+
+        if hasattr(self.vm, "template_for_dispvms"):
+            self.dvm_template_checkbox.setChecked(self.vm.template_for_dispvms)
+        else:
+            self.dvm_template_checkbox.setVisible(False)
 
     def enable_seamless(self):
         self.vm.run_service_for_stdio("qubes.SetGuiMode", input=b'SEAMLESS')
@@ -742,6 +790,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 if self.kernel.currentIndex() != self.kernel_idx:
                     self.vm.kernel = self.kernel_list[
                         self.kernel.currentIndex()]
+                    self.kernel_idx = self.kernel.currentIndex()
             except qubesadmin.exc.QubesException as ex:
                 msg.append(str(ex))
 
@@ -750,14 +799,28 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             if self.default_dispvm.currentIndex() != self.default_dispvm_idx:
                 self.vm.default_dispvm = \
                     self.default_dispvm_list[self.default_dispvm.currentIndex()]
+                self.default_dispvm_idx = self.default_dispvm.currentIndex()
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
         try:
             if self.virt_mode.currentIndex() != self.virt_mode_idx:
                 self.vm.virt_mode = self.selected_virt_mode()
+                self.virt_mode_idx = self.virt_mode.currentIndex()
         except Exception as ex:  # pylint: disable=broad-except
             msg.append(str(ex))
+
+        if getattr(self.vm, "template_for_dispvms", False) != \
+                self.dvm_template_checkbox.isChecked():
+            try:
+                self.vm.template_for_dispvms = \
+                    self.dvm_template_checkbox.isChecked()
+                if self.dvm_template_checkbox.isChecked():
+                    self.vm.features["appmenus-dispvm"] = True
+                else:
+                    del self.vm.features["appmenus-dispvm"]
+            except Exception as ex:  # pylint: disable=broad-except
+                msg.append(str(ex))
 
         return msg
 
@@ -811,7 +874,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         self.virt_mode.clear()
 
-        # pylint: disable=attribute-defined-outside-init
         self.virt_mode_list, self.virt_mode_idx = utils.prepare_choice(\
                 self.virt_mode, self.vm, 'virt_mode', choices, None,\
                 allow_default=True, transform=(lambda x: str(x).upper()))
