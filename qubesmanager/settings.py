@@ -855,7 +855,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
     def update_virt_mode_list(self):
         choices = ['HVM', 'PV']
 
-        if self.dev_list:
+        if hasattr(self, "dev_list"):
             devs_attached = self.dev_list.selected_list.count() != 0
         else:
             devs_attached = bool(list(self.vm.devices['pci'].persistent()))
