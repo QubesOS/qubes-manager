@@ -239,8 +239,9 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.dom0_updates_file_path = '/var/lib/qubes/updates/disable-updates'
 
         try:
-            self.updates_dom0_val = self.qvm_collection.check_updates_dom0
-        except AttributeError:
+            self.updates_dom0_val = self.qvm_collection.domains[
+                'dom0'].features['service.qubes-update-check']
+        except KeyError:
             self.updates_dom0_val =\
                 not os.path.isfile(self.dom0_updates_file_path)
 
@@ -274,19 +275,14 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
 
     def __set_updates_all(self, state):
         for vm in self.qvm_collection.domains:
-            vm.features['check-updates'] = state
+            if vm.klass != "AdminVM":
+                vm.features['service.qubes-update-check'] = state
 
     def __apply_updates__(self):
         if self.updates_dom0.isChecked() != self.updates_dom0_val:
-            # TODO: remove workaround when it is no longer needed
-            try:
-                self.qvm_collection.check_updates_dom0 = \
-                    self.updates_dom0.isChecked()
-            except AttributeError:
-                if self.updates_dom0.isChecked():
-                    os.remove(self.dom0_updates_file_path)
-                else:
-                    open(self.dom0_updates_file_path, 'a').close()
+            self.qvm_collection.domains['dom0'].features[
+                'service.qubes-update-check'] = \
+                self.updates_dom0.isChecked()
 
         self.qvm_collection.check_updates_vm = self.updates_vm.isChecked()
 
