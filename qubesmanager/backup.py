@@ -351,6 +351,10 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
                 self, self.tr("Backup error!"),
                 self.tr("ERROR: {}").format(
                     self.thread.msg))
+            self.button(self.CancelButton).setEnabled(False)
+            self.button(self.FinishButton).setEnabled(True)
+            self.cleanup_temporary_files()
+
         else:
             self.progress_bar.setValue(100)
             self.progress_status.setText(self.tr("Backup finished."))
@@ -373,7 +377,8 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
                 os.system('systemctl poweroff')
 
     def reject(self):
-        if self.currentPage() is self.commit_page:
+        if (self.currentPage() is self.commit_page) and \
+                self.button(self.CancelButton).isEnabled():
             self.qubes_app.qubesd_call(
                 'dom0', 'admin.backup.Cancel',
                 backup_utils.get_profile_name(True))
