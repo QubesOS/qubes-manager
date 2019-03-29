@@ -30,12 +30,14 @@ class RemoveVMThread(QtCore.QThread):
         QtCore.QThread.__init__(self)
         self.vm = vm
         self.msg = None
+        self.is_error = False
 
     def run(self):
         try:
             del self.vm.app.domains[self.vm.name]
         except (exc.QubesException, KeyError) as ex:
             self.msg = ("Error removing qube!", str(ex))
+            self.is_error = True
 
 
 # pylint: disable=too-few-public-methods
@@ -45,6 +47,7 @@ class CloneVMThread(QtCore.QThread):
         self.src_vm = src_vm
         self.dst_name = dst_name
         self.msg = None
+        self.is_error = False
 
     def run(self):
         try:
@@ -52,3 +55,4 @@ class CloneVMThread(QtCore.QThread):
             self.msg = ("Sucess", "The qube was cloned sucessfully.")
         except exc.QubesException as ex:
             self.msg = ("Error while cloning qube!", str(ex))
+            self.is_error = True

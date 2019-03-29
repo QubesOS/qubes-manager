@@ -254,12 +254,14 @@ class StartVMThread(QtCore.QThread):
         QtCore.QThread.__init__(self)
         self.vm = vm
         self.msg = None
+        self.is_error = False
 
     def run(self):
         try:
             self.vm.start()
         except exc.QubesException as ex:
             self.msg = ("Error starting Qube!", str(ex))
+            self.is_error = True
 
 
 # pylint: disable=too-few-public-methods
@@ -268,6 +270,7 @@ class UpdateVMThread(QtCore.QThread):
         QtCore.QThread.__init__(self)
         self.vm = vm
         self.msg = None
+        self.is_error = False
 
     def run(self):
         try:
@@ -298,6 +301,7 @@ class UpdateVMThread(QtCore.QThread):
                         user="root", wait=False)
         except (ChildProcessError, exc.QubesException) as ex:
             self.msg = ("Error on qube update!", str(ex))
+            self.is_error = True
 
 
 # pylint: disable=too-few-public-methods
@@ -307,12 +311,14 @@ class RunCommandThread(QtCore.QThread):
         self.vm = vm
         self.command_to_run = command_to_run
         self.msg = None
+        self.is_error = False
 
     def run(self):
         try:
             self.vm.run(self.command_to_run)
         except (ChildProcessError, exc.QubesException) as ex:
             self.msg = ("Error while running command!", str(ex))
+            self.is_error = True
 
 
 class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
@@ -515,10 +521,17 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
                 if thread.msg:
                     (title, msg) = thread.msg
-                    QtGui.QMessageBox.warning(
-                        None,
-                        self.tr(title),
-                        self.tr(msg))
+                    if thread.is_error:
+                        QtGui.QMessageBox.warning(
+                            None,
+                            self.tr(title),
+                            self.tr(msg))
+                    else:
+                        QtGui.QMessageBox.information(
+                            None,
+                            self.tr(title),
+                            self.tr(msg))
+
 
                 self.threads_list.remove(thread)
                 return
