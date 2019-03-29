@@ -286,7 +286,7 @@ class VMPropertyItem(QtGui.QTableWidgetItem):
             self.setText("n/a")
         elif self.check_default and \
                 self.vm.property_is_default(self.property_name):
-                    self.setText('default (' + str(val) + ')')
+            self.setText('default (' + str(val) + ')')
         elif val is True:
             self.setText("Yes")
         else:

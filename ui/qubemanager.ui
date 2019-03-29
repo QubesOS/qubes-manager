@@ -136,7 +136,7 @@
        <number>10</number>
       </property>
       <property name="columnCount">
-       <number>11</number>
+       <number>12</number>
       </property>
       <attribute name="horizontalHeaderCascadingSectionResizes">
        <bool>false</bool>
@@ -234,6 +234,11 @@
         <string>Last backup</string>
        </property>
       </column>
+      <column>
+       <property name="text">
+        <string>Template for DispVMs</string>
+       </property>
+      </column>
      </widget>
     </item>
    </layout>
@@ -277,6 +282,7 @@
     <addaction name="action_backups"/>
     <addaction name="action_last_backup"/>
     <addaction name="separator"/>
+    <addaction name="action_dvm_template"/>
     <addaction name="action_toolbar"/>
     <addaction name="action_menubar"/>
     <addaction name="separator"/>
@@ -828,6 +834,20 @@
    </property>
    <property name="toolTip">
     <string>Launch a tool that allows multiple templates to be changed at once</string>
+   </property>
+  </action>
+  <action name="action_dvm_template">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Template for DispVMs</string>
+   </property>
+   <property name="toolTip">
+    <string>Template for DispVMs</string>
    </property>
   </action>
  </widget>

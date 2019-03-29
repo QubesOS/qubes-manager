@@ -126,7 +126,7 @@ class VmRowInTable:
 
         self.include_in_backups_widget = table_widgets.VMPropertyItem(
             vm, "include_in_backups",
-            empty_function=(lambda x: True if x is None or not x else False))
+            empty_function=(lambda x: not bool(x)))
         table.setItem(row_no, VmManagerWindow.columns_indices[
             'Include in backups'], self.include_in_backups_widget)
 
@@ -134,6 +134,11 @@ class VmRowInTable:
             vm, "backup_timestamp")
         table.setItem(row_no, VmManagerWindow.columns_indices[
             'Last backup'], self.last_backup_widget)
+
+        self.dvm_template_widget = table_widgets.VMPropertyItem(
+            vm, "template_for_dispvms", empty_function=(lambda x: not x))
+        table.setItem(row_no, VmManagerWindow.columns_indices['DVM Template'],
+                      self.dvm_template_widget)
 
         self.table = table
 
@@ -335,6 +340,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                        "IP": 8,
                        "Include in backups": 9,
                        "Last backup": 10,
+                       "DVM Template": 11
                       }
 
     def __init__(self, qt_app, qubes_app, dispatcher, parent=None):
@@ -375,10 +381,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             self.columns_indices["NetVM"]: self.action_netvm,
             self.columns_indices["Size"]: self.action_size_on_disk,
             self.columns_indices["Internal"]: self.action_internal,
-            self.columns_indices["IP"]: self
-                .action_ip, self.columns_indices["Include in backups"]: self
-                .action_backups, self.columns_indices["Last backup"]: self
-            .action_last_backup
+            self.columns_indices["IP"]: self.action_ip,
+            self.columns_indices["Include in backups"]: self.action_backups,
+            self.columns_indices["Last backup"]: self.action_last_backup,
+            self.columns_indices["DVM Template"]: self.action_dvm_template
         }
 
         self.visible_columns_count = len(self.columns_indices)
@@ -1180,6 +1186,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
     def on_action_size_on_disk_toggled(self, checked):
         self.showhide_column(self.columns_indices['Size'], checked)
+
+    def on_action_dvm_template_toggled(self, checked):
+        self.showhide_column(self.columns_indices['DVM Template'], checked)
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_about_qubes_triggered')
