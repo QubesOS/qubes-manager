@@ -78,7 +78,6 @@ class VmRowInTable:
         # TODO: replace a various different widgets with a more generic
         # VmFeatureWidget or VMPropertyWidget
 
-
         table_widgets.row_height = VmManagerWindow.row_height
         table.setRowHeight(row_no, VmManagerWindow.row_height)
 
@@ -94,7 +93,7 @@ class VmRowInTable:
         table.setItem(row_no, VmManagerWindow.columns_indices['Label'],
                       self.label_widget.table_item)
 
-        self.name_widget = table_widgets.VmNameItem(vm)
+        self.name_widget = table_widgets.VMPropertyItem(vm, "name")
         table.setItem(row_no, VmManagerWindow.columns_indices['Name'],
                       self.name_widget)
 
@@ -108,7 +107,8 @@ class VmRowInTable:
         table.setItem(row_no, VmManagerWindow.columns_indices['Template'],
                       self.template_widget)
 
-        self.netvm_widget = table_widgets.VmNetvmItem(vm)
+        self.netvm_widget = table_widgets.VMPropertyItem(vm, "netvm",
+                                                         check_default=True)
         table.setItem(row_no, VmManagerWindow.columns_indices['NetVM'],
                       self.netvm_widget)
 
@@ -120,16 +120,18 @@ class VmRowInTable:
         table.setItem(row_no, VmManagerWindow.columns_indices['Internal'],
                       self.internal_widget)
 
-        self.ip_widget = table_widgets.VmIPItem(vm)
+        self.ip_widget = table_widgets.VMPropertyItem(vm, "ip")
         table.setItem(row_no, VmManagerWindow.columns_indices['IP'],
                       self.ip_widget)
 
-        self.include_in_backups_widget = \
-            table_widgets.VmIncludeInBackupsItem(vm)
+        self.include_in_backups_widget = table_widgets.VMPropertyItem(
+            vm, "include_in_backups",
+            empty_function=(lambda x: True if x is None or not x else False))
         table.setItem(row_no, VmManagerWindow.columns_indices[
-            'Backups'], self.include_in_backups_widget)
+            'Include in backups'], self.include_in_backups_widget)
 
-        self.last_backup_widget = table_widgets.VmLastBackupItem(vm)
+        self.last_backup_widget = table_widgets.VmLastBackupItem(
+            vm, "backup_timestamp")
         table.setItem(row_no, VmManagerWindow.columns_indices[
             'Last backup'], self.last_backup_widget)
 
@@ -331,7 +333,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                        "Size": 6,
                        "Internal": 7,
                        "IP": 8,
-                       "Backups": 9,
+                       "Include in backups": 9,
                        "Last backup": 10,
                       }
 
@@ -374,7 +376,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             self.columns_indices["Size"]: self.action_size_on_disk,
             self.columns_indices["Internal"]: self.action_internal,
             self.columns_indices["IP"]: self
-                .action_ip, self.columns_indices["Backups"]: self
+                .action_ip, self.columns_indices["Include in backups"]: self
                 .action_backups, self.columns_indices["Last backup"]: self
             .action_last_backup
         }
@@ -1164,7 +1166,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.showhide_column(self.columns_indices['IP'], checked)
 
     def on_action_backups_toggled(self, checked):
-        self.showhide_column(self.columns_indices['Backups'], checked)
+        self.showhide_column(
+            self.columns_indices['Include in backups'], checked)
 
     def on_action_last_backup_toggled(self, checked):
         self.showhide_column(self.columns_indices['Last backup'], checked)

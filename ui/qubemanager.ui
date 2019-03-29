@@ -226,7 +226,7 @@
       </column>
       <column>
        <property name="text">
-        <string>Backups</string>
+        <string>Include in backups</string>
        </property>
       </column>
       <column>

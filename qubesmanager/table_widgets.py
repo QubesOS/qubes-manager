@@ -71,7 +71,6 @@ class VmIconWidget(QtGui.QWidget):
         self.label_icon.setFixedSize(icon_sz)
 
 
-
 class VmTypeWidget(VmIconWidget):
     class VmTypeItem(QtGui.QTableWidgetItem):
         def __init__(self, value, vm):
@@ -158,22 +157,6 @@ class VmLabelWidget(VmIconWidget):
         if icon_path != self.icon_path:
             self.icon_path = icon_path
             self.set_icon(icon_path)
-
-
-class VmNameItem(QtGui.QTableWidgetItem):
-    def __init__(self, vm):
-        super(VmNameItem, self).__init__()
-        self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-        self.setText(vm.name)
-        self.setTextAlignment(QtCore.Qt.AlignVCenter)
-        self.qid = vm.qid
-
-    def __lt__(self, other):
-        if self.qid == 0:
-            return True
-        if other.qid == 0:
-            return False
-        return super(VmNameItem, self).__lt__(other)
 
 
 class VmStatusIcon(QtGui.QLabel):
@@ -281,15 +264,47 @@ class VmInfoWidget(QtGui.QWidget):
         self.upd_info.update_outdated()
 
 
-class VmTemplateItem(QtGui.QTableWidgetItem):
-    def __init__(self, vm):
-        super(VmTemplateItem, self).__init__()
+class VMPropertyItem(QtGui.QTableWidgetItem):
+    def __init__(self, vm, property_name, empty_function=(lambda x: False),
+                 check_default=False):
+        super(VMPropertyItem, self).__init__()
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+        self.setTextAlignment(QtCore.Qt.AlignVCenter)
         self.vm = vm
         self.qid = vm.qid
+        self.property_name = property_name
         self.name = vm.name
-        self.setTextAlignment(QtCore.Qt.AlignVCenter)
+        self.empty_function = empty_function
+        self.check_default = check_default
         self.update()
+
+    def update(self):
+        val = getattr(self.vm, self.property_name, None)
+        if self.empty_function(val):
+            self.setText("")
+        elif val is None:
+            self.setText("n/a")
+        elif self.check_default and \
+                self.vm.property_is_default(self.property_name):
+                    self.setText('default (' + str(val) + ')')
+        elif val is True:
+            self.setText("Yes")
+        else:
+            self.setText(str(val))
+
+    def __lt__(self, other):
+        if self.qid == 0:
+            return True
+        if other.qid == 0:
+            return False
+        if self.text() == other.text():
+            return self.name < other.name
+        return super(VMPropertyItem, self).__lt__(other)
+
+
+class VmTemplateItem(VMPropertyItem):
+    def __init__(self, vm):
+        super(VmTemplateItem, self).__init__(vm, "template")
 
     def update(self):
         if getattr(self.vm, 'template', None) is not None:
@@ -302,68 +317,14 @@ class VmTemplateItem(QtGui.QTableWidgetItem):
 
             self.setText(self.vm.klass)
 
-    def __lt__(self, other):
-        if self.qid == 0:
-            return True
-        if other.qid == 0:
-            return False
-        if self.text() == other.text():
-            return self.name < other.name
-        return super(VmTemplateItem, self).__lt__(other)
 
-
-class VmNetvmItem(QtGui.QTableWidgetItem):
+class VmInternalItem(VMPropertyItem):
     def __init__(self, vm):
-        super(VmNetvmItem, self).__init__()
-        self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-        self.vm = vm
-        self.qid = vm.qid
-        self.name = vm.name
-        self.setTextAlignment(QtCore.Qt.AlignVCenter)
-        self.update()
+        super(VmInternalItem, self).__init__(vm, None)
 
     def update(self):
-        if getattr(self.vm, 'netvm', None) is None:
-            self.setText("n/a")
-        else:
-            if self.vm.property_is_default('netvm'):
-                text = 'default (' + self.vm.netvm.name +')'
-            else:
-                text = self.vm.netvm.name
-            self.setText(text)
-
-    def __lt__(self, other):
-        if self.qid == 0:
-            return True
-        if other.qid == 0:
-            return False
-        if self.text() == other.text():
-            return self.name < other.name
-        return super(VmNetvmItem, self).__lt__(other)
-
-
-class VmInternalItem(QtGui.QTableWidgetItem):
-    def __init__(self, vm):
-        super(VmInternalItem, self).__init__()
-        self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-
-        self.vm = vm
-        self.qid = vm.qid
-        self.name = vm.name
-        self.update()
-
-    def update(self):
-        self.internal = self.vm.features.get('internal', False)
-        self.setText("Yes" if self.internal else "")
-
-    def __lt__(self, other):
-        if self.qid == 0:
-            return True
-        if other.qid == 0:
-            return False
-        if self.internal == other.internal:
-            return self.name < other.name
-        return super(VmInternalItem, self).__lt__(other)
+        internal = self.vm.features.get('internal', False)
+        self.setText("Yes" if internal else "")
 
 
 # features man qvm-features
@@ -474,6 +435,7 @@ class VmUpdateInfoWidget(QtGui.QWidget):
                         alignment=QtCore.Qt.AlignCenter)
                 self.icon.setVisible(True)
 
+
 class VmSizeOnDiskItem(QtGui.QTableWidgetItem):
     def __init__(self, vm):
         super(VmSizeOnDiskItem, self).__init__()
@@ -504,87 +466,15 @@ class VmSizeOnDiskItem(QtGui.QTableWidgetItem):
         return self.value < other.value
 
 
-class VmIPItem(QtGui.QTableWidgetItem):
-    def __init__(self, vm):
-        super(VmIPItem, self).__init__()
-        self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-
-        self.vm = vm
-        self.qid = vm.qid
-        self.name = vm.name
-        self.update()
+class VmLastBackupItem(VMPropertyItem):
+    def __init__(self, vm, property_name):
+        super(VmLastBackupItem, self).__init__(vm, property_name)
 
     def update(self):
-        self.ip = getattr(self.vm, 'ip', None)
-        self.setText(self.ip if self.ip is not None else 'n/a')
+        backup_timestamp = getattr(self.vm, 'backup_timestamp', None)
 
-    def __lt__(self, other):
-        if self.qid == 0:
-            return True
-        if other.qid == 0:
-            return False
-        if self.ip == other.ip:
-            return self.name < other.name
-        return super(VmIPItem, self).__lt__(other)
-
-
-class VmIncludeInBackupsItem(QtGui.QTableWidgetItem):
-    def __init__(self, vm):
-        super(VmIncludeInBackupsItem, self).__init__()
-        self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-
-        self.vm = vm
-        self.name = vm.name
-        self.qid = vm.qid
-        self.update()
-
-    def update(self):
-        if getattr(self.vm, 'include_in_backups', None):
-            self.setText("Yes")
-            self.include_in_backups = True
-        else:
-            self.setText("")
-            self.include_in_backups = False
-
-    def __lt__(self, other):
-        if self.qid == 0:
-            return True
-        if other.qid == 0:
-            return False
-        if self.include_in_backups == other.include_in_backups:
-            return self.name < other.name
-        return self.include_in_backups < other.include_in_backups
-
-
-class VmLastBackupItem(QtGui.QTableWidgetItem):
-    def __init__(self, vm):
-        super(VmLastBackupItem, self).__init__()
-        self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-
-        self.vm = vm
-        self.qid = vm.qid
-        self.name = vm.name
-        self.update()
-
-    def update(self):
-        self.backup_timestamp = getattr(self.vm, 'backup_timestamp', None)
-
-        if self.backup_timestamp:
+        if backup_timestamp:
             self.setText(
-                str(datetime.datetime.fromtimestamp(self.backup_timestamp)))
+                str(datetime.datetime.fromtimestamp(backup_timestamp)))
         else:
             self.setText("")
-
-    #pylint: disable=too-many-return-statements
-    def __lt__(self, other):
-        if self.qid == 0:
-            return True
-        if other.qid == 0:
-            return False
-        if self.backup_timestamp == other.backup_timestamp:
-            return self.name < other.name
-        if not self.backup_timestamp:
-            return False
-        if not other.backup_timestamp:
-            return True
-        return self.backup_timestamp < other.backup_timestamp
