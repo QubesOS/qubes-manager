@@ -280,7 +280,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
     def apply(self):
         with common_threads.busy_cursor():
             self.save_changes()
-        self.save_changes()
 
     def save_and_apply(self):
         with common_threads.busy_cursor():
