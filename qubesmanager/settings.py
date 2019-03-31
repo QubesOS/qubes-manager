@@ -278,10 +278,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 self.tr("ERROR: {0}").format('\n'.join(error)))
 
     def apply(self):
+        with common_threads.busy_cursor():
+            self.save_changes()
         self.save_changes()
 
     def save_and_apply(self):
-        self.save_changes()
+        with common_threads.busy_cursor():
+            self.save_changes()
         self.done(0)
 
     def __save_changes__(self):
