@@ -290,8 +290,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
     def __save_changes__(self):
         ret = []
 
-        QtGui.QApplication.setOverrideCursor(QtCore.Qt.BusyCursor)
-
         try:
             ret_tmp = self.__apply_basic_tab__()
             if ret_tmp:
@@ -328,8 +326,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             ret += [self.tr("Applications tab:"), str(qex)]
         except Exception as ex:  # pylint: disable=broad-except
             ret += [self.tr("Applications tab:"), repr(ex)]
-
-        QtGui.QApplication.restoreOverrideCursor()
 
         utils.debug('\n'.join(ret))
         return ret
