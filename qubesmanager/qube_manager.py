@@ -836,6 +836,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 "Cloning Qube..."), "", 0, 0)
         self.progress.setCancelButton(None)
         self.progress.setModal(True)
+        self.progress.setWindowTitle("Cloning qube...")
         self.progress.show()
 
         thread = common_threads.CloneVMThread(vm, clone_name)
