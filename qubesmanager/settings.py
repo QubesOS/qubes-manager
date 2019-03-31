@@ -264,7 +264,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         self.save_and_apply()
 
     def save_changes(self):
-        error = self.__save_changes__()
+        with common_threads.busy_cursor():
+            error = self.__save_changes__()
 
         if error:
             QtGui.QMessageBox.warning(
@@ -274,12 +275,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 self.tr("ERROR: {0}").format('\n'.join(error)))
 
     def apply(self):
-        with common_threads.busy_cursor():
-            self.save_changes()
+        self.save_changes()
 
     def save_and_apply(self):
-        with common_threads.busy_cursor():
-            self.save_changes()
+        self.save_changes()
         self.done(0)
 
     def __save_changes__(self):
