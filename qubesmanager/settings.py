@@ -134,8 +134,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
     def __init__(self, vm, qapp, init_page="basic", parent=None):
         super(VMSettingsWindow, self).__init__(parent)
 
-        QtGui.QApplication.setOverrideCursor(QtCore.Qt.BusyCursor)
-
         self.vm = vm
         self.qapp = qapp
         self.threads_list = []
@@ -232,8 +230,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
             self.refresh_apps_button.clicked.connect(
                 self.refresh_apps_button_pressed)
-
-        QtGui.QApplication.restoreOverrideCursor()
 
     def clear_threads(self):
         for thread in self.threads_list:
