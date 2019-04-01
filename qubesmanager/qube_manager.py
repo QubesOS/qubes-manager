@@ -1060,7 +1060,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     def action_editfwrules_triggered(self):
         with common_threads.busy_cursor():
             vm = self.get_selected_vm()
-            settings_window = settings.VMSettingsWindow(vm, self.qt_app, "firewall")
+            settings_window = settings.VMSettingsWindow(vm, self.qt_app,\
+                    "firewall")
         settings_window.exec_()
 
     # noinspection PyArgumentList
@@ -1090,7 +1091,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     @QtCore.pyqtSlot(name='on_action_restore_triggered')
     def action_restore_triggered(self):
         with common_threads.busy_cursor():
-            restore_window = restore.RestoreVMsWindow(self.qt_app, self.qubes_app)
+            restore_window = restore.RestoreVMsWindow(self.qt_app,\
+                    self.qubes_app)
         restore_window.exec_()
 
     # noinspection PyArgumentList
