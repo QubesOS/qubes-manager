@@ -966,6 +966,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         self.update_pvh_dont_support_devs()
 
+        self.dev_list.setEnabled(not self.vm.is_running())
+
     def __apply_devices_tab__(self):
         msg = []
 
