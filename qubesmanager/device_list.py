@@ -45,7 +45,7 @@ class PCIDeviceListWindow(ui_devicelist.Ui_Dialog, QtGui.QDialog):
 
         for i in range(self.dev_list.selected_list.count()):
             text = self.dev_list.selected_list.item(i).text()
-            ident = self.dev_list.selected_list.item(i).ident
+            ident = self.dev_list.selected_list.item(i).dev.ident
             self.device_list.addItem(text)
             self.ident_list[text] = ident
             if ident in self.no_strict_reset_list:
