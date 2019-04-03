@@ -267,6 +267,18 @@ class VmInfoWidget(QtGui.QWidget):
 class VMPropertyItem(QtGui.QTableWidgetItem):
     def __init__(self, vm, property_name, empty_function=(lambda x: False),
                  check_default=False):
+        """
+        Class used to represent Qube Manager table widget.
+        :param vm: vm object
+        :param property_name: name of the property the widget represents
+        :param empty_function: a function that, when applied to values of
+        vm.property_name, returns True when the property value should be
+        represented as an empty string and False otherwise; by default this
+        function always returns false (vm.property_name is represented by an
+        empty string only when it actually is one)
+        :param check_default: if True, the widget will prepend its text with
+        "default" if the if the property is set to DEFAULT
+        """
         super(VMPropertyItem, self).__init__()
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
         self.setTextAlignment(QtCore.Qt.AlignVCenter)
@@ -281,16 +293,18 @@ class VMPropertyItem(QtGui.QTableWidgetItem):
     def update(self):
         val = getattr(self.vm, self.property_name, None)
         if self.empty_function(val):
-            self.setText("")
+            text = ""
         elif val is None:
-            self.setText("n/a")
-        elif self.check_default and \
-                self.vm.property_is_default(self.property_name):
-            self.setText('default (' + str(val) + ')')
+            text = "n/a"
         elif val is True:
-            self.setText("Yes")
+            text = "Yes"
         else:
-            self.setText(str(val))
+            text = str(val)
+
+        if self.check_default and hasattr(self.vm, self.property_name) and \
+                self.vm.property_is_default(self.property_name):
+            text = 'default (' + text + ')'
+        self.setText(text)
 
     def __lt__(self, other):
         if self.qid == 0:

@@ -136,7 +136,7 @@
        <number>10</number>
       </property>
       <property name="columnCount">
-       <number>12</number>
+       <number>13</number>
       </property>
       <attribute name="horizontalHeaderCascadingSectionResizes">
        <bool>false</bool>
@@ -211,7 +211,8 @@
       </column>
       <column>
        <property name="text">
-        <string>Disk usage</string>
+        <string>Disk
+usage</string>
        </property>
       </column>
       <column>
@@ -226,7 +227,8 @@
       </column>
       <column>
        <property name="text">
-        <string>Include in backups</string>
+        <string>Include
+in backups</string>
        </property>
       </column>
       <column>
@@ -236,7 +238,14 @@
       </column>
       <column>
        <property name="text">
-        <string>Template for DispVMs</string>
+        <string>Default
+DisposableVM</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Is template for 
+DisposableVMs</string>
        </property>
       </column>
      </widget>
@@ -281,8 +290,9 @@
     <addaction name="action_ip"/>
     <addaction name="action_backups"/>
     <addaction name="action_last_backup"/>
+    <addaction name="action_dispvm_template"/>
+    <addaction name="action_is_dvm_template"/>
     <addaction name="separator"/>
-    <addaction name="action_dvm_template"/>
     <addaction name="action_toolbar"/>
     <addaction name="action_menubar"/>
     <addaction name="separator"/>
@@ -836,7 +846,7 @@
     <string>Launch a tool that allows multiple templates to be changed at once</string>
    </property>
   </action>
-  <action name="action_dvm_template">
+  <action name="action_dispvm_template">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -844,10 +854,24 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Template for DispVMs</string>
+    <string>Default DisposableVMs</string>
    </property>
    <property name="toolTip">
-    <string>Template for DispVMs</string>
+    <string>Default DisposableVMs</string>
+   </property>
+  </action>
+  <action name="action_is_dvm_template">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Is Template for DisposableVMs</string>
+   </property>
+   <property name="toolTip">
+    <string>Is Template for DisposableVMs</string>
    </property>
   </action>
  </widget>
