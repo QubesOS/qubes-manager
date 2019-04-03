@@ -741,7 +741,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_createvm_triggered')
     def action_createvm_triggered(self):  # pylint: disable=no-self-use
-        create_window = create_new_vm.NewVmDlg(self.qt_app, self.qubes_app)
+        with common_threads.busy_cursor():
+            create_window = create_new_vm.NewVmDlg(self.qt_app, self.qubes_app)
         create_window.exec_()
 
     def get_selected_vm(self):
@@ -977,8 +978,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     def action_settings_triggered(self):
         vm = self.get_selected_vm()
         if vm:
-            settings_window = settings.VMSettingsWindow(
-                vm, self.qt_app, "basic")
+            with common_threads.busy_cursor():
+                settings_window = settings.VMSettingsWindow(
+                    vm, self.qt_app, "basic")
             settings_window.exec_()
 
             vm_deleted = False
@@ -1004,10 +1006,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     def action_appmenus_triggered(self):
         vm = self.get_selected_vm()
         if vm:
-            settings_window = settings.VMSettingsWindow(
-                vm, self.qt_app, "applications")
+            with common_threads.busy_cursor():
+                settings_window = settings.VMSettingsWindow(
+                    vm, self.qt_app, "applications")
             settings_window.exec_()
-
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_updatevm_triggered')
@@ -1057,16 +1059,19 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_editfwrules_triggered')
     def action_editfwrules_triggered(self):
-        vm = self.get_selected_vm()
-        settings_window = settings.VMSettingsWindow(vm, self.qt_app, "firewall")
+        with common_threads.busy_cursor():
+            vm = self.get_selected_vm()
+            settings_window = settings.VMSettingsWindow(vm, self.qt_app,\
+                    "firewall")
         settings_window.exec_()
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_global_settings_triggered')
     def action_global_settings_triggered(self):  # pylint: disable=invalid-name
-        global_settings_window = global_settings.GlobalSettingsWindow(
-            self.qt_app,
-            self.qubes_app)
+        with common_threads.busy_cursor():
+            global_settings_window = global_settings.GlobalSettingsWindow(
+                self.qt_app,
+                self.qubes_app)
         global_settings_window.exec_()
 
     # noinspection PyArgumentList
@@ -1086,14 +1091,17 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_restore_triggered')
     def action_restore_triggered(self):
-        restore_window = restore.RestoreVMsWindow(self.qt_app, self.qubes_app)
+        with common_threads.busy_cursor():
+            restore_window = restore.RestoreVMsWindow(self.qt_app,\
+                    self.qubes_app)
         restore_window.exec_()
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_backup_triggered')
     def action_backup_triggered(self):
-        backup_window = backup.BackupVMsWindow(self.qt_app, self.qubes_app,
-                                            self.dispatcher, self)
+        with common_threads.busy_cursor():
+            backup_window = backup.BackupVMsWindow(self.qt_app, self.qubes_app,
+                                                self.dispatcher, self)
         backup_window.show()
 
     # noinspection PyArgumentList

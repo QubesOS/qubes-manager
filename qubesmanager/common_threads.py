@@ -20,8 +20,19 @@
 #
 
 
-from PyQt4 import QtCore  # pylint: disable=import-error
+from PyQt4 import QtCore, QtGui  # pylint: disable=import-error
+from contextlib import contextmanager
+
 from qubesadmin import exc
+
+
+@contextmanager
+def busy_cursor():
+    try:
+        QtGui.QApplication.setOverrideCursor(QtCore.Qt.BusyCursor)
+        yield
+    finally:
+        QtGui.QApplication.restoreOverrideCursor()
 
 
 # pylint: disable=too-few-public-methods
