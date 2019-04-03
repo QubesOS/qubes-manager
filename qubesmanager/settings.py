@@ -919,27 +919,29 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         self.dev_list.add_all_button.setVisible(False)
         self.devices_layout.addWidget(self.dev_list)
 
-        devs = []
-        lspci = subprocess.check_output(['/usr/sbin/lspci']).decode()
-        for dev in lspci.splitlines():
-            devs.append((dev.rstrip(), dev.split(' ')[0]))
+        dom0_devs = list(self.vm.app.domains['dom0'].devices['pci'].available())
+
+        attached_devs = list(self.vm.devices['pci'].persistent())
 
         # pylint: disable=too-few-public-methods
         class DevListWidgetItem(QtGui.QListWidgetItem):
-            def __init__(self, name, ident, parent=None):
-                super(DevListWidgetItem, self).__init__(name, parent)
-                self.ident = ident
+            def __init__(self, dev, unknown=False, parent=None):
+                super(DevListWidgetItem, self).__init__(parent)
+                name = dev.ident.replace('_', ":") + ' ' + dev.description
+                if unknown:
+                    name += ' (unknown)'
+                self.setText(name)
+                self.dev = dev
 
-        persistent = [ass.ident.replace('_', ':')
-                      for ass in self.vm.devices['pci'].persistent()]
-
-        for name, ident in devs:
-            if ident in persistent:
-                self.dev_list.selected_list.addItem(
-                    DevListWidgetItem(name, ident))
+        for dev in dom0_devs:
+            if dev in attached_devs:
+                self.dev_list.selected_list.addItem(DevListWidgetItem(dev))
             else:
-                self.dev_list.available_list.addItem(
-                    DevListWidgetItem(name, ident))
+                self.dev_list.available_list.addItem(DevListWidgetItem(dev))
+        for dev in attached_devs:
+            if dev not in dom0_devs:
+                self.dev_list.selected_list.addItem(
+                    DevListWidgetItem(dev, unknown=True))
 
         if self.dev_list.selected_list.count() > 0\
                 and self.include_in_balancing.isChecked():
@@ -965,44 +967,43 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         msg = []
 
         try:
-            old = [ass.ident.replace('_', ':')
-                   for ass in self.vm.devices['pci'].persistent()]
+            old_devs = list(self.vm.devices['pci'].persistent())
 
-            new = [self.dev_list.selected_list.item(i).ident
-                   for i in range(self.dev_list.selected_list.count())]
-            for ident in new:
-                if ident not in old:
+            new_devs = [item.dev
+                        for item in self.dev_list.selected_list.items()]
+
+            for dev in new_devs:
+                if dev not in old_devs:
                     options = {}
-                    if ident in self.new_strict_reset_list:
+                    if dev.ident in self.new_strict_reset_list:
                         options['no-strict-reset'] = True
                     ass = devices.DeviceAssignment(
                         self.vm.app.domains['dom0'],
-                        ident.replace(':', '_'),
-                        persistent=True, options=options)
+                        dev.ident, persistent=True, options=options)
                     self.vm.devices['pci'].attach(ass)
-                elif (ident in self.current_strict_reset_list) != \
-                        (ident in self.new_strict_reset_list):
+                elif (dev.ident in self.current_strict_reset_list) != \
+                        (dev.ident in self.new_strict_reset_list):
                     current_assignment = None
                     for assignment in self.vm.devices['pci'].assignments(
                             persistent=True):
-                        if assignment.ident.replace("_", ":") == ident:
+                        if assignment.ident == dev.ident:
                             current_assignment = assignment
                             break
                     if current_assignment is None:
                         # it would be very weird if this happened
                         msg.append(self.tr("Error re-assigning device ") +
-                                   ident)
+                                   dev.ident)
                         continue
 
                     self.vm.devices['pci'].detach(current_assignment)
 
                     current_assignment.options['no-strict-reset'] = \
-                        (ident in self.new_strict_reset_list)
+                        (dev.ident in self.new_strict_reset_list)
 
                     self.vm.devices['pci'].attach(current_assignment)
 
             for ass in self.vm.devices['pci'].assignments(persistent=True):
-                if ass.ident.replace('_', ':') not in new:
+                if ass.device not in new_devs:
                     self.vm.devices['pci'].detach(ass)
 
         except qubesadmin.exc.QubesException as ex:
