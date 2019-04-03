@@ -25,34 +25,33 @@ from qubesadmin import exc
 
 
 # pylint: disable=too-few-public-methods
-class RemoveVMThread(QtCore.QThread):
+class QubesThread(QtCore.QThread):
     def __init__(self, vm):
         QtCore.QThread.__init__(self)
         self.vm = vm
         self.msg = None
-        self.is_error = False
+        self.msg_is_success = False
 
+
+# pylint: disable=too-few-public-methods
+class RemoveVMThread(QubesThread):
     def run(self):
         try:
             del self.vm.app.domains[self.vm.name]
         except (exc.QubesException, KeyError) as ex:
             self.msg = ("Error removing qube!", str(ex))
-            self.is_error = True
 
 
 # pylint: disable=too-few-public-methods
-class CloneVMThread(QtCore.QThread):
-    def __init__(self, src_vm, dst_name):
-        QtCore.QThread.__init__(self)
-        self.src_vm = src_vm
+class CloneVMThread(QubesThread):
+    def __init__(self, vm, dst_name):
+        super(CloneVMThread, self).__init__(vm)
         self.dst_name = dst_name
-        self.msg = None
-        self.is_error = False
 
     def run(self):
         try:
-            self.src_vm.app.clone_vm(self.src_vm, self.dst_name)
+            self.vm.app.clone_vm(self.vm, self.dst_name)
             self.msg = ("Sucess", "The qube was cloned sucessfully.")
+            self.msg_is_success = True
         except exc.QubesException as ex:
             self.msg = ("Error while cloning qube!", str(ex))
-            self.is_error = True
