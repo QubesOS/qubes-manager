@@ -608,8 +608,16 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.sort_order = QtCore.Qt.SortOrder(
             self.manager_settings.value("view/sort_order",
                                         defaultValue=self.sort_order))
-        self.table.sortItems(self.columns_indices[self.sort_by_column],
-                             self.sort_order)
+
+        try:
+            self.table.sortItems(self.columns_indices[self.sort_by_column],
+                                 self.sort_order)
+        except KeyError:
+            # the manager was sorted on a column that does not exist in the
+            # current version; possible only with downgrades
+            self.table.sortItems(self.columns_indices["Name"],
+                                 self.sort_order)
+
         if not self.manager_settings.value("view/menubar_visible",
                                            defaultValue=True):
             self.action_menubar.setChecked(False)
