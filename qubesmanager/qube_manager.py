@@ -75,9 +75,6 @@ class VmRowInTable:
     # pylint: disable=too-few-public-methods
     def __init__(self, vm, row_no, table):
         self.vm = vm
-        # TODO: replace a various different widgets with a more generic
-        # VmFeatureWidget or VMPropertyWidget
-
 
         table_widgets.row_height = VmManagerWindow.row_height
         table.setRowHeight(row_no, VmManagerWindow.row_height)
@@ -94,7 +91,7 @@ class VmRowInTable:
         table.setItem(row_no, VmManagerWindow.columns_indices['Label'],
                       self.label_widget.table_item)
 
-        self.name_widget = table_widgets.VmNameItem(vm)
+        self.name_widget = table_widgets.VMPropertyItem(vm, "name")
         table.setItem(row_no, VmManagerWindow.columns_indices['Name'],
                       self.name_widget)
 
@@ -108,7 +105,8 @@ class VmRowInTable:
         table.setItem(row_no, VmManagerWindow.columns_indices['Template'],
                       self.template_widget)
 
-        self.netvm_widget = table_widgets.VmNetvmItem(vm)
+        self.netvm_widget = table_widgets.VMPropertyItem(vm, "netvm",
+                                                         check_default=True)
         table.setItem(row_no, VmManagerWindow.columns_indices['NetVM'],
                       self.netvm_widget)
 
@@ -120,18 +118,31 @@ class VmRowInTable:
         table.setItem(row_no, VmManagerWindow.columns_indices['Internal'],
                       self.internal_widget)
 
-        self.ip_widget = table_widgets.VmIPItem(vm)
+        self.ip_widget = table_widgets.VMPropertyItem(vm, "ip")
         table.setItem(row_no, VmManagerWindow.columns_indices['IP'],
                       self.ip_widget)
 
-        self.include_in_backups_widget = \
-            table_widgets.VmIncludeInBackupsItem(vm)
+        self.include_in_backups_widget = table_widgets.VMPropertyItem(
+            vm, "include_in_backups",
+            empty_function=(lambda x: not bool(x)))
         table.setItem(row_no, VmManagerWindow.columns_indices[
-            'Backups'], self.include_in_backups_widget)
+            'Include in backups'], self.include_in_backups_widget)
 
-        self.last_backup_widget = table_widgets.VmLastBackupItem(vm)
+        self.last_backup_widget = table_widgets.VmLastBackupItem(
+            vm, "backup_timestamp")
         table.setItem(row_no, VmManagerWindow.columns_indices[
             'Last backup'], self.last_backup_widget)
+
+        self.dvm_template_widget = table_widgets.VMPropertyItem(
+            vm, "default_dispvm")
+        table.setItem(row_no, VmManagerWindow.columns_indices['Default DispVM'],
+                      self.dvm_template_widget)
+
+        self.is_dispvm_template_widget = table_widgets.VMPropertyItem(
+            vm, "template_for_dispvms", empty_function=(lambda x: not x))
+        table.setItem(
+            row_no, VmManagerWindow.columns_indices['Is DVM Template'],
+            self.is_dispvm_template_widget)
 
         self.table = table
 
@@ -160,6 +171,10 @@ class VmRowInTable:
                 self.include_in_backups_widget.update()
             if not event or event.endswith(':backup_timestamp'):
                 self.last_backup_widget.update()
+            if not event or event.endswith(':default_dispvm'):
+                self.dvm_template_widget.update()
+            if not event or event.endswith(':template_for_dispvms'):
+                self.is_dispvm_template_widget.update()
             if update_size_on_disk:
                 self.size_widget.update()
         except exc.QubesPropertyAccessError:
@@ -331,8 +346,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                        "Size": 6,
                        "Internal": 7,
                        "IP": 8,
-                       "Backups": 9,
+                       "Include in backups": 9,
                        "Last backup": 10,
+                       "Default DispVM": 11,
+                       "Is DVM Template": 12
                       }
 
     def __init__(self, qt_app, qubes_app, dispatcher, parent=None):
@@ -373,10 +390,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             self.columns_indices["NetVM"]: self.action_netvm,
             self.columns_indices["Size"]: self.action_size_on_disk,
             self.columns_indices["Internal"]: self.action_internal,
-            self.columns_indices["IP"]: self
-                .action_ip, self.columns_indices["Backups"]: self
-                .action_backups, self.columns_indices["Last backup"]: self
-            .action_last_backup
+            self.columns_indices["IP"]: self.action_ip,
+            self.columns_indices["Include in backups"]: self.action_backups,
+            self.columns_indices["Last backup"]: self.action_last_backup,
+            self.columns_indices["Default DispVM"]: self.action_dispvm_template,
+            self.columns_indices["Is DVM Template"]: self.action_is_dvm_template
         }
 
         self.visible_columns_count = len(self.columns_indices)
@@ -1173,7 +1191,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.showhide_column(self.columns_indices['IP'], checked)
 
     def on_action_backups_toggled(self, checked):
-        self.showhide_column(self.columns_indices['Backups'], checked)
+        self.showhide_column(
+            self.columns_indices['Include in backups'], checked)
 
     def on_action_last_backup_toggled(self, checked):
         self.showhide_column(self.columns_indices['Last backup'], checked)
@@ -1186,6 +1205,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
     def on_action_size_on_disk_toggled(self, checked):
         self.showhide_column(self.columns_indices['Size'], checked)
+
+    # pylint: disable=invalid-name
+    def on_action_dispvm_template_toggled(self, checked):
+        self.showhide_column(self.columns_indices['Default DispVM'], checked)
+
+    # pylint: disable=invalid-name
+    def on_action_is_dvm_template_toggled(self, checked):
+        self.showhide_column(self.columns_indices['Is DVM Template'], checked)
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_about_qubes_triggered')
