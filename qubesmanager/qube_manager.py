@@ -264,12 +264,7 @@ class VmShutdownMonitor(QtCore.QObject):
 
 
 # pylint: disable=too-few-public-methods
-class StartVMThread(QtCore.QThread):
-    def __init__(self, vm):
-        QtCore.QThread.__init__(self)
-        self.vm = vm
-        self.msg = None
-
+class StartVMThread(common_threads.QubesThread):
     def run(self):
         try:
             self.vm.start()
@@ -278,12 +273,7 @@ class StartVMThread(QtCore.QThread):
 
 
 # pylint: disable=too-few-public-methods
-class UpdateVMThread(QtCore.QThread):
-    def __init__(self, vm):
-        QtCore.QThread.__init__(self)
-        self.vm = vm
-        self.msg = None
-
+class UpdateVMThread(common_threads.QubesThread):
     def run(self):
         try:
             if self.vm.qid == 0:
@@ -316,12 +306,10 @@ class UpdateVMThread(QtCore.QThread):
 
 
 # pylint: disable=too-few-public-methods
-class RunCommandThread(QtCore.QThread):
+class RunCommandThread(common_threads.QubesThread):
     def __init__(self, vm, command_to_run):
-        QtCore.QThread.__init__(self)
-        self.vm = vm
+        super(RunCommandThread, self).__init__(vm)
         self.command_to_run = command_to_run
-        self.msg = None
 
     def run(self):
         try:
@@ -533,10 +521,16 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
                 if thread.msg:
                     (title, msg) = thread.msg
-                    QtGui.QMessageBox.warning(
-                        None,
-                        self.tr(title),
-                        self.tr(msg))
+                    if thread.msg_is_success:
+                        QtGui.QMessageBox.information(
+                            None,
+                            self.tr(title),
+                            self.tr(msg))
+                    else:
+                        QtGui.QMessageBox.warning(
+                            None,
+                            self.tr(title),
+                            self.tr(msg))
 
                 self.threads_list.remove(thread)
                 return
