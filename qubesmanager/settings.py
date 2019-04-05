@@ -969,8 +969,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         try:
             old_devs = list(self.vm.devices['pci'].persistent())
 
-            new_devs = [item.dev
-                        for item in self.dev_list.selected_list.items()]
+            new_devs = [self.dev_list.selected_list.item(i).dev
+                        for i in range(self.dev_list.selected_list.count())]
 
             for dev in new_devs:
                 if dev not in old_devs:
