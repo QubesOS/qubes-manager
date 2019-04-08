@@ -98,7 +98,7 @@
      </layout>
     </widget>
    </item>
-   <item row="3" column="0" colspan="2">
+   <item row="4" column="0" colspan="2">
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -209,6 +209,30 @@
       <string>Updates</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
+      <item row="1" column="0">
+       <widget class="QComboBox" name="dom0_updates_repo">
+        <item>
+         <property name="text">
+          <string>Stable updates</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Testing updates (security only)</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Testing updates</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Unstable updates</string>
+         </property>
+        </item>
+       </widget>
+      </item>
       <item row="1" column="1">
        <widget class="QPushButton" name="disable_updates_all">
         <property name="text">
@@ -241,6 +265,39 @@
         <property name="text">
          <string>Enable checking for updates for all qubes</string>
         </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QComboBox" name="itl_tmpl_updates_repo">
+        <item>
+         <property name="text">
+          <string>ITL template updates</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>ITL template updates (testing)</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QComboBox" name="comm_tmpl_updates_repo">
+        <item>
+         <property name="text">
+          <string>(Community templates disabled)</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Community template updates</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Community template updates (testing)</string>
+         </property>
+        </item>
        </widget>
       </item>
      </layout>
