@@ -117,9 +117,9 @@ class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
 
         # Order of types is important and used elsewhere; if it's changed
         # check for changes needed in self.type_change and TODO
-        type_list = [self.tr("AppVM"),
-                     self.tr("Standalone qube based on a template"),
-                     self.tr("Standalone qube not based on a template")]
+        type_list = [self.tr("Qube based on a template (AppVM)"),
+                     self.tr("Standalone qube"),
+                     self.tr("Standalone qube copied from a template")]
         self.vm_type.addItems(type_list)
 
         self.vm_type.currentIndexChanged.connect(self.type_change)
