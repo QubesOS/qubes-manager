@@ -104,7 +104,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             )
 
     def __apply_system_defaults__(self):
-        # upatevm
+        # updatevm
         if self.qvm_collection.updatevm != \
                 self.update_vm_vmlist[self.update_vm_combo.currentIndex()]:
             self.qvm_collection.updatevm = \
