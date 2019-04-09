@@ -51,7 +51,8 @@ def _run_qrexec_repo(service, arg=''):
 
 def _manage_repos(repolist, action):
     for i in repolist:
-        _run_qrexec_repo('qubes.repos.' + action, i) == 'ok\n'
+        result = _run_qrexec_repo('qubes.repos.' + action, i)
+        assert result == 'ok\n'
 
 def _handle_dom0_updates_combobox(idx):
     idx += 1
