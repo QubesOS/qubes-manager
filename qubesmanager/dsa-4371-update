@@ -58,7 +58,7 @@ main() {
 
     codename="$(cat /etc/debian_version)"
     case "$codename" in
-        */sid)
+        */sid|kali-*)
             # We will treat testing as sid here. This hopefully won't break
             # anything ...
             codename="sid"
