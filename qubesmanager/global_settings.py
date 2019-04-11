@@ -284,7 +284,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 'service.qubes-update-check'] = \
                 self.updates_dom0.isChecked()
 
-        self.qvm_collection.check_updates_vm = self.updates_vm.isChecked()
+        if self.qvm_collection.check_updates_vm != self.updates_vm.isChecked():
+            self.qvm_collection.check_updates_vm = self.updates_vm.isChecked()
 
     def reject(self):
         self.done(0)
