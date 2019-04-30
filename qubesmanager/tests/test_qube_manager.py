@@ -47,7 +47,7 @@ class QubeManagerTest(unittest.TestCase):
         self.addCleanup(self.mock_qprogress.stop)
 
         self.qapp = Qubes()
-        self.qtapp = QtGui.QApplication(sys.argv)
+        self.qtapp = QtGui.QApplication(["test", "-style", "cleanlooks"])
         self.dispatcher = events.EventsDispatcher(self.qapp)
 
         self.loop = quamash.QEventLoop(self.qtapp)
@@ -64,8 +64,8 @@ class QubeManagerTest(unittest.TestCase):
         self.loop.run_until_complete(asyncio.sleep(0))
         self.loop.close()
         del self.loop
-        del self.qtapp
         del self.dialog
+        del self.qtapp
         gc.collect()
         super(QubeManagerTest, self).tearDown()
 
@@ -238,7 +238,6 @@ class QubeManagerTest(unittest.TestCase):
                 displayed_power_state, correct_power_state,
                 "Wrong power state displayed for {}".format(vm.name))
 
-    @unittest.expectedFailure
     def test_013_incorrect_settings_file(self):
         mock_settings = unittest.mock.MagicMock(spec=QtCore.QSettings)
 
@@ -250,9 +249,12 @@ class QubeManagerTest(unittest.TestCase):
         mock_settings.side_effect = (
             lambda x, *args, **kwargs: settings_result_dict.get(x))
 
-        with unittest.mock.patch('PyQt4.QtCore.QSettings.value', mock_settings):
+        with unittest.mock.patch('PyQt4.QtCore.QSettings.value', mock_settings),\
+                unittest.mock.patch('PyQt4.QtGui.QMessageBox.warning')\
+                as mock_warning:
             self.dialog = qube_manager.VmManagerWindow(
                 self.qtapp, self.qapp, self.dispatcher)
+            self.assertEqual(mock_warning.call_count, 1)
 
     def test_100_sorting(self):
 
@@ -654,14 +656,15 @@ class QubeManagerTest(unittest.TestCase):
         selected_vm = self._select_non_admin_vm()
         self.assertTrue(action.isEnabled())
 
-        mock_input.return_value = (selected_vm.name + "1", False)
+        mock_input.return_value = (selected_vm.name + "clone1", False)
         action.trigger()
         self.assertEqual(mock_thread.call_count, 0,
                          "Ignores cancelling clone VM")
 
-        mock_input.return_value = (selected_vm.name + "1", True)
+        mock_input.return_value = (selected_vm.name + "clone1", True)
         action.trigger()
-        mock_thread.assert_called_once_with(selected_vm, selected_vm.name + "1")
+        mock_thread.assert_called_once_with(selected_vm,
+                                            selected_vm.name + "clone1")
         mock_thread().finished.connect.assert_called_once_with(
             self.dialog.clear_threads)
         mock_thread().start.assert_called_once_with()
@@ -1143,7 +1146,6 @@ class QubeManagerTest(unittest.TestCase):
             else:
                 self.assertEqual(call_count, 0)
 
-    @unittest.expectedFailure
     def test_500_logs(self):
         self._select_admin_vm()
 
