@@ -466,7 +466,17 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.connect(self.action_toolbar, QtCore.SIGNAL("toggled(bool)"),
                      self.showhide_toolbar)
 
-        self.load_manager_settings()
+        try:
+            self.load_manager_settings()
+        except Exception as ex:  # pylint: disable=broad-except
+            QtGui.QMessageBox.warning(
+                None,
+                self.tr("Manager settings unreadable"),
+                self.tr("Qube Manager settings cannot be parsed. Previously "
+                        "saved display settings may not be restored "
+                        "correctly.\nError: {}".format(str(ex))))
+
+        self.settings_loaded = True
 
         self.fill_table()
 
@@ -641,8 +651,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         # load last window size
         self.resize(self.manager_settings.value("window_size",
                                                 QtCore.QSize(1100, 600)))
-
-        self.settings_loaded = True
 
     def get_vms_list(self):
         return [vm for vm in self.qubes_app.domains]
@@ -1329,7 +1337,7 @@ def main():
             asyncio.ensure_future(dispatcher.listen_for_events()))
     except asyncio.CancelledError:
         pass
-    except Exception: # pylint: disable=broad-except
+    except Exception:  # pylint: disable=broad-except
         loop_shutdown()
         exc_type, exc_value, exc_traceback = sys.exc_info()[:3]
         handle_exception(exc_type, exc_value, exc_traceback)
