@@ -604,15 +604,16 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             return  # the VM was deleted before its status could be updated
 
     def load_manager_settings(self):
-        # visible columns
-        self.visible_columns_count = 0
         for col in self.columns_indices:
             col_no = self.columns_indices[col]
-            visible = self.manager_settings.value(
-                'columns/%s' % col,
-                defaultValue="true")
-            self.columns_actions[col_no].setChecked(visible == "true")
-            self.visible_columns_count += 1
+            if col == 'Name':
+                # 'Name' column should be always visible
+                self.columns_actions[col_no].setChecked(True)
+            else:
+                visible = self.manager_settings.value(
+                    'columns/%s' % col,
+                    defaultValue="true")
+                self.columns_actions[col_no].setChecked(visible == "true")
 
         self.sort_by_column = str(
             self.manager_settings.value("view/sort_column",
@@ -1160,22 +1161,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
     def showhide_column(self, col_num, show):
         self.table.setColumnHidden(col_num, not show)
-
-        val = 1 if show else -1
-        self.visible_columns_count += val
-
-        if self.visible_columns_count == 1:
-            # disable hiding the last one
-            for col in self.columns_actions:
-                if self.columns_actions[col].isChecked():
-                    self.columns_actions[col].setEnabled(False)
-                    break
-        elif self.visible_columns_count == 2 and val == 1:
-            # enable hiding previously disabled column
-            for col in self.columns_actions:
-                if not self.columns_actions[col].isEnabled():
-                    self.columns_actions[col].setEnabled(True)
-                    break
 
         if self.settings_loaded:
             col_name = [name for name in self.columns_indices if
