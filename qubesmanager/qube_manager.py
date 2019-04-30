@@ -767,6 +767,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             self.action_run_command_in_vm.setEnabled(False)
             self.action_set_keyboard_layout.setEnabled(False)
 
+        self.update_logs_menu()
+
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_createvm_triggered')
     def action_createvm_triggered(self):  # pylint: disable=no-self-use
@@ -1233,8 +1235,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     def open_tools_context_menu(self, widget, point):
         self.tools_context_menu.exec_(widget.mapToGlobal(point))
 
-    @QtCore.pyqtSlot('const QPoint&')
-    def open_context_menu(self, point):
+    def update_logs_menu(self):
         try:
             vm = self.get_selected_vm()
 
@@ -1260,14 +1261,20 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                     menu_empty = False
 
             self.logs_menu.setEnabled(not menu_empty)
-            if vm.qid == 0:
-                self.dom0_context_menu.exec_(self.table.mapToGlobal(
-                    point + QtCore.QPoint(10, 0)))
-            else:
-                self.context_menu.exec_(self.table.mapToGlobal(
-                    point + QtCore.QPoint(10, 0)))
+
         except exc.QubesPropertyAccessError:
             pass
+
+    @QtCore.pyqtSlot('const QPoint&')
+    def open_context_menu(self, point):
+        vm = self.get_selected_vm()
+
+        if vm.qid == 0:
+            self.dom0_context_menu.exec_(self.table.mapToGlobal(
+                point + QtCore.QPoint(10, 0)))
+        else:
+            self.context_menu.exec_(self.table.mapToGlobal(
+                point + QtCore.QPoint(10, 0)))
 
     @QtCore.pyqtSlot('QAction *')
     def show_log(self, action):
