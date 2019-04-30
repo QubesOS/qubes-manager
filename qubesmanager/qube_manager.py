@@ -504,7 +504,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         # Check Updates Timer
         timer = QtCore.QTimer(self)
         timer.timeout.connect(self.check_updates)
-        timer.start(1000 * 30) # 30s
+        timer.start(1000 * 30)  # 30s
         self.check_updates()
 
     def keyPressEvent(self, event):  # pylint: disable=invalid-name
@@ -850,6 +850,15 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             self.tr('Enter name for Qube <b>{}</b> clone:').format(vm.name),
             text=(name_format % name_number))
         if not ok or clone_name == "":
+            return
+
+        name_in_use = clone_name in self.qubes_app.domains
+
+        if name_in_use:
+            QtGui.QMessageBox.warning(
+                None, self.tr("Name already in use!"),
+                self.tr("There already exists a qube called '{}'. "
+                        "Cloning aborted.").format(clone_name))
             return
 
         self.progress = QtGui.QProgressDialog(
