@@ -49,7 +49,8 @@ class BackupTest(unittest.TestCase):
         self.addCleanup(self.patcher_thread.stop)
 
         self.qapp = Qubes()
-        self.qtapp = QtGui.QApplication(sys.argv)
+        self.qtapp = QtGui.QApplication(["test", "-style", "cleanlooks"])
+
         self.dispatcher = events.EventsDispatcher(self.qapp)
 
         self.loop = quamash.QEventLoop(self.qtapp)
@@ -61,7 +62,6 @@ class BackupTest(unittest.TestCase):
 
     def tearDown(self):
         self.dialog.hide()
-
         self.qtapp.deleteLater()
         self.dialog.deleteLater()
         self.qtapp.processEvents()
@@ -70,8 +70,8 @@ class BackupTest(unittest.TestCase):
         self.loop.run_until_complete(asyncio.sleep(0))
         self.loop.close()
         del self.loop
-        del self.qtapp
         del self.dialog
+        del self.qtapp
         gc.collect()
         super(BackupTest, self).tearDown()
 
@@ -159,7 +159,7 @@ class BackupTest(unittest.TestCase):
         self.assertTrue(self.dialog.currentPage()
                         is self.dialog.select_dir_page)
         # required to check if next button is correctly enabled
-        self.dialog.dir_line_edit.setText("/home/user")
+        self.dialog.dir_line_edit.setText("/home")
 
         next_button = self.dialog.button(self.dialog.NextButton)
 
@@ -248,14 +248,14 @@ class BackupTest(unittest.TestCase):
 
         # setup backup
         self._select_location("dom0")
-        self.dialog.dir_line_edit.setText("/home/user")
+        self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("pass")
         self.dialog.passphrase_line_edit_verify.setText("pass")
         self.dialog.save_profile_checkbox.setChecked(True)
         self.dialog.turn_off_checkbox.setChecked(False)
         self.dialog.compress_checkbox.setChecked(False)
         expected_settings = {'destination_vm': "dom0",
-                             'destination_path': "/home/user",
+                             'destination_path': "/home",
                              'include': ["work"],
                              'passphrase_text': "pass",
                              'compression': False}
@@ -296,14 +296,14 @@ class BackupTest(unittest.TestCase):
 
         # setup backup
         self._select_location("sys-net")
-        self.dialog.dir_line_edit.setText("/home/user")
+        self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("longerPassPhrase")
         self.dialog.passphrase_line_edit_verify.setText("longerPassPhrase")
         self.dialog.save_profile_checkbox.setChecked(False)
         self.dialog.turn_off_checkbox.setChecked(False)
         self.dialog.compress_checkbox.setChecked(True)
         expected_settings = {'destination_vm': "sys-net",
-                             'destination_path': "/home/user",
+                             'destination_path': "/home",
                              'include': ["dom0", "sys-net", "work"],
                              'passphrase_text': "longerPassPhrase",
                              'compression': True}
@@ -330,7 +330,7 @@ class BackupTest(unittest.TestCase):
 
         mock_load.return_value = {
             'destination_vm': "sys-net",
-            'destination_path': "/home/user",
+            'destination_path': "/home",
             'include': ["dom0", "sys-net", "work"],
             'passphrase_text': "longerPassPhrase",
             'compression': True
@@ -347,7 +347,7 @@ class BackupTest(unittest.TestCase):
         # check if settings were loaded
         self.assertEqual(self.dialog.appvm_combobox.currentText(), "sys-net",
                          "Destination VM not loaded")
-        self.assertEqual(self.dialog.dir_line_edit.text(), "/home/user",
+        self.assertEqual(self.dialog.dir_line_edit.text(), "/home",
                          "Destination path not loaded")
         self.assertEqual(self.dialog.passphrase_line_edit.text(),
                          "longerPassPhrase", "Passphrase not loaded")
@@ -411,7 +411,7 @@ class BackupTest(unittest.TestCase):
                         is self.dialog.select_dir_page)
 
         self._select_location("dom0")
-        self.dialog.dir_line_edit.setText("/home/user")
+        self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("pass")
         self.dialog.passphrase_line_edit_verify.setText("pass")
 
@@ -433,7 +433,7 @@ class BackupTest(unittest.TestCase):
                         is self.dialog.select_dir_page)
 
         self._select_location("dom0")
-        self.dialog.dir_line_edit.setText("/home/user")
+        self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("pass")
         self.dialog.passphrase_line_edit_verify.setText("pass")
 
@@ -461,7 +461,7 @@ class BackupTest(unittest.TestCase):
                         is self.dialog.select_dir_page)
 
         self._select_location("dom0")
-        self.dialog.dir_line_edit.setText("/home/user")
+        self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("pass")
         self.dialog.passphrase_line_edit_verify.setText("pass")
         self.dialog.turn_off_checkbox.setChecked(False)
@@ -501,7 +501,7 @@ class BackupTest(unittest.TestCase):
                         is self.dialog.select_dir_page)
 
         self._select_location("dom0")
-        self.dialog.dir_line_edit.setText("/home/user")
+        self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("pass")
         self.dialog.passphrase_line_edit_verify.setText("pass")
         self.dialog.turn_off_checkbox.setChecked(True)
@@ -540,7 +540,7 @@ class BackupTest(unittest.TestCase):
                         is self.dialog.select_dir_page)
 
         self._select_location("dom0")
-        self.dialog.dir_line_edit.setText("/home/user")
+        self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("pass")
         self.dialog.passphrase_line_edit_verify.setText("pass")
         self.dialog.turn_off_checkbox.setChecked(True)
@@ -578,7 +578,7 @@ class BackupTest(unittest.TestCase):
                         is self.dialog.select_dir_page)
 
         self._select_location("dom0")
-        self.dialog.dir_line_edit.setText("/home/user")
+        self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("pass")
         self.dialog.passphrase_line_edit_verify.setText("pass")
         self.dialog.turn_off_checkbox.setChecked(True)
