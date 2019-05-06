@@ -239,8 +239,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.dom0_updates_file_path = '/var/lib/qubes/updates/disable-updates'
 
         try:
-            self.updates_dom0_val = self.qvm_collection.domains[
-                'dom0'].features['service.qubes-update-check']
+            self.updates_dom0_val = bool(self.qvm_collection.domains[
+                'dom0'].features['service.qubes-update-check'])
         except KeyError:
             self.updates_dom0_val =\
                 not os.path.isfile(self.dom0_updates_file_path)
@@ -284,7 +284,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 'service.qubes-update-check'] = \
                 self.updates_dom0.isChecked()
 
-        self.qvm_collection.check_updates_vm = self.updates_vm.isChecked()
+        if self.qvm_collection.check_updates_vm != self.updates_vm.isChecked():
+            self.qvm_collection.check_updates_vm = self.updates_vm.isChecked()
 
     def reject(self):
         self.done(0)

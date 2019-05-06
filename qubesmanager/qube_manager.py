@@ -466,7 +466,17 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.connect(self.action_toolbar, QtCore.SIGNAL("toggled(bool)"),
                      self.showhide_toolbar)
 
-        self.load_manager_settings()
+        try:
+            self.load_manager_settings()
+        except Exception as ex:  # pylint: disable=broad-except
+            QtGui.QMessageBox.warning(
+                None,
+                self.tr("Manager settings unreadable"),
+                self.tr("Qube Manager settings cannot be parsed. Previously "
+                        "saved display settings may not be restored "
+                        "correctly.\nError: {}".format(str(ex))))
+
+        self.settings_loaded = True
 
         self.fill_table()
 
@@ -504,7 +514,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         # Check Updates Timer
         timer = QtCore.QTimer(self)
         timer.timeout.connect(self.check_updates)
-        timer.start(1000 * 30) # 30s
+        timer.start(1000 * 30)  # 30s
         self.check_updates()
 
     def keyPressEvent(self, event):  # pylint: disable=invalid-name
@@ -604,15 +614,16 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             return  # the VM was deleted before its status could be updated
 
     def load_manager_settings(self):
-        # visible columns
-        self.visible_columns_count = 0
         for col in self.columns_indices:
             col_no = self.columns_indices[col]
-            visible = self.manager_settings.value(
-                'columns/%s' % col,
-                defaultValue="true")
-            self.columns_actions[col_no].setChecked(visible == "true")
-            self.visible_columns_count += 1
+            if col == 'Name':
+                # 'Name' column should be always visible
+                self.columns_actions[col_no].setChecked(True)
+            else:
+                visible = self.manager_settings.value(
+                    'columns/%s' % col,
+                    defaultValue="true")
+                self.columns_actions[col_no].setChecked(visible == "true")
 
         self.sort_by_column = str(
             self.manager_settings.value("view/sort_column",
@@ -640,8 +651,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         # load last window size
         self.resize(self.manager_settings.value("window_size",
                                                 QtCore.QSize(1100, 600)))
-
-        self.settings_loaded = True
 
     def get_vms_list(self):
         return [vm for vm in self.qubes_app.domains]
@@ -758,6 +767,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             self.action_run_command_in_vm.setEnabled(False)
             self.action_set_keyboard_layout.setEnabled(False)
 
+        self.update_logs_menu()
+
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_createvm_triggered')
     def action_createvm_triggered(self):  # pylint: disable=no-self-use
@@ -850,6 +861,15 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             self.tr('Enter name for Qube <b>{}</b> clone:').format(vm.name),
             text=(name_format % name_number))
         if not ok or clone_name == "":
+            return
+
+        name_in_use = clone_name in self.qubes_app.domains
+
+        if name_in_use:
+            QtGui.QMessageBox.warning(
+                None, self.tr("Name already in use!"),
+                self.tr("There already exists a qube called '{}'. "
+                        "Cloning aborted.").format(clone_name))
             return
 
         self.progress = QtGui.QProgressDialog(
@@ -1152,22 +1172,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     def showhide_column(self, col_num, show):
         self.table.setColumnHidden(col_num, not show)
 
-        val = 1 if show else -1
-        self.visible_columns_count += val
-
-        if self.visible_columns_count == 1:
-            # disable hiding the last one
-            for col in self.columns_actions:
-                if self.columns_actions[col].isChecked():
-                    self.columns_actions[col].setEnabled(False)
-                    break
-        elif self.visible_columns_count == 2 and val == 1:
-            # enable hiding previously disabled column
-            for col in self.columns_actions:
-                if not self.columns_actions[col].isEnabled():
-                    self.columns_actions[col].setEnabled(True)
-                    break
-
         if self.settings_loaded:
             col_name = [name for name in self.columns_indices if
                         self.columns_indices[name] == col_num][0]
@@ -1231,8 +1235,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     def open_tools_context_menu(self, widget, point):
         self.tools_context_menu.exec_(widget.mapToGlobal(point))
 
-    @QtCore.pyqtSlot('const QPoint&')
-    def open_context_menu(self, point):
+    def update_logs_menu(self):
         try:
             vm = self.get_selected_vm()
 
@@ -1258,14 +1261,20 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                     menu_empty = False
 
             self.logs_menu.setEnabled(not menu_empty)
-            if vm.qid == 0:
-                self.dom0_context_menu.exec_(self.table.mapToGlobal(
-                    point + QtCore.QPoint(10, 0)))
-            else:
-                self.context_menu.exec_(self.table.mapToGlobal(
-                    point + QtCore.QPoint(10, 0)))
+
         except exc.QubesPropertyAccessError:
             pass
+
+    @QtCore.pyqtSlot('const QPoint&')
+    def open_context_menu(self, point):
+        vm = self.get_selected_vm()
+
+        if vm.qid == 0:
+            self.dom0_context_menu.exec_(self.table.mapToGlobal(
+                point + QtCore.QPoint(10, 0)))
+        else:
+            self.context_menu.exec_(self.table.mapToGlobal(
+                point + QtCore.QPoint(10, 0)))
 
     @QtCore.pyqtSlot('QAction *')
     def show_log(self, action):
@@ -1335,7 +1344,7 @@ def main():
             asyncio.ensure_future(dispatcher.listen_for_events()))
     except asyncio.CancelledError:
         pass
-    except Exception: # pylint: disable=broad-except
+    except Exception:  # pylint: disable=broad-except
         loop_shutdown()
         exc_type, exc_value, exc_traceback = sys.exc_info()[:3]
         handle_exception(exc_type, exc_value, exc_traceback)

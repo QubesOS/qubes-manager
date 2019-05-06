@@ -281,7 +281,6 @@ DisposableVMs</string>
     </property>
     <addaction name="action_vm_type"/>
     <addaction name="action_label"/>
-    <addaction name="action_name"/>
     <addaction name="action_state"/>
     <addaction name="action_template"/>
     <addaction name="action_netvm"/>
