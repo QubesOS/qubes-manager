@@ -116,10 +116,10 @@ class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
                 self.tr('Cannot create a qube when no template exists.'))
 
         # Order of types is important and used elsewhere; if it's changed
-        # check for changes needed in self.type_change and TODO
-        type_list = [self.tr("AppVM"),
-                     self.tr("Standalone qube based on a template"),
-                     self.tr("Standalone qube not based on a template")]
+        # check for changes needed in self.type_change
+        type_list = [self.tr("Qube based on a template (AppVM)"),
+                     self.tr("Standalone qube copied from a template"),
+                     self.tr("Empty standalone qube (install your own OS)")]
         self.vm_type.addItems(type_list)
 
         self.vm_type.currentIndexChanged.connect(self.type_change)
