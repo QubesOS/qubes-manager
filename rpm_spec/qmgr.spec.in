@@ -123,7 +123,8 @@ rm -rf $RPM_BUILD_ROOT
 
 %{python3_sitelib}/qubesmanager/tests/__pycache__
 %{python3_sitelib}/qubesmanager/tests/__init__.py
-%{python3_sitelib}/qubesmanager/tests/test_backup_01.py
+%{python3_sitelib}/qubesmanager/tests/test_backup.py
+%{python3_sitelib}/qubesmanager/tests/test_backup_utils.py
 %{python3_sitelib}/qubesmanager/tests/test_global_settings.py
 %{python3_sitelib}/qubesmanager/tests/test_qube_manager.py
 
