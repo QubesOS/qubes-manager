@@ -7,4 +7,4 @@ Terminal=false
 Name=Create Qubes VM
 GenericName=Create Qubes VM
 StartupNotify=false
-Categories=System;X-Xfce-Toplevel;
+Categories=Settings;X-XFCE-SettingsDialog

@@ -6,4 +6,4 @@ Terminal=false
 Name=Restore Backup
 GenericName=Restore Backup
 StartupNotify=false
-Categories=System;
+Categories=Settings;X-XFCE-SettingsDialog
