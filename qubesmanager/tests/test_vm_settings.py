@@ -24,6 +24,8 @@ import unittest
 import unittest.mock
 
 import gc
+import quamash
+import asyncio
 
 from PyQt4 import QtGui, QtTest, QtCore
 from qubesadmin import Qubes
@@ -41,15 +43,36 @@ class VMSettingsTest(unittest.TestCase):
 
         self.qapp = Qubes()
         self.qtapp = QtGui.QApplication(["test", "-style", "cleanlooks"])
+        self.loop = quamash.QEventLoop(self.qtapp)
 
     def tearDown(self):
         del self.qapp.domains["testvm"]
 
-        self.qtapp.deleteLater()
-
+        # process any pending events before destroying the object
         self.qtapp.processEvents()
 
+        # queue destroying the QApplication object, do that for any other QT
+        # related objects here too
+        self.dialog.deleteLater()
+        self.qtapp.deleteLater()
+
+        # process any pending events (other than just queued destroy),
+        # just in case
+        self.qtapp.processEvents()
+        self.qtapp.processEvents()
+        self.qtapp.processEvents()
+
+        # execute main loop, which will process all events, _
+        # including just queued destroy_
+        self.loop.run_until_complete(asyncio.sleep(0))
+
+        # at this point it QT objects are destroyed, cleanup all remaining
+        # references;
+        # del other QT object here too
+        self.loop.close()
+        del self.dialog
         del self.qtapp
+        del self.loop
         gc.collect()
         super(VMSettingsTest, self).tearDown()
 
@@ -60,37 +83,37 @@ class VMSettingsTest(unittest.TestCase):
             self.vm, self.qtapp, "basic")
         self.assertTrue(
             self.dialog.tabWidget.currentWidget() is self.dialog.basic_tab)
-        self.dialog.close()
+        self.dialog.deleteLater()
 
         self.dialog = vm_settings.VMSettingsWindow(
             self.vm, self.qtapp, "advanced")
         self.assertTrue(
             self.dialog.tabWidget.currentWidget() is self.dialog.advanced_tab)
-        self.dialog.close()
+        self.dialog.deleteLater()
 
         self.dialog = vm_settings.VMSettingsWindow(
             self.vm, self.qtapp, "firewall")
         self.assertTrue(
             self.dialog.tabWidget.currentWidget() is self.dialog.firewall_tab)
-        self.dialog.close()
+        self.dialog.deleteLater()
 
         self.dialog = vm_settings.VMSettingsWindow(
             self.vm, self.qtapp, "devices")
         self.assertTrue(
             self.dialog.tabWidget.currentWidget() is self.dialog.devices_tab)
-        self.dialog.close()
+        self.dialog.deleteLater()
 
         self.dialog = vm_settings.VMSettingsWindow(
             self.vm, self.qtapp, "applications")
         self.assertTrue(
             self.dialog.tabWidget.currentWidget() is self.dialog.apps_tab)
-        self.dialog.close()
+        self.dialog.deleteLater()
 
         self.dialog = vm_settings.VMSettingsWindow(
             self.vm, self.qtapp, "services")
         self.assertTrue(
             self.dialog.tabWidget.currentWidget() is self.dialog.services_tab)
-        self.dialog.close()
+        self.dialog.deleteLater()
 
     def test_01_basic_tab_default(self):
         self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
@@ -407,6 +430,8 @@ class VMSettingsTest(unittest.TestCase):
 
         self.assertEqual(self.vm.maxmem, 0)
 
+        self.dialog.deleteLater()
+
         self.dialog = vm_settings.VMSettingsWindow(
             self.vm, self.qtapp, "advanced")
         self.assertFalse(self.dialog.include_in_balancing.isChecked())
@@ -456,6 +481,8 @@ class VMSettingsTest(unittest.TestCase):
 
         self.assertEqual(self.vm.kernel, new_kernel)
 
+        self.dialog.deleteLater()
+
         self.dialog = vm_settings.VMSettingsWindow(
             self.vm, self.qtapp, "advanced")
         self._set_default(self.dialog.kernel)
@@ -477,6 +504,8 @@ class VMSettingsTest(unittest.TestCase):
 
             self.assertEqual(self.vm.virt_mode.upper(), mode)
 
+            self.dialog.deleteLater()
+
         self.dialog = vm_settings.VMSettingsWindow(
             self.vm, self.qtapp, "advanced")
         self._set_default(self.dialog.virt_mode)
@@ -494,6 +523,8 @@ class VMSettingsTest(unittest.TestCase):
         self._click_ok()
 
         self.assertEqual(self.vm.default_dispvm.name, new_dvm)
+
+        self.dialog.deleteLater()
 
         self.dialog = vm_settings.VMSettingsWindow(
             self.vm, self.qtapp, "advanced")

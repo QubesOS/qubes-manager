@@ -56,16 +56,29 @@ class QubeManagerTest(unittest.TestCase):
             self.qtapp, self.qapp, self.dispatcher)
 
     def tearDown(self):
+        # process any pending events before destroying the object
+        self.qtapp.processEvents()
+
+        # queue destroying the QApplication object, do that for any other QT
+        # related objects here too
         self.qtapp.deleteLater()
         self.dialog.deleteLater()
+
+        # process any pending events (other than just queued destroy),
+        # just in case
         self.qtapp.processEvents()
-        self.qtapp.processEvents()
-        self.qtapp.processEvents()
+
+        # execute main loop, which will process all events, _
+        # including just queued destroy_
         self.loop.run_until_complete(asyncio.sleep(0))
+
+        # at this point it QT objects are destroyed, cleanup all remaining
+        # references;
+        # del other QT object here too
         self.loop.close()
-        del self.loop
         del self.dialog
         del self.qtapp
+        del self.loop
         gc.collect()
         super(QubeManagerTest, self).tearDown()
 
@@ -1152,7 +1165,6 @@ class QubeManagerTest(unittest.TestCase):
         self.assertTrue(self.dialog.logs_menu.isEnabled())
 
         dom0_logs = set()
-        print(self.dialog.logs_menu.actions())
         for c in self.dialog.logs_menu.actions():
             dom0_logs.add(c.text())
             self.assertIsNotNone(

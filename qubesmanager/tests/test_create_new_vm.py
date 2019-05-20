@@ -20,13 +20,15 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 import logging.handlers
-import sys
+import quamash
+import asyncio
 import unittest
 import unittest.mock
 import qubesadmin
+import gc
 
 from PyQt4 import QtGui, QtTest, QtCore
-from qubesadmin import Qubes, events, utils, exc
+from qubesadmin import Qubes
 from qubesmanager import create_new_vm
 
 
@@ -36,6 +38,7 @@ class NewVmTest(unittest.TestCase):
 
         self.qapp = Qubes()
         self.qtapp = QtGui.QApplication(["test", "-style", "cleanlooks"])
+        self.loop = quamash.QEventLoop(self.qtapp)
 
         # mock up the Create VM Thread to avoid changing system state
         self.patcher_thread = unittest.mock.patch(
@@ -53,9 +56,30 @@ class NewVmTest(unittest.TestCase):
             self.qtapp, self.qapp)
 
     def tearDown(self):
-        self.dialog.deleteLater()
-        self.qtapp.deleteLater()
+        # process any pending events before destroying the object
         self.qtapp.processEvents()
+
+        # queue destroying the QApplication object, do that for any other QT
+        # related objects here too
+        self.qtapp.deleteLater()
+        self.dialog.deleteLater()
+
+        # process any pending events (other than just queued destroy),
+        # just in case
+        self.qtapp.processEvents()
+
+        # execute main loop, which will process all events, _
+        # including just queued destroy_
+        self.loop.run_until_complete(asyncio.sleep(0))
+
+        # at this point it QT objects are destroyed, cleanup all remaining
+        # references;
+        # del other QT object here too
+        self.loop.close()
+        del self.dialog
+        del self.qtapp
+        del self.loop
+        gc.collect()
 
         super(NewVmTest, self).tearDown()
 
