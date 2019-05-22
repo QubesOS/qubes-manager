@@ -8,7 +8,7 @@ Vendor:		Invisible Things Lab
 License:	GPL
 URL:		http://fixme
 Requires:	python3
-Requires:	python3-PyQt4
+Requires:	python3-PyQt5
 Requires:	python3-inotify
 Requires:	python3-qubesadmin >= 4.0.19
 Requires:	python3-Quamash
@@ -17,9 +17,10 @@ Requires:	qubes-artwork
 Requires:	pmount
 Requires:	cryptsetup
 Requires:	wmctrl
-BuildRequires:	python3-PyQt4-devel
+BuildRequires:	python3-PyQt5-devel
 BuildRequires:	python3-devel
-BuildRequires:	qt-devel
+BuildRequires:	qt5-devel
+BuildRequires:  qt5-linguist
 AutoReq:	0
 
 Source0: %{name}-%{version}.tar.gz

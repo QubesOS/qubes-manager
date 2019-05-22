@@ -20,8 +20,7 @@
 #
 #
 import sys
-from PyQt4 import QtCore  # pylint: disable=import-error
-from PyQt4 import QtGui  # pylint: disable=import-error
+from PyQt5 import QtWidgets  # pylint: disable=import-error
 
 from . import ui_logdlg   # pylint: disable=no-name-in-module
 from . import clipboard
@@ -33,7 +32,7 @@ from qubesadmin import Qubes
 LOG_DISPLAY_SIZE = 1024*1024
 
 
-class LogDialog(ui_logdlg.Ui_LogDialog, QtGui.QDialog):
+class LogDialog(ui_logdlg.Ui_LogDialog, QtWidgets.QDialog):
     # pylint: disable=too-few-public-methods
 
     def __init__(self, app, log_path, parent=None):
@@ -45,9 +44,10 @@ class LogDialog(ui_logdlg.Ui_LogDialog, QtGui.QDialog):
         self.setupUi(self)
         self.setWindowTitle(log_path)
 
-        self.connect(self.copy_to_qubes_clipboard,
-                     QtCore.SIGNAL("clicked()"),
-                     self.copy_to_clipboard_triggered)
+        self.copy_to_qubes_clipboard.clicked.connect(
+            self.copy_to_clipboard_triggered)
+        self.copy_to_qubes_clipboard.clicked.connect(
+            self.copy_to_clipboard_triggered)
 
         self.__init_log_text__()
 
@@ -64,6 +64,7 @@ class LogDialog(ui_logdlg.Ui_LogDialog, QtGui.QDialog):
         self.displayed_text += log.read()
         log.close()
         self.log_text.setPlainText(self.displayed_text)
+        self.log_text.show()
 
     def copy_to_clipboard_triggered(self):
         clipboard.copy_text_to_qubes_clipboard(self.displayed_text)
@@ -71,7 +72,7 @@ class LogDialog(ui_logdlg.Ui_LogDialog, QtGui.QDialog):
 
 def main():
     qubes_app = Qubes()
-    qt_app = QtGui.QApplication(sys.argv)
+    qt_app = QtWidgets.QApplication(sys.argv)
 
     log_window = LogDialog(qubes_app, sys.argv[1])
     log_window.show()

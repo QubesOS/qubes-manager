@@ -24,7 +24,7 @@
 import sys
 import subprocess
 
-from PyQt4 import QtCore, QtGui  # pylint: disable=import-error
+from PyQt5 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
 
 import qubesadmin
 import qubesadmin.tools
@@ -33,6 +33,7 @@ import qubesadmin.exc
 from . import utils
 
 from .ui_newappvmdlg import Ui_NewVMDlg  # pylint: disable=import-error
+
 
 # pylint: disable=too-few-public-methods
 class CreateVMThread(QtCore.QThread):
@@ -59,8 +60,9 @@ class CreateVMThread(QtCore.QThread):
                 for k, v in self.properties.items():
                     setattr(vm, k, v)
             else:
-                vm = self.app.add_new_vm(self.vmclass,
-                    name=self.name, label=self.label, template=self.template)
+                vm = self.app.add_new_vm(
+                    self.vmclass, name=self.name,
+                    label=self.label, template=self.template)
                 for k, v in self.properties.items():
                     setattr(vm, k, v)
 
@@ -70,7 +72,7 @@ class CreateVMThread(QtCore.QThread):
             self.msg = repr(ex)
 
 
-class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
+class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
     def __init__(self, qtapp, app, parent=None):
         super(NewVmDlg, self).__init__(parent)
         self.setupUi(self)
@@ -111,7 +113,8 @@ class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
         self.name.setFocus()
 
         if not self.template_list:
-            QtGui.QMessageBox.warning(None,
+            QtWidgets.QMessageBox.warning(
+                self,
                 self.tr('No template available!'),
                 self.tr('Cannot create a qube when no template exists.'))
 
@@ -140,7 +143,8 @@ class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
         except LookupError:
             pass
         else:
-            QtGui.QMessageBox.warning(None,
+            QtWidgets.QMessageBox.warning(
+                self,
                 self.tr('Incorrect qube name!'),
                 self.tr('A qube with the name <b>{}</b> already exists in the '
                         'system!').format(name))
@@ -153,20 +157,19 @@ class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
         else:
             template = self.template_list[self.template_vm.currentIndex()]
 
-        properties = {}
-        properties['provides_network'] = self.provides_network.isChecked()
+        properties = {'provides_network': self.provides_network.isChecked()}
         if self.netvm.currentIndex() != 0:
             properties['netvm'] = self.netvm_list[self.netvm.currentIndex()]
         if self.install_system.isChecked():
             properties['virt_mode'] = 'hvm'
             properties['kernel'] = None
 
-        self.thread = CreateVMThread(self.app, vmclass, name, label,
-                template, properties)
+        self.thread = CreateVMThread(
+            self.app, vmclass, name, label, template, properties)
         self.thread.finished.connect(self.create_finished)
         self.thread.start()
 
-        self.progress = QtGui.QProgressDialog(
+        self.progress = QtWidgets.QProgressDialog(
             self.tr("Creating new qube <b>{}</b>...").format(name), "", 0, 0)
         self.progress.setCancelButton(None)
         self.progress.setModal(True)
@@ -176,7 +179,8 @@ class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
         self.progress.hide()
 
         if self.thread.msg:
-            QtGui.QMessageBox.warning(None,
+            QtWidgets.QMessageBox.warning(
+                self,
                 self.tr("Error creating the qube!"),
                 self.tr("ERROR: {}").format(self.thread.msg))
 
@@ -185,11 +189,10 @@ class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
         if not self.thread.msg:
             if self.launch_settings.isChecked():
                 subprocess.check_call(['qubes-vm-settings',
-                    str(self.name.text())])
+                                       str(self.name.text())])
             if self.install_system.isChecked():
                 subprocess.check_call(
                     ['qubes-vm-boot-from-device', str(self.name.text())])
-
 
     def type_change(self):
         # AppVM
@@ -221,12 +224,14 @@ class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
         if self.launch_settings.isChecked() and self.install_system.isEnabled():
             self.install_system.setChecked(False)
 
+
 parser = qubesadmin.tools.QubesArgumentParser()
+
 
 def main(args=None):
     args = parser.parse_args(args)
 
-    qtapp = QtGui.QApplication(sys.argv)
+    qtapp = QtWidgets.QApplication(sys.argv)
     qtapp.setOrganizationName('Invisible Things Lab')
     qtapp.setOrganizationDomain('https://www.qubes-os.org/')
     qtapp.setApplicationName('Create qube')

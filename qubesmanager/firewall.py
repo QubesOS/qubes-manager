@@ -21,7 +21,7 @@
 import datetime
 import re
 
-from PyQt4 import QtCore, QtGui  # pylint: disable=import-error
+from PyQt5 import QtCore, QtGui, QtWidgets  # pylint: disable=import-error
 import qubesadmin.firewall
 
 from . import ui_newfwruledlg  # pylint: disable=no-name-in-module
@@ -29,6 +29,7 @@ from . import ui_newfwruledlg  # pylint: disable=no-name-in-module
 
 class FirewallModifiedOutsideError(ValueError):
     pass
+
 
 class QIPAddressValidator(QtGui.QValidator):
     # pylint: disable=too-few-public-methods
@@ -40,10 +41,10 @@ class QIPAddressValidator(QtGui.QValidator):
         hostname = str(input_string)
 
         if len(hostname) > 255 or not hostname:
-            return (QtGui.QValidator.Intermediate, input_string, pos)
+            return QtGui.QValidator.Intermediate, input_string, pos
 
         if hostname == "*":
-            return (QtGui.QValidator.Acceptable, input_string, pos)
+            return QtGui.QValidator.Acceptable, input_string, pos
 
         unmask = hostname.split("/", 1)
         if len(unmask) == 2:
@@ -51,27 +52,28 @@ class QIPAddressValidator(QtGui.QValidator):
             mask = unmask[1]
             if mask.isdigit() or mask == "":
                 if re.match(r"^([0-9]{1,3}\.){3}[0-9]{1,3}$", hostname) is None:
-                    return (QtGui.QValidator.Invalid, input_string, pos)
+                    return QtGui.QValidator.Invalid, input_string, pos
                 if mask != "":
                     mask = int(unmask[1])
                     if mask < 0 or mask > 32:
-                        return (QtGui.QValidator.Invalid, input_string, pos)
+                        return QtGui.QValidator.Invalid, input_string, pos
             else:
-                return (QtGui.QValidator.Invalid, input_string, pos)
+                return QtGui.QValidator.Invalid, input_string, pos
 
         if hostname[-1:] == ".":
             hostname = hostname[:-1]
 
         if hostname[-1:] == "-":
-            return (QtGui.QValidator.Intermediate, input_string, pos)
+            return QtGui.QValidator.Intermediate, input_string, pos
 
         allowed = re.compile(r"(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
         if all(allowed.match(x) for x in hostname.split(".")):
-            return (QtGui.QValidator.Acceptable, input_string, pos)
+            return QtGui.QValidator.Acceptable, input_string, pos
 
-        return (QtGui.QValidator.Invalid, input_string, pos)
+        return QtGui.QValidator.Invalid, input_string, pos
 
-class NewFwRuleDlg(QtGui.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
+
+class NewFwRuleDlg(QtWidgets.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
     def __init__(self, parent=None):
         super(NewFwRuleDlg, self).__init__(parent)
         self.setupUi(self)
@@ -84,19 +86,20 @@ class NewFwRuleDlg(QtGui.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
             QtCore.QRegExp("[a-z][a-z0-9-]+|[0-9]+(-[0-9]+)?",
                            QtCore.Qt.CaseInsensitive), None))
         self.serviceComboBox.setEnabled(False)
-        self.serviceComboBox.setInsertPolicy(QtGui.QComboBox.InsertAtBottom)
+        self.serviceComboBox.setInsertPolicy(QtWidgets.QComboBox.InsertAtBottom)
         self.populate_combos()
-        self.serviceComboBox.setInsertPolicy(QtGui.QComboBox.InsertAtTop)
+        self.serviceComboBox.setInsertPolicy(QtWidgets.QComboBox.InsertAtTop)
 
     def accept(self):
         if self.tcp_radio.isChecked() or self.udp_radio.isChecked():
             if not self.serviceComboBox.currentText():
-                msg = QtGui.QMessageBox()
-                msg.warning(self, self.tr("Firewall rule"),
+                msg = QtWidgets.QMessageBox()
+                msg.warning(
+                    self, self.tr("Firewall rule"),
                     self.tr("You need to fill service "
                             "name/port for TCP/UDP rule"))
                 return
-        QtGui.QDialog.accept(self)
+        super().accept()
 
     def populate_combos(self):
         example_addresses = [
@@ -122,7 +125,7 @@ class NewFwRuleDlg(QtGui.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
         self.set_ok_state(True)
 
     def set_ok_state(self, ok_state):
-        ok_button = self.buttonBox.button(QtGui.QDialogButtonBox.Ok)
+        ok_button = self.buttonBox.button(QtWidgets.QDialogButtonBox.Ok)
         if ok_button is not None:
             ok_button.setEnabled(ok_state)
 
@@ -158,10 +161,10 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
                         (service["name"], int(service["port"]),))
 
         self.fw_changed = False
-        self.allow = None # is the default policy allow or deny
-        self.temp_full_access_expire_time = None # temporary full access time
-        self.__vm = None # VM that the model applies to
-        self.__children = None # list of rules in the FW
+        self.allow = None  # is the default policy allow or deny
+        self.temp_full_access_expire_time = None  # temporary full access time
+        self.__vm = None  # VM that the model applies to
+        self.__children = None  # list of rules in the FW
 
     def sort(self, idx, order):
         rev = (order == QtCore.Qt.AscendingOrder)
@@ -171,7 +174,6 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         index1 = self.createIndex(0, 0)
         index2 = self.createIndex(len(self) - 1, len(self.__column_names) - 1)
         self.dataChanged.emit(index1, index2)
-
 
     def get_service_name(self, port):
         for service in self.__services:
@@ -286,19 +288,19 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
             rules.append(rule)
 
         if not conf['allow']:
-            rules.append(qubesadmin.firewall.Rule(None,
-                action='accept', specialtarget='dns'))
+            rules.append(qubesadmin.firewall.Rule(
+                None, action='accept', specialtarget='dns'))
 
         if not conf['allow']:
-            rules.append(qubesadmin.firewall.Rule(None,
-                action='accept', proto='icmp'))
+            rules.append(qubesadmin.firewall.Rule(
+                None, action='accept', proto='icmp'))
 
         if conf['allow']:
-            rules.append(qubesadmin.firewall.Rule(None,
-                action='accept'))
+            rules.append(qubesadmin.firewall.Rule(
+                None, action='accept'))
         else:
-            rules.append(qubesadmin.firewall.Rule(None,
-                action='drop'))
+            rules.append(qubesadmin.firewall.Rule(
+                None, action='drop'))
 
         vm.firewall.rules = rules
 
@@ -329,7 +331,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
 
         conf = {"allow": allow,
                 "rules": list()
-            }
+                }
 
         conf['rules'].extend(self.children)
 
@@ -372,7 +374,8 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
                 try:
                     rule.dsthost = address
                 except ValueError:
-                    QtGui.QMessageBox.warning(None, self.tr("Invalid address"),
+                    QtWidgets.QMessageBox.warning(
+                        dialog, self.tr("Invalid address"),
                         self.tr("Address '{0}' is invalid.").format(address))
                     return
 
@@ -385,11 +388,11 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
                 try:
                     rule.dstports = service
                 except ValueError:
-                    QtGui.QMessageBox.warning(
-                        None,
+                    QtWidgets.QMessageBox.warning(
+                        dialog,
                         self.tr("Invalid port or service"),
-                        self.tr("Port number or service '{0}' is invalid.")
-                                        .format(service))
+                        self.tr("Port number or service '{0}' is "
+                                "invalid.").format(service))
                     return
             elif service:
                 try:
@@ -398,10 +401,12 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
                     if self.get_service_port(service) is not None:
                         rule.dstports = self.get_service_port(service)
                     else:
-                        QtGui.QMessageBox.warning(None,
+                        QtWidgets.QMessageBox.warning(
+                            dialog,
                             self.tr("Invalid port or service"),
-                            self.tr("Port number or service '{0}' is invalid.")
-                                            .format(service))
+                            self.tr(
+                                "Port number or service '{0}' is "
+                                "invalid.".format(service)))
                         return
 
             if row is not None:
@@ -415,7 +420,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
 
         return self.createIndex(row, column, self.children[row])
 
-    def parent(self, child): # pylint: disable=unused-argument,no-self-use
+    def parent(self, child):  # pylint: disable=unused-argument,no-self-use
         return QtCore.QModelIndex()
 
     # pylint: disable=invalid-name,unused-argument

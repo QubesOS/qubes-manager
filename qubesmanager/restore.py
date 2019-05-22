@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 #
 # The Qubes OS Project, http://www.qubes-os.org
 #
@@ -21,8 +21,7 @@
 #
 
 import sys
-from PyQt4 import QtCore  # pylint: disable=import-error
-from PyQt4 import QtGui  # pylint: disable=import-error
+from PyQt5 import QtCore, QtWidgets  # pylint: disable=import-error
 import os
 import os.path
 import traceback
@@ -36,7 +35,7 @@ from . import multiselectwidget
 from . import backup_utils
 
 from multiprocessing import Queue
-from multiprocessing.queues import Empty
+from queue import Empty
 from qubesadmin import Qubes, exc
 from qubesadmin.backup import restore
 
@@ -72,7 +71,7 @@ class RestoreThread(QtCore.QThread):
                 self.tr("Finished successfully!"))
 
 
-class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
+class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
     def __init__(self, qt_app, qubes_app, parent=None):
         super(RestoreVMsWindow, self).__init__(parent)
 
@@ -101,22 +100,16 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
         self.select_vms_widget = multiselectwidget.MultiSelectWidget(self)
         self.select_vms_layout.insertWidget(1, self.select_vms_widget)
 
-        self.connect(self,
-                     QtCore.SIGNAL("currentIdChanged(int)"),
-                     self.current_page_changed)
-        self.dir_line_edit.connect(self.dir_line_edit,
-                                   QtCore.SIGNAL("textChanged(QString)"),
-                                   self.backup_location_changed)
+        self.currentIdChanged.connect(self.current_page_changed)
+        self.dir_line_edit.textChanged.connect(self.backup_location_changed)
 
         self.select_dir_page.isComplete = self.has_selected_dir
         self.select_vms_page.isComplete = self.has_selected_vms
         self.confirm_page.isComplete = self.all_vms_good
         # FIXME
         # this causes to run isComplete() twice, I don't know why
-        self.select_vms_page.connect(
-            self.select_vms_widget,
-            QtCore.SIGNAL("selected_changed()"),
-            QtCore.SIGNAL("completeChanged()"))
+        self.select_vms_widget.selectedChanged.connect(
+            self.select_vms_page.completeChanged.emit)
 
         backup_utils.fill_appvms_list(self)
 
@@ -169,7 +162,8 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
                     continue
                 self.select_vms_widget.available_list.addItem(vmname)
         except exc.QubesException as ex:
-            QtGui.QMessageBox.warning(None, self.tr("Restore error!"), str(ex))
+            QtWidgets.QMessageBox.warning(
+                self, self.tr("Restore error!"), str(ex))
             self.restart()
 
     def append_output(self, text):
@@ -201,7 +195,7 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
             self.confirm_text_edit.setFontFamily("Monospace")
             self.confirm_text_edit.setText(self.func_output)
 
-            self.confirm_page.emit(QtCore.SIGNAL("completeChanged()"))
+            self.confirm_page.completeChanged.emit()
 
         elif self.currentPage() is self.commit_page:
             self.button(self.FinishButton).setDisabled(True)
@@ -226,8 +220,8 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
         self.progress_bar.setValue(100)
 
         if self.thread.msg:
-            QtGui.QMessageBox.warning(
-                None,
+            QtWidgets.QMessageBox.warning(
+                self,
                 self.tr("Restore qubes"),
                 self.tr(self.thread.msg))
 
@@ -259,7 +253,6 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
                 log_record = self.feedback_queue.get_nowait()
         except Empty:
             pass
-
 
     def all_vms_good(self):
         for vm_info in self.vms_to_restore.values():
@@ -296,7 +289,7 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
 
     def backup_location_changed(self, new_dir=None):
         # pylint: disable=unused-argument
-        self.select_dir_page.emit(QtCore.SIGNAL("completeChanged()"))
+        self.select_dir_page.completeChanged.emit()
 
 
 # Bases on the original code by:
@@ -308,18 +301,16 @@ def handle_exception(exc_type, exc_value, exc_traceback):
     filename = os.path.basename(filename)
     error = "%s: %s" % (exc_type.__name__, exc_value)
 
-    QtGui.QMessageBox.critical(None, "Houston, we have a problem...",
-                         "Whoops. A critical error has occured. "
-                         "This is most likely a bug "
-                         "in Qubes Restore VMs application.<br><br>"
-                         "<b><i>%s</i></b>" % error +
-                         "at <b>line %d</b> of file <b>%s</b>.<br/><br/>"
-                                      % (line, filename))
+    QtWidgets.QMessageBox.critical(
+        None, "Houston, we have a problem...",
+        "Whoops. A critical error has occured. This is most likely a bug "
+        "in Qubes Restore VMs application.<br><br><b><i>%s</i></b>" % error +
+        "at <b>line %d</b> of file <b>%s</b>.<br/><br/>" % (line, filename))
 
 
 def main():
 
-    qt_app = QtGui.QApplication(sys.argv)
+    qt_app = QtWidgets.QApplication(sys.argv)
     qt_app.setOrganizationName("The Qubes Project")
     qt_app.setOrganizationDomain("http://qubes-os.org")
     qt_app.setApplicationName("Qubes Restore VMs")

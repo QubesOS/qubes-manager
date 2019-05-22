@@ -21,8 +21,7 @@
 import re
 import socket
 
-from PyQt4 import QtGui  # pylint: disable=import-error
-from PyQt4 import QtCore  # pylint: disable=import-error
+from PyQt5 import QtWidgets  # pylint: disable=import-error
 
 import subprocess
 from . import utils
@@ -76,7 +75,7 @@ def select_path_button_clicked(dialog, select_file=False, read_only=False):
     vm = dialog.qubes_app.domains[new_appvm]
     try:
         if vm.name == socket.gethostname():
-            file_dialog = QtGui.QFileDialog()
+            file_dialog = QtWidgets.QFileDialog()
             file_dialog.setReadOnly(True)
 
             if select_file:
@@ -94,8 +93,8 @@ def select_path_button_clicked(dialog, select_file=False, read_only=False):
                 else "qubes.SelectDirectory")
     except subprocess.CalledProcessError:
         if not read_only:
-            QtGui.QMessageBox.warning(
-                None,
+            QtWidgets.QMessageBox.warning(
+                dialog,
                 dialog.tr("Nothing selected!"),
                 dialog.tr("No file or directory selected."))
         else:
@@ -105,7 +104,7 @@ def select_path_button_clicked(dialog, select_file=False, read_only=False):
         dialog.dir_line_edit.setText(new_path)
 
     if new_path and backup_location and not read_only:
-        dialog.select_dir_page.emit(QtCore.SIGNAL("completeChanged()"))
+        dialog.select_dir_page.completeChanged.emit()
 
 
 def get_profile_name(use_temp):

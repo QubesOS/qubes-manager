@@ -37,8 +37,7 @@ from qubesadmin import exc
 from qubesadmin import utils
 from qubesadmin import events
 
-from PyQt4 import QtGui  # pylint: disable=import-error
-from PyQt4 import QtCore  # pylint: disable=import-error
+from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
 
 from qubesmanager.about import AboutDialog
 
@@ -54,7 +53,7 @@ from . import utils as manager_utils
 from . import common_threads
 
 
-class SearchBox(QtGui.QLineEdit):
+class SearchBox(QtWidgets.QLineEdit):
     def __init__(self, parent=None):
         super(SearchBox, self).__init__(parent)
         self.focusing = False
@@ -184,7 +183,7 @@ class VmRowInTable:
             # AdminAPI
             pass
 
-        #force re-sorting
+        # force re-sorting
         self.table.setSortingEnabled(True)
 
 
@@ -229,16 +228,25 @@ class VmShutdownMonitor(QtCore.QObject):
         if vm_is_running and vm_start_time \
                 and vm_start_time < self.shutdown_started:
             if self.timeout_reached():
-                reply = QtGui.QMessageBox.question(
-                    None, self.tr("Qube Shutdown"),
-                    self.tr(
+
+                msgbox = QtWidgets.QMessageBox(self.caller)
+                msgbox.setIcon(QtWidgets.QMessageBox.Question)
+                msgbox.setWindowTitle(self.tr("Qube Shutdown"))
+                msgbox.setText(self.tr(
                         "The Qube <b>'{0}'</b> hasn't shutdown within the last "
                         "{1} seconds, do you want to kill it?<br>").format(
-                            vm.name, self.shutdown_time / 1000),
-                    self.tr("Kill it!"),
+                            vm.name, self.shutdown_time / 1000))
+                kill_button = msgbox.addButton(
+                    self.tr("Kill it!"), QtWidgets.QMessageBox.YesRole)
+                wait_button = msgbox.addButton(
                     self.tr("Wait another {0} seconds...").format(
-                        self.shutdown_time / 1000))
-                if reply == 0:
+                        self.shutdown_time / 1000),
+                    QtWidgets.QMessageBox.NoRole)
+                msgbox.setDefaultButton(wait_button)
+                msgbox.exec_()
+                msgbox.deleteLater()
+
+                if msgbox.clickedButton() is kill_button:
                     try:
                         vm.kill()
                     except exc.QubesVMNotStartedError:
@@ -290,8 +298,9 @@ class UpdateVMThread(common_threads.QubesThread):
                             user="root",
                             input=dsa4371update.read())
                 if stdout == b'changed=yes\n':
-                    subprocess.call(['notify-send', '-i', 'dialog-information',
-                            'Debian DSA-4371 fix installed in {}'.format(
+                    subprocess.call(
+                        ['notify-send', '-i', 'dialog-information',
+                         'Debian DSA-4371 fix installed in {}'.format(
                                 self.vm.name)])
                 elif stdout == b'changed=no\n':
                     pass
@@ -299,8 +308,8 @@ class UpdateVMThread(common_threads.QubesThread):
                     raise exc.QubesException(
                             "Failed to apply DSA-4371 fix: {}".format(
                                 stderr.decode('ascii')))
-                self.vm.run_service("qubes.InstallUpdatesGUI",\
-                        user="root", wait=False)
+                self.vm.run_service("qubes.InstallUpdatesGUI",
+                                    user="root", wait=False)
         except (ChildProcessError, exc.QubesException) as ex:
             self.msg = ("Error on qube update!", str(ex))
 
@@ -318,7 +327,7 @@ class RunCommandThread(common_threads.QubesThread):
             self.msg = ("Error while running command!", str(ex))
 
 
-class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
+class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
     # pylint: disable=too-many-instance-attributes
     row_height = 30
     column_width = 200
@@ -337,8 +346,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                        "Include in backups": 9,
                        "Last backup": 10,
                        "Default DispVM": 11,
-                       "Is DVM Template": 12
-                      }
+                       "Is DVM Template": 12}
 
     def __init__(self, qt_app, qubes_app, dispatcher, parent=None):
         # pylint: disable=unused-argument
@@ -355,8 +363,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             QtCore.QRegExp("[a-zA-Z0-9_-]*", QtCore.Qt.CaseInsensitive), None))
         self.searchContainer.addWidget(self.searchbox)
 
-        self.connect(self.table, QtCore.SIGNAL("itemSelectionChanged()"),
-                     self.table_selection_changed)
+        self.table.itemSelectionChanged.connect(self.table_selection_changed)
 
         self.table.setColumnWidth(0, self.column_width)
 
@@ -393,12 +400,12 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.table.setColumnWidth(self.columns_indices["Label"], 40)
         self.table.setColumnWidth(self.columns_indices["Type"], 40)
 
-        self.table.horizontalHeader().setResizeMode(
-            QtGui.QHeaderView.Interactive)
+        self.table.horizontalHeader().setSectionResizeMode(
+            QtWidgets.QHeaderView.Interactive)
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.horizontalHeader().setMinimumSectionSize(40)
 
-        self.context_menu = QtGui.QMenu(self)
+        self.context_menu = QtWidgets.QMenu(self)
 
         self.context_menu.addAction(self.action_settings)
         self.context_menu.addAction(self.action_editfwrules)
@@ -423,11 +430,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.context_menu.addMenu(self.logs_menu)
         self.context_menu.addSeparator()
 
-        self.tools_context_menu = QtGui.QMenu(self)
+        self.tools_context_menu = QtWidgets.QMenu(self)
         self.tools_context_menu.addAction(self.action_toolbar)
         self.tools_context_menu.addAction(self.action_menubar)
 
-        self.dom0_context_menu = QtGui.QMenu(self)
+        self.dom0_context_menu = QtWidgets.QMenu(self)
         self.dom0_context_menu.addAction(self.action_global_settings)
         self.dom0_context_menu.addAction(self.action_updatevm)
         self.dom0_context_menu.addSeparator()
@@ -435,42 +442,29 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.dom0_context_menu.addMenu(self.logs_menu)
         self.dom0_context_menu.addSeparator()
 
-        self.connect(
-            self.table.horizontalHeader(),
-            QtCore.SIGNAL("sortIndicatorChanged(int, Qt::SortOrder)"),
+        self.table.horizontalHeader().sortIndicatorChanged.connect(
             self.sort_indicator_changed)
-        self.connect(self.table,
-                     QtCore.SIGNAL("customContextMenuRequested(const QPoint&)"),
-                     self.open_context_menu)
-        self.connect(self.menubar,
-                     QtCore.SIGNAL("customContextMenuRequested(const QPoint&)"),
-                     lambda pos: self.open_tools_context_menu(self.menubar,
-                                                              pos))
-        self.connect(self.toolbar,
-                     QtCore.SIGNAL("customContextMenuRequested(const QPoint&)"),
-                     lambda pos: self.open_tools_context_menu(self.toolbar,
-                                                              pos))
-        self.connect(self.logs_menu, QtCore.SIGNAL("triggered(QAction *)"),
-                     self.show_log)
+        self.table.customContextMenuRequested.connect(self.open_context_menu)
+        self.menubar.customContextMenuRequested.connect(
+            lambda pos: self.open_tools_context_menu(self.menubar, pos))
+        self.toolbar.customContextMenuRequested.connect(
+            lambda pos: self.open_tools_context_menu(self.toolbar, pos))
+        self.logs_menu.triggered.connect(self.show_log)
 
-        self.connect(self.searchbox,
-                     QtCore.SIGNAL("textChanged(const QString&)"),
-                     self.do_search)
+        self.searchbox.textChanged.connect(self.do_search)
 
         self.table.setContentsMargins(0, 0, 0, 0)
         self.centralwidget.layout().setContentsMargins(0, 0, 0, 0)
         self.layout().setContentsMargins(0, 0, 0, 0)
 
-        self.connect(self.action_menubar, QtCore.SIGNAL("toggled(bool)"),
-                     self.showhide_menubar)
-        self.connect(self.action_toolbar, QtCore.SIGNAL("toggled(bool)"),
-                     self.showhide_toolbar)
+        self.action_menubar.toggled.connect(self.showhide_menubar)
+        self.action_toolbar.toggled.connect(self.showhide_toolbar)
 
         try:
             self.load_manager_settings()
         except Exception as ex:  # pylint: disable=broad-except
-            QtGui.QMessageBox.warning(
-                None,
+            QtWidgets.QMessageBox.warning(
+                self,
                 self.tr("Manager settings unreadable"),
                 self.tr("Qube Manager settings cannot be parsed. Previously "
                         "saved display settings may not be restored "
@@ -492,7 +486,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                                self.on_domain_status_changed)
         dispatcher.add_handler('domain-stopped', self.on_domain_status_changed)
         dispatcher.add_handler('domain-pre-shutdown',
-                                self.on_domain_status_changed)
+                               self.on_domain_status_changed)
         dispatcher.add_handler('domain-shutdown', self.on_domain_status_changed)
         dispatcher.add_handler('domain-paused', self.on_domain_status_changed)
         dispatcher.add_handler('domain-unpaused', self.on_domain_status_changed)
@@ -517,6 +511,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         timer.start(1000 * 30)  # 30s
         self.check_updates()
 
+        # select the first row of the table to make sure menu actions are
+        # correctly initialized
+        self.table.selectRow(0)
+
     def keyPressEvent(self, event):  # pylint: disable=invalid-name
         if event.key() == QtCore.Qt.Key_Escape:
             self.searchbox.clear()
@@ -532,13 +530,13 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 if thread.msg:
                     (title, msg) = thread.msg
                     if thread.msg_is_success:
-                        QtGui.QMessageBox.information(
-                            None,
+                        QtWidgets.QMessageBox.information(
+                            self,
                             self.tr(title),
                             self.tr(msg))
                     else:
-                        QtGui.QMessageBox.warning(
-                            None,
+                        QtWidgets.QMessageBox.warning(
+                            self,
                             self.tr(title),
                             self.tr(msg))
 
@@ -586,7 +584,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 row_to_delete = row
                 qid_to_delete = qid
         if not row_to_delete:
-            return # for some reason, the VM was removed in some other way
+            return  # for some reason, the VM was removed in some other way
 
         del self.vms_in_table[qid_to_delete]
         self.table.removeRow(row_to_delete.name_widget.row())
@@ -663,7 +661,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         self.table.setRowCount(len(vms_list))
 
-        progress = QtGui.QProgressDialog(
+        progress = QtWidgets.QProgressDialog(
             self.tr(
                 "Loading Qube Manager..."), "", 0, len(vms_list))
         progress.setWindowTitle(self.tr("Qube Manager"))
@@ -806,7 +804,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                         manager_utils.format_dependencies_list(dependencies) + \
                         "<br>"
 
-            info_dialog = QtGui.QMessageBox(self)
+            info_dialog = QtWidgets.QMessageBox(self)
             info_dialog.setWindowTitle(self.tr("Warning!"))
             info_dialog.setText(
                 self.tr("This qube cannot be removed. It is used as:"
@@ -818,8 +816,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
             return
 
-        (requested_name, ok) = QtGui.QInputDialog.getText(
-            None, self.tr("Qube Removal Confirmation"),
+        (requested_name, ok) = QtWidgets.QInputDialog.getText(
+            self, self.tr("Qube Removal Confirmation"),
             self.tr("Are you sure you want to remove the Qube <b>'{0}'</b>"
                     "?<br> All data on this Qube's private storage will be "
                     "lost!<br><br>Type the name of the Qube (<b>{1}</b>) below "
@@ -831,8 +829,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         if requested_name != vm.name:
             # name did not match
-            QtGui.QMessageBox.warning(
-                None,
+            QtWidgets.QMessageBox.warning(
+                self,
                 self.tr("Qube removal confirmation failed"),
                 self.tr(
                     "Entered name did not match! Not removing "
@@ -856,7 +854,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         while name_format % name_number in self.qubes_app.domains.keys():
             name_number += 1
 
-        (clone_name, ok) = QtGui.QInputDialog.getText(
+        (clone_name, ok) = QtWidgets.QInputDialog.getText(
             self, self.tr('Qubes clone Qube'),
             self.tr('Enter name for Qube <b>{}</b> clone:').format(vm.name),
             text=(name_format % name_number))
@@ -866,13 +864,13 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         name_in_use = clone_name in self.qubes_app.domains
 
         if name_in_use:
-            QtGui.QMessageBox.warning(
-                None, self.tr("Name already in use!"),
+            QtWidgets.QMessageBox.warning(
+                self, self.tr("Name already in use!"),
                 self.tr("There already exists a qube called '{}'. "
                         "Cloning aborted.").format(clone_name))
             return
 
-        self.progress = QtGui.QProgressDialog(
+        self.progress = QtWidgets.QProgressDialog(
             self.tr(
                 "Cloning Qube..."), "", 0, 0)
         self.progress.setCancelButton(None)
@@ -894,8 +892,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             try:
                 vm.unpause()
             except exc.QubesException as ex:
-                QtGui.QMessageBox.warning(
-                    None, self.tr("Error unpausing Qube!"),
+                QtWidgets.QMessageBox.warning(
+                    self, self.tr("Error unpausing Qube!"),
                     self.tr("ERROR: {0}").format(ex))
             return
 
@@ -923,8 +921,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         try:
             vm.pause()
         except exc.QubesException as ex:
-            QtGui.QMessageBox.warning(
-                None,
+            QtWidgets.QMessageBox.warning(
+                self,
                 self.tr("Error pausing Qube!"),
                 self.tr("ERROR: {0}").format(ex))
             return
@@ -934,14 +932,15 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     def action_shutdownvm_triggered(self):
         vm = self.get_selected_vm()
 
-        reply = QtGui.QMessageBox.question(
-            None, self.tr("Qube Shutdown Confirmation"),
+        reply = QtWidgets.QMessageBox.question(
+            self, self.tr("Qube Shutdown Confirmation"),
             self.tr("Are you sure you want to power down the Qube"
                     " <b>'{0}'</b>?<br><small>This will shutdown all the "
                     "running applications within this Qube.</small>").format(
-                     vm.name), QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel)
+                     vm.name),
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel)
 
-        if reply == QtGui.QMessageBox.Yes:
+        if reply == QtWidgets.QMessageBox.Yes:
             self.shutdown_vm(vm)
 
     def shutdown_vm(self, vm, shutdown_time=vm_shutdown_timeout,
@@ -949,8 +948,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         try:
             vm.shutdown()
         except exc.QubesException as ex:
-            QtGui.QMessageBox.warning(
-                None,
+            QtWidgets.QMessageBox.warning(
+                self,
                 self.tr("Error shutting down Qube!"),
                 self.tr("ERROR: {0}").format(ex))
             return
@@ -967,14 +966,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     def action_restartvm_triggered(self):
         vm = self.get_selected_vm()
 
-        reply = QtGui.QMessageBox.question(
-            None, self.tr("Qube Restart Confirmation"),
+        reply = QtWidgets.QMessageBox.question(
+            self, self.tr("Qube Restart Confirmation"),
             self.tr("Are you sure you want to restart the Qube <b>'{0}'</b>?"
                     "<br><small>This will shutdown all the running "
                     "applications within this Qube.</small>").format(vm.name),
-            QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel)
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel)
 
-        if reply == QtGui.QMessageBox.Yes:
+        if reply == QtWidgets.QMessageBox.Yes:
             # in case the user shut down the VM in the meantime
             if vm.is_running():
                 self.shutdown_vm(vm, and_restart=True)
@@ -997,17 +996,17 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                            "shutdown!)</b> all the running applications within "
                            "this Qube.</small>").format(vm.name)
 
-        reply = QtGui.QMessageBox.question(
-            None, self.tr("Qube Kill Confirmation"), info,
-            QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel,
-            QtGui.QMessageBox.Cancel)
+        reply = QtWidgets.QMessageBox.question(
+            self, self.tr("Qube Kill Confirmation"), info,
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel,
+            QtWidgets.QMessageBox.Cancel)
 
-        if reply == QtGui.QMessageBox.Yes:
+        if reply == QtWidgets.QMessageBox.Yes:
             try:
                 vm.kill()
             except exc.QubesException as ex:
-                QtGui.QMessageBox.critical(
-                    None, self.tr("Error while killing Qube!"),
+                QtWidgets.QMessageBox.critical(
+                    self, self.tr("Error while killing Qube!"),
                     self.tr(
                         "<b>An exception ocurred while killing {0}.</b><br>"
                         "ERROR: {1}").format(vm.name, ex))
@@ -1057,13 +1056,13 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         vm = self.get_selected_vm()
 
         if not vm.is_running():
-            reply = QtGui.QMessageBox.question(
-                None, self.tr("Qube Update Confirmation"),
+            reply = QtWidgets.QMessageBox.question(
+                self, self.tr("Qube Update Confirmation"),
                 self.tr(
                     "<b>{0}</b><br>The Qube has to be running to be updated."
                     "<br>Do you want to start it?<br>").format(vm.name),
-                QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel)
-            if reply != QtGui.QMessageBox.Yes:
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel)
+            if reply != QtWidgets.QMessageBox.Yes:
                 return
 
         thread = UpdateVMThread(vm)
@@ -1071,14 +1070,13 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         thread.finished.connect(self.clear_threads)
         thread.start()
 
-
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_run_command_in_vm_triggered')
     def action_run_command_in_vm_triggered(self):
         # pylint: disable=invalid-name
         vm = self.get_selected_vm()
 
-        (command_to_run, ok) = QtGui.QInputDialog.getText(
+        (command_to_run, ok) = QtWidgets.QInputDialog.getText(
             self, self.tr('Qubes command entry'),
             self.tr('Run command in <b>{}</b>:').format(vm.name))
         if not ok or command_to_run == "":
@@ -1101,8 +1099,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     def action_editfwrules_triggered(self):
         with common_threads.busy_cursor():
             vm = self.get_selected_vm()
-            settings_window = settings.VMSettingsWindow(vm, self.qt_app,\
-                    "firewall")
+            settings_window = settings.VMSettingsWindow(vm, self.qt_app,
+                                                        "firewall")
         settings_window.exec_()
 
     # noinspection PyArgumentList
@@ -1132,16 +1130,16 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
     @QtCore.pyqtSlot(name='on_action_restore_triggered')
     def action_restore_triggered(self):
         with common_threads.busy_cursor():
-            restore_window = restore.RestoreVMsWindow(self.qt_app,\
-                    self.qubes_app)
+            restore_window = restore.RestoreVMsWindow(self.qt_app,
+                                                      self.qubes_app)
         restore_window.exec_()
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_backup_triggered')
     def action_backup_triggered(self):
         with common_threads.busy_cursor():
-            backup_window = backup.BackupVMsWindow(self.qt_app, self.qubes_app,
-                                                self.dispatcher, self)
+            backup_window = backup.BackupVMsWindow(
+                self.qt_app, self.qubes_app, self.dispatcher, self)
         backup_window.show()
 
     # noinspection PyArgumentList
@@ -1227,7 +1225,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         about.exec_()
 
     def createPopupMenu(self):  # pylint: disable=invalid-name
-        menu = QtGui.QMenu()
+        menu = QtWidgets.QMenu()
         menu.addAction(self.action_toolbar)
         menu.addAction(self.action_menubar)
         return menu
@@ -1302,9 +1300,9 @@ def handle_exception(exc_type, exc_value, exc_traceback):
         strace += "line no.: %d\n" % line
         strace += "file: %s\n" % filename
 
-    msg_box = QtGui.QMessageBox()
+    msg_box = QtWidgets.QMessageBox()
     msg_box.setDetailedText(strace)
-    msg_box.setIcon(QtGui.QMessageBox.Critical)
+    msg_box.setIcon(QtWidgets.QMessageBox.Critical)
     msg_box.setWindowTitle("Houston, we have a problem...")
     msg_box.setText("Whoops. A critical error has occured. "
                     "This is most likely a bug in Qubes Manager.<br><br>"
@@ -1323,7 +1321,7 @@ def loop_shutdown():
 
 
 def main():
-    qt_app = QtGui.QApplication(sys.argv)
+    qt_app = QtWidgets.QApplication(sys.argv)
     qt_app.setOrganizationName("The Qubes Project")
     qt_app.setOrganizationDomain("http://qubes-os.org")
     qt_app.setApplicationName("Qube Manager")

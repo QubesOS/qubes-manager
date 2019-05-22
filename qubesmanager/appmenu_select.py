@@ -20,13 +20,13 @@
 #
 
 import subprocess
+import PyQt5.QtWidgets  # pylint: disable=import-error
 
-import PyQt4.QtGui  # pylint: disable=import-error
 
 # TODO description in tooltip
 # TODO icon
 # pylint: disable=too-few-public-methods
-class AppListWidgetItem(PyQt4.QtGui.QListWidgetItem):
+class AppListWidgetItem(PyQt5.QtWidgets.QListWidgetItem):
     def __init__(self, name, ident, parent=None):
         super(AppListWidgetItem, self).__init__(name, parent)
 #       self.setToolTip(command)
@@ -58,9 +58,10 @@ class AppmenuSelectManager:
         self.app_list.clear()
 
         available_appmenus = [AppListWidgetItem.from_line(line)
-            for line in subprocess.check_output(['qvm-appmenus',
-                    '--get-available', '--i-understand-format-is-unstable',
-                    self.vm.name]).decode().splitlines()]
+                              for line in subprocess.check_output(
+                ['qvm-appmenus',
+                 '--get-available', '--i-understand-format-is-unstable',
+                 self.vm.name]).decode().splitlines()]
 
         for app in available_appmenus:
             if app.ident in self.whitelisted:
@@ -73,7 +74,7 @@ class AppmenuSelectManager:
 
     def save_appmenu_select_changes(self):
         new_whitelisted = [self.app_list.selected_list.item(i).ident
-            for i in range(self.app_list.selected_list.count())]
+                           for i in range(self.app_list.selected_list.count())]
 
         if set(new_whitelisted) == set(self.whitelisted):
             return False

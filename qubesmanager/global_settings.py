@@ -24,7 +24,7 @@ import sys
 import os
 import os.path
 import traceback
-from PyQt4 import QtCore, QtGui  # pylint: disable=import-error
+from PyQt5 import QtWidgets  # pylint: disable=import-error
 
 from qubesadmin import Qubes
 from qubesadmin.utils import parse_size
@@ -36,9 +36,10 @@ from configparser import ConfigParser
 
 qmemman_config_path = '/etc/qubes/qmemman.conf'
 
+
 # pylint: disable=too-many-instance-attributes
 class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
-                           QtGui.QDialog):
+                           QtWidgets.QDialog):
 
     def __init__(self, app, qvm_collection, parent=None):
         super(GlobalSettingsWindow, self).__init__(parent)
@@ -48,11 +49,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
 
         self.setupUi(self)
 
-        self.connect(
-            self.buttonBox,
-            QtCore.SIGNAL("accepted()"),
-            self.save_and_apply)
-        self.connect(self.buttonBox, QtCore.SIGNAL("rejected()"), self.reject)
+        self.buttonBox.accepted.connect(self.save_and_apply)
+        self.buttonBox.rejected.connect(self.reject)
 
         self.__init_system_defaults__()
         self.__init_kernel_defaults__()
@@ -154,10 +152,10 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 self.kernels_list[self.default_kernel_combo.currentIndex()]
 
     def __init_mem_defaults__(self):
-        #qmemman settings
+        # qmemman settings
         self.qmemman_config = ConfigParser()
-        self.vm_min_mem_val = '200MiB'  #str(qmemman_algo.MIN_PREFMEM)
-        self.dom0_mem_boost_val = '350MiB' #str(qmemman_algo.DOM0_MEM_BOOST)
+        self.vm_min_mem_val = '200MiB'  # str(qmemman_algo.MIN_PREFMEM)
+        self.dom0_mem_boost_val = '350MiB'  # str(qmemman_algo.DOM0_MEM_BOOST)
 
         self.qmemman_config.read(qmemman_config_path)
         if self.qmemman_config.has_section('global'):
@@ -172,10 +170,9 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.min_vm_mem.setValue(self.vm_min_mem_val/1024/1024)
         self.dom0_mem_boost.setValue(self.dom0_mem_boost_val/1024/1024)
 
-
     def __apply_mem_defaults__(self):
 
-        #qmemman settings
+        # qmemman settings
         current_min_vm_mem = self.min_vm_mem.value()
         current_dom0_mem_boost = self.dom0_mem_boost.value()
 
@@ -186,7 +183,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             current_dom0_mem_boost = str(current_dom0_mem_boost)+'MiB'
 
             if not self.qmemman_config.has_section('global'):
-                #add the whole section
+                # add the whole section
                 self.qmemman_config.add_section('global')
                 self.qmemman_config.set(
                     'global', 'vm-min-mem', current_min_vm_mem)
@@ -201,7 +198,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 qmemman_config_file.close()
 
             else:
-                #If there already is a 'global' section, we don't use
+                # If there already is a 'global' section, we don't use
                 # SafeConfigParser.write() - it would get rid of
                 # all the comments...
 
@@ -209,7 +206,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 lines_to_add['vm-min-mem'] = \
                     "vm-min-mem = " + current_min_vm_mem + "\n"
                 lines_to_add['dom0-mem-boost'] = \
-                    "dom0-mem-boost = " + current_dom0_mem_boost +"\n"
+                    "dom0-mem-boost = " + current_dom0_mem_boost + "\n"
 
                 config_lines = []
 
@@ -252,23 +249,23 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.disable_updates_all.clicked.connect(self.__disable_updates_all)
 
     def __enable_updates_all(self):
-        reply = QtGui.QMessageBox.question(
+        reply = QtWidgets.QMessageBox.question(
             self, self.tr("Change state of all qubes"),
             self.tr("Are you sure you want to set all qubes to check "
                     "for updates?"),
-            QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel)
-        if reply == QtGui.QMessageBox.Cancel:
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel)
+        if reply == QtWidgets.QMessageBox.Cancel:
             return
 
         self.__set_updates_all(True)
 
     def __disable_updates_all(self):
-        reply = QtGui.QMessageBox.question(
+        reply = QtWidgets.QMessageBox.question(
             self, self.tr("Change state of all qubes"),
             self.tr("Are you sure you want to set all qubes to not check "
                     "for updates?"),
-            QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel)
-        if reply == QtGui.QMessageBox.Cancel:
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel)
+        if reply == QtWidgets.QMessageBox.Cancel:
             return
 
         self.__set_updates_all(False)
@@ -298,7 +295,6 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.__apply_updates__()
 
 
-
 # Bases on the original code by:
 # Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
 
@@ -307,7 +303,7 @@ def handle_exception(exc_type, exc_value, exc_traceback):
     filename = os.path.basename(filename)
     error = "%s: %s" % (exc_type.__name__, exc_value)
 
-    QtGui.QMessageBox.critical(
+    QtWidgets.QMessageBox.critical(
         None,
         "Houston, we have a problem...",
         "Whoops. A critical error has occured. This is most likely a bug "
@@ -317,7 +313,7 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 
 
 def main():
-    qtapp = QtGui.QApplication(sys.argv)
+    qtapp = QtWidgets.QApplication(sys.argv)
     qtapp.setOrganizationName("The Qubes Project")
     qtapp.setOrganizationDomain("http://qubes-os.org")
     qtapp.setApplicationName("Qubes Global Settings")
@@ -332,6 +328,7 @@ def main():
 
     qtapp.exec_()
     qtapp.exit()
+
 
 if __name__ == "__main__":
     main()
