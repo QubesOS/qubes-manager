@@ -20,113 +20,144 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 import logging.handlers
-import sys
+import quamash
+import asyncio
 import unittest
 import unittest.mock
+import gc
 
 from PyQt4 import QtGui, QtTest, QtCore
 from qubesadmin import Qubes
-from qubes.tests import SystemTestCase
 import qubesmanager.global_settings as global_settings
-import concurrent.futures
-
-# sudo systemctl stop qubesd; sudo -E python3 test_backup.py -v ; sudo systemctl start qubesd
-
-def wrap_in_loop(func):
-    def wrapped(self):
-        self.loop.run_until_complete(
-            self.loop.run_in_executor(self.executor,
-                                      func, self))
-    return wrapped
 
 
-class GlobalSettingsTest(SystemTestCase):
+class GlobalSettingsTest(unittest.TestCase):
     def setUp(self):
         super(GlobalSettingsTest, self).setUp()
 
-        self.qtapp = QtGui.QApplication(sys.argv)
-        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
-        self.setUpInExecutor()
-
-    @wrap_in_loop
-    def setUpInExecutor(self):
         self.qapp = Qubes()
-        self.dialog = global_settings.GlobalSettingsWindow(
-                self.qtapp, self.qapp)
+        self.qtapp = QtGui.QApplication(["test", "-style", "cleanlooks"])
+        self.loop = quamash.QEventLoop(self.qtapp)
+        self.dialog = global_settings.GlobalSettingsWindow(self.qtapp,
+                                                           self.qapp)
+
+        self.setattr_patcher = unittest.mock.patch.object(
+            type(self.dialog.qvm_collection), "__setattr__")
+        self.setattr_mock = self.setattr_patcher.start()
+        self.addCleanup(self.setattr_patcher.stop)
 
     def tearDown(self):
-        self.tearDownInExecutor()
-        super(GlobalSettingsTest, self).tearDown()
+        # process any pending events before destroying the object
+        self.qtapp.processEvents()
 
-    @wrap_in_loop
-    def tearDownInExecutor(self):
+        # queue destroying the QApplication object, do that for any other QT
+        # related objects here too
+        self.qtapp.deleteLater()
+        self.dialog.deleteLater()
+
+        # process any pending events (other than just queued destroy),
+        # just in case
+        self.qtapp.processEvents()
+
+        # execute main loop, which will process all events, _
+        # including just queued destroy_
+        self.loop.run_until_complete(asyncio.sleep(0))
+
+        # at this point it QT objects are destroyed, cleanup all remaining
+        # references;
+        # del other QT object here too
+        self.loop.close()
         del self.dialog
         del self.qtapp
+        del self.loop
+        gc.collect()
+        super(GlobalSettingsTest, self).tearDown()
 
-    @wrap_in_loop
     def test_00_settings_started(self):
         # non-empty drop-downs
         self.assertNotEqual(
-            self.dialog.default_kernel_combo.currentText(), "")
+            self.dialog.default_kernel_combo.currentText(), "",
+            "Default kernel not listed")
         self.assertNotEqual(
-            self.dialog.default_netvm_combo.currentText(), "")
+            self.dialog.default_netvm_combo.currentText(), "",
+            "Default netVM not listed")
         self.assertNotEqual(
             self.dialog.default_template_combo.currentText(),
-            "")
+            "", "Default template not listed")
         self.assertNotEqual(
-            self.dialog.clock_vm_combo.currentText(), "")
+            self.dialog.clock_vm_combo.currentText(), "",
+            "ClockVM not listed")
         self.assertNotEqual(
-            self.dialog.update_vm_combo.currentText(), "")
+            self.dialog.update_vm_combo.currentText(), "",
+            "UpdateVM for dom0 not listed")
+        self.assertNotEqual(
+            self.dialog.default_dispvm_combo.currentText(), "",
+            "Default DispVM not listed")
 
-    @wrap_in_loop
+        # not empty memory settings
+        self.assertTrue(len(self.dialog.min_vm_mem.text()) > 4,
+                        "Too short min mem value")
+        self.assertTrue(len(self.dialog.dom0_mem_boost.text()) > 4,
+                        "Too short dom0 mem boost value")
+
     def test_01_load_correct_defs(self):
         # correctly selected default template
         selected_default_template = \
             self.dialog.default_template_combo.currentText()
         self.assertTrue(
             selected_default_template.startswith(
-                self.app.default_template.name))
+                str(getattr(self.qapp, 'default_template', '(none)'))),
+            "Incorrect default template loaded")
 
         # correctly selected default NetVM
-        selected_default_netvm = \
-            self.dialog.default_netvm_combo.currentText()
+        selected_default_netvm = self.dialog.default_netvm_combo.currentText()
         self.assertTrue(selected_default_netvm.startswith(
-            self.app.default_netvm.name))
+            str(getattr(self.qapp, 'default_netvm', '(none)'))),
+            "Incorrect default netVM loaded")
 
         # correctly selected default kernel
-        selected_default_kernel = \
-            self.dialog.default_kernel_combo.currentText()
+        selected_default_kernel = self.dialog.default_kernel_combo.currentText()
         self.assertTrue(selected_default_kernel.startswith(
-            self.app.default_kernel))
+            str(getattr(self.qapp, 'default_kernel', '(none)'))),
+            "Incorrect default kernel loaded")
 
         # correct ClockVM
-        selected_clockvm = \
-            self.dialog.clock_vm_combo.currentText()
-        correct_clockvm = self.app.clockvm.name if self.app.clockvm \
-            else "(none)"
-        self.assertTrue(selected_clockvm.startswith(correct_clockvm))
+        selected_clockvm = self.dialog.clock_vm_combo.currentText()
+        correct_clockvm = str(getattr(self.qapp, 'clockvm', "(none)"))
+        self.assertTrue(selected_clockvm.startswith(correct_clockvm),
+                        "Incorrect clockVM loaded")
 
         # correct updateVM
-        selected_updatevm = \
-            self.dialog.update_vm_combo.currentText()
-        correct_updatevm = \
-            self.app.updatevm.name if self.app.updatevm else "(none)"
-        self.assertTrue(selected_updatevm.startswith(correct_updatevm))
+        selected_updatevm = self.dialog.update_vm_combo.currentText()
+        correct_updatevm = str(getattr(self.qapp, 'updatevm', "(none)"))
+        self.assertTrue(selected_updatevm.startswith(correct_updatevm),
+                        "Incorrect updateVm loaded")
+
+        # correct defaultDispVM
+        selected_default_dispvm = self.dialog.default_dispvm_combo.currentText()
+        correct_default_dispvm = \
+            str(getattr(self.qapp, 'default_dispvm', "(none)"))
+        self.assertTrue(
+            selected_default_dispvm.startswith(correct_default_dispvm),
+            "Incorrect defaultDispVM loaded")
 
         # update vm status
-        self.assertEqual(self.app.check_updates_vm,
-                         self.dialog.updates_vm.isChecked())
+        self.assertEqual(self.qapp.check_updates_vm,
+                         self.dialog.updates_vm.isChecked(),
+                         "Incorrect check qube updates value loaded")
 
-    @wrap_in_loop
     def test_02_dom0_updates_load(self):
         # check dom0 updates
         try:
-            dom0_updates = self.app.check_updates_dom0
-        except AttributeError:
+            dom0_updates = self.qapp.domains[
+                'dom0'].features['service.qubes-update-check']
+        except KeyError:
             self.skipTest("check_updates_dom0 property not implemented")
             return
 
-        self.assertEqual(dom0_updates, self.dialog.updates_dom0.isChecked())
+        self.assertEqual(bool(dom0_updates),
+                         self.dialog.updates_dom0.isChecked(),
+                         "Incorrect dom0 updates value")
 
     def __set_noncurrent(self, widget):
         if widget.count() < 2:
@@ -150,178 +181,193 @@ class GlobalSettingsTest(SystemTestCase):
         okwidget = self.dialog.buttonBox.button(
                     self.dialog.buttonBox.Ok)
 
-        QtTest.QTest.mouseClick(okwidget,
-                                QtCore.Qt.LeftButton)
+        QtTest.QTest.mouseClick(okwidget, QtCore.Qt.LeftButton)
 
-    @wrap_in_loop
+    def __click_cancel(self):
+        cancelwidget = self.dialog.buttonBox.button(
+            self.dialog.buttonBox.Cancel)
+
+        QtTest.QTest.mouseClick(cancelwidget, QtCore.Qt.LeftButton)
+
+    def test_03_nothing_changed_ok(self):
+        self.__click_ok()
+
+        self.assertEqual(self.setattr_mock.call_count, 0,
+                         "Changes occurred despite no changes being made")
+
+    def test_04_nothing_changed_cancel(self):
+        self.__click_cancel()
+
+        self.assertEqual(self.setattr_mock.call_count, 0,
+                         "Changes occurred despite no changes being made")
+
     def test_10_set_update_vm(self):
         new_updatevm_name = self.__set_noncurrent(self.dialog.update_vm_combo)
+
         self.__click_ok()
 
-        self.assertEqual(self.app.updatevm.name, new_updatevm_name)
+        self.setattr_mock.assert_called_once_with('updatevm', new_updatevm_name)
 
-    @wrap_in_loop
     def test_11_set_update_vm_to_none(self):
         self.__set_none(self.dialog.update_vm_combo)
+
         self.__click_ok()
 
-        self.assertIsNone(self.app.updatevm)
+        self.setattr_mock.assert_called_once_with('updatevm', None)
 
-    @wrap_in_loop
-    def test_12_set_update_vm_to_none2(self):
-        self.app.updatevm = None
+    def test_20_set_clock_vm(self):
+        new_clockvm_name = self.__set_noncurrent(self.dialog.clock_vm_combo)
+
+        self.__click_ok()
+
+        self.setattr_mock.assert_called_once_with('clockvm', new_clockvm_name)
+
+    def test_21_set_clock_vm_to_none(self):
+        self.__set_none(self.dialog.clock_vm_combo)
+
+        self.__click_ok()
+
+        self.setattr_mock.assert_called_once_with('clockvm', None)
+
+    def test_30_set_default_netvm(self):
+        new_netvm_name = self.__set_noncurrent(self.dialog.default_netvm_combo)
+
+        self.__click_ok()
+
+        self.setattr_mock.assert_called_once_with('default_netvm',
+                                                  new_netvm_name)
+
+    def test_31_set_default_netvm_to_none(self):
+        self.__set_none(self.dialog.default_netvm_combo)
+
+        self.__click_ok()
+
+        self.setattr_mock.assert_called_once_with('default_netvm', None)
+
+    def test_40_set_default_template(self):
+        new_def_template_name = self.__set_noncurrent(
+            self.dialog.default_template_combo)
+
+        self.__click_ok()
+
+        self.setattr_mock.assert_called_once_with('default_template',
+                                                  new_def_template_name)
+
+    def test_50_set_default_kernel(self):
+        new_def_kernel_name = self.__set_noncurrent(
+            self.dialog.default_kernel_combo)
+
+        self.__click_ok()
+
+        self.setattr_mock.assert_called_once_with('default_kernel',
+                                                  new_def_kernel_name)
+
+    def test_51_set_default_kernel_to_none(self):
+        self.__set_none(self.dialog.default_kernel_combo)
+
+        self.__click_ok()
+
+        self.setattr_mock.assert_called_once_with('default_kernel',
+                                                  None)
+
+    def test_60_set_dom0_updates_true(self):
+        current_state = self.dialog.updates_dom0.isChecked()
+        self.dialog.updates_dom0.setChecked(not current_state)
+
+        with unittest.mock.patch.object(
+                type(self.dialog.qvm_collection.domains['dom0'].features),
+                '__setitem__') as mock_features:
+            self.__click_ok()
+            mock_features.assert_called_once_with('service.qubes-update-check',
+                                                  not current_state)
+
+    def test_70_change_vm_updates(self):
+        current_state = self.dialog.updates_vm.isChecked()
+        self.dialog.updates_vm.setChecked(not current_state)
+
+        self.__click_ok()
+
+        self.setattr_mock.assert_called_once_with('check_updates_vm',
+                                                  not current_state)
+
+    @unittest.mock.patch("PyQt4.QtGui.QMessageBox.question",
+                         return_value=QtGui.QMessageBox.Yes)
+    @unittest.mock.patch('qubesadmin.features.Features.__setitem__')
+    def test_72_set_all_vms_true(self, mock_features, msgbox):
+
+        QtTest.QTest.mouseClick(self.dialog.enable_updates_all,
+                                QtCore.Qt.LeftButton)
+
+        self.assertEqual(msgbox.call_count, 1,
+                         "Wrong number of confirmation window calls")
+
+        call_list_expected = \
+            [unittest.mock.call('service.qubes-update-check', True) for vm
+             in self.qapp.domains if vm.klass != 'AdminVM']
+
+        self.assertListEqual(call_list_expected,
+                             mock_features.call_args_list)
+
+    @unittest.mock.patch("PyQt4.QtGui.QMessageBox.question",
+                         return_value=QtGui.QMessageBox.Yes)
+    @unittest.mock.patch('qubesadmin.features.Features.__setitem__')
+    def test_73_set_all_vms_false(self, mock_features, msgbox):
+
+        QtTest.QTest.mouseClick(self.dialog.disable_updates_all,
+                                QtCore.Qt.LeftButton)
+
+        self.assertEqual(msgbox.call_count, 1,
+                         "Wrong number of confirmation window calls")
+
+        call_list_expected = \
+            [unittest.mock.call('service.qubes-update-check', False) for vm
+             in self.qapp.domains if vm.klass != 'AdminVM']
+
+        self.assertListEqual(call_list_expected,
+                             mock_features.call_args_list)
+
+    def test_80_set_default_dispvm(self):
+        new_dispvm_name = self.__set_noncurrent(
+            self.dialog.default_dispvm_combo)
+
+        self.__click_ok()
+
+        self.setattr_mock.assert_called_once_with('default_dispvm',
+                                                  new_dispvm_name)
+
+    def test_81_set_default_dispvm_to_none(self):
+        self.__set_none(self.dialog.default_dispvm_combo)
+
+        self.__click_ok()
+
+        self.setattr_mock.assert_called_once_with('default_dispvm', None)
+
+    @unittest.mock.patch.object(
+        type(Qubes()), '__getattr__',
+        side_effect=(lambda x: False if x == 'check_updates_vm' else None))
+    def test_90_test_all_set_none(self, mock_qubes):
+        mock_qubes.configure_mock()
         self.dialog = global_settings.GlobalSettingsWindow(
             self.qtapp, self.qapp)
 
         self.assertEqual(self.dialog.update_vm_combo.currentText(),
-                         "(none) (current)")
-
-    @wrap_in_loop
-    def test_20_set_clock_vm(self):
-        new_clockvm_name = self.__set_noncurrent(self.dialog.clock_vm_combo)
-        self.__click_ok()
-
-        self.assertEqual(self.app.clockvm.name, new_clockvm_name)
-
-    @wrap_in_loop
-    def test_21_set_clock_vm_to_none(self):
-        self.__set_none(self.dialog.clock_vm_combo)
-        self.__click_ok()
-
-        self.assertIsNone(self.app.clockvm)
-
-    @wrap_in_loop
-    def test_22_set_clock_vm_to_none2(self):
-        self.app.clockvm = None
-        self.dialog = global_settings.GlobalSettingsWindow(
-                self.qtapp, self.qapp)
-
+                         "(none) (current)",
+                         "UpdateVM displays as none incorrectly")
         self.assertEqual(self.dialog.clock_vm_combo.currentText(),
-                         "(none) (current)")
-
-    @wrap_in_loop
-    def test_30_set_default_netvm(self):
-        new_netvm_name = self.__set_noncurrent(self.dialog.default_netvm_combo)
-        self.__click_ok()
-
-        self.assertEqual(self.app.default_netvm.name, new_netvm_name)
-
-    @wrap_in_loop
-    def test_31_set_default_netvm_to_none(self):
-        self.__set_none(self.dialog.default_netvm_combo)
-        self.__click_ok()
-
-        self.assertIsNone(self.app.default_netvm)
-
-    @wrap_in_loop
-    def test_32_set_default_netvm_to_none2(self):
-        self.app.default_netvm = None
-        self.dialog = global_settings.GlobalSettingsWindow(
-                self.qtapp, self.qapp)
-
+                         "(none) (current)",
+                         "ClockVM displays as none incorrectly")
         self.assertEqual(self.dialog.default_netvm_combo.currentText(),
-                         "(none) (current)")
-
-    @wrap_in_loop
-    def test_40_set_default_template(self):
-        new_def_template_name = self.__set_noncurrent(
-            self.dialog.default_template_combo)
-        self.__click_ok()
-
-        self.assertEqual(self.app.default_template.name, new_def_template_name)
-
-    @wrap_in_loop
-    def test_50_set_default_kernel(self):
-        new_def_kernel_name = self.__set_noncurrent(
-            self.dialog.default_kernel_combo)
-        self.__click_ok()
-
-        self.assertEqual(self.app.default_kernel, new_def_kernel_name)
-
-    @wrap_in_loop
-    def test_51_set_default_kernel_to_none(self):
-        self.__set_none(self.dialog.default_kernel_combo)
-        self.__click_ok()
-
-        self.assertEqual(self.app.default_kernel, '')
-
-    @wrap_in_loop
-    def test_52_set_default_kernel_to_none2(self):
-        self.app.default_kernel = None
-        self.dialog = global_settings.GlobalSettingsWindow(
-                self.qtapp, self.qapp)
-
+                         "(none) (current)",
+                         "Default NetVM displays as none incorrectly")
+        self.assertEqual(self.dialog.default_template_combo.currentText(),
+                         "(none) (current)",
+                         "Default template displays as none incorrectly")
         self.assertEqual(self.dialog.default_kernel_combo.currentText(),
-                         "(none) (current)")
-
-    @wrap_in_loop
-    def test_60_set_dom0_updates_true(self):
-        self.dialog.updates_dom0.setChecked(True)
-        self.__click_ok()
-
-        if not hasattr(self.app, 'check_updates_dom0'):
-            self.skipTest("check_updates_dom0 property not implemented")
-
-        self.assertTrue(self.app.check_updates_dom0)
-
-    @wrap_in_loop
-    def test_61_set_dom0_updates_false(self):
-        self.dialog.updates_dom0.setChecked(False)
-        self.__click_ok()
-
-        if not hasattr(self.app, 'check_updates_dom0'):
-            self.skipTest("check_updates_dom0 property not implemented")
-
-        self.assertFalse(self.app.check_updates_dom0)
-
-    @wrap_in_loop
-    def test_70_set_vm_updates_true(self):
-        self.dialog.updates_vm.setChecked(True)
-        self.__click_ok()
-
-        self.assertTrue(self.app.check_updates_vm)
-
-    @wrap_in_loop
-    def test_71_set_vm_updates_false(self):
-        self.dialog.updates_vm.setChecked(False)
-        self.__click_ok()
-
-        self.assertFalse(self.app.check_updates_vm)
-
-    @wrap_in_loop
-    def test_72_set_all_vms_true(self):
-
-        with unittest.mock.patch("PyQt4.QtGui.QMessageBox.question",
-                                 return_value=QtGui.QMessageBox.Yes) as msgbox:
-
-            QtTest.QTest.mouseClick(self.dialog.enable_updates_all,
-                                    QtCore.Qt.LeftButton)
-
-            msgbox.assert_called_once_with(
-                self.dialog,
-                "Change state of all qubes",
-                "Are you sure you want to set all qubes to check for updates?",
-                unittest.mock.ANY)
-
-        for vm in self.app.domains:
-            self.assertTrue(vm.features['check-updates'])
-
-    @wrap_in_loop
-    def test_73_set_all_vms_false(self):
-        with unittest.mock.patch("PyQt4.QtGui.QMessageBox.question",
-                                 return_value=QtGui.QMessageBox.Yes) as msgbox:
-            QtTest.QTest.mouseClick(self.dialog.disable_updates_all,
-                                    QtCore.Qt.LeftButton)
-
-            msgbox.assert_called_once_with(
-                self.dialog,
-                "Change state of all qubes",
-                "Are you sure you want to set all qubes to not check "
-                "for updates?",
-                unittest.mock.ANY)
-
-        for vm in self.app.domains:
-            self.assertFalse(vm.features['check-updates'])
+                         "(none) (current)",
+                         "Defautl kernel displays as none incorrectly")
+        self.assertEqual(self.dialog.default_dispvm_combo.currentText(),
+                         "(none) (current)",
+                         "Default DispVM displays as none incorrectly")
 
 
 if __name__ == "__main__":
@@ -330,3 +376,5 @@ if __name__ == "__main__":
         logging.Formatter('%(name)s[%(process)d]: %(message)s'))
     logging.root.addHandler(ha_syslog)
     unittest.main()
+
+# TODO: add tests for memory settings once memory is handled better
