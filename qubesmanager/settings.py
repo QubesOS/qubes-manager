@@ -745,6 +745,17 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         else:
             self.dvm_template_checkbox.setVisible(False)
 
+        self.provides_network_checkbox.setChecked(
+            getattr(self.vm, 'provides_network', False))
+        if self.provides_network_checkbox.isChecked():
+            domains_using = [vm.name for vm in self.vm.connected_vms]
+            if domains_using:
+                self.provides_network_checkbox.setEnabled(False)
+                self.provides_network_checkbox.setToolTip(
+                    "Cannot change this setting while this qube is used as a "
+                    "NetVM by the following qubes:\n" +
+                    "\n".join(domains_using))
+
     def enable_seamless(self):
         self.vm.run_service_for_stdio("qubes.SetGuiMode", input=b'SEAMLESS')
 
@@ -812,6 +823,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                     self.vm.features["appmenus-dispvm"] = True
                 else:
                     del self.vm.features["appmenus-dispvm"]
+            except Exception as ex:  # pylint: disable=broad-except
+                msg.append(str(ex))
+
+        if getattr(self.vm, 'provides_network', False) != \
+                self.provides_network_checkbox.isChecked():
+            try:
+                self.vm.provides_network = \
+                    self.provides_network_checkbox.isChecked()
             except Exception as ex:  # pylint: disable=broad-except
                 msg.append(str(ex))
 
