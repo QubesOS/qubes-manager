@@ -586,7 +586,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                 row_to_delete = row
                 qid_to_delete = qid
         if not row_to_delete:
-            return # for some reason, the VM was removed in some other way
+            return  # for some reason, the VM was removed in some other way
 
         del self.vms_in_table[qid_to_delete]
         self.table.removeRow(row_to_delete.name_widget.row())
@@ -596,6 +596,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             self.vms_in_table[vm.qid].info_widget.update_vm_state()
         except exc.QubesPropertyAccessError:
             return  # the VM was deleted before its status could be updated
+        except KeyError:  # adding the VM failed for some reason
+            self.on_domain_added(None, None, vm)
 
         if vm == self.get_selected_vm():
             self.table_selection_changed()
