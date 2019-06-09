@@ -112,10 +112,30 @@ def prepare_choice(widget, holder, propname, choice, default,
 
     return choice_list, idx
 
+
+class KernelVersion:  # pylint: disable=too-few-public-methods
+    # Cannot use distutils.version.LooseVersion, because it fails at handling
+    # versions that have no numbers in them
+    def __init__(self, string):
+        self.string = string
+        self.contents = []
+        if re.compile(r'\d+.*').match(string):
+            # the version begins with a number
+            self.contents = [int(x) for x in re.compile(r'\D+').split(string)]
+
+    def __lt__(self, other):
+        if not self.contents and not other.contents:
+            return self.string < other.string
+        if not self.contents or not other.contents:
+            return len(self.contents) < len(other.contents)
+        return self.contents < other.contents
+
 def prepare_kernel_choice(widget, holder, propname, default, *args, **kwargs):
     # TODO get from storage API (pool 'linux-kernel') (suggested by @marmarta)
-    return prepare_choice(widget, holder, propname,
-        os.listdir('/var/lib/qubes/vm-kernels'), default, *args, **kwargs)
+    kernels = sorted(os.listdir('/var/lib/qubes/vm-kernels'),
+                     key=KernelVersion)
+    return prepare_choice(
+        widget, holder, propname, kernels, default, *args, **kwargs)
 
 def prepare_label_choice(widget, holder, propname, default, *args, **kwargs):
     try:
