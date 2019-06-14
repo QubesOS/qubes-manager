@@ -45,14 +45,13 @@ from PyQt4 import QtCore, QtGui  # pylint: disable=import-error
 
 from . import ui_settingsdlg  # pylint: disable=no-name-in-module
 
+
 # pylint: disable=too-few-public-methods
-class RenameVMThread(QtCore.QThread):
+class RenameVMThread(common_threads.QubesThread):
     def __init__(self, vm, new_vm_name, dependencies):
-        QtCore.QThread.__init__(self)
-        self.vm = vm
+        super(RenameVMThread, self).__init__(vm)
         self.new_vm_name = new_vm_name
         self.dependencies = dependencies
-        self.msg = None
 
     def run(self):
         try:
@@ -88,12 +87,10 @@ class RenameVMThread(QtCore.QThread):
 
 
 # pylint: disable=too-few-public-methods
-class RefreshAppsVMThread(QtCore.QThread):
+class RefreshAppsVMThread(common_threads.QubesThread):
     def __init__(self, vm, button):
-        QtCore.QThread.__init__(self)
-        self.vm = vm
+        super(RefreshAppsVMThread, self).__init__(vm)
         self.button = button
-        self.msg = None
 
     def run(self):
         vms_to_refresh = [self.vm]
