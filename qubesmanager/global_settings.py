@@ -344,16 +344,6 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         else:
             self.comm_tmpl_updates_repo.setCurrentIndex(0)
 
-        self.dom0_updates_repo.currentIndexChanged.connect(
-            _handle_dom0_updates_combobox
-        )
-        self.itl_tmpl_updates_repo.currentIndexChanged.connect(
-            _handle_itl_tmpl_updates_combobox
-        )
-        self.comm_tmpl_updates_repo.currentIndexChanged.connect(
-            _handle_comm_tmpl_updates_combobox
-        )
-
     def __enable_updates_all(self):
         reply = QtGui.QMessageBox.question(
             self, self.tr("Change state of all qubes"),
@@ -390,6 +380,14 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         if self.qvm_collection.check_updates_vm != self.updates_vm.isChecked():
             self.qvm_collection.check_updates_vm = self.updates_vm.isChecked()
 
+    def __apply_repos__(self):
+        _handle_dom0_updates_combobox(
+            self.dom0_updates_repo.currentIndex())
+        _handle_itl_tmpl_updates_combobox(
+            self.itl_tmpl_updates_repo.currentIndex())
+        _handle_comm_tmpl_updates_combobox(
+            self.comm_tmpl_updates_repo.currentIndex())
+
     def reject(self):
         self.done(0)
 
@@ -399,8 +397,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.__apply_kernel_defaults__()
         self.__apply_mem_defaults__()
         self.__apply_updates__()
-
-
+        self.__apply_repos__()
 
 # Bases on the original code by:
 # Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
