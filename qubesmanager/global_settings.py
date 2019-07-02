@@ -269,11 +269,11 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
 
         repos = dict()
         for i in _run_qrexec_repo('qubes.repos.List').split('\n'):
-            l = i.split('\0')
+            lst = i.split('\0')
             # Keyed by repo name
-            d = repos[l[0]] = dict()
-            d['prettyname'] = l[1]
-            d['enabled'] = l[2] == 'enabled'
+            dct = repos[lst[0]] = dict()
+            dct['prettyname'] = lst[1]
+            dct['enabled'] = lst[2] == 'enabled'
 
         if repos['qubes-dom0-unstable']['enabled']:
             self.dom0_updates_repo.setCurrentIndex(3)
