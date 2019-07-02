@@ -46,10 +46,11 @@ def _run_qrexec_repo(service, arg=''):
         stderr=subprocess.PIPE
     )
     if p.stderr:
-        raise RuntimeError('qrexec call stderr was not empty', stderr=p.stderr)
+        raise RuntimeError('qrexec call stderr was not empty',
+                           {'stderr': p.stderr})
     if p.returncode != 0:
         raise RuntimeError('qrexec call exited with non-zero return code',
-                           returncode=p.returncode)
+                           {'returncode': p.returncode})
     return p.stdout.decode('utf-8')
 
 # pylint: disable=too-many-instance-attributes
@@ -343,13 +344,19 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 if result != 'ok\n':
                     raise RuntimeError(
                         'qrexec call stdout did not contain "ok" as expected',
-                        result=result)
+                        {'stdout': result})
             except RuntimeError as ex:
+                msg = '{desc}; {args}'.format(desc=ex.args[0], args=', '.join(
+                      # This is kind of hard to mentally parse but really all
+                      # it does is pretty-print args[1], which is a dictionary
+                      ['{key}: {val}'.format(key=i[0], val=i[1]) for i in
+                       ex.args[1].items()]
+                ))
                 QtGui.QMessageBox.warning(
                     None,
                     self.tr("ERROR!"),
-                    self.tr("Error managing repository settings: {e}".format(
-                        e=str(ex))))
+                    self.tr("Error managing repository settings: {msg}".format(
+                        msg=msg)))
 
     def _handle_dom0_updates_combobox(self, idx):
         idx += 1
