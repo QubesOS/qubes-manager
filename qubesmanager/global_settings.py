@@ -52,50 +52,6 @@ def _run_qrexec_repo(service, arg=''):
                            returncode=p.returncode)
     return p.stdout.decode('utf-8')
 
-def _manage_repos(repolist, action):
-    for i in repolist:
-        try:
-            result = _run_qrexec_repo('qubes.repos.' + action, i)
-            if result != 'ok\n':
-                raise RuntimeError(
-                    'qrexec call stdout did not contain "ok" as expected',
-                    result=result)
-        except RuntimeError as ex:
-            QtGui.QMessageBox.warning(
-                None,
-                self.tr("ERROR!"),
-                self.tr("Error managing repository settings: {e}".format(
-                    e=str(ex))))
-
-def _handle_dom0_updates_combobox(idx):
-    idx += 1
-    repolist = ['qubes-dom0-current', 'qubes-dom0-security-testing',
-         'qubes-dom0-current-testing', 'qubes-dom0-unstable']
-    enable = repolist[:idx]
-    disable = repolist[idx:]
-    _manage_repos(enable, 'Enable')
-    _manage_repos(disable, 'Disable')
-
-# pylint: disable=invalid-name
-def _handle_itl_tmpl_updates_combobox(idx):
-    idx += 1
-    repolist = ['qubes-templates-itl', 'qubes-templates-itl-testing']
-    enable = repolist[:idx]
-    disable = repolist[idx:]
-    _manage_repos(enable, 'Enable')
-    _manage_repos(disable, 'Disable')
-
-# pylint: disable=invalid-name
-def _handle_comm_tmpl_updates_combobox(idx):
-    # We don't increment idx by 1 because this is the only combobox that
-    # has an explicit "disable this repository entirely" option
-    repolist = ['qubes-templates-community',
-                'qubes-templates-community-testing']
-    enable = repolist[:idx]
-    disable = repolist[idx:]
-    _manage_repos(enable, 'Enable')
-    _manage_repos(disable, 'Disable')
-
 # pylint: disable=too-many-instance-attributes
 class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                            QtGui.QDialog):
@@ -380,12 +336,56 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         if self.qvm_collection.check_updates_vm != self.updates_vm.isChecked():
             self.qvm_collection.check_updates_vm = self.updates_vm.isChecked()
 
+    def _manage_repos(self, repolist, action):
+        for i in repolist:
+            try:
+                result = _run_qrexec_repo('qubes.repos.' + action, i)
+                if result != 'ok\n':
+                    raise RuntimeError(
+                        'qrexec call stdout did not contain "ok" as expected',
+                        result=result)
+            except RuntimeError as ex:
+                QtGui.QMessageBox.warning(
+                    None,
+                    self.tr("ERROR!"),
+                    self.tr("Error managing repository settings: {e}".format(
+                        e=str(ex))))
+
+    def _handle_dom0_updates_combobox(self, idx):
+        idx += 1
+        repolist = ['qubes-dom0-current', 'qubes-dom0-security-testing',
+                    'qubes-dom0-current-testing', 'qubes-dom0-unstable']
+        enable = repolist[:idx]
+        disable = repolist[idx:]
+        self._manage_repos(enable, 'Enable')
+        self._manage_repos(disable, 'Disable')
+
+    # pylint: disable=invalid-name
+    def _handle_itl_tmpl_updates_combobox(self, idx):
+        idx += 1
+        repolist = ['qubes-templates-itl', 'qubes-templates-itl-testing']
+        enable = repolist[:idx]
+        disable = repolist[idx:]
+        self._manage_repos(enable, 'Enable')
+        self._manage_repos(disable, 'Disable')
+
+    # pylint: disable=invalid-name
+    def _handle_comm_tmpl_updates_combobox(self, idx):
+        # We don't increment idx by 1 because this is the only combobox that
+        # has an explicit "disable this repository entirely" option
+        repolist = ['qubes-templates-community',
+                    'qubes-templates-community-testing']
+        enable = repolist[:idx]
+        disable = repolist[idx:]
+        self._manage_repos(enable, 'Enable')
+        self._manage_repos(disable, 'Disable')
+
     def __apply_repos__(self):
-        _handle_dom0_updates_combobox(
+        self._handle_dom0_updates_combobox(
             self.dom0_updates_repo.currentIndex())
-        _handle_itl_tmpl_updates_combobox(
+        self._handle_itl_tmpl_updates_combobox(
             self.itl_tmpl_updates_repo.currentIndex())
-        _handle_comm_tmpl_updates_combobox(
+        self._handle_comm_tmpl_updates_combobox(
             self.comm_tmpl_updates_repo.currentIndex())
 
     def reject(self):
