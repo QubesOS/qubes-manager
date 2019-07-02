@@ -47,7 +47,7 @@ def _run_qrexec_repo(service, arg=''):
     )
     if p.stderr:
         raise RuntimeError('qrexec call stderr was not empty',
-                           {'stderr': p.stderr})
+                           {'stderr': p.stderr.decode('utf-8')})
     if p.returncode != 0:
         raise RuntimeError('qrexec call exited with non-zero return code',
                            {'returncode': p.returncode})
