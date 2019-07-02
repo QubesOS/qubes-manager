@@ -45,14 +45,27 @@ def _run_qrexec_repo(service, arg=''):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE
     )
-    assert not p.stderr
-    assert p.returncode == 0
+    if p.stderr:
+        raise RuntimeError('qrexec call stderr was not empty', stderr=p.stderr)
+    if p.returncode != 0:
+        raise RuntimeError('qrexec call exited with non-zero return code',
+                           returncode=p.returncode)
     return p.stdout.decode('utf-8')
 
 def _manage_repos(repolist, action):
     for i in repolist:
-        result = _run_qrexec_repo('qubes.repos.' + action, i)
-        assert result == 'ok\n'
+        try:
+            result = _run_qrexec_repo('qubes.repos.' + action, i)
+            if result != 'ok\n':
+                raise RuntimeError(
+                    'qrexec call stdout did not contain "ok" as expected',
+                    result=result)
+        except RuntimeError as ex:
+            QtGui.QMessageBox.warning(
+                None,
+                self.tr("ERROR!"),
+                self.tr("Error managing repository settings: {e}".format(
+                    e=str(ex))))
 
 def _handle_dom0_updates_combobox(idx):
     idx += 1
