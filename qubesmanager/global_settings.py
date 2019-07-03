@@ -359,8 +359,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 QtGui.QMessageBox.warning(
                     None,
                     self.tr("ERROR!"),
-                    self.tr("Error managing repository settings: {msg}".format(
-                        msg=msg)))
+                    self.tr("Error managing {repo} repository settings:"
+                            " {msg}".format(repo=name, msg=msg)))
 
     def _handle_dom0_updates_combobox(self, idx):
         idx += 1
