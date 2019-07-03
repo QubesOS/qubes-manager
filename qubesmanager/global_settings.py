@@ -267,7 +267,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.enable_updates_all.clicked.connect(self.__enable_updates_all)
         self.disable_updates_all.clicked.connect(self.__disable_updates_all)
 
-        repos = dict()
+        self.repos = repos = dict()
         for i in _run_qrexec_repo('qubes.repos.List').split('\n'):
             lst = i.split('\0')
             # Keyed by repo name
@@ -338,9 +338,13 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             self.qvm_collection.check_updates_vm = self.updates_vm.isChecked()
 
     def _manage_repos(self, repolist, action):
-        for i in repolist:
+        for name in repolist:
+            if self.repos[name]['enabled'] and action == 'Enable' or \
+               not self.repos[name]['enabled'] and action == 'Disable':
+                continue
+
             try:
-                result = _run_qrexec_repo('qubes.repos.' + action, i)
+                result = _run_qrexec_repo('qubes.repos.' + action, name)
                 if result != 'ok\n':
                     raise RuntimeError(
                         'qrexec call stdout did not contain "ok" as expected',
