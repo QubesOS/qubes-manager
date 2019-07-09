@@ -76,7 +76,7 @@ main() {
             fixed_version="1.4.9"
             ;;
         *)
-            error 'Error: Could not determine Debian release!'
+            exit_ok 'changed=no' 'Unrecognized debian variant, but probably ok by now'
     esac
 
     if check_apt_version "$pkg" "$fixed_version"; then
