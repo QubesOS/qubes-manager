@@ -117,11 +117,26 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
 
     def select_file_dialog(self):
         backend_vm = self.vm_list[self.fileVM.currentIndex()]
+        error_occurred = False
 
         try:
             new_path = utils.get_path_from_vm(backend_vm, "qubes.SelectFile")
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as ex:
+            if ex.returncode != 1:
+                # Error other than 'user did not select a file'
+                error_occurred = True
             new_path = None
+        except Exception:  # pylint: disable=broad-except
+            error_occurred = True
+            new_path = None
+
+        if error_occurred:
+            QtGui.QMessageBox.warning(
+                None,
+                self.tr("Failed to display file selection dialog"),
+                self.tr("Check if the qube {0} can be started and has a file"
+                        " manager installed.").format(backend_vm)
+            )
 
         if new_path:
             self.pathText.setText(new_path)
