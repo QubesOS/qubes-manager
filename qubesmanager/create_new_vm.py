@@ -153,9 +153,12 @@ class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
 
         properties = {}
         properties['provides_network'] = self.provides_network.isChecked()
+
         if self.netvm.currentIndex() != 0:
             properties['netvm'] = self.netvm_list[self.netvm.currentIndex()]
-        if self.install_system.isChecked():
+
+        # Standalone - not based on a template
+        if self.vm_type.currentIndex() == 2:
             properties['virt_mode'] = 'hvm'
             properties['kernel'] = None
 
