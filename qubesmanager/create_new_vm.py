@@ -135,12 +135,10 @@ class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
                    else 'StandaloneVM')
 
         name = str(self.name.text())
-        try:
-            self.app.domains[name]
-        except LookupError:
-            pass
-        else:
-            QtGui.QMessageBox.warning(None,
+
+        if name in self.app.domains:
+            QtGui.QMessageBox.warning(
+                None,
                 self.tr('Incorrect qube name!'),
                 self.tr('A qube with the name <b>{}</b> already exists in the '
                         'system!').format(name))
@@ -155,9 +153,12 @@ class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
 
         properties = {}
         properties['provides_network'] = self.provides_network.isChecked()
+
         if self.netvm.currentIndex() != 0:
             properties['netvm'] = self.netvm_list[self.netvm.currentIndex()]
-        if self.install_system.isChecked():
+
+        # Standalone - not based on a template
+        if self.vm_type.currentIndex() == 2:
             properties['virt_mode'] = 'hvm'
             properties['kernel'] = None
 
