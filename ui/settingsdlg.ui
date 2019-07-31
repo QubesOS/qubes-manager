@@ -646,6 +646,12 @@ border-width: 1px;</string>
               <property name="enabled">
                <bool>true</bool>
               </property>
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="text">
                <string>Initial memory:</string>
               </property>
@@ -662,6 +668,9 @@ border-width: 1px;</string>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
               </property>
+              <property name="suffix">
+               <string> MB</string>
+              </property>
               <property name="minimum">
                <number>0</number>
               </property>
@@ -676,26 +685,6 @@ border-width: 1px;</string>
               </property>
              </widget>
             </item>
-            <item row="0" column="2">
-             <widget class="QLabel" name="label_16">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="text">
-               <string>MB</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="label_17">
-              <property name="text">
-               <string>Max memory:</string>
-              </property>
-              <property name="buddy">
-               <cstring>max_mem_size</cstring>
-              </property>
-             </widget>
-            </item>
             <item row="1" column="1">
              <widget class="QSpinBox" name="max_mem_size">
               <property name="enabled">
@@ -703,6 +692,9 @@ border-width: 1px;</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+              <property name="suffix">
+               <string> MB</string>
               </property>
               <property name="minimum">
                <number>0</number>
@@ -718,15 +710,14 @@ border-width: 1px;</string>
               </property>
              </widget>
             </item>
-            <item row="1" column="2">
-             <widget class="QLabel" name="label_6">
-              <property name="text">
-               <string>MB</string>
-              </property>
-             </widget>
-            </item>
             <item row="2" column="0">
              <widget class="QLabel" name="label_4">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="text">
                <string>VCPUs no.:</string>
               </property>
@@ -778,6 +769,22 @@ border-width: 1px;</string>
               </property>
              </widget>
             </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_17">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Max memory:</string>
+              </property>
+              <property name="buddy">
+               <cstring>max_mem_size</cstring>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </item>
@@ -806,34 +813,31 @@ border-width: 1px;</string>
             <property name="topMargin">
              <number>15</number>
             </property>
-            <item row="5" column="0">
-             <widget class="QLabel" name="label_26">
+            <item row="1" column="0">
+             <widget class="QCheckBox" name="provides_network_checkbox">
+              <property name="text">
+               <string>Provides network</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QCheckBox" name="dvm_template_checkbox">
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Which qube should be used by default as a template for DisposableVMs started from this one? DisposableVMs will inherit their template's configuration and installed programs.&lt;br/&gt;For a qube to to appear in this list, it must have the &amp;quot;DisposableVM Template&amp;quot; checkbox enabled. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allows using this qube as a template for DisposableVMs. The DisposableVMs will inherit the VM's state (configuration, installed programs etc.), but their state will not persist between restarts. &lt;/p&gt;&lt;p&gt;Setting this option will cause this qube to be listed as an option in the &amp;quot;Default DisposableVM Template&amp;quot; dropdown for all other qubes. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
-               <string>Default DisposableVM Template</string>
-              </property>
-              <property name="buddy">
-               <cstring>default_dispvm</cstring>
+               <string>Disposable VM Template</string>
               </property>
              </widget>
             </item>
-            <item row="5" column="1">
-             <widget class="QComboBox" name="default_dispvm">
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Which qube should be used by default as a template for DisposableVMs started from this one? DisposableVMs will inherit their template's configuration and installed programs.&lt;br/&gt;For a qube to to appear in this list, it must have the &amp;quot;DisposableVM Template&amp;quot; checkbox enabled. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-             </widget>
-            </item>
-            <item row="6" column="0" colspan="2">
+            <item row="7" column="0" colspan="2">
              <widget class="QPushButton" name="boot_from_device_button">
               <property name="text">
                <string>Boot qube from CDROM</string>
               </property>
              </widget>
             </item>
-            <item row="7" column="0" colspan="2">
+            <item row="8" column="0" colspan="2">
              <layout class="QHBoxLayout" name="horizontalLayout_8">
               <item>
                <widget class="QPushButton" name="seamless_on_button">
@@ -859,22 +863,35 @@ The qube must be running to disable seamless mode; this setting is not persisten
               </item>
              </layout>
             </item>
-            <item row="1" column="0">
-             <widget class="QCheckBox" name="provides_network_checkbox">
-              <property name="text">
-               <string>Provides network</string>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="0">
-             <widget class="QCheckBox" name="dvm_template_checkbox">
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allows using this qube as a template for DisposableVMs. The DisposableVMs will inherit the VM's state (configuration, installed programs etc.), but their state will not persist between restarts. &lt;/p&gt;&lt;p&gt;Setting this option will cause this qube to be listed as an option in the &amp;quot;Default DisposableVM Template&amp;quot; dropdown for all other qubes. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="text">
-               <string>Disposable VM Template</string>
-              </property>
-             </widget>
+            <item row="5" column="0" colspan="2">
+             <layout class="QHBoxLayout" name="horizontalLayout_6">
+              <item>
+               <widget class="QLabel" name="label_26">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Which qube should be used by default as a template for DisposableVMs started from this one? DisposableVMs will inherit their template's configuration and installed programs.&lt;br/&gt;For a qube to to appear in this list, it must have the &amp;quot;DisposableVM Template&amp;quot; checkbox enabled. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>Default DisposableVM Template</string>
+                </property>
+                <property name="buddy">
+                 <cstring>default_dispvm</cstring>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="default_dispvm">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Which qube should be used by default as a template for DisposableVMs started from this one? DisposableVMs will inherit their template's configuration and installed programs.&lt;br/&gt;For a qube to to appear in this list, it must have the &amp;quot;DisposableVM Template&amp;quot; checkbox enabled. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
            </layout>
           </widget>
@@ -1478,6 +1495,8 @@ The qube must be running to disable seamless mode; this setting is not persisten
   <tabstop>max_mem_size</tabstop>
   <tabstop>vcpus</tabstop>
   <tabstop>include_in_balancing</tabstop>
+  <tabstop>provides_network_checkbox</tabstop>
+  <tabstop>dvm_template_checkbox</tabstop>
   <tabstop>default_dispvm</tabstop>
   <tabstop>boot_from_device_button</tabstop>
   <tabstop>seamless_on_button</tabstop>
@@ -1495,9 +1514,9 @@ The qube must be running to disable seamless mode; this setting is not persisten
   <tabstop>no_strict_reset_button</tabstop>
   <tabstop>refresh_apps_button</tabstop>
   <tabstop>service_line_edit</tabstop>
+  <tabstop>services_list</tabstop>
   <tabstop>add_srv_button</tabstop>
   <tabstop>remove_srv_button</tabstop>
-  <tabstop>services_list</tabstop>
   <tabstop>buttonBox</tabstop>
   <tabstop>tabWidget</tabstop>
  </tabstops>
