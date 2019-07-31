@@ -19,7 +19,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-
+import itertools
 import os
 import re
 import qubesadmin
@@ -118,17 +118,17 @@ class KernelVersion:  # pylint: disable=too-few-public-methods
     # versions that have no numbers in them
     def __init__(self, string):
         self.string = string
-        self.contents = []
-        if re.compile(r'\d+.*').match(string):
-            # the version begins with a number
-            self.contents = [int(x) for x in re.compile(r'\D+').split(string)]
+        self.groups = re.compile(r'(\d+)').split(self.string)
 
     def __lt__(self, other):
-        if not self.contents and not other.contents:
-            return self.string < other.string
-        if not self.contents or not other.contents:
-            return len(self.contents) < len(other.contents)
-        return self.contents < other.contents
+        for (self_content, other_content) in itertools.zip_longest(
+                self.groups, other.groups):
+            if self_content == other_content:
+                continue
+            if self_content.isdigit() and other_content.isdigit():
+                return int(self_content) < int(other_content)
+            return self_content < other_content
+
 
 def prepare_kernel_choice(widget, holder, propname, default, *args, **kwargs):
     # TODO get from storage API (pool 'linux-kernel') (suggested by @marmarta)
