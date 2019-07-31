@@ -238,14 +238,14 @@ in backups</string>
       </column>
       <column>
        <property name="text">
-        <string>Default
-DisposableVM</string>
+        <string>Default DisposableVM
+Template</string>
        </property>
       </column>
       <column>
        <property name="text">
-        <string>Is template for 
-DisposableVMs</string>
+        <string>DisposableVM
+Template</string>
        </property>
       </column>
      </widget>
@@ -258,7 +258,7 @@ DisposableVMs</string>
      <x>0</x>
      <y>0</y>
      <width>1100</width>
-     <height>28</height>
+     <height>23</height>
     </rect>
    </property>
    <property name="contextMenuPolicy">
@@ -853,10 +853,10 @@ DisposableVMs</string>
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Default DisposableVMs</string>
+    <string>Default DisposableVM Template</string>
    </property>
    <property name="toolTip">
-    <string>Default DisposableVMs</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Default DisposableVM Template&lt;br/&gt;&lt;br/&gt;Which qube should be used by default as a template for DisposableVMs started from this one? DisposableVMs will inherit their template's configuration and installed programs.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
   <action name="action_is_dvm_template">
@@ -867,10 +867,10 @@ DisposableVMs</string>
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Is Template for DisposableVMs</string>
+    <string>DisposableVM Template</string>
    </property>
    <property name="toolTip">
-    <string>Is Template for DisposableVMs</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;DisposableVM Template&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Allows using this qube as a template for DisposableVMs. The DisposableVMs will inherit the VM's state (configuration, installed programs etc.), but their state will not persist between restarts. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
  </widget>
