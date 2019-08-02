@@ -109,7 +109,7 @@ class NewFwRuleDlg(QtGui.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
                 'http', 'https', 'ftp', 'ftps', 'smtp',
                 'pop3', 'pop3s', 'imap', 'imaps', 'odmr',
                 'nntp', 'nntps', 'ssh', 'telnet', 'telnets', 'ntp',
-                'snmp', 'ldap', 'ldaps', 'irc', 'ircs', 'xmpp-client',
+                'snmp', 'ldap', 'ldaps', 'irc', 'ircs-u', 'xmpp-client',
                 'syslog', 'printer', 'nfs', 'x11'
             ]
         for address in example_addresses:
@@ -144,6 +144,9 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
 
         self.__column_names = {0: "Address", 1: "Port/Service", 2: "Protocol", }
         self.__services = list()
+
+        self.port_range_pattern = re.compile(r'\d+-\d+')
+
         pattern = re.compile(
             r"(?P<name>[a-z][a-z0-9-]+)\s+(?P<port>[0-9]+)/"
             r"(?P<protocol>[a-z]+)",
@@ -380,7 +383,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
             elif dialog.udp_radio.isChecked():
                 rule.proto = 'udp'
 
-            if '-' in service:
+            if self.port_range_pattern.fullmatch(service):
                 try:
                     rule.dstports = service
                 except ValueError:
