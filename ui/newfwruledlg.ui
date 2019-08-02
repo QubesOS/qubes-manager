@@ -53,7 +53,7 @@
      <item row="1" column="0">
       <widget class="QLabel" name="label_4">
        <property name="text">
-        <string>Service</string>
+        <string>Port/Service</string>
        </property>
       </widget>
      </item>
@@ -98,6 +98,9 @@
      </item>
      <item row="1" column="1" colspan="3">
       <widget class="QComboBox" name="serviceComboBox">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Port/service can be provided as either port number (e.g. 122), port range (1024-1234) or service name (e.g. smtp) . For full list of services known, see /etc/services in dom0.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="editable">
         <bool>true</bool>
        </property>

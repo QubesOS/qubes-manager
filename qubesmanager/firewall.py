@@ -104,18 +104,17 @@ class NewFwRuleDlg(QtGui.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
                 "192.168.1.100", "192.168.0.0/16",
                 "*"
             ]
-        displayed_services = [
-                '',
+        example_services = [
+                '', '22', '80', '1024-1234',
                 'http', 'https', 'ftp', 'ftps', 'smtp',
-                'smtps', 'pop3', 'pop3s', 'imap', 'imaps', 'odmr',
+                'pop3', 'pop3s', 'imap', 'imaps', 'odmr',
                 'nntp', 'nntps', 'ssh', 'telnet', 'telnets', 'ntp',
-                'snmp', 'ldap', 'ldaps', 'irc', 'ircs', 'xmpp-client',
-                'syslog', 'printer', 'nfs', 'x11',
-                '1024-1234'
+                'snmp', 'ldap', 'ldaps', 'irc', 'ircs-u', 'xmpp-client',
+                'syslog', 'printer', 'nfs', 'x11'
             ]
         for address in example_addresses:
             self.addressComboBox.addItem(address)
-        for service in displayed_services:
+        for service in example_services:
             self.serviceComboBox.addItem(service)
 
     def address_editing_finished(self):
@@ -143,8 +142,11 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
     def __init__(self, parent=None):
         QtCore.QAbstractItemModel.__init__(self, parent)
 
-        self.__column_names = {0: "Address", 1: "Service", 2: "Protocol", }
+        self.__column_names = {0: "Address", 1: "Port/Service", 2: "Protocol", }
         self.__services = list()
+
+        self.port_range_pattern = re.compile(r'\d+-\d+')
+
         pattern = re.compile(
             r"(?P<name>[a-z][a-z0-9-]+)\s+(?P<port>[0-9]+)/"
             r"(?P<protocol>[a-z]+)",
@@ -176,7 +178,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
     def get_service_name(self, port):
         for service in self.__services:
             if str(service[1]) == str(port):
-                return service[0]
+                return "{0} ({1})".format(str(port), service[0])
         return str(port)
 
     def get_service_port(self, name):
@@ -381,7 +383,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
             elif dialog.udp_radio.isChecked():
                 rule.proto = 'udp'
 
-            if '-' in service:
+            if self.port_range_pattern.fullmatch(service):
                 try:
                     rule.dstports = service
                 except ValueError:
