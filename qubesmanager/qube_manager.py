@@ -72,7 +72,7 @@ class SearchBox(QtGui.QLineEdit):
 
 
 class VmRowInTable:
-    # pylint: disable=too-few-public-methods
+    # pylint: disable=too-few-public-methods,too-many-instance-attributes
     def __init__(self, vm, row_no, table):
         self.vm = vm
 
@@ -144,6 +144,10 @@ class VmRowInTable:
             row_no, VmManagerWindow.columns_indices['Is DVM Template'],
             self.is_dispvm_template_widget)
 
+        self.virt_mode_widget = table_widgets.VMPropertyItem(vm, 'virt_mode')
+        table.setItem(row_no, VmManagerWindow.columns_indices[
+            'Virtualization Mode'], self.virt_mode_widget)
+
         self.table = table
 
     def update(self, update_size_on_disk=False, event=None):
@@ -175,6 +179,8 @@ class VmRowInTable:
                 self.dvm_template_widget.update()
             if not event or event.endswith(':template_for_dispvms'):
                 self.is_dispvm_template_widget.update()
+            if not event or event.endswith(':virt_mode'):
+                self.virt_mode_widget.update()
             if update_size_on_disk:
                 self.size_widget.update()
         except exc.QubesPropertyAccessError:
@@ -337,7 +343,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                        "Include in backups": 9,
                        "Last backup": 10,
                        "Default DispVM": 11,
-                       "Is DVM Template": 12
+                       "Is DVM Template": 12,
+                       "Virtualization Mode": 13
                       }
 
     def __init__(self, qt_app, qubes_app, dispatcher, parent=None):
@@ -382,7 +389,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             self.columns_indices["Include in backups"]: self.action_backups,
             self.columns_indices["Last backup"]: self.action_last_backup,
             self.columns_indices["Default DispVM"]: self.action_dispvm_template,
-            self.columns_indices["Is DVM Template"]: self.action_is_dvm_template
+            self.columns_indices["Is DVM Template"]:
+                self.action_is_dvm_template,
+            self.columns_indices["Virtualization Mode"]: self.action_virt_mode
         }
 
         self.visible_columns_count = len(self.columns_indices)
@@ -1213,6 +1222,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
     def on_action_size_on_disk_toggled(self, checked):
         self.showhide_column(self.columns_indices['Size'], checked)
+
+    def on_action_virt_mode_toggled(self, checked):
+        self.showhide_column(self.columns_indices['Virtualization Mode'],
+                             checked)
 
     # pylint: disable=invalid-name
     def on_action_dispvm_template_toggled(self, checked):
