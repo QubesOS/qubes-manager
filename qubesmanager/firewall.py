@@ -146,6 +146,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         self.__services = list()
 
         self.port_range_pattern = re.compile(r'\d+-\d+')
+        self.service_port_pattern = re.compile(r'(\d*) \([a-zA-Z-]*\)')
 
         pattern = re.compile(
             r"(?P<name>[a-z][a-z0-9-]+)\s+(?P<port>[0-9]+)/"
@@ -394,16 +395,22 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
                                         .format(service))
                     return
             elif service:
+                if self.service_port_pattern.fullmatch(service):
+                    parsed_service = self.service_port_pattern.match(
+                        service).groups()[0]
+                else:
+                    parsed_service = service
+
                 try:
-                    rule.dstports = service
+                    rule.dstports = parsed_service
                 except (TypeError, ValueError):
-                    if self.get_service_port(service) is not None:
-                        rule.dstports = self.get_service_port(service)
+                    if self.get_service_port(parsed_service) is not None:
+                        rule.dstports = self.get_service_port(parsed_service)
                     else:
                         QtGui.QMessageBox.warning(None,
                             self.tr("Invalid port or service"),
                             self.tr("Port number or service '{0}' is invalid.")
-                                            .format(service))
+                                            .format(parsed_service))
                         return
 
             if row is not None:
