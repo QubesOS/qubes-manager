@@ -146,7 +146,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         self.__services = list()
 
         self.port_range_pattern = re.compile(r'\d+-\d+')
-        self.service_port_pattern = re.compile(r'(\d*) \([a-zA-Z-]*\)')
+        self.service_port_pattern = re.compile(r'(\d*) \([a-zA-Z0-9-]*\)')
 
         pattern = re.compile(
             r"(?P<name>[a-z][a-z0-9-]+)\s+(?P<port>[0-9]+)/"
