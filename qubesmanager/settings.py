@@ -551,7 +551,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 self.tr("Initial memory can not be less than one tenth "
                         "Max memory.<br>Setting initial memory to the minimum "
                         "allowed value."))
-            self.init_mem.setValue(self.max_mem_size.value() / 10)
+            self.init_mem.setValue((self.max_mem_size.value() + 9) // 10)
 
     def check_warn_dispvmnetvm(self):
         if not hasattr(self.vm, 'default_dispvm'):
