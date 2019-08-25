@@ -77,7 +77,7 @@
      </layout>
     </item>
     <item row="1" column="0">
-     <widget class="QTableWidget" name="table">
+     <widget class="QTableView" name="table">
       <property name="minimumSize">
        <size>
         <width>0</width>
