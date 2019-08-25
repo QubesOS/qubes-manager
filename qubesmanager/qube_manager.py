@@ -43,7 +43,6 @@ from PyQt4 import QtCore  # pylint: disable=import-error
 from qubesmanager.about import AboutDialog
 
 from . import ui_qubemanager  # pylint: disable=no-name-in-module
-from . import table_widgets
 from . import settings
 from . import global_settings
 from . import restore
@@ -70,122 +69,156 @@ class SearchBox(QtGui.QLineEdit):
             self.selectAll()
             self.focusing = False
 
+row_height = 30
+size_multiplier = 1 #0.7
 
-class VmRowInTable:
-    # pylint: disable=too-few-public-methods
-    def __init__(self, vm, row_no, table):
+
+
+class VmInfo():
+    def __init__(self, vm):
         self.vm = vm
+        self.update()
 
-        table_widgets.row_height = VmManagerWindow.row_height
-        table.setRowHeight(row_no, VmManagerWindow.row_height)
+    def update(self):
+        self.name = self.vm.name
+        self.klass = self.vm.klass
+        self.label = self.vm.label
+        self.netvm = getattr(self.vm, 'netvm', None)
+        if self.netvm:
+            self.netvm = self.netvm.name
 
-        self.type_widget = table_widgets.VmTypeWidget(vm)
-        table.setCellWidget(row_no, VmManagerWindow.columns_indices['Type'],
-                            self.type_widget)
-        table.setItem(row_no, VmManagerWindow.columns_indices['Type'],
-                      self.type_widget.table_item)
+        self.ip = getattr(self.vm, 'ip', None)
+        self.inc_backup = getattr(self.vm, 'include__in_backups', None)
 
-        self.label_widget = table_widgets.VmLabelWidget(vm)
-        table.setCellWidget(row_no, VmManagerWindow.columns_indices['Label'],
-                            self.label_widget)
-        table.setItem(row_no, VmManagerWindow.columns_indices['Label'],
-                      self.label_widget.table_item)
+        self.last_backup = getattr(self.vm, 'backup_timestamp', None)
+        if self.last_backup:
+            self.last_backup = str(datetime.fromtimestamp(
+                self.last_backup))
 
-        self.name_widget = table_widgets.VMPropertyItem(vm, "name")
-        table.setItem(row_no, VmManagerWindow.columns_indices['Name'],
-                      self.name_widget)
-
-        self.info_widget = table_widgets.VmInfoWidget(vm)
-        table.setCellWidget(row_no, VmManagerWindow.columns_indices['State'],
-                            self.info_widget)
-        table.setItem(row_no, VmManagerWindow.columns_indices['State'],
-                      self.info_widget.table_item)
-
-        self.template_widget = table_widgets.VmTemplateItem(vm)
-        table.setItem(row_no, VmManagerWindow.columns_indices['Template'],
-                      self.template_widget)
-
-        self.netvm_widget = table_widgets.VMPropertyItem(vm, "netvm",
-                                                         check_default=True)
-        table.setItem(row_no, VmManagerWindow.columns_indices['NetVM'],
-                      self.netvm_widget)
-
-        self.size_widget = table_widgets.VmSizeOnDiskItem(vm)
-        table.setItem(row_no, VmManagerWindow.columns_indices['Size'],
-                      self.size_widget)
-
-        self.internal_widget = table_widgets.VmInternalItem(vm)
-        table.setItem(row_no, VmManagerWindow.columns_indices['Internal'],
-                      self.internal_widget)
-
-        self.ip_widget = table_widgets.VMPropertyItem(vm, "ip")
-        table.setItem(row_no, VmManagerWindow.columns_indices['IP'],
-                      self.ip_widget)
-
-        self.include_in_backups_widget = table_widgets.VMPropertyItem(
-            vm, "include_in_backups",
-            empty_function=(lambda x: not bool(x)))
-        table.setItem(row_no, VmManagerWindow.columns_indices[
-            'Include in backups'], self.include_in_backups_widget)
-
-        self.last_backup_widget = table_widgets.VmLastBackupItem(
-            vm, "backup_timestamp")
-        table.setItem(row_no, VmManagerWindow.columns_indices[
-            'Last backup'], self.last_backup_widget)
-
-        self.dvm_template_widget = table_widgets.VMPropertyItem(
-            vm, "default_dispvm")
-        table.setItem(row_no, VmManagerWindow.columns_indices['Default DispVM'],
-                      self.dvm_template_widget)
-
-        self.is_dispvm_template_widget = table_widgets.VMPropertyItem(
-            vm, "template_for_dispvms", empty_function=(lambda x: not x))
-        table.setItem(
-            row_no, VmManagerWindow.columns_indices['Is DVM Template'],
-            self.is_dispvm_template_widget)
-
-        self.table = table
-
-    def update(self, update_size_on_disk=False, event=None):
-        """
-        Update info in a single VM row
-        :param update_size_on_disk: should disk utilization be updated? the
-        widget will extract the data from VM object
-        :param event: name of the event that caused the update, to avoid
-        updating unnecessary properties; if event is none, update everything
-        :return: None
-        """
         try:
-            self.info_widget.update_vm_state()
-            if not event or event.endswith(':label'):
-                self.label_widget.update()
-            if not event or event.endswith(':template'):
-                self.template_widget.update()
-            if not event or event.endswith(':netvm'):
-                self.netvm_widget.update()
-            if not event or event.endswith(':internal'):
-                self.internal_widget.update()
-            if not event or event.endswith(':ip'):
-                self.ip_widget.update()
-            if not event or event.endswith(':include_in_backups'):
-                self.include_in_backups_widget.update()
-            if not event or event.endswith(':backup_timestamp'):
-                self.last_backup_widget.update()
-            if not event or event.endswith(':default_dispvm'):
-                self.dvm_template_widget.update()
-            if not event or event.endswith(':template_for_dispvms'):
-                self.is_dispvm_template_widget.update()
-            if update_size_on_disk:
-                self.size_widget.update()
-        except exc.QubesPropertyAccessError:
-            pass
-        except exc.QubesDaemonNoResponseError:
-            # TODO: this will be fixed by a rewrite moving the event system to
-            # AdminAPI
-            pass
+            self.template = self.vm.template.name
+        except:
+            self.template = self.vm.klass
 
-        #force re-sorting
-        self.table.setSortingEnabled(True)
+        self.disk = str(round(self.vm.get_disk_utilization()/(1024*1024),2))+"MiB"
+        self.state = self.vm.get_power_state()
+
+        self.internal = "Yes" if self.vm.features.get('internal', False) else ""
+        self.updates = "Yes" if self.vm.features.get('updates-available', False) else ""
+
+        self.dvm = getattr(self.vm, 'default_dispvm', None)
+        self.dvm_template = getattr(self.vm, 'template_for_dispvms', None)
+
+class QubesTableModel(QtCore.QAbstractTableModel):
+    def __init__(self, qubes_app):
+        QtCore.QAbstractTableModel.__init__(self)
+        self.qubes_app = qubes_app
+        self.info_list =  []
+        self.template = {}
+        self.klass_pixmap = {}
+        self.label_pixmap = {}
+        self.columns_indices = [
+                "Type",
+                "Label",
+                "Name",
+                "State",
+                "Template",
+                "NetVM",
+                "Size",
+                "Internal",
+                "IP",
+                "Include in backups",
+                "Last backup",
+                "Default DispVM",
+                "Is DVM Template"
+                ]
+
+        self.fill_list()
+
+    def fill_list(self):
+        vms_list = self.get_vms_list()
+
+        progress = QtGui.QProgressDialog(
+            self.tr(
+                "Loading Qube Manager..."), "", 0, len(vms_list))
+        progress.setWindowTitle(self.tr("Qube Manager"))
+        progress.setMinimumDuration(1000)
+        progress.setCancelButton(None)
+
+        row_no = 0
+        for vm in vms_list:
+            progress.setValue(row_no)
+            self.info_list.append(VmInfo(vm))
+            row_no += 1
+
+        progress.setValue(row_no)
+
+    def change(self, current, previous):
+        print("CHANGED")
+
+    def get_vms_list(self):
+        return [vm for vm in self.qubes_app.domains]
+
+    def rowCount(self, parent):
+        return len(self.info_list) 
+
+    def columnCount(self, parent):
+        return len(self.columns_indices)
+
+    def data(self, index, role):
+        if not index.isValid():
+            return  None
+
+        col = index.column()
+        row = index.row()
+        vm = self.info_list[row]
+
+        if role == QtCore.Qt.DisplayRole:
+            if col in [0,1]:
+                return None
+            if col == 2:
+                return self.info_list[index.row()].name
+            elif col == 4:
+                return self.info_list[index.row()].template
+            elif col == 5:
+                return self.info_list[index.row()].netvm
+            elif col == 6:
+                return self.info_list[index.row()].disk
+            elif col == 8:
+                return self.info_list[index.row()].ip
+            elif col == 9:
+                return self.info_list[index.row()].inc_backup
+            elif col == 10:
+                return self.info_list[index.row()].last_backup
+            elif col == 11:
+                return self.info_list[index.row()].dvm
+            elif col == 12:
+                return self.info_list[index.row()].dvm_template
+
+        elif role == QtCore.Qt.DecorationRole:
+            if col == 0:
+                try:
+                    return self.klass_pixmap[vm.klass]
+                except:
+                    self.klass_pixmap[vm.klass] =  QtGui.QPixmap(row_height*size_multiplier,row_height*size_multiplier)
+                    self.klass_pixmap[vm.klass].load(":/"+vm.klass.lower()+".png")
+                    self.klass_pixmap[vm.klass] = self.klass_pixmap[vm.klass].scaled(row_height*size_multiplier,row_height*size_multiplier)
+                    return self.klass_pixmap[vm.klass]
+            if col == 1:
+                try:
+                    return self.label_pixmap[vm.label]
+                except:
+                    self.label_pixmap[vm.label] = QtGui.QIcon.fromTheme(vm.label.icon)
+                    return self.label_pixmap[vm.label]
+        return None
+
+    def headerData(self, col, orientation, role):
+        if(col < 2):
+            return None
+        if(orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole):
+            return self.columns_indices[col]
+        return None
+
 
 
 vm_shutdown_timeout = 20000  # in msec
@@ -355,10 +388,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             QtCore.QRegExp("[a-zA-Z0-9_-]*", QtCore.Qt.CaseInsensitive), None))
         self.searchContainer.addWidget(self.searchbox)
 
-        self.connect(self.table, QtCore.SIGNAL("itemSelectionChanged()"),
-                     self.table_selection_changed)
-
-        self.table.setColumnWidth(0, self.column_width)
+       # self.connect(self.table, QtCore.SIGNAL("itemSelectionChanged()"),
+       #              self.table_selection_changed)
 
         self.sort_by_column = "Type"
         self.sort_order = QtCore.Qt.AscendingOrder
@@ -384,19 +415,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             self.columns_indices["Default DispVM"]: self.action_dispvm_template,
             self.columns_indices["Is DVM Template"]: self.action_is_dvm_template
         }
-
-        self.visible_columns_count = len(self.columns_indices)
-
-        # Other columns get sensible default sizes, but those have only
-        # icon content, and thus PyQt makes them too wide
-        self.table.setColumnWidth(self.columns_indices["State"], 80)
-        self.table.setColumnWidth(self.columns_indices["Label"], 40)
-        self.table.setColumnWidth(self.columns_indices["Type"], 40)
-
-        self.table.horizontalHeader().setResizeMode(
-            QtGui.QHeaderView.Interactive)
-        self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.horizontalHeader().setMinimumSectionSize(40)
 
         self.context_menu = QtGui.QMenu(self)
 
@@ -435,29 +453,29 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.dom0_context_menu.addMenu(self.logs_menu)
         self.dom0_context_menu.addSeparator()
 
-        self.connect(
-            self.table.horizontalHeader(),
-            QtCore.SIGNAL("sortIndicatorChanged(int, Qt::SortOrder)"),
-            self.sort_indicator_changed)
-        self.connect(self.table,
-                     QtCore.SIGNAL("customContextMenuRequested(const QPoint&)"),
-                     self.open_context_menu)
-        self.connect(self.menubar,
-                     QtCore.SIGNAL("customContextMenuRequested(const QPoint&)"),
-                     lambda pos: self.open_tools_context_menu(self.menubar,
-                                                              pos))
-        self.connect(self.toolbar,
-                     QtCore.SIGNAL("customContextMenuRequested(const QPoint&)"),
-                     lambda pos: self.open_tools_context_menu(self.toolbar,
-                                                              pos))
-        self.connect(self.logs_menu, QtCore.SIGNAL("triggered(QAction *)"),
-                     self.show_log)
+        #self.connect(
+        #    self.table.horizontalHeader(),
+        #    QtCore.SIGNAL("sortIndicatorChanged(int, Qt::SortOrder)"),
+        #    self.sort_indicator_changed)
+        #self.connect(self.table,
+        #             QtCore.SIGNAL("customContextMenuRequested(const QPoint&)"),
+        #             self.open_context_menu)
+        #self.connect(self.menubar,
+        #             QtCore.SIGNAL("customContextMenuRequested(const QPoint&)"),
+        #             lambda pos: self.open_tools_context_menu(self.menubar,
+        #                                                      pos))
+        #self.connect(self.toolbar,
+        #             QtCore.SIGNAL("customContextMenuRequested(const QPoint&)"),
+        #             lambda pos: self.open_tools_context_menu(self.toolbar,
+        #                                                      pos))
+        #self.connect(self.logs_menu, QtCore.SIGNAL("triggered(QAction *)"),
+        #             self.show_log)
 
-        self.connect(self.searchbox,
-                     QtCore.SIGNAL("textChanged(const QString&)"),
-                     self.do_search)
+        #self.connect(self.searchbox,
+        #             QtCore.SIGNAL("textChanged(const QString&)"),
+        #             self.do_search)
 
-        self.table.setContentsMargins(0, 0, 0, 0)
+        #self.table.setContentsMargins(0, 0, 0, 0)
         self.centralwidget.layout().setContentsMargins(0, 0, 0, 0)
         self.layout().setContentsMargins(0, 0, 0, 0)
 
@@ -478,10 +496,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
         self.settings_loaded = True
 
-        self.fill_table()
+        #self.fill_table()
 
         self.update_size_on_disk = False
         self.shutdown_monitor = {}
+
+        qubes_model = QubesTableModel(qubes_app)
+        self.table.setModel(qubes_model)
+        self.table.resizeColumnsToContents()
 
         # Connect events
         self.dispatcher = dispatcher
@@ -564,56 +586,16 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                     pass
 
     def on_domain_added(self, _submitter, _event, vm, **_kwargs):
-        row_no = 0
-        self.table.setSortingEnabled(False)
-        try:
-            domain = self.qubes_app.domains[vm]
-            row_no = self.table.rowCount()
-            self.table.setRowCount(row_no + 1)
-            vm_row = VmRowInTable(domain, row_no, self.table)
-            self.vms_in_table[domain.qid] = vm_row
-        except (exc.QubesException, KeyError):
-            if row_no != 0:
-                self.table.removeRow(row_no)
-        self.table.setSortingEnabled(True)
-        self.showhide_vms()
+        pass
 
     def on_domain_removed(self, _submitter, _event, **kwargs):
-        row_to_delete = None
-        qid_to_delete = None
-        for qid, row in self.vms_in_table.items():
-            if row.vm.name == kwargs['vm']:
-                row_to_delete = row
-                qid_to_delete = qid
-        if not row_to_delete:
-            return  # for some reason, the VM was removed in some other way
-
-        del self.vms_in_table[qid_to_delete]
-        self.table.removeRow(row_to_delete.name_widget.row())
+        pass
 
     def on_domain_status_changed(self, vm, _event, **_kwargs):
-        try:
-            self.vms_in_table[vm.qid].info_widget.update_vm_state()
-        except exc.QubesPropertyAccessError:
-            return  # the VM was deleted before its status could be updated
-        except KeyError:  # adding the VM failed for some reason
-            self.on_domain_added(None, None, vm)
-
-        if vm == self.get_selected_vm():
-            self.table_selection_changed()
-
-        if vm.klass == 'TemplateVM':
-            for row in self.vms_in_table.values():
-                if getattr(row.vm, 'template', None) == vm:
-                    row.info_widget.update_vm_state()
+        pass
 
     def on_domain_changed(self, vm, event, **_kwargs):
-        if not vm:  # change of global properties occured
-            return
-        try:
-            self.vms_in_table[vm.qid].update(event=event)
-        except exc.QubesPropertyAccessError:
-            return  # the VM was deleted before its status could be updated
+        pass
 
     def load_manager_settings(self):
         for col in self.columns_indices:
@@ -634,15 +616,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
             self.manager_settings.value("view/sort_order",
                                         defaultValue=self.sort_order))
 
-        try:
-            self.table.sortItems(self.columns_indices[self.sort_by_column],
-                                 self.sort_order)
-        except KeyError:
-            # the manager was sorted on a column that does not exist in the
-            # current version; possible only with downgrades
-            self.table.sortItems(self.columns_indices["Name"],
-                                 self.sort_order)
-
         if not self.manager_settings.value("view/menubar_visible",
                                            defaultValue=True):
             self.action_menubar.setChecked(False)
@@ -656,34 +629,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
 
     def get_vms_list(self):
         return [vm for vm in self.qubes_app.domains]
-
-    def fill_table(self):
-        self.table.setSortingEnabled(False)
-        vms_list = self.get_vms_list()
-
-        vms_in_table = {}
-
-        self.table.setRowCount(len(vms_list))
-
-        progress = QtGui.QProgressDialog(
-            self.tr(
-                "Loading Qube Manager..."), "", 0, len(vms_list))
-        progress.setWindowTitle(self.tr("Qube Manager"))
-        progress.setMinimumDuration(1000)
-        progress.setCancelButton(None)
-
-        row_no = 0
-        for vm in vms_list:
-            progress.setValue(row_no)
-            vm_row = VmRowInTable(vm, row_no, self.table)
-            vms_in_table[vm.qid] = vm_row
-            row_no += 1
-
-        progress.setValue(row_no)
-
-        self.vms_list = vms_list
-        self.vms_in_table = vms_in_table
-        self.table.setSortingEnabled(True)
 
     def showhide_vms(self):
         if not self.search:
