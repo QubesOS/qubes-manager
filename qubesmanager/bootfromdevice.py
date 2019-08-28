@@ -129,7 +129,7 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
             new_path = None
 
         if error_occurred:
-            QtGui.QMessageBox.warning(
+            QtWidgets.QMessageBox.warning(
                 None,
                 self.tr("Failed to display file selection dialog"),
                 self.tr("Check if the qube {0} can be started and has a file"
