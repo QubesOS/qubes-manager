@@ -52,6 +52,12 @@ cp qubes-backup-restore.desktop $RPM_BUILD_ROOT/usr/share/applications/
 cp qubes-qube-manager.desktop $RPM_BUILD_ROOT/usr/share/applications/
 cp qubes-template-manager.desktop $RPM_BUILD_ROOT/usr/share/applications/
 
+mkdir -p $RPM_BUILD_ROOT/usr/share/desktop-directories/
+cp qubes-tools.directory $RPM_BUILD_ROOT/usr/share/desktop-directories/
+
+mkdir -p $RPM_BUILD_ROOT/etc/xdg/menus/applications-merged/
+cp qubes-tools.menu $RPM_BUILD_ROOT/etc/xdg/menus/applications-merged/
+
 %post
 update-desktop-database &> /dev/null || :
 
@@ -140,6 +146,8 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/applications/qubes-backup-restore.desktop
 /usr/share/applications/qubes-qube-manager.desktop
 /usr/share/applications/qubes-template-manager.desktop
+/usr/share/desktop-directories/qubes-tools.directory
+/etc/xdg/menus/applications-merged/qubes-tools.menu
 
 %changelog
 @CHANGELOG@

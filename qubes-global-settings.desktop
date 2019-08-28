@@ -6,4 +6,4 @@ Terminal=false
 Name=Qubes Global Settings
 GenericName=Qubes Global Settings
 StartupNotify=false
-Categories=System;
+Categories=Settings;X-XFCE-SettingsDialog

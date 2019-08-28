@@ -6,4 +6,4 @@ Terminal=false
 Name=Backup Qubes
 GenericName=Backup Qubes
 StartupNotify=false
-Categories=System;
+Categories=Settings;X-XFCE-SettingsDialog
