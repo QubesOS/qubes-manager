@@ -24,6 +24,7 @@ import sys
 import os
 import os.path
 import traceback
+import subprocess
 from PyQt5 import QtWidgets  # pylint: disable=import-error
 
 from qubesadmin import Qubes
@@ -36,6 +37,21 @@ from configparser import ConfigParser
 
 qmemman_config_path = '/etc/qubes/qmemman.conf'
 
+def _run_qrexec_repo(service, arg=''):
+    # Fake up a "qrexec call" to dom0 because dom0 can't qrexec to itself yet
+    cmd = '/etc/qubes-rpc/' + service
+    p = subprocess.run(
+        ['sudo', cmd, arg],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    if p.stderr:
+        raise RuntimeError('qrexec call stderr was not empty',
+                           {'stderr': p.stderr.decode('utf-8')})
+    if p.returncode != 0:
+        raise RuntimeError('qrexec call exited with non-zero return code',
+                           {'returncode': p.returncode})
+    return p.stdout.decode('utf-8')
 
 # pylint: disable=too-many-instance-attributes
 class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
@@ -102,7 +118,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             )
 
     def __apply_system_defaults__(self):
-        # upatevm
+        # updatevm
         if self.qvm_collection.updatevm != \
                 self.update_vm_vmlist[self.update_vm_combo.currentIndex()]:
             self.qvm_collection.updatevm = \
@@ -231,7 +247,6 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 qmemman_config_file.close()
 
     def __init_updates__(self):
-
         # TODO: remove workaround when it is no longer needed
         self.dom0_updates_file_path = '/var/lib/qubes/updates/disable-updates'
 
@@ -247,6 +262,40 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.updates_vm.setChecked(self.qvm_collection.check_updates_vm)
         self.enable_updates_all.clicked.connect(self.__enable_updates_all)
         self.disable_updates_all.clicked.connect(self.__disable_updates_all)
+
+        self.repos = repos = dict()
+        for i in _run_qrexec_repo('qubes.repos.List').split('\n'):
+            lst = i.split('\0')
+            # Keyed by repo name
+            dct = repos[lst[0]] = dict()
+            dct['prettyname'] = lst[1]
+            dct['enabled'] = lst[2] == 'enabled'
+
+        if repos['qubes-dom0-unstable']['enabled']:
+            self.dom0_updates_repo.setCurrentIndex(3)
+        elif repos['qubes-dom0-current-testing']['enabled']:
+            self.dom0_updates_repo.setCurrentIndex(2)
+        elif repos['qubes-dom0-security-testing']['enabled']:
+            self.dom0_updates_repo.setCurrentIndex(1)
+        elif repos['qubes-dom0-current']['enabled']:
+            self.dom0_updates_repo.setCurrentIndex(0)
+        else:
+            raise Exception('Cannot detect enabled dom0 update repositories')
+
+        if repos['qubes-templates-itl-testing']['enabled']:
+            self.itl_tmpl_updates_repo.setCurrentIndex(1)
+        elif repos['qubes-templates-itl']['enabled']:
+            self.itl_tmpl_updates_repo.setCurrentIndex(0)
+        else:
+            raise Exception('Cannot detect enabled ITL template update '
+                            'repositories')
+
+        if repos['qubes-templates-community-testing']['enabled']:
+            self.comm_tmpl_updates_repo.setCurrentIndex(2)
+        elif repos['qubes-templates-community']['enabled']:
+            self.comm_tmpl_updates_repo.setCurrentIndex(1)
+        else:
+            self.comm_tmpl_updates_repo.setCurrentIndex(0)
 
     def __enable_updates_all(self):
         reply = QtWidgets.QMessageBox.question(
@@ -284,6 +333,68 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         if self.qvm_collection.check_updates_vm != self.updates_vm.isChecked():
             self.qvm_collection.check_updates_vm = self.updates_vm.isChecked()
 
+    def _manage_repos(self, repolist, action):
+        for name in repolist:
+            if self.repos[name]['enabled'] and action == 'Enable' or \
+               not self.repos[name]['enabled'] and action == 'Disable':
+                continue
+
+            try:
+                result = _run_qrexec_repo('qubes.repos.' + action, name)
+                if result != 'ok\n':
+                    raise RuntimeError(
+                        'qrexec call stdout did not contain "ok" as expected',
+                        {'stdout': result})
+            except RuntimeError as ex:
+                msg = '{desc}; {args}'.format(desc=ex.args[0], args=', '.join(
+                      # This is kind of hard to mentally parse but really all
+                      # it does is pretty-print args[1], which is a dictionary
+                      ['{key}: {val}'.format(key=i[0], val=i[1]) for i in
+                       ex.args[1].items()]
+                ))
+                QtWidgets.QMessageBox.warning(
+                    None,
+                    self.tr("ERROR!"),
+                    self.tr("Error managing {repo} repository settings:"
+                            " {msg}".format(repo=name, msg=msg)))
+
+    def _handle_dom0_updates_combobox(self, idx):
+        idx += 1
+        repolist = ['qubes-dom0-current', 'qubes-dom0-security-testing',
+                    'qubes-dom0-current-testing', 'qubes-dom0-unstable']
+        enable = repolist[:idx]
+        disable = repolist[idx:]
+        self._manage_repos(enable, 'Enable')
+        self._manage_repos(disable, 'Disable')
+
+    # pylint: disable=invalid-name
+    def _handle_itl_tmpl_updates_combobox(self, idx):
+        idx += 1
+        repolist = ['qubes-templates-itl', 'qubes-templates-itl-testing']
+        enable = repolist[:idx]
+        disable = repolist[idx:]
+        self._manage_repos(enable, 'Enable')
+        self._manage_repos(disable, 'Disable')
+
+    # pylint: disable=invalid-name
+    def _handle_comm_tmpl_updates_combobox(self, idx):
+        # We don't increment idx by 1 because this is the only combobox that
+        # has an explicit "disable this repository entirely" option
+        repolist = ['qubes-templates-community',
+                    'qubes-templates-community-testing']
+        enable = repolist[:idx]
+        disable = repolist[idx:]
+        self._manage_repos(enable, 'Enable')
+        self._manage_repos(disable, 'Disable')
+
+    def __apply_repos__(self):
+        self._handle_dom0_updates_combobox(
+            self.dom0_updates_repo.currentIndex())
+        self._handle_itl_tmpl_updates_combobox(
+            self.itl_tmpl_updates_repo.currentIndex())
+        self._handle_comm_tmpl_updates_combobox(
+            self.comm_tmpl_updates_repo.currentIndex())
+
     def reject(self):
         self.done(0)
 
@@ -293,7 +404,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.__apply_kernel_defaults__()
         self.__apply_mem_defaults__()
         self.__apply_updates__()
-
+        self.__apply_repos__()
 
 # Bases on the original code by:
 # Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
