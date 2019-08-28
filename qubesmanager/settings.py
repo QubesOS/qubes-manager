@@ -41,7 +41,7 @@ from . import device_list
 
 from .appmenu_select import AppmenuSelectManager
 from . import firewall
-from PyQt4 import QtCore, QtGui  # pylint: disable=import-error
+from PyQt5 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
 
 from . import ui_settingsdlg  # pylint: disable=no-name-in-module
 
@@ -118,7 +118,7 @@ class RefreshAppsVMThread(common_threads.QubesThread):
 
 
 # pylint: disable=too-many-instance-attributes
-class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
+class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
     tabs_indices = collections.OrderedDict((
         ('basic', 0),
         ('advanced', 1),
@@ -148,7 +148,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             assert idx in range(self.tabWidget.count())
             self.tabWidget.setCurrentIndex(idx)
 
-        self.buttonBox.button(QtGui.QDialogButtonBox.Apply).clicked.connect(
+        self.buttonBox.button(QtWidgets.QDialogButtonBox.Apply).clicked.connect(
             self.apply)
 
         self.tabWidget.currentChanged.connect(self.current_tab_changed)
@@ -174,12 +174,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         self.__init_advanced_tab__()
         self.include_in_balancing.stateChanged.connect(
             self.include_in_balancing_changed)
-        self.connect(self.init_mem,
-                     QtCore.SIGNAL("editingFinished()"),
-                     self.check_mem_changes)
-        self.connect(self.max_mem_size,
-                     QtCore.SIGNAL("editingFinished()"),
-                     self.check_mem_changes)
+        self.init_mem.editingFinished.connect(self.check_mem_changes)
+        self.max_mem_size.editingFinished.connect(self.check_mem_changes)
         self.boot_from_device_button.clicked.connect(
             self.boot_from_cdrom_button_pressed)
 
@@ -204,9 +200,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         ####### devices tab
         self.__init_devices_tab__()
-        self.connect(self.dev_list,
-                     QtCore.SIGNAL("selected_changed()"),
-                     self.devices_selection_changed)
+        self.dev_list.selectedChanged.connect(self.devices_selection_changed)
         self.no_strict_reset_button.clicked.connect(
             self.strict_reset_button_pressed)
         self.current_strict_reset_list = []
@@ -237,8 +231,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
                 if thread.msg:
                     (title, msg) = thread.msg
-                    QtGui.QMessageBox.warning(
-                        None,
+                    QtWidgets.QMessageBox.warning(
+                        self,
                         self.tr(title),
                         self.tr(msg))
 
@@ -265,10 +259,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             error = self.__save_changes__()
 
         if error:
-            QtGui.QMessageBox.warning(
+            QtWidgets.QMessageBox.warning(
                 self,
-                self.tr("Error while changing settings for {0}!"\
-                        ).format(self.vm.name),\
+                self.tr("Error while changing settings for {0}!"
+                        ).format(self.vm.name),
                 self.tr("ERROR: {0}").format('\n'.join(error)))
 
     def apply(self):
@@ -328,7 +322,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             netvm is not None and
             not netvm.features.check_with_template('qubes-firewall', False))
         if netvm is None:
-            QtGui.QMessageBox.warning(
+            QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Qube configuration problem!"),
                 self.tr('This qube has networking disabled '
@@ -337,17 +331,17 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                         'please enable networking.')
             )
         if netvm is not None and \
-                not netvm.features.check_with_template(\
+                not netvm.features.check_with_template(
                     'qubes-firewall', False):
-            QtGui.QMessageBox.warning(
+            QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Qube configuration problem!"),
-                self.tr("The '{vm}' qube is network connected to "\
-                        "'{netvm}', which does not support firewall!<br/>"\
-                        "You may edit the '{vm}' qube firewall rules, but "\
-                        "these will not take any effect until you connect it "\
-                        "to a working Firewall qube.").format(\
-                        vm=self.vm.name, netvm=netvm.name))
+                self.tr("The '{vm}' qube is network connected to "
+                        "'{netvm}', which does not support firewall!<br/>"
+                        "You may edit the '{vm}' qube firewall rules, but "
+                        "these will not take any effect until you connect it "
+                        "to a working Firewall qube.").format(
+                    vm=self.vm.name, netvm=netvm.name))
 
     def current_tab_changed(self, idx):
         if idx == self.tabs_indices["firewall"]:
@@ -535,7 +529,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
     def check_mem_changes(self):
         if self.max_mem_size.value() < self.init_mem.value():
-            QtGui.QMessageBox.warning(
+            QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Warning!"),
                 self.tr("Max memory can not be less than initial memory.<br>"
@@ -545,7 +539,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         # max_mem_size/10.79 in order to allow scaling up to
         # max_mem_size (or else "add_memory() failed: -17" problem)
         if self.init_mem.value() * 10 < self.max_mem_size.value():
-            QtGui.QMessageBox.warning(
+            QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Warning!"),
                 self.tr("Initial memory can not be less than one tenth "
@@ -578,7 +572,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         else:
             self.warn_netvm_dispvm.setVisible(False)
 
-
     def rename_vm(self):
 
         dependencies = admin_utils.vm_dependencies(self.vm.app, self.vm)
@@ -588,7 +581,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                                 and vm.is_running()]
 
         if running_dependencies:
-            QtGui.QMessageBox.warning(
+            QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Qube cannot be renamed!"),
                 self.tr(
@@ -598,7 +591,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                         ", ".join(running_dependencies)))
             return
 
-        new_vm_name, ok = QtGui.QInputDialog.getText(
+        new_vm_name, ok = QtWidgets.QInputDialog.getText(
             self,
             self.tr('Rename qube'),
             self.tr('New name: (WARNING: all other changes will be discarded)'))
@@ -608,7 +601,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             self.threads_list.append(thread)
             thread.finished.connect(self.clear_threads)
 
-            self.progress = QtGui.QProgressDialog(
+            self.progress = QtWidgets.QProgressDialog(
                 self.tr(
                     "Renaming Qube..."), "", 0, 0)
             self.progress.setCancelButton(None)
@@ -624,7 +617,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         if dependencies:
             list_text = utils.format_dependencies_list(dependencies)
-            QtGui.QMessageBox.warning(
+            QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Qube cannot be removed!"),
                 self.tr("This qube cannot be removed. It is used as:"
@@ -634,8 +627,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
             return
 
-
-        answer, ok = QtGui.QInputDialog.getText(
+        answer, ok = QtWidgets.QInputDialog.getText(
             self,
             self.tr('Delete qube'),
             self.tr('Are you absolutely sure you want to delete this qube? '
@@ -649,14 +641,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             self.done(0)
 
         elif ok:
-            QtGui.QMessageBox.warning(
+            QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Removal cancelled"),
                 self.tr("The qube will not be removed."))
 
     def clone_vm(self):
 
-        cloned_vm_name, ok = QtGui.QInputDialog.getText(
+        cloned_vm_name, ok = QtWidgets.QInputDialog.getText(
             self,
             self.tr('Clone qube'),
             self.tr('Name for the cloned qube:'))
@@ -666,7 +658,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             thread.finished.connect(self.clear_threads)
             self.threads_list.append(thread)
 
-            self.progress = QtGui.QProgressDialog(
+            self.progress = QtWidgets.QProgressDialog(
                 self.tr(
                     "Cloning Qube..."), "", 0, 0)
             self.progress.setCancelButton(None)
@@ -885,9 +877,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         self.virt_mode.clear()
 
-        self.virt_mode_list, self.virt_mode_idx = utils.prepare_choice(\
-                self.virt_mode, self.vm, 'virt_mode', choices, None,\
-                allow_default=True, transform=(lambda x: str(x).upper()))
+        self.virt_mode_list, self.virt_mode_idx = utils.prepare_choice(
+            self.virt_mode, self.vm, 'virt_mode', choices, None,
+            allow_default=True, transform=(lambda x: str(x).upper()))
 
         if old_mode is not None:
             self.virt_mode.setCurrentIndex(self.virt_mode_list.index(old_mode))
@@ -942,7 +934,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         attached_devs = list(self.vm.devices['pci'].persistent())
 
         # pylint: disable=too-few-public-methods
-        class DevListWidgetItem(QtGui.QListWidgetItem):
+        class DevListWidgetItem(QtWidgets.QListWidgetItem):
             def __init__(self, dev, unknown=False, parent=None):
                 super(DevListWidgetItem, self).__init__(parent)
                 name = dev.ident.replace('_', ":") + ' ' + dev.description
@@ -1088,7 +1080,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             if not feature.startswith('service.'):
                 continue
             service = feature[len('service.'):]
-            item = QtGui.QListWidgetItem(service)
+            item = QtWidgets.QListWidgetItem(service)
             item.setCheckState(ui_settingsdlg.QtCore.Qt.Checked
                                if self.vm.features[feature]
                                else ui_settingsdlg.QtCore.Qt.Unchecked)
@@ -1115,12 +1107,12 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         srv = str(self.service_line_edit.currentText()).strip()
         if srv != "":
             if srv in self.new_srv_dict:
-                QtGui.QMessageBox.information(
+                QtWidgets.QMessageBox.information(
                     self,
                     '',
                     self.tr('Service already on the list!'))
             else:
-                item = QtGui.QListWidgetItem(srv)
+                item = QtWidgets.QListWidgetItem(srv)
                 item.setCheckState(ui_settingsdlg.QtCore.Qt.Checked)
                 self.services_list.addItem(item)
                 self.new_srv_dict[srv] = True
@@ -1164,9 +1156,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
     def set_fw_model(self, model):
         self.fw_model = model
         self.rulesTreeView.setModel(model)
-        self.rulesTreeView.header().setResizeMode(
-            QtGui.QHeaderView.ResizeToContents)
-        self.rulesTreeView.header().setResizeMode(0, QtGui.QHeaderView.Stretch)
+        self.rulesTreeView.header().setSectionResizeMode(
+            QtWidgets.QHeaderView.ResizeToContents)
+        self.rulesTreeView.header().setSectionResizeMode(
+            0, QtWidgets.QHeaderView.Stretch)
         self.set_allow(model.allow)
         if model.temp_full_access_expire_time:
             self.temp_full_access.setChecked(True)
@@ -1244,9 +1237,9 @@ def handle_exception(exc_type, exc_value, exc_traceback):
         strace += "line no.: %d\n" % line
         strace += "file: %s\n" % filename
 
-    msg_box = QtGui.QMessageBox()
+    msg_box = QtWidgets.QMessageBox()
     msg_box.setDetailedText(strace)
-    msg_box.setIcon(QtGui.QMessageBox.Critical)
+    msg_box.setIcon(QtWidgets.QMessageBox.Critical)
     msg_box.setWindowTitle("Houston, we have a problem...")
     msg_box.setText("Whoops. A critical error has occured. "
                     "This is most likely a bug in Qubes Manager.<br><br>"
@@ -1272,7 +1265,7 @@ def main(args=None):
     args = parser.parse_args(args)
     vm = args.domains.pop()
 
-    qapp = QtGui.QApplication(sys.argv)
+    qapp = QtWidgets.QApplication(sys.argv)
     qapp.setOrganizationName('Invisible Things Lab')
     qapp.setOrganizationDomain("https://www.qubes-os.org/")
     qapp.setApplicationName("Qube Settings")

@@ -20,8 +20,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 import datetime
 
-from PyQt4 import QtGui  # pylint: disable=import-error
-from PyQt4 import QtCore  # pylint: disable=import-error
+from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
 # pylint: disable=too-few-public-methods
 
 power_order = QtCore.Qt.DescendingOrder
@@ -31,7 +30,7 @@ update_order = QtCore.Qt.AscendingOrder
 row_height = 30
 
 
-class VmIconWidget(QtGui.QWidget):
+class VmIconWidget(QtWidgets.QWidget):
     def __init__(self, icon_path, enabled=True, size_multiplier=0.7,
                  tooltip=None, parent=None,
                  icon_sz=(32, 32)):   # pylint: disable=unused-argument
@@ -39,13 +38,13 @@ class VmIconWidget(QtGui.QWidget):
 
         self.enabled = enabled
         self.size_multiplier = size_multiplier
-        self.label_icon = QtGui.QLabel()
+        self.label_icon = QtWidgets.QLabel()
         self.set_icon(icon_path)
 
         if tooltip is not None:
             self.label_icon.setToolTip(tooltip)
 
-        layout = QtGui.QHBoxLayout()
+        layout = QtWidgets.QHBoxLayout()
         layout.addWidget(self.label_icon)
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
@@ -72,7 +71,7 @@ class VmIconWidget(QtGui.QWidget):
 
 
 class VmTypeWidget(VmIconWidget):
-    class VmTypeItem(QtGui.QTableWidgetItem):
+    class VmTypeItem(QtWidgets.QTableWidgetItem):
         def __init__(self, value, vm):
             super(VmTypeWidget.VmTypeItem, self).__init__()
             self.value = value
@@ -82,7 +81,7 @@ class VmTypeWidget(VmIconWidget):
         def set_value(self, value):
             self.value = value
 
-        #pylint: disable=too-many-return-statements
+        # pylint: disable=too-many-return-statements
         def __lt__(self, other):
             if self.qid == 0:
                 return True
@@ -120,7 +119,7 @@ class VmTypeWidget(VmIconWidget):
 
 
 class VmLabelWidget(VmIconWidget):
-    class VmLabelItem(QtGui.QTableWidgetItem):
+    class VmLabelItem(QtWidgets.QTableWidgetItem):
         def __init__(self, value, vm):
             super(VmLabelWidget.VmLabelItem, self).__init__()
             self.value = value
@@ -130,7 +129,7 @@ class VmLabelWidget(VmIconWidget):
         def set_value(self, value):
             self.value = value
 
-        #pylint: disable=too-many-return-statements
+        # pylint: disable=too-many-return-statements
         def __lt__(self, other):
             if self.qid == 0:
                 return True
@@ -159,10 +158,11 @@ class VmLabelWidget(VmIconWidget):
             self.set_icon(icon_path)
 
 
-class VmStatusIcon(QtGui.QLabel):
+class VmStatusIcon(QtWidgets.QLabel):
     def __init__(self, vm, parent=None):
         super(VmStatusIcon, self).__init__(parent)
         self.vm = vm
+        self.status = None
         self.set_on_icon()
         self.previous_power_state = self.vm.get_power_state()
 
@@ -191,8 +191,8 @@ class VmStatusIcon(QtGui.QLabel):
         self.setFixedSize(icon_sz)
 
 
-class VmInfoWidget(QtGui.QWidget):
-    class VmInfoItem(QtGui.QTableWidgetItem):
+class VmInfoWidget(QtWidgets.QWidget):
+    class VmInfoItem(QtWidgets.QTableWidgetItem):
         def __init__(self, on_icon, upd_info_item, vm):
             super(VmInfoWidget.VmInfoItem, self).__init__()
             self.on_icon = on_icon
@@ -232,7 +232,7 @@ class VmInfoWidget(QtGui.QWidget):
     def __init__(self, vm, parent=None):
         super(VmInfoWidget, self).__init__(parent)
         self.vm = vm
-        layout = QtGui.QHBoxLayout()
+        layout = QtWidgets.QHBoxLayout()
 
         self.on_icon = VmStatusIcon(vm)
         self.upd_info = VmUpdateInfoWidget(vm, show_text=False)
@@ -243,9 +243,9 @@ class VmInfoWidget(QtGui.QWidget):
         layout.addWidget(self.on_icon)
         layout.addWidget(self.upd_info)
         layout.addWidget(self.error_icon)
-        layout.addItem(QtGui.QSpacerItem(0, 10,
-                                         QtGui.QSizePolicy.Expanding,
-                                         QtGui.QSizePolicy.Expanding))
+        layout.addItem(QtWidgets.QSpacerItem(0, 10,
+                                             QtWidgets.QSizePolicy.Expanding,
+                                             QtWidgets.QSizePolicy.Expanding))
         layout.addWidget(self.blk_icon)
         layout.addWidget(self.rec_icon)
 
@@ -256,15 +256,15 @@ class VmInfoWidget(QtGui.QWidget):
         self.blk_icon.setVisible(False)
         self.error_icon.setVisible(False)
 
-        self.table_item = self.VmInfoItem(self.on_icon,\
-                self.upd_info.table_item, vm)
+        self.table_item = self.VmInfoItem(self.on_icon,
+                                          self.upd_info.table_item, vm)
 
     def update_vm_state(self):
         self.on_icon.update()
         self.upd_info.update_outdated()
 
 
-class VMPropertyItem(QtGui.QTableWidgetItem):
+class VMPropertyItem(QtWidgets.QTableWidgetItem):
     def __init__(self, vm, property_name, empty_function=(lambda x: False),
                  check_default=False):
         """
@@ -327,7 +327,7 @@ class VmTemplateItem(VMPropertyItem):
             font = QtGui.QFont()
             font.setStyle(QtGui.QFont.StyleItalic)
             self.setFont(font)
-            self.setTextColor(QtGui.QColor("gray"))
+            self.setForeground(QtGui.QBrush(QtGui.QColor("gray")))
 
             self.setText(self.vm.klass)
 
@@ -342,8 +342,8 @@ class VmInternalItem(VMPropertyItem):
 
 
 # features man qvm-features
-class VmUpdateInfoWidget(QtGui.QWidget):
-    class VmUpdateInfoItem(QtGui.QTableWidgetItem):
+class VmUpdateInfoWidget(QtWidgets.QWidget):
+    class VmUpdateInfoItem(QtWidgets.QTableWidgetItem):
         def __init__(self, value, vm):
             super(VmUpdateInfoWidget.VmUpdateInfoItem, self).__init__()
             self.value = 0
@@ -371,13 +371,13 @@ class VmUpdateInfoWidget(QtGui.QWidget):
 
     def __init__(self, vm, show_text=True, parent=None):
         super(VmUpdateInfoWidget, self).__init__(parent)
-        layout = QtGui.QHBoxLayout()
+        layout = QtWidgets.QHBoxLayout()
         self.show_text = show_text
         if self.show_text:
-            self.label = QtGui.QLabel("")
+            self.label = QtWidgets.QLabel("")
             layout.addWidget(self.label, alignment=QtCore.Qt.AlignCenter)
         else:
-            self.icon = QtGui.QLabel("")
+            self.icon = QtWidgets.QLabel("")
             layout.addWidget(self.icon, alignment=QtCore.Qt.AlignCenter)
         self.setLayout(layout)
 
@@ -432,6 +432,8 @@ class VmUpdateInfoWidget(QtGui.QWidget):
                 "The Template must be stopped before changes from its "
                 "current session can be picked up by this qube.")
         else:
+            label_text = None
+            tooltip_text = None
             icon_path = None
 
         if hasattr(self, 'icon'):
@@ -445,12 +447,12 @@ class VmUpdateInfoWidget(QtGui.QWidget):
             if icon_path is not None:
                 self.icon = VmIconWidget(icon_path, True, 0.7)
                 self.icon.setToolTip(tooltip_text)
-                self.layout().addWidget(self.icon,\
-                        alignment=QtCore.Qt.AlignCenter)
+                self.layout().addWidget(self.icon,
+                                        alignment=QtCore.Qt.AlignCenter)
                 self.icon.setVisible(True)
 
 
-class VmSizeOnDiskItem(QtGui.QTableWidgetItem):
+class VmSizeOnDiskItem(QtWidgets.QTableWidgetItem):
     def __init__(self, vm):
         super(VmSizeOnDiskItem, self).__init__()
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
