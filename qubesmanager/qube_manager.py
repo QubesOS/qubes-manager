@@ -77,37 +77,55 @@ size_multiplier = 1 #0.7
 class VmInfo():
     def __init__(self, vm):
         self.vm = vm
-        self.update()
-
-    def update(self):
         self.name = self.vm.name
         self.klass = self.vm.klass
-        self.label = self.vm.label
-        self.netvm = getattr(self.vm, 'netvm', None)
-        if self.netvm:
-            self.netvm = self.netvm.name
+        self.update(True)
 
-        self.ip = getattr(self.vm, 'ip', None)
-        self.inc_backup = getattr(self.vm, 'include__in_backups', None)
-
-        self.last_backup = getattr(self.vm, 'backup_timestamp', None)
-        if self.last_backup:
-            self.last_backup = str(datetime.fromtimestamp(
-                self.last_backup))
-
+    def update(self, update_size_on_disk=False, event=None):
+        """
+        Update VmInfo
+        :param update_size_on_disk: should disk utilization be updated?
+        :param event: name of the event that caused the update, to avoid
+        updating unnecessary properties; if event is none, update everything
+        :return: None
+        """
         try:
-            self.template = self.vm.template.name
-        except:
-            self.template = self.vm.klass
+            self.state = self.vm.get_power_state()
+            if not event or event.endswith(':label'):
+                self.label = self.vm.label
+            if not event or event.endswith(':template'):
+                try:
+                    self.template = self.vm.template.name
+                except:
+                    self.template = self.vm.klass
+            if not event or event.endswith(':netvm'):
+                self.netvm = getattr(self.vm, 'netvm', None)
+                if self.netvm:
+                    self.netvm = self.netvm.name
+            if not event or event.endswith(':internal'):
+                self.internal = "Yes" if self.vm.features.get('internal', False) else ""
+            if not event or event.endswith(':ip'):
+                self.ip = getattr(self.vm, 'ip', None)
+            if not event or event.endswith(':include_in_backups'):
+                self.inc_backup = getattr(self.vm, 'include_in_backups', None)
+            if not event or event.endswith(':backup_timestamp'):
+                self.last_backup = getattr(self.vm, 'backup_timestamp', None)
+                if self.last_backup:
+                    self.last_backup = str(datetime.fromtimestamp(
+                        self.last_backup))
+            if not event or event.endswith(':default_dispvm'):
+                self.dvm = getattr(self.vm, 'default_dispvm', None)
+            if not event or event.endswith(':template_for_dispvms'):
+                self.dvm_template = getattr(self.vm, 'template_for_dispvms', None)
+            if update_size_on_disk:
+                self.disk = str(round(self.vm.get_disk_utilization()/(1024*1024),2))+"MiB"
+        except exc.QubesPropertyAccessError:
+            pass
+        except exc.QubesDaemonNoResponseError:
+            # TODO: this will be fixed by a rewrite moving the event system to
+            # AdminAPI
+            pass
 
-        self.disk = str(round(self.vm.get_disk_utilization()/(1024*1024),2))+"MiB"
-        self.state = self.vm.get_power_state()
-
-        self.internal = "Yes" if self.vm.features.get('internal', False) else ""
-        self.updates = "Yes" if self.vm.features.get('updates-available', False) else ""
-
-        self.dvm = getattr(self.vm, 'default_dispvm', None)
-        self.dvm_template = getattr(self.vm, 'template_for_dispvms', None)
 
 class QubesTableModel(QtCore.QAbstractTableModel):
     def __init__(self, qubes_app):
