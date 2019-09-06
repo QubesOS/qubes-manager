@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 #
 # The Qubes OS Project, http://www.qubes-os.org
 #
@@ -37,7 +37,8 @@ from .ui_newappvmdlg import Ui_NewVMDlg  # pylint: disable=import-error
 
 # pylint: disable=too-few-public-methods
 class CreateVMThread(QtCore.QThread):
-    def __init__(self, app, vmclass, name, label, template, properties):
+    def __init__(self, app, vmclass, name, label, template, properties,
+                 pool):
         QtCore.QThread.__init__(self)
         self.app = app
         self.vmclass = vmclass
@@ -45,6 +46,7 @@ class CreateVMThread(QtCore.QThread):
         self.label = label
         self.template = template
         self.properties = properties
+        self.pool = pool
         self.msg = None
 
     def run(self):
@@ -54,15 +56,29 @@ class CreateVMThread(QtCore.QThread):
                     src_vm = self.app.default_template
                 else:
                     src_vm = self.template
-                vm = self.app.clone_vm(src_vm, self.name, self.vmclass,
-                                       ignore_volumes=['private'])
+
+                args = {
+                    'ignore_volumes': ['private']
+                }
+                if self.pool:
+                    args['pool'] = self.pool
+
+                vm = self.app.clone_vm(src_vm, self.name, self.vmclass, **args)
+
                 vm.label = self.label
                 for k, v in self.properties.items():
                     setattr(vm, k, v)
             else:
-                vm = self.app.add_new_vm(
-                    self.vmclass, name=self.name,
-                    label=self.label, template=self.template)
+                args = {
+                    "name": self.name,
+                    "label": self.label,
+                    "template": self.template
+                }
+                if self.pool:
+                    args['pool'] = self.pool
+
+                vm = self.app.add_new_vm(self.vmclass, **args)
+
                 for k, v in self.properties.items():
                     setattr(vm, k, v)
 
@@ -106,6 +122,16 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
             self.app.default_netvm,
             (lambda vm: vm.provides_network),
             allow_internal=False, allow_default=True, allow_none=True)
+
+        self.pool_list, self.pool_idx = utils.prepare_choice(
+            widget=self.storage_pool,
+            holder=None,
+            propname=None,
+            choice=self.app.pools.values(),
+            default=self.app.default_pool,
+            allow_default=True,
+            allow_none=False
+        )
 
         self.name.setValidator(QtGui.QRegExpValidator(
             QtCore.QRegExp("[a-zA-Z0-9_-]*", QtCore.Qt.CaseInsensitive), None))
@@ -163,8 +189,17 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
             properties['virt_mode'] = 'hvm'
             properties['kernel'] = None
 
+        if self.pool_list[self.storage_pool.currentIndex()] is not \
+                qubesadmin.DEFAULT:
+            pool = self.pool_list[self.storage_pool.currentIndex()]
+        else:
+            pool = None
+
+        if self.init_ram.value() > 0:
+            properties['memory'] = self.init_ram.value()
+
         self.thread = CreateVMThread(
-            self.app, vmclass, name, label, template, properties)
+            self.app, vmclass, name, label, template, properties, pool)
         self.thread.finished.connect(self.create_finished)
         self.thread.start()
 
