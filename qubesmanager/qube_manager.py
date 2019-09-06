@@ -484,6 +484,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
 
         self.fill_table()
 
+        self.table.resizeColumnsToContents()
+
         self.update_size_on_disk = False
         self.shutdown_monitor = {}
 
