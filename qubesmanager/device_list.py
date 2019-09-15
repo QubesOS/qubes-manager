@@ -18,10 +18,10 @@
 #
 
 from . import ui_devicelist  # pylint: disable=no-name-in-module
-from PyQt4 import QtGui, QtCore  # pylint: disable=import-error
+from PyQt5 import QtWidgets  # pylint: disable=import-error
 
 
-class PCIDeviceListWindow(ui_devicelist.Ui_Dialog, QtGui.QDialog):
+class PCIDeviceListWindow(ui_devicelist.Ui_Dialog, QtWidgets.QDialog):
     def __init__(self, vm, qapp, dev_list, no_strict_reset_list, parent=None):
         super(PCIDeviceListWindow, self).__init__(parent)
 
@@ -32,10 +32,8 @@ class PCIDeviceListWindow(ui_devicelist.Ui_Dialog, QtGui.QDialog):
 
         self.setupUi(self)
 
-        self.connect(
-            self.buttonBox, QtCore.SIGNAL("accepted()"), self.save_and_apply)
-        self.connect(
-            self.buttonBox, QtCore.SIGNAL("rejected()"), self.reject)
+        self.buttonBox.accepted.connect(self.save_and_apply)
+        self.buttonBox.rejected.connect(self.reject)
 
         self.ident_list = {}
         self.fill_device_list()

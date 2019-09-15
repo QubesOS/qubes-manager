@@ -6,4 +6,4 @@ Terminal=false
 Name=Qube Manager
 GenericName=Qube Manager
 StartupNotify=false
-Categories=System;
+Categories=Settings;X-XFCE-SettingsDialog

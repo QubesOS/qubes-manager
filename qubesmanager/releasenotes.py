@@ -20,7 +20,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #
-from PyQt4.QtGui import QDialog  # pylint: disable=import-error
+from PyQt5.QtWidgets import QDialog  # pylint: disable=import-error
 
 from . import ui_releasenotes  # pylint: disable=no-name-in-module
 

@@ -30,8 +30,8 @@ from qubesadmin import utils as admin_utils
 from qubesadmin import events
 from qubes.storage.file import get_disk_usage
 
-from PyQt4 import QtCore  # pylint: disable=import-error
-from PyQt4 import QtGui  # pylint: disable=import-error
+from PyQt5 import QtCore  # pylint: disable=import-error
+from PyQt5 import QtWidgets  # pylint: disable=import-error
 from . import ui_backupdlg  # pylint: disable=no-name-in-module
 from . import multiselectwidget
 
@@ -44,6 +44,7 @@ import sys
 import os
 import asyncio
 from contextlib import suppress
+
 
 # pylint: disable=too-few-public-methods
 class BackupThread(QtCore.QThread):
@@ -67,7 +68,7 @@ class BackupThread(QtCore.QThread):
             self.msg = '\n'.join(msg)
 
 
-class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
+class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
     def __init__(self, qt_app, qubes_app, dispatcher, parent=None):
         super(BackupVMsWindow, self).__init__(parent)
 
@@ -86,34 +87,21 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
         self.select_vms_widget = multiselectwidget.MultiSelectWidget(self)
         self.verticalLayout.insertWidget(1, self.select_vms_widget)
 
-        self.connect(self, QtCore.SIGNAL("currentIdChanged(int)"),
-                     self.current_page_changed)
-        self.connect(self.select_vms_widget,
-                     QtCore.SIGNAL("items_removed(PyQt_PyObject)"),
-                     self.vms_removed)
-        self.connect(self.select_vms_widget,
-                     QtCore.SIGNAL("items_added(PyQt_PyObject)"),
-                     self.vms_added)
-        self.dir_line_edit.connect(self.dir_line_edit,
-                                   QtCore.SIGNAL("textChanged(QString)"),
-                                   self.backup_location_changed)
+        self.currentIdChanged.connect(self.current_page_changed)
+        self.select_vms_widget.itemsRemoved.connect(self.vms_removed)
+        self.select_vms_widget.itemsAdded.connect(self.vms_added)
+        self.dir_line_edit.textChanged.connect(self.backup_location_changed)
 
         self.select_vms_page.isComplete = self.has_selected_vms
         self.select_dir_page.isComplete = self.has_selected_dir_and_pass
         # FIXME
         # this causes to run isComplete() twice, I don't know why
-        self.select_vms_page.connect(
-                self.select_vms_widget,
-                QtCore.SIGNAL("selected_changed()"),
-                QtCore.SIGNAL("completeChanged()"))
-        self.passphrase_line_edit.connect(
-                self.passphrase_line_edit,
-                QtCore.SIGNAL("textChanged(QString)"),
-                self.backup_location_changed)
-        self.passphrase_line_edit_verify.connect(
-                self.passphrase_line_edit_verify,
-                QtCore.SIGNAL("textChanged(QString)"),
-                self.backup_location_changed)
+        self.select_vms_widget.selectedChanged.connect(
+            self.select_vms_page.completeChanged.emit)
+        self.passphrase_line_edit.textChanged.connect(
+            self.backup_location_changed)
+        self.passphrase_line_edit_verify.textChanged.connect(
+            self.backup_location_changed)
 
         self.total_size = 0
 
@@ -173,8 +161,8 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
         except FileNotFoundError:
             return
         except exc.QubesException:
-            QtGui.QMessageBox.information(
-                None, self.tr("Error loading backup profile"),
+            QtWidgets.QMessageBox.information(
+                self, self.tr("Error loading backup profile"),
                 self.tr("Unable to load saved backup profile."))
             return
         if not profile_data:
@@ -216,7 +204,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
 
         backup_utils.write_backup_profile(settings, use_temp)
 
-    class VmListItem(QtGui.QListWidgetItem):
+    class VmListItem(QtWidgets.QListWidgetItem):
         # pylint: disable=too-few-public-methods
         def __init__(self, vm):
             self.vm = vm
@@ -276,32 +264,31 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
         elif self.currentPage() is self.select_dir_page:
             backup_location = str(self.dir_line_edit.text())
             if not backup_location:
-                QtGui.QMessageBox.information(
-                    None, self.tr("Wait!"),
+                QtWidgets.QMessageBox.information(
+                    self, self.tr("Wait!"),
                     self.tr("Enter backup target location first."))
                 return False
             if self.appvm_combobox.currentText() == "dom0" \
                     and not os.path.isdir(backup_location):
-                QtGui.QMessageBox.information(
-                    None, self.tr("Wait!"),
+                QtWidgets.QMessageBox.information(
+                    self, self.tr("Wait!"),
                     self.tr("Selected directory do not exists or "
                             "not a directory (%s).") % backup_location)
                 return False
             if not self.passphrase_line_edit.text():
-                QtGui.QMessageBox.information(
-                    None, self.tr("Wait!"),
+                QtWidgets.QMessageBox.information(
+                    self, self.tr("Wait!"),
                     self.tr("Enter passphrase for backup "
                             "encryption/verification first."))
                 return False
             if self.passphrase_line_edit.text() !=\
                     self.passphrase_line_edit_verify.text():
-                QtGui.QMessageBox.information(
-                    None, self.tr("Wait!"),
+                QtWidgets.QMessageBox.information(
+                    self, self.tr("Wait!"),
                     self.tr("Enter the same passphrase in both fields."))
                 return False
 
         return True
-
 
     @staticmethod
     def cleanup_temporary_files():
@@ -310,7 +297,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
         except FileNotFoundError:
             pass
 
-    def current_page_changed(self, page_id): # pylint: disable=unused-argument
+    def current_page_changed(self, page_id):  # pylint: disable=unused-argument
         old_sigchld_handler = signal.signal(signal.SIGCHLD, signal.SIG_DFL)
         if self.currentPage() is self.confirm_page:
 
@@ -347,7 +334,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
     def backup_finished(self):
         if self.thread.msg:
             self.progress_status.setText(self.tr("Backup error."))
-            QtGui.QMessageBox.warning(
+            QtWidgets.QMessageBox.warning(
                 self, self.tr("Backup error!"),
                 self.tr("ERROR: {}").format(
                     self.thread.msg))
@@ -383,7 +370,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
                 'dom0', 'admin.backup.Cancel',
                 backup_utils.get_profile_name(True))
             self.thread.wait()
-            QtGui.QMessageBox.warning(
+            QtWidgets.QMessageBox.warning(
                 self, self.tr("Backup aborted!"),
                 self.tr("ERROR: {}").format("Aborted!"))
 
@@ -403,7 +390,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
 
     def backup_location_changed(self, new_dir=None):
         # pylint: disable=unused-argument
-        self.select_dir_page.emit(QtCore.SIGNAL("completeChanged()"))
+        self.select_dir_page.completeChanged.emit()
 
 
 # Bases on the original code by:
@@ -414,13 +401,14 @@ def handle_exception(exc_type, exc_value, exc_traceback):
     filename = os.path.basename(filename)
     error = "%s: %s" % (exc_type.__name__, exc_value)
 
-    QtGui.QMessageBox.critical(
+    QtWidgets.QMessageBox.critical(
         None,
         "Houston, we have a problem...",
         "Whoops. A critical error has occured. This is most likely a bug "
         "in Qubes Global Settings application.<br><br><b><i>%s</i></b>" %
         error + "at <b>line %d</b> of file <b>%s</b>.<br/><br/>"
         % (line, filename))
+
 
 def loop_shutdown():
     pending = asyncio.Task.all_tasks()
@@ -430,7 +418,7 @@ def loop_shutdown():
 
 
 def main():
-    qt_app = QtGui.QApplication(sys.argv)
+    qt_app = QtWidgets.QApplication(sys.argv)
     qt_app.setOrganizationName("The Qubes Project")
     qt_app.setOrganizationDomain("http://qubes-os.org")
     qt_app.setApplicationName("Qubes Backup VMs")
@@ -452,7 +440,7 @@ def main():
             asyncio.ensure_future(dispatcher.listen_for_events()))
     except asyncio.CancelledError:
         pass
-    except Exception: # pylint: disable=broad-except
+    except Exception:  # pylint: disable=broad-except
         loop_shutdown()
         exc_type, exc_value, exc_traceback = sys.exc_info()[:3]
         handle_exception(exc_type, exc_value, exc_traceback)

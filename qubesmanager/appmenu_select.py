@@ -20,22 +20,23 @@
 #
 
 import subprocess
+import PyQt5.QtWidgets  # pylint: disable=import-error
 
-import PyQt4.QtGui  # pylint: disable=import-error
 
 # TODO description in tooltip
 # TODO icon
 # pylint: disable=too-few-public-methods
-class AppListWidgetItem(PyQt4.QtGui.QListWidgetItem):
-    def __init__(self, name, ident, parent=None):
+class AppListWidgetItem(PyQt5.QtWidgets.QListWidgetItem):
+    def __init__(self, name, ident, tooltip=None, parent=None):
         super(AppListWidgetItem, self).__init__(name, parent)
-#       self.setToolTip(command)
+        if tooltip:
+            self.setToolTip(tooltip)
         self.ident = ident
 
     @classmethod
     def from_line(cls, line):
-        ident, _icon_name, name = line.strip().split(maxsplit=2)
-        return cls(name=name, ident=ident)
+        ident, name, comment = line.split('|', maxsplit=3)
+        return cls(name=name, ident=ident, tooltip=comment)
 
 
 class AppmenuSelectManager:
@@ -58,9 +59,10 @@ class AppmenuSelectManager:
         self.app_list.clear()
 
         available_appmenus = [AppListWidgetItem.from_line(line)
-            for line in subprocess.check_output(['qvm-appmenus',
-                    '--get-available', '--i-understand-format-is-unstable',
-                    self.vm.name]).decode().splitlines()]
+            for line in subprocess.check_output(
+                ['qvm-appmenus', '--get-available',
+                 '--i-understand-format-is-unstable', '--file-field',
+                 'Comment', self.vm.name]).decode().splitlines()]
 
         for app in available_appmenus:
             if app.ident in self.whitelisted:
@@ -73,7 +75,7 @@ class AppmenuSelectManager:
 
     def save_appmenu_select_changes(self):
         new_whitelisted = [self.app_list.selected_list.item(i).ident
-            for i in range(self.app_list.selected_list.count())]
+                           for i in range(self.app_list.selected_list.count())]
 
         if set(new_whitelisted) == set(self.whitelisted):
             return False

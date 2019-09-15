@@ -6,4 +6,4 @@ Terminal=false
 Name=Qubes Template Manager
 GenericName=Qubes Template Manager
 StartupNotify=false
-Categories=System;
+Categories=Settings;X-XFCE-SettingsDialog

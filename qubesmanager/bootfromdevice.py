@@ -21,12 +21,13 @@ import sys
 import subprocess
 from . import utils
 from . import ui_bootfromdevice  # pylint: disable=no-name-in-module
-from PyQt4 import QtGui, QtCore  # pylint: disable=import-error
+from PyQt5 import QtWidgets  # pylint: disable=import-error
 from qubesadmin import tools
 from qubesadmin.tools import qvm_start
 
 
-class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
+class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
+                             QtWidgets.QDialog):
     def __init__(self, vm, qapp, parent=None):
         super(VMBootFromDeviceWindow, self).__init__(parent)
 
@@ -37,11 +38,8 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
         self.setWindowTitle(
             self.tr("Boot {vm} from device").format(vm=self.vm.name))
 
-        self.connect(
-            self.buttonBox,
-            QtCore.SIGNAL("accepted()"),
-            self.save_and_apply)
-        self.connect(self.buttonBox, QtCore.SIGNAL("rejected()"), self.reject)
+        self.buttonBox.accepted.connect(self.save_and_apply)
+        self.buttonBox.rejected.connect(self.reject)
 
         # populate buttons and such
         self.__init_buttons__()
@@ -59,8 +57,8 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
                 self.vm_list[self.fileVM.currentIndex()]) + \
                              ":" + self.pathText.text()
         else:
-            QtGui.QMessageBox.warning(
-                None,
+            QtWidgets.QMessageBox.warning(
+                self,
                 self.tr("ERROR!"),
                 self.tr("No file or block device selected; please select one."))
             return
@@ -74,8 +72,8 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
 
     def __warn_if_running__(self):
         if self.vm.is_running():
-            QtGui.QMessageBox.warning(
-                None,
+            QtWidgets.QMessageBox.warning(
+                self,
                 self.tr("Warning!"),
                 self.tr("Qube must be turned off before booting it from "
                         "device. Please turn off the qube.")
@@ -102,7 +100,7 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
             self.vm,
             None,
             [device for domain in self.vm.app.domains
-                    for device in domain.devices["block"]],
+             for device in domain.devices["block"]],
             None,
             None,
             allow_default=False, allow_none=False
@@ -131,7 +129,7 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
             new_path = None
 
         if error_occurred:
-            QtGui.QMessageBox.warning(
+            QtWidgets.QMessageBox.warning(
                 None,
                 self.tr("Failed to display file selection dialog"),
                 self.tr("Check if the qube {0} can be started and has a file"
@@ -149,7 +147,7 @@ def main(args=None):
     args = parser.parse_args(args)
     vm = args.domains.pop()
 
-    qapp = QtGui.QApplication(sys.argv)
+    qapp = QtWidgets.QApplication(sys.argv)
     qapp.setOrganizationName('Invisible Things Lab')
     qapp.setOrganizationDomain("https://www.qubes-os.org/")
     qapp.setApplicationName("Boot Qube From Device")
@@ -162,6 +160,7 @@ def main(args=None):
 
     qapp.exec_()
     qapp.exit()
+
 
 if __name__ == "__main__":
     main()

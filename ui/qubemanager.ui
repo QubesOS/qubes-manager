@@ -136,7 +136,7 @@
        <number>10</number>
       </property>
       <property name="columnCount">
-       <number>13</number>
+       <number>14</number>
       </property>
       <attribute name="horizontalHeaderCascadingSectionResizes">
        <bool>false</bool>
@@ -248,6 +248,11 @@ Template</string>
 Template</string>
        </property>
       </column>
+      <column>
+       <property name="text">
+        <string>Virtualization Mode</string>
+       </property>
+      </column>
      </widget>
     </item>
    </layout>
@@ -291,6 +296,7 @@ Template</string>
     <addaction name="action_last_backup"/>
     <addaction name="action_dispvm_template"/>
     <addaction name="action_is_dvm_template"/>
+    <addaction name="action_virt_mode"/>
     <addaction name="separator"/>
     <addaction name="action_toolbar"/>
     <addaction name="action_menubar"/>
@@ -871,6 +877,17 @@ Template</string>
    </property>
    <property name="toolTip">
     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;DisposableVM Template&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Allows using this qube as a template for DisposableVMs. The DisposableVMs will inherit the VM's state (configuration, installed programs etc.), but their state will not persist between restarts. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+  </action>
+  <action name="action_virt_mode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Virtualization Mode</string>
    </property>
   </action>
  </widget>

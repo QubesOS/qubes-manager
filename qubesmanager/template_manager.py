@@ -32,10 +32,7 @@ from qubesadmin import Qubes
 from qubesadmin import exc
 from qubesadmin import events
 
-from PyQt4 import QtGui  # pylint: disable=import-error
-from PyQt4 import QtCore  # pylint: disable=import-error
-from PyQt4 import Qt  # pylint: disable=import-error
-
+from PyQt5 import QtWidgets, QtGui, QtCore  # pylint: disable=import-error
 
 from . import ui_templatemanager  # pylint: disable=no-name-in-module
 
@@ -43,7 +40,7 @@ column_names = ['State', 'Qube', 'Current template', 'New template']
 
 
 class TemplateManagerWindow(
-        ui_templatemanager.Ui_MainWindow, QtGui.QMainWindow):
+        ui_templatemanager.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def __init__(self, qt_app, qubes_app, dispatcher, parent=None):
         # pylint: disable=unused-argument
@@ -61,11 +58,11 @@ class TemplateManagerWindow(
         self.prepare_lists()
         self.initialize_table_events()
 
-        self.buttonBox.button(QtGui.QDialogButtonBox.Ok).clicked.connect(
+        self.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).clicked.connect(
             self.apply)
-        self.buttonBox.button(QtGui.QDialogButtonBox.Cancel).clicked.connect(
-            self.cancel)
-        self.buttonBox.button(QtGui.QDialogButtonBox.Reset).clicked.connect(
+        self.buttonBox.button(
+            QtWidgets.QDialogButtonBox.Cancel).clicked.connect(self.cancel)
+        self.buttonBox.button(QtWidgets.QDialogButtonBox.Reset).clicked.connect(
             self.reset)
 
         self.change_all_combobox.currentIndexChanged.connect(
@@ -118,7 +115,7 @@ class TemplateManagerWindow(
     def vm_added(self, _submitter, _event, vm, **_kwargs):
         # unfortunately, a VM just in the moment of creation may not have
         # a template it will have in a second - e.g., when cloning
-        timer = Qt.QTimer()
+        timer = QtCore.QTimer()
         timer.setSingleShot(True)
         timer.timeout.connect(lambda: self._vm_added(vm, timer))
         self.timers.append(timer)
@@ -239,7 +236,7 @@ class TemplateManagerWindow(
                     errors[vm] = str(ex)
         if errors:
             error_messages = [vm + ": " + errors[vm] for vm in errors]
-            QtGui.QMessageBox.warning(
+            QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Errors encountered!"),
                 self.tr(
@@ -248,7 +245,7 @@ class TemplateManagerWindow(
         self.close()
 
 
-class VMNameItem(QtGui.QTableWidgetItem):
+class VMNameItem(QtWidgets.QTableWidgetItem):
     # pylint: disable=too-few-public-methods
     def __init__(self, vm):
         super(VMNameItem, self).__init__()
@@ -258,7 +255,7 @@ class VMNameItem(QtGui.QTableWidgetItem):
         self.setIcon(QtGui.QIcon.fromTheme(vm.label.icon))
 
 
-class StatusItem(QtGui.QTableWidgetItem):
+class StatusItem(QtWidgets.QTableWidgetItem):
     def __init__(self, vm):
         super(StatusItem, self).__init__()
         self.vm = vm
@@ -281,7 +278,7 @@ class StatusItem(QtGui.QTableWidgetItem):
         return self.state < other.state
 
 
-class CurrentTemplateItem(QtGui.QTableWidgetItem):
+class CurrentTemplateItem(QtWidgets.QTableWidgetItem):
     # pylint: disable=too-few-public-methods
     def __init__(self, vm):
         super(CurrentTemplateItem, self).__init__()
@@ -295,7 +292,7 @@ class CurrentTemplateItem(QtGui.QTableWidgetItem):
         return self.text() < other.text()
 
 
-class NewTemplateItem(QtGui.QComboBox):
+class NewTemplateItem(QtWidgets.QComboBox):
     def __init__(self, vm, templates, table_widget):
         super(NewTemplateItem, self).__init__()
         self.vm = vm
@@ -331,7 +328,7 @@ class VMRow:
         # state
         self.state_item = StatusItem(self.vm)
         table_widget.setItem(row_no, columns.index('State'), self.state_item)
-        self.checkbox = QtGui.QCheckBox()
+        self.checkbox = QtWidgets.QCheckBox()
 
         # icon and name
         self.name_item = VMNameItem(self.vm)
@@ -343,7 +340,7 @@ class VMRow:
                              self.current_item)
 
         # new template
-        self.dummy_new_item = QtGui.QTableWidgetItem("qube is running")
+        self.dummy_new_item = QtWidgets.QTableWidgetItem("qube is running")
         self.new_item = NewTemplateItem(self.vm, templates, table_widget)
 
         table_widget.setItem(row_no, columns.index('New template'),
@@ -367,7 +364,7 @@ class VMRow:
         if not is_running:
             self.new_item = NewTemplateItem(self.vm, self.templates,
                                             self.table_widget)
-            self.checkbox = QtGui.QCheckBox()
+            self.checkbox = QtWidgets.QCheckBox()
 
             self.table_widget.setCellWidget(
                 row, column_names.index('New template'), self.new_item)
@@ -408,9 +405,9 @@ def handle_exception(exc_type, exc_value, exc_traceback):
         strace += "line no.: %d\n" % line
         strace += "file: %s\n" % filename
 
-    msg_box = QtGui.QMessageBox()
+    msg_box = QtWidgets.QMessageBox()
     msg_box.setDetailedText(strace)
-    msg_box.setIcon(QtGui.QMessageBox.Critical)
+    msg_box.setIcon(QtWidgets.QMessageBox.Critical)
     msg_box.setWindowTitle("Houston, we have a problem...")
     msg_box.setText("Whoops. A critical error has occured. "
                     "This is most likely a bug in Qubes Manager.<br><br>"
@@ -429,7 +426,7 @@ def loop_shutdown():
 
 
 def main():
-    qt_app = QtGui.QApplication(sys.argv)
+    qt_app = QtWidgets.QApplication(sys.argv)
     qt_app.setOrganizationName("The Qubes Project")
     qt_app.setOrganizationDomain("http://qubes-os.org")
     qt_app.setApplicationName("Qube Manager")
@@ -450,7 +447,7 @@ def main():
             asyncio.ensure_future(dispatcher.listen_for_events()))
     except asyncio.CancelledError:
         pass
-    except Exception: # pylint: disable=broad-except
+    except Exception:  # pylint: disable=broad-except
         loop_shutdown()
         exc_type, exc_value, exc_traceback = sys.exc_info()[:3]
         handle_exception(exc_type, exc_value, exc_traceback)

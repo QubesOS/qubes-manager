@@ -24,16 +24,18 @@ import os
 import re
 import qubesadmin
 
-from PyQt4.QtGui import QIcon  # pylint: disable=import-error
+from PyQt5.QtGui import QIcon  # pylint: disable=import-error
+
 
 def _filter_internal(vm):
     return (not vm.klass == 'AdminVM'
-        and not vm.features.get('internal', False))
+            and not vm.features.get('internal', False))
+
 
 def prepare_choice(widget, holder, propname, choice, default,
-        filter_function=None, *,
-        icon_getter=None, allow_internal=None, allow_default=False,
-        allow_none=False, transform=None):
+                   filter_function=None, *,
+                   icon_getter=None, allow_internal=None, allow_default=False,
+                   allow_none=False, transform=None):
 
     # for newly created vms, set propname to None
 
@@ -144,10 +146,12 @@ def prepare_label_choice(widget, holder, propname, default, *args, **kwargs):
         app = holder
 
     return prepare_choice(widget, holder, propname,
-        sorted(app.labels.values(), key=lambda l: l.index),
-        default, *args,
-        icon_getter=(lambda label: QIcon.fromTheme(label.icon)),
-        **kwargs)
+                          sorted(app.labels.values(), key=lambda l: l.index),
+                          default, *args,
+                          icon_getter=(lambda label:
+                                       QIcon.fromTheme(label.icon)),
+                          **kwargs)
+
 
 def prepare_vm_choice(widget, holder, propname, default, *args, **kwargs):
     try:
@@ -156,10 +160,12 @@ def prepare_vm_choice(widget, holder, propname, default, *args, **kwargs):
         app = holder
 
     return prepare_choice(widget, holder, propname, app.domains, default,
-        *args, **kwargs)
+                          *args, **kwargs)
+
 
 def is_debug():
     return os.getenv('QUBES_MANAGER_DEBUG', '') not in ('', '0')
+
 
 def debug(*args, **kwargs):
     if not is_debug():

@@ -1,12 +1,13 @@
-from PyQt4 import QtCore, QtGui  # pylint: disable=import-error
-from . import ui_multiselectwidget # pylint: disable=no-name-in-module
+from PyQt5 import QtCore, QtWidgets  # pylint: disable=import-error
+from . import ui_multiselectwidget  # pylint: disable=no-name-in-module
+
 
 class MultiSelectWidget(
-    ui_multiselectwidget.Ui_MultiSelectWidget, QtGui.QWidget):
+        ui_multiselectwidget.Ui_MultiSelectWidget, QtWidgets.QWidget):
 
-    __pyqtSignals__ = ("selected_changed()",)
-    __pyqtSignals__ = ("items_added(PyQt_PyObject)",)
-    __pyqtSignals__ = ("items_removed(PyQt_PyObject)",)
+    selectedChanged = QtCore.pyqtSignal()
+    itemsAdded = QtCore.pyqtSignal(list)
+    itemsRemoved = QtCore.pyqtSignal(list)
 
     def __init__(self, parent=None):
         super(MultiSelectWidget, self).__init__(parent)
@@ -16,9 +17,9 @@ class MultiSelectWidget(
         self.remove_selected_button.clicked.connect(self.remove_selected)
         self.remove_all_button.clicked.connect(self.remove_all)
         self.available_list.setSelectionMode(
-            QtGui.QAbstractItemView.ExtendedSelection)
+            QtWidgets.QAbstractItemView.ExtendedSelection)
         self.selected_list.setSelectionMode(
-            QtGui.QAbstractItemView.ExtendedSelection)
+            QtWidgets.QAbstractItemView.ExtendedSelection)
 
     def switch_selected(self, src, dst):
         selected = src.selectedItems()
@@ -30,11 +31,11 @@ class MultiSelectWidget(
             dst.addItem(item)
             items.append(item)
         dst.sortItems()
-        self.emit(QtCore.SIGNAL("selected_changed()"))
+        self.selectedChanged.emit()
         if src is self.selected_list:
-            self.emit(QtCore.SIGNAL("items_removed(PyQt_PyObject)"), items)
+            self.itemsRemoved.emit(items)
         else:
-            self.emit(QtCore.SIGNAL("items_added(PyQt_PyObject)"), items)
+            self.itemsAdded.emit(items)
 
     def add_selected(self):
         self.switch_selected(self.available_list, self.selected_list)
@@ -49,12 +50,11 @@ class MultiSelectWidget(
             dst.addItem(item)
             items.append(item)
         dst.sortItems()
-        self.emit(QtCore.SIGNAL("selected_changed()"))
+        self.selectedChanged.emit()
         if src is self.selected_list:
-            self.emit(QtCore.SIGNAL("items_removed(PyQt_PyObject)"), items)
+            self.itemsRemoved.emit(items)
         else:
-            self.emit(QtCore.SIGNAL("items_added(PyQt_PyObject)"), items)
-
+            self.itemsAdded.emit(items)
 
     def add_all(self):
         self.move_all(self.available_list, self.selected_list)

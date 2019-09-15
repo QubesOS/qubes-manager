@@ -8,7 +8,7 @@ Vendor:		Invisible Things Lab
 License:	GPL
 URL:		http://fixme
 Requires:	python3
-Requires:	python3-PyQt4
+Requires:	python3-PyQt5
 Requires:	python3-inotify
 Requires:	python3-qubesadmin >= 4.0.19
 Requires:	python3-Quamash
@@ -17,9 +17,10 @@ Requires:	qubes-artwork
 Requires:	pmount
 Requires:	cryptsetup
 Requires:	wmctrl
-BuildRequires:	python3-PyQt4-devel
+BuildRequires:	python3-PyQt5-devel
 BuildRequires:	python3-devel
-BuildRequires:	qt-devel
+BuildRequires:	qt5-devel
+BuildRequires:  qt5-linguist
 AutoReq:	0
 
 Source0: %{name}-%{version}.tar.gz
@@ -50,6 +51,12 @@ cp qubes-backup.desktop $RPM_BUILD_ROOT/usr/share/applications/
 cp qubes-backup-restore.desktop $RPM_BUILD_ROOT/usr/share/applications/
 cp qubes-qube-manager.desktop $RPM_BUILD_ROOT/usr/share/applications/
 cp qubes-template-manager.desktop $RPM_BUILD_ROOT/usr/share/applications/
+
+mkdir -p $RPM_BUILD_ROOT/usr/share/desktop-directories/
+cp qubes-tools.directory $RPM_BUILD_ROOT/usr/share/desktop-directories/
+
+mkdir -p $RPM_BUILD_ROOT/etc/xdg/menus/applications-merged/
+cp qubes-tools.menu $RPM_BUILD_ROOT/etc/xdg/menus/applications-merged/
 
 %post
 update-desktop-database &> /dev/null || :
@@ -139,6 +146,8 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/applications/qubes-backup-restore.desktop
 /usr/share/applications/qubes-qube-manager.desktop
 /usr/share/applications/qubes-template-manager.desktop
+/usr/share/desktop-directories/qubes-tools.directory
+/etc/xdg/menus/applications-merged/qubes-tools.menu
 
 %changelog
 @CHANGELOG@
