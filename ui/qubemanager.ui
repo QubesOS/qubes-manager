@@ -132,12 +132,6 @@
       <property name="cornerButtonEnabled">
        <bool>false</bool>
       </property>
-      <property name="rowCount">
-       <number>10</number>
-      </property>
-      <property name="columnCount">
-       <number>14</number>
-      </property>
       <attribute name="horizontalHeaderCascadingSectionResizes">
        <bool>false</bool>
       </attribute>
