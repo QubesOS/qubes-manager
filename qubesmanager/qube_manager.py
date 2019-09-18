@@ -273,6 +273,7 @@ class QubesTableModel(QtCore.QAbstractTableModel):
         QtCore.QAbstractTableModel.__init__(self)
         self.qubes_app = qubes_app
         self.info_list =  []
+        self.info_by_id =  {}
         self.template = {}
         self.klass_pixmap = {}
         self.label_pixmap = {}
@@ -306,9 +307,9 @@ class QubesTableModel(QtCore.QAbstractTableModel):
 
         row_no = 0
         for vm in vms_list:
-            print(row_no)
             progress.setValue(row_no)
             self.info_list.append(VmInfo(vm))
+            self.info_by_id[vm.qid]  = self.info_list[row_no]
             row_no += 1
 
         progress.setValue(row_no)
@@ -672,8 +673,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         self.update_size_on_disk = False
         self.shutdown_monitor = {}
 
-        qubes_model = QubesTableModel(qubes_app)
-        self.table.setModel(qubes_model)
+        self.qubes_model = QubesTableModel(qubes_app)
+        self.table.setModel(self.qubes_model)
         self.table.setItemDelegateForColumn(3, StateIconDelegate())
         self.table.resizeColumnsToContents()
 
@@ -762,16 +763,39 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
                     pass
 
     def on_domain_added(self, _submitter, _event, vm, **_kwargs):
-        pass
+        try:
+            domain = self.qubes_app.domains[vm]
+            self.qubes_model.info_by_id[domain.qid] = VmInfo(domain)
+            self.qubes_model.info_list.append(self.qubes_model.info_by_id[domain.qid])
+            self.qubes_model.layoutChanged.emit()
+        except (exc.QubesException, KeyError):
+            pass
 
     def on_domain_removed(self, _submitter, _event, **kwargs):
-        pass
+        for qid, vm in self.qubes_model.info_by_id.items():
+            if vm.name == kwargs['vm']:
+                self.qubes_model.info_list.remove(self.qubes_model.info_by_id[qid])
+                del self.qubes_model.info_by_id[qid]
+                self.qubes_model.layoutChanged.emit()
+                return
 
     def on_domain_status_changed(self, vm, _event, **_kwargs):
-        pass
+        try:
+            self.qubes_model.info_by_id[vm.qid].update()
+            self.qubes_model.layoutChanged.emit()
+        except exc.QubesPropertyAccessError:
+            return  # the VM was deleted before its status could be updated
+        except KeyError:  # adding the VM failed for some reason
+            self.on_domain_added(None, None, vm)
 
     def on_domain_changed(self, vm, event, **_kwargs):
-        pass
+        if not vm:  # change of global properties occured
+            return
+        try:
+            self.qubes_model.info_by_id[vm.qid].update(event=event)
+            self.qubes_model.layoutChanged.emit()
+        except exc.QubesPropertyAccessError:
+            return  # the VM was deleted before its status could be updated
 
     def load_manager_settings(self):
         for col in self.columns_indices:
