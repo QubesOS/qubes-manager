@@ -72,11 +72,139 @@ row_height = 30
 size_multiplier = 1 #0.7
 
 
+
+class StateIconDelegate(QtWidgets.QStyledItemDelegate):
+    lastIndex = None
+    def __init__(self):
+        super(StateIconDelegate, self).__init__()
+        self.stateIcons = {
+                "Running" :  QtGui.QIcon(":/on.png"),
+                "Paused" :  QtGui.QIcon(":/paused.png"),
+                "Suspended" :  QtGui.QIcon(":/paused.png"),
+                "Transient" :  QtGui.QIcon(":/transient.png"),
+                "Halting" :  QtGui.QIcon(":/transient.png"),
+                "Dying" :  QtGui.QIcon(":/transient.png"),
+                "Halted" :  QtGui.QIcon(":/off.png")
+                }
+        self.outdatedIcons = {
+                "update" :  QtGui.QIcon(":/update-recommended.png"),
+                "outdated" :  QtGui.QIcon(":/outdated.png"),
+                "to-be-outdated" :  QtGui.QIcon(":/to-be-outdated.png"),
+                }
+        self.outdatedTooltips = {
+                "update" : self.tr("Updates pending!"),
+                "outdated" : self.tr(
+                    "The qube must be restarted for its filesystem to reflect the "
+                    "template's recent committed changes."),
+                "to-be-outdated" : self.tr(
+                    "The Template must be stopped before changes from its "
+                    "current session can be picked up by this qube."),
+                }
+
+    def sizeHint(self, option, index):
+        hint = super(StateIconDelegate, self).sizeHint(option, index)
+        option = QtWidgets.QStyleOptionViewItem(option)
+        option.features |= option.HasDecoration
+        widget = option.widget
+        style = widget.style()
+        iconRect = style.subElementRect(style.SE_ItemViewItemDecoration,
+            option, widget)
+        margin = iconRect.left() - option.rect.left()
+        width = iconRect.width() * 3 # Nº of possible icons
+        hint.setWidth(width)
+        return hint
+
+    def paint(self, qp, option, index):
+        # create a new QStyleOption (*never* use the one given in arguments)
+        option = QtWidgets.QStyleOptionViewItem(option)
+
+        widget = option.widget
+        style = widget.style()
+
+        # paint the base item (borders, gradients, selection colors, etc)
+        style.drawControl(style.CE_ItemViewItem, option, qp, widget)
+
+        # "lie" about the decoration, to get a valid icon rectangle (even if we
+        # don't have any "real" icon set for the item)
+        option.features |= option.HasDecoration
+        iconRect = style.subElementRect(style.SE_ItemViewItemDecoration,
+            option, widget)
+        iconSize = iconRect.size()
+        margin = iconRect.left() - option.rect.left()
+
+        qp.save()
+        # ensure that we do not draw outside the item rectangle (and add some
+        # fancy margin on the right
+        qp.setClipRect(option.rect.adjusted(0, 0, -margin, 0))
+
+        # draw the main state icon, assuming all items have one
+        qp.drawPixmap(iconRect,
+            self.stateIcons[index.data().power].pixmap(iconSize))
+
+        left = delta = margin + iconRect.width()
+        if index.data().outdated:
+            qp.drawPixmap(iconRect.translated(left, 0),
+                    self.outdatedIcons[index.data().outdated].pixmap(iconSize))
+            left += delta
+
+        # cycle through roles, draw an icon if the index has that role set to True
+        #left = delta = margin + iconRect.width()
+        #for role, name, icon in self.extraIconData:
+        #    if index.data(role):
+        #        qp.drawPixmap(iconRect.translated(left, 0),
+        #            icon.pixmap(iconSize))
+        #        left += delta
+        qp.restore()
+
+    def helpEvent(self, event, view, option, index):
+        if event.type() != QtCore.QEvent.ToolTip:
+            return super(StateIconDelegate, self).helpEvent(event, view, option, index)
+        option = QtWidgets.QStyleOptionViewItem(option)
+        widget = option.widget
+        style = widget.style()
+        option.features |= option.HasDecoration
+
+        iconRect = style.subElementRect(style.SE_ItemViewItemDecoration,
+            option, widget)
+        iconRect.setTop(option.rect.y())
+        iconRect.setHeight(option.rect.height())
+
+        # similar to what we do in the paint() method
+        if event.pos() in iconRect:
+            # (*) clear any existing tooltip; a single space is better , as
+            # sometimes it's not enough to use an empty string
+            if index != self.lastIndex:
+                QtWidgets.QToolTip.showText(QtCore.QPoint(), ' ')
+            QtWidgets.QToolTip.showText(event.globalPos(),
+                index.data().power, view)
+        else:
+            margin = iconRect.left() - option.rect.left()
+            left = delta = margin + iconRect.width()
+
+            if index.data().outdated:
+                if event.pos() in iconRect.translated(left, 0):
+                    # see above (*)
+                    if index != self.lastIndex:
+                        QtWidgets.QToolTip.showText(QtCore.QPoint(), ' ')
+                    QtWidgets.QToolTip.showText(event.globalPos(),
+                            self.outdatedTooltips[index.data().outdated], view)
+                # shift the left *only* if the role is True, otherwise we
+                # can assume that that icon doesn't exist at all
+            left += delta
+        self.lastIndex = index
+        return True
+
+
+class StateInfo():
+    power = None
+    outdated = None
+
 class VmInfo():
     def __init__(self, vm):
         self.vm = vm
         self.name = self.vm.name
         self.klass = self.vm.klass
+        self.state = StateInfo()
         self.update(True)
 
     def update(self, update_size_on_disk=False, event=None):
@@ -88,7 +216,23 @@ class VmInfo():
         :return: None
         """
         try:
-            self.state = self.vm.get_power_state()
+            self.state.power = self.vm.get_power_state()
+
+            if self.vm.is_running():
+                if hasattr(self.vm, 'template') and self.vm.template.is_running():
+                    self.state.outdated = "to-be-outdated"
+
+                if not self.state.outdated:
+                    for vol in self.vm.volumes.values():
+                        if vol.is_outdated():
+                            self.state.outdated = "outdated"
+                            break
+
+            if self.vm.klass in {'TemplateVM', 'StandaloneVM'} and \
+                    self.vm.features.get('updates-available', False):
+                self.state.outdated = 'update'
+
+
             if not event or event.endswith(':label'):
                 self.label = self.vm.label
             if not event or event.endswith(':template'):
@@ -151,7 +295,7 @@ class QubesTableModel(QtCore.QAbstractTableModel):
         self.fill_list()
 
     def fill_list(self):
-        vms_list = self.get_vms_list()
+        vms_list = self._get_vms_list()
 
         progress = QtWidgets.QProgressDialog(
             self.tr(
@@ -162,16 +306,14 @@ class QubesTableModel(QtCore.QAbstractTableModel):
 
         row_no = 0
         for vm in vms_list:
+            print(row_no)
             progress.setValue(row_no)
             self.info_list.append(VmInfo(vm))
             row_no += 1
 
         progress.setValue(row_no)
 
-    def change(self, current, previous):
-        print("CHANGED")
-
-    def get_vms_list(self):
+    def _get_vms_list(self):
         return [vm for vm in self.qubes_app.domains]
 
     def rowCount(self, parent):
@@ -193,6 +335,8 @@ class QubesTableModel(QtCore.QAbstractTableModel):
                 return None
             if col == 2:
                 return self.info_list[index.row()].name
+            elif col == 3:
+                return self.info_list[index.row()].state
             elif col == 4:
                 return self.info_list[index.row()].template
             elif col == 5:
@@ -530,6 +674,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
 
         qubes_model = QubesTableModel(qubes_app)
         self.table.setModel(qubes_model)
+        self.table.setItemDelegateForColumn(3, StateIconDelegate())
         self.table.resizeColumnsToContents()
 
         # Connect events
