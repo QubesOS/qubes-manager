@@ -133,7 +133,7 @@ class VmRowInTable:
             'Last backup'], self.last_backup_widget)
 
         self.dvm_template_widget = table_widgets.VMPropertyItem(
-            vm, "default_dispvm")
+            vm, "default_dispvm", check_default=True)
         table.setItem(row_no, VmManagerWindow.columns_indices['Default DispVM'],
                       self.dvm_template_widget)
 
