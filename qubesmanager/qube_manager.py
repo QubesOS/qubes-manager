@@ -133,7 +133,7 @@ class VmRowInTable:
             'Last backup'], self.last_backup_widget)
 
         self.dvm_template_widget = table_widgets.VMPropertyItem(
-            vm, "default_dispvm")
+            vm, "default_dispvm", check_default=True)
         table.setItem(row_no, VmManagerWindow.columns_indices['Default DispVM'],
                       self.dvm_template_widget)
 
@@ -619,7 +619,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
 
     def on_domain_changed(self, vm, event, **_kwargs):
         if not vm:  # change of global properties occured
+            if event.endswith(':default_netvm'):
+                for vm_row in self.vms_in_table.values():
+                    vm_row.update(event='property-set:netvm')
+            if event.endswith(':default_dispvm'):
+                for vm_row in self.vms_in_table.values():
+                    vm_row.update(event='property-set:default_dispvm')
             return
+
         try:
             self.vms_in_table[vm.qid].update(event=event)
         except exc.QubesPropertyAccessError:
