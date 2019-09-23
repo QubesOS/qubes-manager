@@ -205,6 +205,8 @@ class VmInfo():
         self.name = self.vm.name
         self.klass = self.vm.klass
         self.state = StateInfo()
+        self.qid = vm.qid
+        self.updateable = getattr(vm, 'updateable', False) 
         self.update(True)
 
     def update(self, update_size_on_disk=False, event=None):
@@ -559,9 +561,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
             QtCore.QRegExp("[a-zA-Z0-9_-]*", QtCore.Qt.CaseInsensitive), None))
         self.searchContainer.addWidget(self.searchbox)
 
-       # self.connect(self.table, QtCore.SIGNAL("itemSelectionChanged()"),
-       #              self.table_selection_changed)
-
         self.sort_by_column = "Type"
         self.sort_order = QtCore.Qt.AscendingOrder
 
@@ -677,6 +676,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         self.table.setModel(self.qubes_model)
         self.table.setItemDelegateForColumn(3, StateIconDelegate())
         self.table.resizeColumnsToContents()
+        self.table.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        self.table.selectionModel().selectionChanged.connect(self.table_selection_changed)
+
 
         # Connect events
         self.dispatcher = dispatcher
@@ -862,59 +864,76 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
             self.manager_settings.setValue('view/sort_order', self.sort_order)
             self.manager_settings.sync()
 
-    def table_selection_changed(self):
-        vm = self.get_selected_vm()
+    def _enable_all(self):
+        self.action_settings.setEnabled(True)
+        self.action_removevm.setEnabled(True)
+        self.action_clonevm.setEnabled(True)
+        self.action_resumevm.setEnabled(True)
+        self.action_pausevm.setEnabled(True)
+        self.action_shutdownvm.setEnabled(True)
+        self.action_restartvm.setEnabled(True)
+        self.action_killvm.setEnabled(True)
+        self.action_appmenus.setEnabled(True)
+        self.action_editfwrules.setEnabled(True)
+        self.action_updatevm.setEnabled(True)
+        self.action_run_command_in_vm.setEnabled(True)
+        self.action_set_keyboard_layout.setEnabled(True)
 
-        if vm is not None and vm in self.qubes_app.domains:
+    def table_selection_changed(self, selection):
+        # Since selection could have multiple domains  
+        # enable all first and then filter them 
+        self._enable_all()
+
+        indexes = self.table.selectionModel().selectedIndexes()
+
+        for index in indexes:
             #  TODO: add boot from device to menu and add windows tools there
             # Update available actions:
-            self.action_settings.setEnabled(vm.klass != 'AdminVM')
-            self.action_removevm.setEnabled(
-                vm.klass != 'AdminVM' and not vm.is_running())
-            self.action_clonevm.setEnabled(vm.klass != 'AdminVM')
-            self.action_resumevm.setEnabled(
-                not vm.is_running() or vm.get_power_state() == "Paused")
-            self.action_pausevm.setEnabled(
-                vm.is_running() and vm.get_power_state() != "Paused"
-                and vm.klass != 'AdminVM')
-            self.action_shutdownvm.setEnabled(
-                vm.is_running() and vm.get_power_state() != "Paused"
-                and vm.klass != 'AdminVM')
-            self.action_restartvm.setEnabled(
-                vm.is_running() and vm.get_power_state() != "Paused"
-                and vm.klass != 'AdminVM'
-                and (vm.klass != 'DispVM' or not vm.auto_cleanup))
-            self.action_killvm.setEnabled(
-                (vm.get_power_state() == "Paused" or vm.is_running())
-                and vm.klass != 'AdminVM')
+            if index.column() != 0:
+                continue
+            vm = self.qubes_model.info_list[index.row()]
+            if vm.state.power in ["Running","Transient","Halting","Dying"]:
+                self.action_resumevm.setEnabled(False)
+                self.action_removevm.setEnabled(False)
+            elif vm.state.power == "Paused":
+                self.action_removevm.setEnabled(False)
+                self.action_pausevm.setEnabled(False)
+                self.action_set_keyboard_layout.setEnabled(False)
+                self.action_restartvm.setEnabled(False)
+            elif vm.state.power == "Suspend":
+                self.action_removevm.setEnabled(False)
+                self.action_pausevm.setEnabled(False)
+            elif vm.state.power == "Halted":
+                self.action_pausevm.setEnabled(False)
+                self.action_shutdownvm.setEnabled(False)
+                self.action_restartvm.setEnabled(False)
+                self.action_killvm.setEnabled(False)
 
-            self.action_appmenus.setEnabled(
-                vm.klass != 'AdminVM' and vm.klass != 'DispVM'
-                and not vm.features.get('internal', False))
-            self.action_editfwrules.setEnabled(vm.klass != 'AdminVM')
-            self.action_updatevm.setEnabled(getattr(vm, 'updateable', False)
-                                            or vm.qid == 0)
-            self.action_run_command_in_vm.setEnabled(
-                not vm.get_power_state() == "Paused" and vm.qid != 0)
-            self.action_set_keyboard_layout.setEnabled(
-                vm.qid != 0 and
-                vm.get_power_state() != "Paused" and vm.is_running())
-        else:
-            self.action_settings.setEnabled(False)
-            self.action_removevm.setEnabled(False)
-            self.action_clonevm.setEnabled(False)
-            self.action_resumevm.setEnabled(False)
-            self.action_pausevm.setEnabled(False)
-            self.action_shutdownvm.setEnabled(False)
-            self.action_restartvm.setEnabled(False)
-            self.action_killvm.setEnabled(False)
-            self.action_appmenus.setEnabled(False)
-            self.action_editfwrules.setEnabled(False)
-            self.action_updatevm.setEnabled(False)
-            self.action_run_command_in_vm.setEnabled(False)
-            self.action_set_keyboard_layout.setEnabled(False)
+            if vm.klass == 'AdminVM':
+                self.action_settings.setEnabled(False)
+                self.action_resumevm.setEnabled(False)
+                self.action_removevm.setEnabled(False)
+                self.action_clonevm.setEnabled(False)
+                self.action_pausevm.setEnabled(False)
+                self.action_restartvm.setEnabled(False)
+                self.action_killvm.setEnabled(False)
+                self.action_shutdownvm.setEnabled(False)
+                self.action_appmenus.setEnabled(False)
+                self.action_editfwrules.setEnabled(False)
+                self.action_set_keyboard_layout.setEnabled(False)
+                self.action_run_command_in_vm.setEnabled(False)
+            elif vm.klass == 'DispVM':
+                self.action_appmenus.setEnabled(False)
+                self.action_restartvm.setEnabled(False)
 
-        self.update_logs_menu()
+            if vm.vm.features.get('internal', False):
+                self.action_appmenus.setEnabled(False)
+
+            if not vm.updateable and vm.qid != 0:
+                self.action_updatevm.setEnabled(False)
+
+        #else:
+        #    self.update_logs_menu()
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_createvm_triggered')
@@ -922,22 +941,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         with common_threads.busy_cursor():
             create_window = create_new_vm.NewVmDlg(self.qt_app, self.qubes_app)
         create_window.exec_()
-
-    def get_selected_vm(self):
-        # vm selection relies on the VmInfo widget's value used
-        # for sorting by VM name
-        row_index = self.table.currentRow()
-        if row_index != -1:
-            vm_item = self.table.item(row_index, self.columns_indices["Name"])
-            # here is possible race with update_table timer so check
-            # if really got the item
-            if vm_item is None:
-                return None
-            qid = vm_item.qid
-            assert self.vms_in_table[qid] is not None
-            vm = self.vms_in_table[qid].vm
-            return vm
-        return None
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_removevm_triggered')
