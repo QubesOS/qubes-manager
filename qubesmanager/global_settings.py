@@ -20,14 +20,11 @@
 #
 #
 
-import sys
 import os
 import os.path
-import traceback
 import subprocess
 from PyQt5 import QtWidgets  # pylint: disable=import-error
 
-from qubesadmin import Qubes
 from qubesadmin.utils import parse_size
 
 from . import ui_globalsettingsdlg  # pylint: disable=no-name-in-module
@@ -406,39 +403,9 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.__apply_updates__()
         self.__apply_repos__()
 
-# Bases on the original code by:
-# Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
-
-def handle_exception(exc_type, exc_value, exc_traceback):
-    filename, line, dummy, dummy = traceback.extract_tb(exc_traceback).pop()
-    filename = os.path.basename(filename)
-    error = "%s: %s" % (exc_type.__name__, exc_value)
-
-    QtWidgets.QMessageBox.critical(
-        None,
-        "Houston, we have a problem...",
-        "Whoops. A critical error has occured. This is most likely a bug "
-        "in Qubes Global Settings application.<br><br><b><i>%s</i></b>" %
-        error + "at <b>line %d</b> of file <b>%s</b>.<br/><br/>"
-        % (line, filename))
-
 
 def main():
-    qtapp = QtWidgets.QApplication(sys.argv)
-    qtapp.setOrganizationName("The Qubes Project")
-    qtapp.setOrganizationDomain("http://qubes-os.org")
-    qtapp.setApplicationName("Qubes Global Settings")
-
-    sys.excepthook = handle_exception
-
-    app = Qubes()
-
-    global_window = GlobalSettingsWindow(qtapp, app)
-
-    global_window.show()
-
-    qtapp.exec_()
-    qtapp.exit()
+    utils.run_synchronous("Qubes Global Settings", GlobalSettingsWindow)
 
 
 if __name__ == "__main__":

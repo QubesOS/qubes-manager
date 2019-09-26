@@ -20,11 +20,9 @@
 #
 #
 
-import sys
 from PyQt5 import QtCore, QtWidgets  # pylint: disable=import-error
 import os
 import os.path
-import traceback
 import logging
 import logging.handlers
 
@@ -33,6 +31,7 @@ from qubes import backup
 from . import ui_restoredlg  # pylint: disable=no-name-in-module
 from . import multiselectwidget
 from . import backup_utils
+from . import utils
 
 from multiprocessing import Queue
 from queue import Empty
@@ -292,39 +291,8 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
         self.select_dir_page.completeChanged.emit()
 
 
-# Bases on the original code by:
-# Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
-
-def handle_exception(exc_type, exc_value, exc_traceback):
-
-    filename, line, dummy, dummy = traceback.extract_tb(exc_traceback).pop()
-    filename = os.path.basename(filename)
-    error = "%s: %s" % (exc_type.__name__, exc_value)
-
-    QtWidgets.QMessageBox.critical(
-        None, "Houston, we have a problem...",
-        "Whoops. A critical error has occured. This is most likely a bug "
-        "in Qubes Restore VMs application.<br><br><b><i>%s</i></b>" % error +
-        "at <b>line %d</b> of file <b>%s</b>.<br/><br/>" % (line, filename))
-
-
 def main():
-
-    qt_app = QtWidgets.QApplication(sys.argv)
-    qt_app.setOrganizationName("The Qubes Project")
-    qt_app.setOrganizationDomain("http://qubes-os.org")
-    qt_app.setApplicationName("Qubes Restore VMs")
-
-    sys.excepthook = handle_exception
-
-    qubes_app = Qubes()
-
-    restore_window = RestoreVMsWindow(qt_app, qubes_app)
-
-    restore_window.show()
-
-    qt_app.exec_()
-    qt_app.exit()
+    utils.run_synchronous("Qubes Restore VMs", RestoreVMsWindow)
 
 
 if __name__ == "__main__":

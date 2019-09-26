@@ -20,18 +20,14 @@
 #
 #
 
-import traceback
-
 import signal
-import quamash
-
-from qubesadmin import Qubes, exc
+from qubesadmin import exc
 from qubesadmin import utils as admin_utils
-from qubesadmin import events
 from qubes.storage.file import get_disk_usage
 
 from PyQt5 import QtCore  # pylint: disable=import-error
 from PyQt5 import QtWidgets  # pylint: disable=import-error
+from PyQt5 import QtGui
 from . import ui_backupdlg  # pylint: disable=no-name-in-module
 from . import multiselectwidget
 
@@ -393,57 +389,10 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         self.select_dir_page.completeChanged.emit()
 
 
-# Bases on the original code by:
-# Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
-
-def handle_exception(exc_type, exc_value, exc_traceback):
-    filename, line, dummy, dummy = traceback.extract_tb(exc_traceback).pop()
-    filename = os.path.basename(filename)
-    error = "%s: %s" % (exc_type.__name__, exc_value)
-
-    QtWidgets.QMessageBox.critical(
-        None,
-        "Houston, we have a problem...",
-        "Whoops. A critical error has occured. This is most likely a bug "
-        "in Qubes Global Settings application.<br><br><b><i>%s</i></b>" %
-        error + "at <b>line %d</b> of file <b>%s</b>.<br/><br/>"
-        % (line, filename))
-
-
-def loop_shutdown():
-    pending = asyncio.Task.all_tasks()
-    for task in pending:
-        with suppress(asyncio.CancelledError):
-            task.cancel()
-
-
 def main():
-    qt_app = QtWidgets.QApplication(sys.argv)
-    qt_app.setOrganizationName("The Qubes Project")
-    qt_app.setOrganizationDomain("http://qubes-os.org")
-    qt_app.setApplicationName("Qubes Backup VMs")
-    qt_app.lastWindowClosed.connect(loop_shutdown)
-
-    sys.excepthook = handle_exception
-
-    qubes_app = Qubes()
-
-    loop = quamash.QEventLoop(qt_app)
-    asyncio.set_event_loop(loop)
-    dispatcher = events.EventsDispatcher(qubes_app)
-
-    backup_window = BackupVMsWindow(qt_app, qubes_app, dispatcher)
-    backup_window.show()
-
-    try:
-        loop.run_until_complete(
-            asyncio.ensure_future(dispatcher.listen_for_events()))
-    except asyncio.CancelledError:
-        pass
-    except Exception:  # pylint: disable=broad-except
-        loop_shutdown()
-        exc_type, exc_value, exc_traceback = sys.exc_info()[:3]
-        handle_exception(exc_type, exc_value, exc_traceback)
+    utils.run_asynchronous("Qubes Backup VMs",
+                           QtGui.QIcon.fromTheme("qubes-manager"),
+                           BackupVMsWindow)
 
 
 if __name__ == "__main__":
