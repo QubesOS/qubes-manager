@@ -25,9 +25,7 @@ from qubesadmin import exc
 from qubesadmin import utils as admin_utils
 from qubes.storage.file import get_disk_usage
 
-from PyQt5 import QtCore  # pylint: disable=import-error
-from PyQt5 import QtWidgets  # pylint: disable=import-error
-from PyQt5 import QtGui
+from PyQt5 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
 from . import ui_backupdlg  # pylint: disable=no-name-in-module
 from . import multiselectwidget
 
@@ -36,10 +34,7 @@ from . import utils
 
 import grp
 import pwd
-import sys
 import os
-import asyncio
-from contextlib import suppress
 
 
 # pylint: disable=too-few-public-methods

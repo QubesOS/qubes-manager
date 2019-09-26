@@ -33,6 +33,7 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
 
         self.vm = vm
         self.qapp = qapp
+        self.qubesapp = qubesapp
 
         self.setupUi(self)
         self.setWindowTitle(

@@ -35,7 +35,7 @@ from . import utils
 
 from multiprocessing import Queue
 from queue import Empty
-from qubesadmin import Qubes, exc
+from qubesadmin import exc
 from qubesadmin.backup import restore
 
 

@@ -40,7 +40,8 @@ def _run_qrexec_repo(service, arg=''):
     p = subprocess.run(
         ['sudo', cmd, arg],
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+        stderr=subprocess.PIPE,
+        check=False
     )
     if p.stderr:
         raise RuntimeError('qrexec call stderr was not empty',
