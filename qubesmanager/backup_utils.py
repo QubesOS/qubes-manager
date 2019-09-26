@@ -76,7 +76,6 @@ def select_path_button_clicked(dialog, select_file=False, read_only=False):
     try:
         if vm.name == socket.gethostname():
             file_dialog = QtWidgets.QFileDialog()
-            file_dialog.setReadOnly(True)
 
             if select_file:
                 file_dialog_function = file_dialog.getOpenFileName
