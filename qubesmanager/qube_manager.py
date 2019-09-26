@@ -662,7 +662,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
                                                 QtCore.QSize(1100, 600)))
 
     def get_vms_list(self):
-        return [vm for vm in self.qubes_app.domains]
+        return list(self.qubes_app.domains)
 
     def fill_table(self):
         self.table.setSortingEnabled(False)

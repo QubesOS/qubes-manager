@@ -324,8 +324,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
                 if rule.action == 'accept':
                     conf['rules'].insert(0, rule)
                     continue
-                else:
-                    raise FirewallModifiedOutsideError('No blacklist support.')
+                raise FirewallModifiedOutsideError('No blacklist support.')
 
             if rule.expire is not None and rule.dsthost is None \
                     and rule.proto is None:
