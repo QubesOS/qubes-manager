@@ -594,7 +594,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         new_vm_name, ok = QtWidgets.QInputDialog.getText(
             self,
             self.tr('Rename qube'),
-            self.tr('New name: (WARNING: all other changes will be discarded)'))
+            self.tr('New name: (WARNING: all other changes will be discarded)'),
+            text=self.vm.name)
 
         if ok:
             thread = RenameVMThread(self.vm, new_vm_name, dependencies)
