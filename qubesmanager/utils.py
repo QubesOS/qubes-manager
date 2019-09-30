@@ -23,7 +23,14 @@ import itertools
 import os
 import re
 import qubesadmin
+import traceback
+import asyncio
+from contextlib import suppress
+import sys
+import quamash
+from qubesadmin import events
 
+from PyQt5 import QtWidgets  # pylint: disable=import-error
 from PyQt5.QtGui import QIcon  # pylint: disable=import-error
 
 
@@ -215,3 +222,87 @@ def format_dependencies_list(dependencies):
                 prop, holder.name)
 
     return list_text
+
+
+def loop_shutdown():
+    pending = asyncio.Task.all_tasks()
+    for task in pending:
+        with suppress(asyncio.CancelledError):
+            task.cancel()
+
+
+# Bases on the original code by:
+# Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
+def handle_exception(exc_type, exc_value, exc_traceback):
+
+    filename, line, _, _ = traceback.extract_tb(exc_traceback).pop()
+    filename = os.path.basename(filename)
+    error = "%s: %s" % (exc_type.__name__, exc_value)
+
+    strace = ""
+    stacktrace = traceback.extract_tb(exc_traceback)
+    while stacktrace:
+        (filename, line, func, txt) = stacktrace.pop()
+        strace += "----\n"
+        strace += "line: %s\n" % txt
+        strace += "func: %s\n" % func
+        strace += "line no.: %d\n" % line
+        strace += "file: %s\n" % filename
+
+    msg_box = QtWidgets.QMessageBox()
+    msg_box.setDetailedText(strace)
+    msg_box.setIcon(QtWidgets.QMessageBox.Critical)
+    msg_box.setWindowTitle("Houston, we have a problem...")
+    msg_box.setText("Whoops. A critical error has occured. "
+                    "This is most likely a bug in Qubes Manager.<br><br>"
+                    "<b><i>%s</i></b>" % error +
+                    "<br/>at line <b>%d</b><br/>of file %s.<br/><br/>"
+                    % (line, filename))
+
+    msg_box.exec_()
+
+
+def run_asynchronous(app_name, icon, window_class):
+    qt_app = QtWidgets.QApplication(sys.argv)
+    qt_app.setOrganizationName("The Qubes Project")
+    qt_app.setOrganizationDomain("http://qubes-os.org")
+    qt_app.setApplicationName(app_name)
+    qt_app.setWindowIcon(icon)
+    qt_app.lastWindowClosed.connect(loop_shutdown)
+
+    qubes_app = qubesadmin.Qubes()
+
+    loop = quamash.QEventLoop(qt_app)
+    asyncio.set_event_loop(loop)
+    dispatcher = events.EventsDispatcher(qubes_app)
+
+    window = window_class(qt_app, qubes_app, dispatcher)
+    window.show()
+
+    try:
+        loop.run_until_complete(
+            asyncio.ensure_future(dispatcher.listen_for_events()))
+    except asyncio.CancelledError:
+        pass
+    except Exception:  # pylint: disable=broad-except
+        loop_shutdown()
+        exc_type, exc_value, exc_traceback = sys.exc_info()[:3]
+        handle_exception(exc_type, exc_value, exc_traceback)
+
+
+def run_synchronous(app_name, window_class):
+    qt_app = QtWidgets.QApplication(sys.argv)
+    qt_app.setOrganizationName("The Qubes Project")
+    qt_app.setOrganizationDomain("http://qubes-os.org")
+    qt_app.setApplicationName(app_name)
+
+    sys.excepthook = handle_exception
+
+    qubes_app = qubesadmin.Qubes()
+
+    window = window_class(qt_app, qubes_app)
+
+    window.show()
+
+    qt_app.exec_()
+    qt_app.exit()

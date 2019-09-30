@@ -23,12 +23,10 @@
 #
 
 import collections
-import os.path
-import os
+import functools
 import re
 import subprocess
 import traceback
-import sys
 from qubesadmin.tools import QubesArgumentParser
 from qubesadmin import devices
 from qubesadmin import utils as admin_utils
@@ -128,11 +126,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         ('services', 5),
         ))
 
-    def __init__(self, vm, qapp, init_page="basic", parent=None):
+    def __init__(self, vm, init_page="basic", qapp=None, qubesapp=None,
+                 parent=None):
         super(VMSettingsWindow, self).__init__(parent)
 
         self.vm = vm
         self.qapp = qapp
+        self.qubesapp = qubesapp
         self.threads_list = []
         self.progress = None
         self.thread_closes = False
@@ -1219,38 +1219,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.fw_model.remove_child(i)
 
 
-# Bases on the original code by:
-# Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
-
-def handle_exception(exc_type, exc_value, exc_traceback):
-
-    filename, line, dummy, dummy = traceback.extract_tb(exc_traceback).pop()
-    filename = os.path.basename(filename)
-    error = "%s: %s" % (exc_type.__name__, exc_value)
-
-    strace = ""
-    stacktrace = traceback.extract_tb(exc_traceback)
-    while stacktrace:
-        (filename, line, func, txt) = stacktrace.pop()
-        strace += "----\n"
-        strace += "line: %s\n" % txt
-        strace += "func: %s\n" % func
-        strace += "line no.: %d\n" % line
-        strace += "file: %s\n" % filename
-
-    msg_box = QtWidgets.QMessageBox()
-    msg_box.setDetailedText(strace)
-    msg_box.setIcon(QtWidgets.QMessageBox.Critical)
-    msg_box.setWindowTitle("Houston, we have a problem...")
-    msg_box.setText("Whoops. A critical error has occured. "
-                    "This is most likely a bug in Qubes Manager.<br><br>"
-                    "<b><i>%s</i></b>" % error +
-                    "<br/>at line <b>%d</b><br/>of file %s.<br/><br/>"
-                    % (line, filename))
-
-    msg_box.exec_()
-
-
 parser = QubesArgumentParser(vmname_nargs=1)
 
 parser.add_argument('--tab', metavar='TAB',
@@ -1266,19 +1234,8 @@ def main(args=None):
     args = parser.parse_args(args)
     vm = args.domains.pop()
 
-    qapp = QtWidgets.QApplication(sys.argv)
-    qapp.setOrganizationName('Invisible Things Lab')
-    qapp.setOrganizationDomain("https://www.qubes-os.org/")
-    qapp.setApplicationName("Qube Settings")
-
-    if not utils.is_debug():
-        sys.excepthook = handle_exception
-
-    settings_window = VMSettingsWindow(vm, qapp, args.tab)
-    settings_window.show()
-
-    qapp.exec_()
-    qapp.exit()
+    utils.run_synchronous("Qube Settings",
+                          functools.partial(VMSettingsWindow, vm, args.tab))
 
 
 if __name__ == "__main__":

@@ -17,7 +17,7 @@
 #
 #
 
-import sys
+import functools
 import subprocess
 from . import utils
 from . import ui_bootfromdevice  # pylint: disable=no-name-in-module
@@ -28,11 +28,12 @@ from qubesadmin.tools import qvm_start
 
 class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
                              QtWidgets.QDialog):
-    def __init__(self, vm, qapp, parent=None):
+    def __init__(self, vm, qapp, qubesapp=None, parent=None):
         super(VMBootFromDeviceWindow, self).__init__(parent)
 
         self.vm = vm
         self.qapp = qapp
+        self.qubesapp = qubesapp
 
         self.setupUi(self)
         self.setWindowTitle(
@@ -147,19 +148,8 @@ def main(args=None):
     args = parser.parse_args(args)
     vm = args.domains.pop()
 
-    qapp = QtWidgets.QApplication(sys.argv)
-    qapp.setOrganizationName('Invisible Things Lab')
-    qapp.setOrganizationDomain("https://www.qubes-os.org/")
-    qapp.setApplicationName("Boot Qube From Device")
-
-#    if not utils.is_debug(): #FIXME
-#        sys.excepthook = handle_exception
-
-    bootfromdevice_window = VMBootFromDeviceWindow(vm, qapp)
-    bootfromdevice_window.show()
-
-    qapp.exec_()
-    qapp.exit()
+    utils.run_synchronous("Boot Qube From Device",
+                          functools.partial(VMBootFromDeviceWindow, vm))
 
 
 if __name__ == "__main__":

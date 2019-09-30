@@ -21,21 +21,13 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #
-import sys
 import os
 import os.path
 import subprocess
 from datetime import datetime, timedelta
-import traceback
-from contextlib import suppress
 
-import quamash
-import asyncio
-
-from qubesadmin import Qubes
 from qubesadmin import exc
 from qubesadmin import utils
-from qubesadmin import events
 
 from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
 
@@ -672,7 +664,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
                                                 QtCore.QSize(1100, 600)))
 
     def get_vms_list(self):
-        return [vm for vm in self.qubes_app.domains]
+        return list(self.qubes_app.domains)
 
     def fill_table(self):
         self.table.setSortingEnabled(False)
@@ -1306,71 +1298,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         log_dlg.exec_()
 
 
-# Bases on the original code by:
-# Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
-
-def handle_exception(exc_type, exc_value, exc_traceback):
-
-    filename, line, dummy, dummy = traceback.extract_tb(exc_traceback).pop()
-    filename = os.path.basename(filename)
-    error = "%s: %s" % (exc_type.__name__, exc_value)
-
-    strace = ""
-    stacktrace = traceback.extract_tb(exc_traceback)
-    while stacktrace:
-        (filename, line, func, txt) = stacktrace.pop()
-        strace += "----\n"
-        strace += "line: %s\n" % txt
-        strace += "func: %s\n" % func
-        strace += "line no.: %d\n" % line
-        strace += "file: %s\n" % filename
-
-    msg_box = QtWidgets.QMessageBox()
-    msg_box.setDetailedText(strace)
-    msg_box.setIcon(QtWidgets.QMessageBox.Critical)
-    msg_box.setWindowTitle("Houston, we have a problem...")
-    msg_box.setText("Whoops. A critical error has occured. "
-                    "This is most likely a bug in Qubes Manager.<br><br>"
-                    "<b><i>%s</i></b>" % error +
-                    "<br/>at line <b>%d</b><br/>of file %s.<br/><br/>"
-                    % (line, filename))
-
-    msg_box.exec_()
-
-
-def loop_shutdown():
-    pending = asyncio.Task.all_tasks()
-    for task in pending:
-        with suppress(asyncio.CancelledError):
-            task.cancel()
-
-
 def main():
-    qt_app = QtWidgets.QApplication(sys.argv)
-    qt_app.setOrganizationName("The Qubes Project")
-    qt_app.setOrganizationDomain("http://qubes-os.org")
-    qt_app.setApplicationName("Qube Manager")
-    qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
-    qt_app.lastWindowClosed.connect(loop_shutdown)
-
-    qubes_app = Qubes()
-
-    loop = quamash.QEventLoop(qt_app)
-    asyncio.set_event_loop(loop)
-    dispatcher = events.EventsDispatcher(qubes_app)
-
-    manager_window = VmManagerWindow(qt_app, qubes_app, dispatcher)
-    manager_window.show()
-
-    try:
-        loop.run_until_complete(
-            asyncio.ensure_future(dispatcher.listen_for_events()))
-    except asyncio.CancelledError:
-        pass
-    except Exception:  # pylint: disable=broad-except
-        loop_shutdown()
-        exc_type, exc_value, exc_traceback = sys.exc_info()[:3]
-        handle_exception(exc_type, exc_value, exc_traceback)
+    manager_utils.run_asynchronous(
+        "Qube Manager",
+        QtGui.QIcon.fromTheme("qubes-manager"),
+        VmManagerWindow)
 
 
 if __name__ == "__main__":
