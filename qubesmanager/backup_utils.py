@@ -81,7 +81,7 @@ def select_path_button_clicked(dialog, select_file=False, read_only=False):
                 file_dialog_function = file_dialog.getOpenFileName
             else:
                 file_dialog_function = file_dialog.getExistingDirectory
-            new_path = file_dialog_function(
+            new_path, _ = file_dialog_function(
                 dialog,
                 dialog.tr("Select backup location."),
                 backup_location if backup_location else '/')
