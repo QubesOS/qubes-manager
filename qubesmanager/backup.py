@@ -25,7 +25,7 @@ from qubesadmin import exc
 from qubesadmin import utils as admin_utils
 from qubes.storage.file import get_disk_usage
 
-from PyQt5 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
+from PyQt5 import QtCore, QtWidgets  # pylint: disable=import-error
 from . import ui_backupdlg  # pylint: disable=no-name-in-module
 from . import multiselectwidget
 
@@ -386,7 +386,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
 
 def main():
     utils.run_asynchronous("Qubes Backup VMs",
-                           QtGui.QIcon.fromTheme("qubes-manager"),
+                           "qubes-manager",
                            BackupVMsWindow)
 
 

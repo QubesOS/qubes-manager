@@ -262,12 +262,12 @@ def handle_exception(exc_type, exc_value, exc_traceback):
     msg_box.exec_()
 
 
-def run_asynchronous(app_name, icon, window_class):
+def run_asynchronous(app_name, icon_name, window_class):
     qt_app = QtWidgets.QApplication(sys.argv)
     qt_app.setOrganizationName("The Qubes Project")
     qt_app.setOrganizationDomain("http://qubes-os.org")
     qt_app.setApplicationName(app_name)
-    qt_app.setWindowIcon(icon)
+    qt_app.setWindowIcon(QIcon.fromTheme(icon_name))
     qt_app.lastWindowClosed.connect(loop_shutdown)
 
     qubes_app = qubesadmin.Qubes()

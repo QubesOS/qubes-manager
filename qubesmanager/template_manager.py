@@ -379,7 +379,7 @@ class VMRow:
 
 def main():
     utils.run_asynchronous("Template Manager",
-                           QtGui.QIcon.fromTheme("qubes-manager"),
+                           "qubes-manager",
                            TemplateManagerWindow)
 
 

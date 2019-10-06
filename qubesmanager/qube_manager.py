@@ -1301,7 +1301,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
 def main():
     manager_utils.run_asynchronous(
         "Qube Manager",
-        QtGui.QIcon.fromTheme("qubes-manager"),
+        "qubes-manager",
         VmManagerWindow)
 
 
