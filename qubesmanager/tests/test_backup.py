@@ -20,21 +20,20 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 import logging.handlers
-import sys
 import unittest
 import unittest.mock
 
-from PyQt4 import QtGui, QtTest, QtCore
+from PyQt5 import QtTest, QtCore, QtWidgets
 from qubesadmin import Qubes, events, utils, exc
 from qubesmanager import backup
-import quamash
+from qubesmanager.tests import init_qtapp
 import asyncio
-import gc
 
 
 class BackupTest(unittest.TestCase):
     def setUp(self):
         super(BackupTest, self).setUp()
+        self.qtapp, self.loop = init_qtapp()
 
         # mock up nonexistence of saved backup settings
         self.patcher_open = unittest.mock.patch('builtins.open')
@@ -49,43 +48,16 @@ class BackupTest(unittest.TestCase):
         self.addCleanup(self.patcher_thread.stop)
 
         self.qapp = Qubes()
-        self.qtapp = QtGui.QApplication(["test", "-style", "cleanlooks"])
-
         self.dispatcher = events.EventsDispatcher(self.qapp)
-
-        self.loop = quamash.QEventLoop(self.qtapp)
 
         self.dialog = backup.BackupVMsWindow(
             self.qtapp, self.qapp, self.dispatcher)
-
         self.dialog.show()
 
     def tearDown(self):
-        self.dialog.hide()
-        # process any pending events before destroying the object
+        self.dialog.close()
         self.qtapp.processEvents()
-
-        # queue destroying the QApplication object, do that for any other QT
-        # related objects here too
-        self.qtapp.deleteLater()
-        self.dialog.deleteLater()
-
-        # process any pending events (other than just queued destroy),
-        # just in case
-        self.qtapp.processEvents()
-
-        # execute main loop, which will process all events, _
-        # including just queued destroy_
-        self.loop.run_until_complete(asyncio.sleep(0))
-
-        # at this point it QT objects are destroyed, cleanup all remaining
-        # references;
-        # del other QT object here too
-        self.loop.close()
-        del self.dialog
-        del self.qtapp
-        del self.loop
-        gc.collect()
+        yield from asyncio.sleep(1)
         super(BackupTest, self).tearDown()
 
     def test_00_window_loads(self):
@@ -106,16 +78,17 @@ class BackupTest(unittest.TestCase):
                         "Compress backup should be checked by default")
 
         # correct VMs are selected
-        include_in_backups_no = len([vm for vm in self.qapp.domains
-                                     if not vm.features.get('internal', False)
-                                     and getattr(vm, 'include_in_backups', True)])
+        include_in_backups_no = len(
+            [vm for vm in self.qapp.domains
+             if not vm.features.get('internal', False)
+             and getattr(vm, 'include_in_backups', True)])
         selected_no = self.dialog.select_vms_widget.selected_list.count()
         self.assertEqual(include_in_backups_no, selected_no,
                          "Incorrect VMs selected by default")
 
         # passphrase is empty
         self.assertEqual(self.dialog.passphrase_line_edit.text(), "",
-                          "Passphrase should be empty")
+                         "Passphrase should be empty")
 
         # save defaults
         self.assertTrue(self.dialog.save_profile_checkbox.isChecked(),
@@ -399,7 +372,7 @@ class BackupTest(unittest.TestCase):
         self.assertTrue(self.dialog.unrecognized_config_label.isVisible())
 
     @unittest.mock.patch('qubesmanager.backup_utils.load_backup_profile')
-    @unittest.mock.patch('PyQt4.QtGui.QMessageBox.information')
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.information')
     def test_22_loading_settings_exc(self, mock_info, mock_load):
 
         mock_load.side_effect = exc.QubesException('Error')
@@ -436,7 +409,7 @@ class BackupTest(unittest.TestCase):
             mock_remove.assert_called_once_with(
                 '/etc/qubes/backup/qubes-manager-backup-tmp.conf')
 
-    @unittest.mock.patch('PyQt4.QtGui.QMessageBox.warning')
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
     @unittest.mock.patch('qubesmanager.backup_utils.write_backup_profile')
     @unittest.mock.patch('qubesadmin.Qubes.qubesd_call',
                          return_value=b'backup output')
@@ -461,7 +434,7 @@ class BackupTest(unittest.TestCase):
             mock_remove.assert_called_once_with(
                 '/etc/qubes/backup/qubes-manager-backup-tmp.conf')
 
-    @unittest.mock.patch('PyQt4.QtGui.QMessageBox.warning')
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
     @unittest.mock.patch('os.system')
     @unittest.mock.patch('os.remove')
     @unittest.mock.patch('qubesmanager.backup_utils.write_backup_profile')
@@ -501,7 +474,7 @@ class BackupTest(unittest.TestCase):
         self.assertEqual(mock_warning.call_count, 0,
                          "Backup succeeded but received warning")
 
-    @unittest.mock.patch('PyQt4.QtGui.QMessageBox.warning')
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
     @unittest.mock.patch('os.system')
     @unittest.mock.patch('os.remove')
     @unittest.mock.patch('qubesmanager.backup_utils.write_backup_profile')
@@ -540,7 +513,7 @@ class BackupTest(unittest.TestCase):
         self.assertEqual(mock_warning.call_count, 0,
                          "Backup succeeded but received warning")
 
-    @unittest.mock.patch('PyQt4.QtGui.QMessageBox.warning')
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
     @unittest.mock.patch('os.system')
     @unittest.mock.patch('os.remove')
     @unittest.mock.patch('qubesmanager.backup_utils.write_backup_profile')
@@ -578,14 +551,14 @@ class BackupTest(unittest.TestCase):
                          "Attempted shutdown at failed backup")
         self.assertEqual(mock_warn.call_count, 1)
 
-    @unittest.mock.patch('PyQt4.QtGui.QMessageBox.warning')
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
     @unittest.mock.patch('os.system')
     @unittest.mock.patch('os.remove')
     @unittest.mock.patch('qubesmanager.backup_utils.write_backup_profile')
     @unittest.mock.patch('qubesadmin.Qubes.qubesd_call',
                          return_value=b'backup output')
     def test_28_progress(
-            self, _a, _b, mock_remove, mock_system, mock_warn):
+            self, _a, _b, _mock_remove, _mock_system, _mock_warn):
         self._click_next()
         self.assertTrue(self.dialog.currentPage()
                         is self.dialog.select_dir_page)
@@ -626,11 +599,11 @@ class BackupTest(unittest.TestCase):
             widget.setCurrentIndex(widget.currentIndex() + 1)
 
     def _click_next(self):
-        next_widget = self.dialog.button(QtGui.QWizard.NextButton)
+        next_widget = self.dialog.button(QtWidgets.QWizard.NextButton)
         QtTest.QTest.mouseClick(next_widget, QtCore.Qt.LeftButton)
 
     def _click_cancel(self):
-        cancel_widget = self.dialog.button(QtGui.QWizard.CancelButton)
+        cancel_widget = self.dialog.button(QtWidgets.QWizard.CancelButton)
         QtTest.QTest.mouseClick(cancel_widget, QtCore.Qt.LeftButton)
 
     def _select_vm(self, name_starts_with):

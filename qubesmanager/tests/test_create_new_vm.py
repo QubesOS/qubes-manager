@@ -20,25 +20,22 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 import logging.handlers
-import quamash
-import asyncio
 import unittest
 import unittest.mock
 import qubesadmin
-import gc
 
-from PyQt4 import QtGui, QtTest, QtCore
+from PyQt5 import QtTest, QtCore
 from qubesadmin import Qubes
+from qubesmanager.tests import init_qtapp
 from qubesmanager import create_new_vm
 
 
 class NewVmTest(unittest.TestCase):
     def setUp(self):
         super(NewVmTest, self).setUp()
+        self.qtapp, self.loop = init_qtapp()
 
         self.qapp = Qubes()
-        self.qtapp = QtGui.QApplication(["test", "-style", "cleanlooks"])
-        self.loop = quamash.QEventLoop(self.qtapp)
 
         # mock up the Create VM Thread to avoid changing system state
         self.patcher_thread = unittest.mock.patch(
@@ -48,39 +45,16 @@ class NewVmTest(unittest.TestCase):
 
         # mock the progress dialog to speed testing up
         self.patcher_progress = unittest.mock.patch(
-            'PyQt4.QtGui.QProgressDialog')
+            'PyQt5.QtWidgets.QProgressDialog')
         self.mock_progress = self.patcher_progress.start()
         self.addCleanup(self.patcher_progress.stop)
 
-        self.dialog = create_new_vm.NewVmDlg(
-            self.qtapp, self.qapp)
+        self.dialog = create_new_vm.NewVmDlg(self.qtapp, self.qapp)
 
     def tearDown(self):
-        # process any pending events before destroying the object
+        self.dialog.close()
         self.qtapp.processEvents()
-
-        # queue destroying the QApplication object, do that for any other QT
-        # related objects here too
-        self.qtapp.deleteLater()
-        self.dialog.deleteLater()
-
-        # process any pending events (other than just queued destroy),
-        # just in case
-        self.qtapp.processEvents()
-
-        # execute main loop, which will process all events, _
-        # including just queued destroy_
-        self.loop.run_until_complete(asyncio.sleep(0))
-
-        # at this point it QT objects are destroyed, cleanup all remaining
-        # references;
-        # del other QT object here too
-        self.loop.close()
-        del self.dialog
-        del self.qtapp
-        del self.loop
-        gc.collect()
-
+        yield from self.loop.sleep(1)
         super(NewVmTest, self).tearDown()
 
     def test_00_window_loads(self):

@@ -24,56 +24,35 @@ import unittest
 import unittest.mock
 
 import gc
-import quamash
 import asyncio
 
-from PyQt4 import QtGui, QtTest, QtCore
+from PyQt5 import QtTest, QtCore, QtWidgets
 from qubesadmin import Qubes
 import qubesmanager.settings as vm_settings
+from qubesmanager.tests import init_qtapp
 
 
 class VMSettingsTest(unittest.TestCase):
     def setUp(self):
         super(VMSettingsTest, self).setUp()
+        self.qtapp, self.loop = init_qtapp()
 
-        self.mock_qprogress = unittest.mock.patch('PyQt4.QtGui.QProgressDialog')
+        self.mock_qprogress = unittest.mock.patch(
+            'PyQt5.QtWidgets.QProgressDialog')
         self.mock_qprogress.start()
 
         self.addCleanup(self.mock_qprogress.stop)
 
         self.qapp = Qubes()
-        self.qtapp = QtGui.QApplication(["test", "-style", "cleanlooks"])
-        self.loop = quamash.QEventLoop(self.qtapp)
+        
+        if "testvm" in self.qapp.domains:
+            del self.qapp.domains["testvm"]
 
     def tearDown(self):
         del self.qapp.domains["testvm"]
-
-        # process any pending events before destroying the object
         self.qtapp.processEvents()
+        yield from self.loop.sleep(1)
 
-        # queue destroying the QApplication object, do that for any other QT
-        # related objects here too
-        self.dialog.deleteLater()
-        self.qtapp.deleteLater()
-
-        # process any pending events (other than just queued destroy),
-        # just in case
-        self.qtapp.processEvents()
-        self.qtapp.processEvents()
-        self.qtapp.processEvents()
-
-        # execute main loop, which will process all events, _
-        # including just queued destroy_
-        self.loop.run_until_complete(asyncio.sleep(0))
-
-        # at this point it QT objects are destroyed, cleanup all remaining
-        # references;
-        # del other QT object here too
-        self.loop.close()
-        del self.dialog
-        del self.qtapp
-        del self.loop
-        gc.collect()
         super(VMSettingsTest, self).tearDown()
 
     def test_00_load_correct_tab(self):
@@ -325,8 +304,8 @@ class VMSettingsTest(unittest.TestCase):
 
         # TODO are dependencies correctly processed
 
-    @unittest.mock.patch('PyQt4.QtGui.QProgressDialog')
-    @unittest.mock.patch('PyQt4.QtGui.QInputDialog.getText')
+    @unittest.mock.patch('PyQt5.QtWidgets.QProgressDialog')
+    @unittest.mock.patch('PyQt5.QtWidgets.QInputDialog.getText')
     @unittest.mock.patch('qubesmanager.settings.RenameVMThread')
     def test_11_rename_vm(self, mock_thread, mock_input, _):
         self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
@@ -343,8 +322,8 @@ class VMSettingsTest(unittest.TestCase):
 
 # TODO: thread tests for rename
 
-    @unittest.mock.patch('PyQt4.QtGui.QProgressDialog')
-    @unittest.mock.patch('PyQt4.QtGui.QInputDialog.getText')
+    @unittest.mock.patch('PyQt5.QtWidgets.QProgressDialog')
+    @unittest.mock.patch('PyQt5.QtWidgets.QInputDialog.getText')
     @unittest.mock.patch('qubesmanager.common_threads.CloneVMThread')
     def test_12_clone_vm(self, mock_thread, mock_input, _):
         self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
@@ -359,9 +338,9 @@ class VMSettingsTest(unittest.TestCase):
         mock_thread.assert_called_with(self.vm, "testvm2")
         mock_thread().start.assert_called_with()
 
-    @unittest.mock.patch('PyQt4.QtGui.QMessageBox.warning')
-    @unittest.mock.patch('PyQt4.QtGui.QProgressDialog')
-    @unittest.mock.patch('PyQt4.QtGui.QInputDialog.getText')
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
+    @unittest.mock.patch('PyQt5.QtWidgets.QProgressDialog')
+    @unittest.mock.patch('PyQt5.QtWidgets.QInputDialog.getText')
     @unittest.mock.patch('qubesmanager.common_threads.RemoveVMThread')
     def test_13_remove_vm(self, mock_thread, mock_input, _, mock_warning):
         self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")

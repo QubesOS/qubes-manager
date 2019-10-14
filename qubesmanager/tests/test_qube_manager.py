@@ -22,64 +22,39 @@
 import asyncio
 import contextlib
 import logging.handlers
-import sys
 import unittest
 import unittest.mock
 
-import gc
 import subprocess
 import datetime
 import time
 
-import quamash
-from PyQt4 import QtGui, QtTest, QtCore
+from PyQt5 import QtTest, QtCore, QtWidgets
 from qubesadmin import Qubes, events, exc
 import qubesmanager.qube_manager as qube_manager
-
+from qubesmanager.tests import init_qtapp
 
 class QubeManagerTest(unittest.TestCase):
     def setUp(self):
         super(QubeManagerTest, self).setUp()
+        self.qtapp, self.loop = init_qtapp()
 
-        self.mock_qprogress = unittest.mock.patch('PyQt4.QtGui.QProgressDialog')
+        self.mock_qprogress = unittest.mock.patch(
+            'PyQt5.QtWidgets.QProgressDialog')
         self.mock_qprogress.start()
 
         self.addCleanup(self.mock_qprogress.stop)
 
         self.qapp = Qubes()
-        self.qtapp = QtGui.QApplication(["test", "-style", "cleanlooks"])
         self.dispatcher = events.EventsDispatcher(self.qapp)
-
-        self.loop = quamash.QEventLoop(self.qtapp)
 
         self.dialog = qube_manager.VmManagerWindow(
             self.qtapp, self.qapp, self.dispatcher)
 
     def tearDown(self):
-        # process any pending events before destroying the object
+        self.dialog.close()
         self.qtapp.processEvents()
-
-        # queue destroying the QApplication object, do that for any other QT
-        # related objects here too
-        self.qtapp.deleteLater()
-        self.dialog.deleteLater()
-
-        # process any pending events (other than just queued destroy),
-        # just in case
-        self.qtapp.processEvents()
-
-        # execute main loop, which will process all events, _
-        # including just queued destroy_
-        self.loop.run_until_complete(asyncio.sleep(0))
-
-        # at this point it QT objects are destroyed, cleanup all remaining
-        # references;
-        # del other QT object here too
-        self.loop.close()
-        del self.dialog
-        del self.qtapp
-        del self.loop
-        gc.collect()
+        yield from self.loop.sleep(1)
         super(QubeManagerTest, self).tearDown()
 
     def test_000_window_loads(self):
@@ -262,8 +237,9 @@ class QubeManagerTest(unittest.TestCase):
         mock_settings.side_effect = (
             lambda x, *args, **kwargs: settings_result_dict.get(x))
 
-        with unittest.mock.patch('PyQt4.QtCore.QSettings.value', mock_settings),\
-                unittest.mock.patch('PyQt4.QtGui.QMessageBox.warning')\
+        with unittest.mock.patch('PyQt5.QtCore.QSettings.value',
+                                 mock_settings),\
+                unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')\
                 as mock_warning:
             self.dialog = qube_manager.VmManagerWindow(
                 self.qtapp, self.qapp, self.dispatcher)
@@ -357,8 +333,8 @@ class QubeManagerTest(unittest.TestCase):
 
         self.assertFalse(self.dialog.action_set_keyboard_layout.isEnabled())
 
-    @unittest.mock.patch("PyQt4.QtGui.QMessageBox.question",
-                         return_value=QtGui.QMessageBox.Yes)
+    @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox.question",
+                         return_value=QtWidgets.QMessageBox.Yes)
     def test_207_update_vm_not_running(self, _):
         selected_vm = self._select_templatevm(running=False)
         self.assertIsNotNone(selected_vm, "No valid template VM found")
@@ -387,7 +363,7 @@ class QubeManagerTest(unittest.TestCase):
             mock_update.assert_called_once_with(selected_vm)
             mock_update().start.assert_called_once_with()
 
-    @unittest.mock.patch("PyQt4.QtGui.QInputDialog.getText",
+    @unittest.mock.patch("PyQt5.QtWidgets.QInputDialog.getText",
                          return_value=("command to run", True))
     def test_209_run_command_in_vm(self, _):
         selected_vm = self._select_non_admin_vm()
@@ -408,7 +384,7 @@ class QubeManagerTest(unittest.TestCase):
         self.assertFalse(self.dialog.action_run_command_in_vm.isEnabled(),
                          "Should not be able to run commands for dom0")
 
-    @unittest.mock.patch("PyQt4.QtGui.QMessageBox.warning")
+    @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox.warning")
     def test_211_pausevm(self, mock_warn):
         selected_vm = self._select_non_admin_vm(running=True)
 
@@ -446,9 +422,9 @@ class QubeManagerTest(unittest.TestCase):
         self._select_non_admin_vm(running=True)
         self.assertFalse(self.dialog.action_resumevm.isEnabled())
 
-    @unittest.mock.patch("PyQt4.QtGui.QMessageBox.question",
-                         return_value=QtGui.QMessageBox.Yes)
-    @unittest.mock.patch('PyQt4.QtCore.QTimer.singleShot')
+    @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox.question",
+                         return_value=QtWidgets.QMessageBox.Yes)
+    @unittest.mock.patch('PyQt5.QtCore.QTimer.singleShot')
     @unittest.mock.patch('qubesmanager.qube_manager.VmShutdownMonitor')
     def test_214_shutdownvm(self, mock_monitor, mock_timer, _):
         selected_vm = self._select_non_admin_vm(running=True)
@@ -484,7 +460,7 @@ class QubeManagerTest(unittest.TestCase):
 
         self.assertFalse(self.dialog.action_removevm.isEnabled())
 
-    @unittest.mock.patch("PyQt4.QtGui.QMessageBox")
+    @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox")
     @unittest.mock.patch('qubesadmin.utils.vm_dependencies')
     def test_218_remove_vm_dependencies(self, mock_dependencies, mock_msgbox):
         action = self.dialog.action_removevm
@@ -496,8 +472,8 @@ class QubeManagerTest(unittest.TestCase):
         action.trigger()
         mock_msgbox().show.assert_called_with()
 
-    @unittest.mock.patch('PyQt4.QtGui.QMessageBox.warning')
-    @unittest.mock.patch("PyQt4.QtGui.QInputDialog.getText")
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
+    @unittest.mock.patch("PyQt5.QtWidgets.QInputDialog.getText")
     @unittest.mock.patch('qubesadmin.utils.vm_dependencies')
     def test_219_remove_vm_no_depencies(
             self, mock_dependencies, mock_input, mock_warning):
@@ -531,10 +507,10 @@ class QubeManagerTest(unittest.TestCase):
         self._select_non_admin_vm(running=False)
         self.assertFalse(self.dialog.action_restartvm.isEnabled())
 
-    @unittest.mock.patch('PyQt4.QtCore.QTimer.singleShot')
+    @unittest.mock.patch('PyQt5.QtCore.QTimer.singleShot')
     @unittest.mock.patch('qubesmanager.qube_manager.VmShutdownMonitor')
-    @unittest.mock.patch("PyQt4.QtGui.QMessageBox.question",
-                         return_value=QtGui.QMessageBox.Yes)
+    @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox.question",
+                         return_value=QtWidgets.QMessageBox.Yes)
     def test_221_restartvm_running_vm(self, _msgbox, mock_monitor, _qtimer):
         selected_vm = self._select_non_admin_vm(running=True)
 
@@ -550,8 +526,8 @@ class QubeManagerTest(unittest.TestCase):
                 unittest.mock.ANY, True, unittest.mock.ANY)
 
     @unittest.mock.patch('qubesmanager.qube_manager.StartVMThread')
-    @unittest.mock.patch("PyQt4.QtGui.QMessageBox.question",
-                         return_value=QtGui.QMessageBox.Yes)
+    @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox.question",
+                         return_value=QtWidgets.QMessageBox.Yes)
     def test_222_restartvm_shutdown_meantime(self, _, mock_thread):
         selected_vm = self._select_non_admin_vm(running=True)
 
@@ -577,8 +553,8 @@ class QubeManagerTest(unittest.TestCase):
             self.dialog.clear_threads)
         mock_thread().start.assert_called_once_with()
 
-    @unittest.mock.patch("PyQt4.QtGui.QMessageBox.question",
-                         return_value=QtGui.QMessageBox.Yes)
+    @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox.question",
+                         return_value=QtWidgets.QMessageBox.Yes)
     @unittest.mock.patch('qubesmanager.qube_manager.UpdateVMThread')
     def test_224_updatevm_halted(self, mock_thread, _):
         selected_vm = self._select_non_admin_vm(running=False)
@@ -590,8 +566,8 @@ class QubeManagerTest(unittest.TestCase):
             self.dialog.clear_threads)
         mock_thread().start.assert_called_once_with()
 
-    @unittest.mock.patch("PyQt4.QtGui.QMessageBox.question",
-                         return_value=QtGui.QMessageBox.Yes)
+    @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox.question",
+                         return_value=QtWidgets.QMessageBox.Yes)
     def test_224_killvm(self, _):
         selected_vm = self._select_non_admin_vm(running=True)
         action = self.dialog.action_killvm
@@ -600,8 +576,8 @@ class QubeManagerTest(unittest.TestCase):
             action.trigger()
             mock_kill.assert_called_once_with()
 
-    @unittest.mock.patch("PyQt4.QtGui.QMessageBox.question",
-                         return_value=QtGui.QMessageBox.Cancel)
+    @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox.question",
+                         return_value=QtWidgets.QMessageBox.Cancel)
     def test_225_killvm_cancel(self, _):
         selected_vm = self._select_non_admin_vm(running=True)
         action = self.dialog.action_killvm
@@ -659,7 +635,7 @@ class QubeManagerTest(unittest.TestCase):
         mock_subprocess.assert_called_once_with('qubes-template-manager')
 
     @unittest.mock.patch('qubesmanager.common_threads.CloneVMThread')
-    @unittest.mock.patch('PyQt4.QtGui.QInputDialog.getText')
+    @unittest.mock.patch('PyQt5.QtWidgets.QInputDialog.getText')
     def test_232_clonevm(self, mock_input, mock_thread):
         action = self.dialog.action_clonevm
 
@@ -714,7 +690,7 @@ class QubeManagerTest(unittest.TestCase):
                          "Incorrect number of vms shown for cleared search box")
 
     def test_235_hide_show_toolbars(self):
-        with unittest.mock.patch('PyQt4.QtCore.QSettings.setValue')\
+        with unittest.mock.patch('PyQt5.QtCore.QSettings.setValue')\
                 as mock_setvalue:
             self.dialog.action_menubar.trigger()
             mock_setvalue.assert_called_with('view/menubar_visible', False)
@@ -741,8 +717,8 @@ class QubeManagerTest(unittest.TestCase):
         self.assertEqual(expected_number, actual_number,
                          "Incorrect number of vms shown for cleared search box")
 
-    @unittest.mock.patch('PyQt4.QtGui.QMessageBox.information')
-    @unittest.mock.patch('PyQt4.QtGui.QMessageBox.warning')
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.information')
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
     def test_300_clear_threads(self, mock_warning, mock_info):
         mock_thread_finished_ok = unittest.mock.Mock(
             spec=['isFinished', 'msg', 'msg_is_success'],
@@ -1422,8 +1398,8 @@ class QubeManagerThreadTest(unittest.TestCase):
 
 
 class VMShutdownMonitorTest(unittest.TestCase):
-    @unittest.mock.patch('PyQt4.QtGui.QMessageBox.question')
-    @unittest.mock.patch('PyQt4.QtCore.QTimer')
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.question')
+    @unittest.mock.patch('PyQt5.QtCore.QTimer')
     def test_01_vm_shutdown_correct(self, mock_timer, mock_question):
         mock_vm = unittest.mock.Mock()
         mock_vm.is_running.return_value = False
@@ -1437,9 +1413,9 @@ class VMShutdownMonitorTest(unittest.TestCase):
         self.assertEqual(mock_timer.call_count, 0)
         monitor.restart_vm_if_needed.assert_called_once_with()
 
-    @unittest.mock.patch('PyQt4.QtGui.QMessageBox.question',
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.question',
                          return_value=1)
-    @unittest.mock.patch('PyQt4.QtCore.QTimer.singleShot')
+    @unittest.mock.patch('PyQt5.QtCore.QTimer.singleShot')
     def test_02_vm_not_shutdown_wait(self, mock_timer, mock_question):
         mock_vm = unittest.mock.Mock()
         mock_vm.is_running.return_value = True
@@ -1453,9 +1429,9 @@ class VMShutdownMonitorTest(unittest.TestCase):
         self.assertEqual(mock_question.call_count, 1)
         self.assertEqual(mock_timer.call_count, 1)
 
-    @unittest.mock.patch('PyQt4.QtGui.QMessageBox.question',
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.question',
                          return_value=0)
-    @unittest.mock.patch('PyQt4.QtCore.QTimer.singleShot')
+    @unittest.mock.patch('PyQt5.QtCore.QTimer.singleShot')
     def test_03_vm_kill(self, mock_timer, mock_question):
         mock_vm = unittest.mock.Mock()
         mock_vm.is_running.return_value = True
@@ -1472,9 +1448,9 @@ class VMShutdownMonitorTest(unittest.TestCase):
         mock_vm.kill.assert_called_once_with()
         monitor.restart_vm_if_needed.assert_called_once_with()
 
-    @unittest.mock.patch('PyQt4.QtGui.QMessageBox.question',
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.question',
                          return_value=0)
-    @unittest.mock.patch('PyQt4.QtCore.QTimer.singleShot')
+    @unittest.mock.patch('PyQt5.QtCore.QTimer.singleShot')
     def test_04_check_later(self, mock_timer, mock_question):
         mock_vm = unittest.mock.Mock()
         mock_vm.is_running.return_value = True
