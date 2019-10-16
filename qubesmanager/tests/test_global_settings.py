@@ -43,12 +43,6 @@ class GlobalSettingsTest(unittest.TestCase):
         self.setattr_mock = self.setattr_patcher.start()
         self.addCleanup(self.setattr_patcher.stop)
 
-    def tearDown(self):
-        self.dialog.close()
-        self.qtapp.processEvents()
-        yield from self.loop.sleep(1)
-        super(GlobalSettingsTest, self).tearDown()
-
     def test_00_settings_started(self):
         # non-empty drop-downs
         self.assertNotEqual(

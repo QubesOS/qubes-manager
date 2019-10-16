@@ -23,10 +23,7 @@ import logging.handlers
 import unittest
 import unittest.mock
 
-import gc
-import asyncio
-
-from PyQt5 import QtTest, QtCore, QtWidgets
+from PyQt5 import QtTest, QtCore
 from qubesadmin import Qubes
 import qubesmanager.settings as vm_settings
 from qubesmanager.tests import init_qtapp
@@ -44,64 +41,63 @@ class VMSettingsTest(unittest.TestCase):
         self.addCleanup(self.mock_qprogress.stop)
 
         self.qapp = Qubes()
-        
-        if "testvm" in self.qapp.domains:
-            del self.qapp.domains["testvm"]
+
+        if "test-vm" in self.qapp.domains:
+            del self.qapp.domains["test-vm"]
 
     def tearDown(self):
-        del self.qapp.domains["testvm"]
-        self.qtapp.processEvents()
-        yield from self.loop.sleep(1)
-
+        if "test-vm" in self.qapp.domains:
+            del self.qapp.domains["test-vm"]
         super(VMSettingsTest, self).tearDown()
 
     def test_00_load_correct_tab(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "testvm", "red")
+        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "red")
 
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "basic")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
         self.assertTrue(
             self.dialog.tabWidget.currentWidget() is self.dialog.basic_tab)
         self.dialog.deleteLater()
 
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "advanced")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
         self.assertTrue(
             self.dialog.tabWidget.currentWidget() is self.dialog.advanced_tab)
         self.dialog.deleteLater()
 
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "firewall")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="firewall")
         self.assertTrue(
             self.dialog.tabWidget.currentWidget() is self.dialog.firewall_tab)
         self.dialog.deleteLater()
 
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "devices")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="devices")
         self.assertTrue(
             self.dialog.tabWidget.currentWidget() is self.dialog.devices_tab)
         self.dialog.deleteLater()
 
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "applications")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp,
+            init_page="applications")
         self.assertTrue(
             self.dialog.tabWidget.currentWidget() is self.dialog.apps_tab)
         self.dialog.deleteLater()
 
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "services")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="services")
         self.assertTrue(
             self.dialog.tabWidget.currentWidget() is self.dialog.services_tab)
         self.dialog.deleteLater()
 
     def test_01_basic_tab_default(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
+        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
         # set the vm to have a default template and netvm
 
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "basic")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
 
-        self.assertEqual(self.dialog.vmname.text(), "testvm",
+        self.assertEqual(self.dialog.vmname.text(), "test-vm",
                          "Name displayed incorrectly")
 
         self.assertTrue("blue" in self.dialog.vmlabel.currentText(),
@@ -156,12 +152,12 @@ class VMSettingsTest(unittest.TestCase):
                          "Incorrect max private root size")
 
     def test_02_basic_tab_nones(self):
-        self.vm = self.qapp.add_new_vm("StandaloneVM", "testvm", "blue")
+        self.vm = self.qapp.add_new_vm("StandaloneVM", "test-vm", "blue")
         # set the vm to have a default template and netvm
         self.vm.netvm = None
 
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "basic")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
 
         self.assertEqual("", self.dialog.template_name.currentText(),
                          "No template incorrectly displayed")
@@ -185,12 +181,11 @@ class VMSettingsTest(unittest.TestCase):
                          "---",
                          "Incorrect gateway displayed")
 
-    @unittest.expectedFailure
     def test_03_change_label(self):
-        # this test fails due to error where we check whether label is visible
-        self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
+        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "basic")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
+        self.dialog.show()
 
         new_label = self._set_noncurrent(self.dialog.vmlabel)
         self._click_ok()
@@ -199,9 +194,9 @@ class VMSettingsTest(unittest.TestCase):
                          "Label is not set correctly")
 
     def test_04_change_template(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
+        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "basic")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
 
         new_template = self._set_noncurrent(self.dialog.template_name)
         self._click_ok()
@@ -210,9 +205,9 @@ class VMSettingsTest(unittest.TestCase):
                          "Template is not set correctly")
 
     def test_05_change_networking(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
+        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "basic")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
 
         new_netvm = self._set_noncurrent(self.dialog.netVM)
         self._click_ok()
@@ -221,9 +216,9 @@ class VMSettingsTest(unittest.TestCase):
                          "NetVM is not set correctly")
 
     def test_06_change_networking_none(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
+        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "basic")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
 
         self._set_none(self.dialog.netVM)
         self._click_ok()
@@ -232,7 +227,7 @@ class VMSettingsTest(unittest.TestCase):
                           "None netVM is not set correctly")
 
     def test_07_change_networking_to_default(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
+        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
 
         for vm in self.qapp.domains:
             if getattr(vm, 'provides_network', False)\
@@ -241,7 +236,7 @@ class VMSettingsTest(unittest.TestCase):
                 break
 
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "basic")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
 
         new_netvm = self._set_default(self.dialog.netVM)
         self._click_ok()
@@ -250,11 +245,11 @@ class VMSettingsTest(unittest.TestCase):
                         "NetVM is not set correctly")
         self.assertTrue(self.vm.property_is_default('netvm'))
 
-    @unittest.expectedFailure
     def test_08_basic_checkboxes_true(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
+        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "basic")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
+        self.dialog.show()
 
         self.dialog.include_in_backups.setChecked(True)
         self.dialog.autostart_vm.setChecked(True)
@@ -269,11 +264,11 @@ class VMSettingsTest(unittest.TestCase):
         self.assertTrue(self.vm.debug,
                         "Debug mode not set to true")
 
-    @unittest.expectedFailure
     def test_09_basic_checkboxes_false(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
+        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "basic")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
+        self.dialog.show()
 
         self.dialog.include_in_backups.setChecked(False)
         self.dialog.autostart_vm.setChecked(False)
@@ -289,9 +284,9 @@ class VMSettingsTest(unittest.TestCase):
                          "Debug mode not set to false")
 
     def test_10_increase_private_storage(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
+        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "basic")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
 
         current_storage = self.vm.volumes['private'].size // 1024**2
         new_storage = current_storage + 512
@@ -308,16 +303,16 @@ class VMSettingsTest(unittest.TestCase):
     @unittest.mock.patch('PyQt5.QtWidgets.QInputDialog.getText')
     @unittest.mock.patch('qubesmanager.settings.RenameVMThread')
     def test_11_rename_vm(self, mock_thread, mock_input, _):
-        self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
+        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "basic")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
 
         self.assertTrue(self.dialog.rename_vm_button.isEnabled())
 
-        mock_input.return_value = ("testvm2", True)
+        mock_input.return_value = ("test-vm2", True)
         self.dialog.rename_vm_button.click()
 
-        mock_thread.assert_called_with(self.vm, "testvm2", unittest.mock.ANY)
+        mock_thread.assert_called_with(self.vm, "test-vm2", unittest.mock.ANY)
         mock_thread().start.assert_called_with()
 
 # TODO: thread tests for rename
@@ -326,16 +321,16 @@ class VMSettingsTest(unittest.TestCase):
     @unittest.mock.patch('PyQt5.QtWidgets.QInputDialog.getText')
     @unittest.mock.patch('qubesmanager.common_threads.CloneVMThread')
     def test_12_clone_vm(self, mock_thread, mock_input, _):
-        self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
+        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "basic")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
 
         self.assertTrue(self.dialog.clone_vm_button.isEnabled())
 
-        mock_input.return_value = ("testvm2", True)
+        mock_input.return_value = ("test-vm2", True)
         self.dialog.clone_vm_button.click()
 
-        mock_thread.assert_called_with(self.vm, "testvm2")
+        mock_thread.assert_called_with(self.vm, "test-vm2")
         mock_thread().start.assert_called_with()
 
     @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
@@ -343,19 +338,19 @@ class VMSettingsTest(unittest.TestCase):
     @unittest.mock.patch('PyQt5.QtWidgets.QInputDialog.getText')
     @unittest.mock.patch('qubesmanager.common_threads.RemoveVMThread')
     def test_13_remove_vm(self, mock_thread, mock_input, _, mock_warning):
-        self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
+        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "basic")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
 
         self.assertTrue(self.dialog.delete_vm_button.isEnabled())
 
         # try with a wrong name
-        mock_input.return_value = ("testvm2", True)
+        mock_input.return_value = ("test-vm2", True)
         self.dialog.delete_vm_button.click()
         self.assertEqual(mock_warning.call_count, 1)
 
         # and now correct one
-        mock_input.return_value = ("testvm", True)
+        mock_input.return_value = ("test-vm", True)
         self.dialog.delete_vm_button.click()
 
         mock_thread.assert_called_with(self.vm)
@@ -363,9 +358,9 @@ class VMSettingsTest(unittest.TestCase):
 
 # Advanced Tab
     def test_20_advanced_loads(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
+        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "advanced")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
 
         self.assertEqual(self.dialog.init_mem.value(), self.vm.memory,
                          "Incorrect initial memory")
@@ -396,11 +391,11 @@ class VMSettingsTest(unittest.TestCase):
         self.assertTrue("PVH" in self.dialog.virt_mode.currentText())
 
     def test_21_nondefaultmaxmem(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
+        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
         self.vm.maxmem = 5000
 
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "advanced")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
 
         self.assertEqual(self.dialog.max_mem_size.value(), 5000)
 
@@ -412,7 +407,7 @@ class VMSettingsTest(unittest.TestCase):
         self.dialog.deleteLater()
 
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "advanced")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
         self.assertFalse(self.dialog.include_in_balancing.isChecked())
 
         self.dialog.include_in_balancing.setChecked(True)
@@ -422,11 +417,11 @@ class VMSettingsTest(unittest.TestCase):
         self.assertEqual(self.vm.maxmem, 5000)
 
     def test_22_initmem(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
+        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
         self.vm.memory = 500
 
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "advanced")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
 
         self.assertEqual(self.dialog.init_mem.value(), 500,
                          "Incorrect initial memory")
@@ -436,11 +431,11 @@ class VMSettingsTest(unittest.TestCase):
         self.assertEqual(self.vm.memory, 600, "Setting initial memory failed")
 
     def test_23_vcpus(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
+        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
         self.vm.vcpus = 1
 
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "advanced")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
         self.assertEqual(self.dialog.vcpus.value(), 1,
                          "Incorrect number of VCPUs")
 
@@ -451,9 +446,10 @@ class VMSettingsTest(unittest.TestCase):
                          "Incorrect number of VCPUs")
 
     def test_24_kernel(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
+        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "advanced")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
+        self.dialog.show()
 
         new_kernel = self._set_noncurrent(self.dialog.kernel)
         self._click_ok()
@@ -463,20 +459,22 @@ class VMSettingsTest(unittest.TestCase):
         self.dialog.deleteLater()
 
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "advanced")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
+        self.dialog.show()
         self._set_default(self.dialog.kernel)
 
         self._click_ok()
         self.assertTrue(self.vm.property_is_default('kernel'))
 
     def test_25_virtmode_change(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
+        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
 
         modes = ["HVM", "PVH", "PV"]
 
         for mode in modes:
             self.dialog = vm_settings.VMSettingsWindow(
-                self.vm, self.qtapp, "advanced")
+                self.vm, qapp=self.qtapp, qubesapp=self.qapp,
+                init_page="advanced")
 
             self._set_value(self.dialog.virt_mode, mode)
             self._click_ok()
@@ -486,17 +484,17 @@ class VMSettingsTest(unittest.TestCase):
             self.dialog.deleteLater()
 
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "advanced")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
         self._set_default(self.dialog.virt_mode)
         self._click_ok()
 
         self.assertTrue(self.vm.property_is_default('virt_mode'))
 
     def test_26_default_dispvm(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
+        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
 
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "advanced")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
 
         new_dvm = self._set_noncurrent(self.dialog.default_dispvm)
         self._click_ok()
@@ -506,7 +504,7 @@ class VMSettingsTest(unittest.TestCase):
         self.dialog.deleteLater()
 
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "advanced")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
         self._set_default(self.dialog.default_dispvm)
         self._click_ok()
 
@@ -514,13 +512,13 @@ class VMSettingsTest(unittest.TestCase):
 
     @unittest.mock.patch('subprocess.check_call')
     def test_27_boot_cdrom(self, mock_call):
-        self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
+        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
 
         self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, self.qtapp, "advanced")
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
 
         self.dialog.boot_from_device_button.click()
-        mock_call.assert_called_with(['qubes-vm-boot-from-device', "testvm"])
+        mock_call.assert_called_with(['qubes-vm-boot-from-device', "test-vm"])
 
     def _click_ok(self):
         okwidget = self.dialog.buttonBox.button(

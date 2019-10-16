@@ -34,6 +34,7 @@ from qubesadmin import Qubes, events, exc
 import qubesmanager.qube_manager as qube_manager
 from qubesmanager.tests import init_qtapp
 
+
 class QubeManagerTest(unittest.TestCase):
     def setUp(self):
         super(QubeManagerTest, self).setUp()
@@ -50,12 +51,6 @@ class QubeManagerTest(unittest.TestCase):
 
         self.dialog = qube_manager.VmManagerWindow(
             self.qtapp, self.qapp, self.dispatcher)
-
-    def tearDown(self):
-        self.dialog.close()
-        self.qtapp.processEvents()
-        yield from self.loop.sleep(1)
-        super(QubeManagerTest, self).tearDown()
 
     def test_000_window_loads(self):
         self.assertTrue(self.dialog.table is not None, "Window did not load")
@@ -182,7 +177,11 @@ class QubeManagerTest(unittest.TestCase):
             vm = self._get_table_item(row, "Name").vm
 
             def_dispvm_item = self._get_table_item(row, "Default DispVM")
-            def_dispvm_value = getattr(vm, "default_dispvm", None)
+            if vm.property_is_default("default_dispvm"):
+                def_dispvm_value = "default ({})".format(
+                    self.qapp.default_dispvm)
+            else:
+                def_dispvm_value = getattr(vm, "default_dispvm", None)
 
             self.assertEqual(
                 str(def_dispvm_value), def_dispvm_item.text(),
@@ -247,10 +246,12 @@ class QubeManagerTest(unittest.TestCase):
 
     def test_100_sorting(self):
 
-        self.dialog.table.sortByColumn(self.dialog.columns_indices["Template"])
+        self.dialog.table.sortByColumn(self.dialog.columns_indices["Template"],
+                                       QtCore.Qt.AscendingOrder)
         self.__check_sorting("Template")
 
-        self.dialog.table.sortByColumn(self.dialog.columns_indices["Name"])
+        self.dialog.table.sortByColumn(self.dialog.columns_indices["Name"],
+                                       QtCore.Qt.AscendingOrder)
         self.__check_sorting("Name")
 
     @unittest.mock.patch('qubesmanager.qube_manager.QtCore.QSettings.setValue')
@@ -466,7 +467,7 @@ class QubeManagerTest(unittest.TestCase):
         action = self.dialog.action_removevm
 
         mock_vm = unittest.mock.Mock(spec=['name'],
-                                     **{'name.return_value': 'testvm'})
+                                     **{'name.return_value': 'test-vm'})
         mock_dependencies.return_value = [(mock_vm, "test_prop")]
 
         action.trigger()
@@ -767,10 +768,10 @@ class QubeManagerTest(unittest.TestCase):
     def test_400_event_domain_added(self):
         number_of_vms = self.dialog.table.rowCount()
 
-        self.addCleanup(subprocess.call, ["qvm-remove", "-f", "testvm"])
+        self.addCleanup(subprocess.call, ["qvm-remove", "-f", "test-vm"])
 
         self._run_command_and_process_events(
-            ["qvm-create", "--label", "red", "testvm"])
+            ["qvm-create", "--label", "red", "test-vm"])
 
         # a single row was added to the table
         self.assertEqual(self.dialog.table.rowCount(), number_of_vms + 1)
@@ -791,26 +792,26 @@ class QubeManagerTest(unittest.TestCase):
         # try opening settings for the added vm
         for row in range(self.dialog.table.rowCount()):
             name = self._get_table_item(row, "Name")
-            if name.text() == "testvm":
+            if name.text() == "test-vm":
                 self.dialog.table.setCurrentItem(name)
                 break
         with unittest.mock.patch('qubesmanager.settings.VMSettingsWindow')\
                 as mock_settings:
             self.dialog.action_settings.trigger()
             mock_settings.assert_called_once_with(
-                self.qapp.domains["testvm"], self.qtapp, "basic")
+                self.qapp.domains["test-vm"], self.qtapp, "basic")
 
     def test_401_event_domain_removed(self):
         initial_vms = self._create_set_of_current_vms()
 
         self._run_command_and_process_events(
-            ["qvm-create", "--label", "red", "testvm"])
+            ["qvm-create", "--label", "red", "test-vm"])
 
         current_vms = self._create_set_of_current_vms()
         self.assertEqual(len(initial_vms) + 1, len(current_vms))
 
         self._run_command_and_process_events(
-            ["qvm-remove", "--force", "testvm"])
+            ["qvm-remove", "--force", "test-vm"])
         current_vms = self._create_set_of_current_vms()
         self.assertEqual(initial_vms, current_vms)
 
@@ -1186,12 +1187,13 @@ class QubeManagerTest(unittest.TestCase):
         events
         :param command: list of strings, containing the command and all its
         parameters
-        :param timeout: default 20 seconds
+        :param timeout: default 5 seconds
         :return:
         """
         asyncio.set_event_loop(self.loop)
 
         future1 = asyncio.ensure_future(self.dispatcher.listen_for_events())
+        self.loop.run_until_complete(asyncio.sleep(0))
         future2 = asyncio.create_subprocess_exec(*command,
                                                  stdout=subprocess.DEVNULL,
                                                  stderr=subprocess.DEVNULL)
@@ -1398,7 +1400,7 @@ class QubeManagerThreadTest(unittest.TestCase):
 
 
 class VMShutdownMonitorTest(unittest.TestCase):
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.question')
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox')
     @unittest.mock.patch('PyQt5.QtCore.QTimer')
     def test_01_vm_shutdown_correct(self, mock_timer, mock_question):
         mock_vm = unittest.mock.Mock()
@@ -1413,10 +1415,12 @@ class VMShutdownMonitorTest(unittest.TestCase):
         self.assertEqual(mock_timer.call_count, 0)
         monitor.restart_vm_if_needed.assert_called_once_with()
 
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.question',
-                         return_value=1)
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox')
     @unittest.mock.patch('PyQt5.QtCore.QTimer.singleShot')
     def test_02_vm_not_shutdown_wait(self, mock_timer, mock_question):
+        mock_question().clickedButton.return_value = 1
+        mock_question().addButton.return_value = 0
+
         mock_vm = unittest.mock.Mock()
         mock_vm.is_running.return_value = True
         mock_vm.start_time = datetime.datetime.now().timestamp() - 3000
@@ -1426,13 +1430,14 @@ class VMShutdownMonitorTest(unittest.TestCase):
 
         monitor.check_if_vm_has_shutdown()
 
-        self.assertEqual(mock_question.call_count, 1)
         self.assertEqual(mock_timer.call_count, 1)
 
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.question',
-                         return_value=0)
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox')
     @unittest.mock.patch('PyQt5.QtCore.QTimer.singleShot')
     def test_03_vm_kill(self, mock_timer, mock_question):
+        mock_question().clickedButton.return_value = 1
+        mock_question().addButton.return_value = 1
+
         mock_vm = unittest.mock.Mock()
         mock_vm.is_running.return_value = True
         mock_vm.start_time = datetime.datetime.now().timestamp() - 3000
@@ -1443,13 +1448,11 @@ class VMShutdownMonitorTest(unittest.TestCase):
 
         monitor.check_if_vm_has_shutdown()
 
-        self.assertEqual(mock_question.call_count, 1)
         self.assertEqual(mock_timer.call_count, 0)
         mock_vm.kill.assert_called_once_with()
         monitor.restart_vm_if_needed.assert_called_once_with()
 
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.question',
-                         return_value=0)
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox')
     @unittest.mock.patch('PyQt5.QtCore.QTimer.singleShot')
     def test_04_check_later(self, mock_timer, mock_question):
         mock_vm = unittest.mock.Mock()

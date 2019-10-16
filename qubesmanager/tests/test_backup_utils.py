@@ -21,29 +21,18 @@
 #
 import logging.handlers
 import unittest.mock
-import quamash
-import asyncio
-import sys
 from PyQt5 import QtWidgets
 from qubesadmin import Qubes
 
 from qubesmanager import backup_utils
-
-qtapp = QtWidgets.QApplication(sys.argv)
-loop = quamash.QEventLoop(qtapp)
-asyncio.set_event_loop(loop)
+from qubesmanager.tests import init_qtapp
 
 
 class BackupUtilsTest(unittest.TestCase):
     def setUp(self):
         super(BackupUtilsTest, self).setUp()
+        self.qtapp, self.loop = init_qtapp()
         self.qapp = Qubes()
-        self.loop = quamash.QEventLoop(qtapp)
-
-    def tearDown(self):
-        qtapp.processEvents()
-        yield from loop.sleep(1)
-        super(BackupUtilsTest, self).tearDown()
 
     def test_01_fill_apvms(self):
         dialog = QtWidgets.QDialog()

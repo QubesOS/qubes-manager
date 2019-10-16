@@ -27,10 +27,26 @@ from PyQt5 import QtTest, QtCore, QtWidgets
 from qubesadmin import Qubes, events, utils, exc
 from qubesmanager import backup
 from qubesmanager.tests import init_qtapp
-import asyncio
 
 
 class BackupTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        qapp = Qubes()
+
+        cls.dom0_name = "dom0"
+
+        cls.vms = []
+        cls.running_vm = None
+
+        for vm in qapp.domains:
+            if vm.klass != "AdminVM" and vm.is_running():
+                cls.running_vm = vm.name
+            if vm.klass != "AdminVM" and vm.get_disk_utilization() > 0:
+                cls.vms.append(vm.name)
+            if cls.running_vm and len(cls.vms) >= 3:
+                break
+
     def setUp(self):
         super(BackupTest, self).setUp()
         self.qtapp, self.loop = init_qtapp()
@@ -55,9 +71,7 @@ class BackupTest(unittest.TestCase):
         self.dialog.show()
 
     def tearDown(self):
-        self.dialog.close()
-        self.qtapp.processEvents()
-        yield from asyncio.sleep(1)
+        self.dialog.done(0)
         super(BackupTest, self).tearDown()
 
     def test_00_window_loads(self):
@@ -110,7 +124,7 @@ class BackupTest(unittest.TestCase):
                          self.dialog.select_vms_widget.available_list.count(),
                          "Remove All VMs does not work")
 
-        self._select_vm("work")
+        self._select_vm(self.vms[0])
 
         self.assertEqual(self.dialog.select_vms_widget.selected_list.count(),
                          1, "Select a single VM does not work")
@@ -179,12 +193,16 @@ class BackupTest(unittest.TestCase):
     def test_07_disk_space_correct(self):
         for i in range(self.dialog.select_vms_widget.available_list.count()):
             item = self.dialog.select_vms_widget.available_list.item(i)
-            if item.vm.name == "dom0" or item.vm.get_disk_utilization() > 0:
+            if item.vm.name == self.dom0_name or \
+                    item.vm.get_disk_utilization() > 0:
                 self.assertGreater(
                     item.size, 0,
                     "{} size incorrectly reported as 0".format(item.vm.name))
 
     def test_08_total_size_correct(self):
+        if len(self.vms) < 3:
+            self.skipTest("Insufficient number of VMs with positive "
+                          "disk utilization")
         # select nothing
         self.dialog.select_vms_widget.remove_all_button.click()
         self.assertEqual(self.dialog.total_size_label.text(), "0",
@@ -192,27 +210,27 @@ class BackupTest(unittest.TestCase):
 
         current_size = 0
         # select a single VM
-        self._select_vm("sys-net")
+        self._select_vm(self.vms[0])
 
-        current_size += self.qapp.domains["sys-net"].get_disk_utilization()
+        current_size += self.qapp.domains[self.vms[0]].get_disk_utilization()
         self.assertEqual(self.dialog.total_size_label.text(),
                          utils.size_to_human(current_size),
                          "Size incorrectly listed for a single VM")
 
         # add two more
-        self._select_vm("sys-firewall")
-        self._select_vm("work")
+        self._select_vm(self.vms[1])
+        self._select_vm(self.vms[2])
 
-        current_size += self.qapp.domains["sys-firewall"].get_disk_utilization()
-        current_size += self.qapp.domains["work"].get_disk_utilization()
+        current_size += self.qapp.domains[self.vms[1]].get_disk_utilization()
+        current_size += self.qapp.domains[self.vms[2]].get_disk_utilization()
 
         self.assertEqual(self.dialog.total_size_label.text(),
                          utils.size_to_human(current_size),
                          "Size incorrectly listed for several VMs")
 
         # remove one
-        self._deselect_vm("sys-net")
-        current_size -= self.qapp.domains["sys-net"].get_disk_utilization()
+        self._deselect_vm(self.vms[0])
+        current_size -= self.qapp.domains[self.vms[0]].get_disk_utilization()
         self.assertEqual(self.dialog.total_size_label.text(),
                          utils.size_to_human(current_size),
                          "Size incorrectly listed for several VMs")
@@ -225,7 +243,7 @@ class BackupTest(unittest.TestCase):
                         is self.dialog.select_vms_page)
 
         self.dialog.select_vms_widget.remove_all_button.click()
-        self._select_vm("work")
+        self._select_vm(self.vms[0])
 
         self._click_next()
 
@@ -233,16 +251,16 @@ class BackupTest(unittest.TestCase):
                         is self.dialog.select_dir_page)
 
         # setup backup
-        self._select_location("dom0")
+        self._select_location(self.dom0_name)
         self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("pass")
         self.dialog.passphrase_line_edit_verify.setText("pass")
         self.dialog.save_profile_checkbox.setChecked(True)
         self.dialog.turn_off_checkbox.setChecked(False)
         self.dialog.compress_checkbox.setChecked(False)
-        expected_settings = {'destination_vm': "dom0",
+        expected_settings = {'destination_vm': self.dom0_name,
                              'destination_path': "/home",
-                             'include': ["work"],
+                             'include': [self.vms[0]],
                              'passphrase_text': "pass",
                              'compression': False}
         with unittest.mock.patch.object(self.dialog.textEdit, 'setText')\
@@ -260,7 +278,8 @@ class BackupTest(unittest.TestCase):
 
         # make sure the backup is executed
         self._click_next()
-        self.mock_thread.assert_called_once_with(self.qapp.domains["dom0"])
+        self.mock_thread.assert_called_once_with(
+            self.qapp.domains[self.dom0_name])
         self.mock_thread().start.assert_called_once_with()
 
     @unittest.mock.patch('qubesmanager.backup_utils.write_backup_profile')
@@ -271,9 +290,9 @@ class BackupTest(unittest.TestCase):
                         is self.dialog.select_vms_page)
 
         self.dialog.select_vms_widget.remove_all_button.click()
-        self._select_vm("work")
-        self._select_vm("sys-net")
-        self._select_vm("dom0")
+        self._select_vm(self.dom0_name)
+        self._select_vm(self.vms[0])
+        self._select_vm(self.vms[1])
 
         self._click_next()
 
@@ -281,16 +300,17 @@ class BackupTest(unittest.TestCase):
                         is self.dialog.select_dir_page)
 
         # setup backup
-        self._select_location("sys-net")
+        self._select_location(self.running_vm)
         self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("longerPassPhrase")
         self.dialog.passphrase_line_edit_verify.setText("longerPassPhrase")
         self.dialog.save_profile_checkbox.setChecked(False)
         self.dialog.turn_off_checkbox.setChecked(False)
         self.dialog.compress_checkbox.setChecked(True)
-        expected_settings = {'destination_vm': "sys-net",
+        expected_settings = {'destination_vm': self.running_vm,
                              'destination_path': "/home",
-                             'include': ["dom0", "sys-net", "work"],
+                             'include': sorted([self.dom0_name, self.vms[0],
+                                         self.vms[1]]),
                              'passphrase_text': "longerPassPhrase",
                              'compression': True}
         with unittest.mock.patch.object(self.dialog.textEdit, 'setText')\
@@ -308,16 +328,17 @@ class BackupTest(unittest.TestCase):
 
         # make sure the backup is executed
         self._click_next()
-        self.mock_thread.assert_called_once_with(self.qapp.domains["sys-net"])
+        self.mock_thread.assert_called_once_with(
+            self.qapp.domains[self.running_vm])
         self.mock_thread().start.assert_called_once_with()
 
     @unittest.mock.patch('qubesmanager.backup_utils.load_backup_profile')
     def test_20_loading_settings(self, mock_load):
 
         mock_load.return_value = {
-            'destination_vm': "sys-net",
+            'destination_vm': self.running_vm,
             'destination_path': "/home",
-            'include': ["dom0", "sys-net", "work"],
+            'include': [self.dom0_name, self.vms[0], self.vms[1]],
             'passphrase_text': "longerPassPhrase",
             'compression': True
         }
@@ -331,7 +352,8 @@ class BackupTest(unittest.TestCase):
         self.dialog.show()
 
         # check if settings were loaded
-        self.assertEqual(self.dialog.appvm_combobox.currentText(), "sys-net",
+        self.assertEqual(self.dialog.appvm_combobox.currentText(),
+                         self.running_vm,
                          "Destination VM not loaded")
         self.assertEqual(self.dialog.dir_line_edit.text(), "/home",
                          "Destination path not loaded")
@@ -396,7 +418,7 @@ class BackupTest(unittest.TestCase):
         self.assertTrue(self.dialog.currentPage()
                         is self.dialog.select_dir_page)
 
-        self._select_location("dom0")
+        self._select_location(self.dom0_name)
         self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("pass")
         self.dialog.passphrase_line_edit_verify.setText("pass")
@@ -418,7 +440,7 @@ class BackupTest(unittest.TestCase):
         self.assertTrue(self.dialog.currentPage()
                         is self.dialog.select_dir_page)
 
-        self._select_location("dom0")
+        self._select_location(self.dom0_name)
         self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("pass")
         self.dialog.passphrase_line_edit_verify.setText("pass")
@@ -446,7 +468,7 @@ class BackupTest(unittest.TestCase):
         self.assertTrue(self.dialog.currentPage()
                         is self.dialog.select_dir_page)
 
-        self._select_location("dom0")
+        self._select_location(self.dom0_name)
         self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("pass")
         self.dialog.passphrase_line_edit_verify.setText("pass")
@@ -486,7 +508,7 @@ class BackupTest(unittest.TestCase):
         self.assertTrue(self.dialog.currentPage()
                         is self.dialog.select_dir_page)
 
-        self._select_location("dom0")
+        self._select_location(self.dom0_name)
         self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("pass")
         self.dialog.passphrase_line_edit_verify.setText("pass")
@@ -525,7 +547,7 @@ class BackupTest(unittest.TestCase):
         self.assertTrue(self.dialog.currentPage()
                         is self.dialog.select_dir_page)
 
-        self._select_location("dom0")
+        self._select_location(self.dom0_name)
         self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("pass")
         self.dialog.passphrase_line_edit_verify.setText("pass")
@@ -563,7 +585,7 @@ class BackupTest(unittest.TestCase):
         self.assertTrue(self.dialog.currentPage()
                         is self.dialog.select_dir_page)
 
-        self._select_location("dom0")
+        self._select_location(self.dom0_name)
         self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("pass")
         self.dialog.passphrase_line_edit_verify.setText("pass")
