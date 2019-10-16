@@ -128,8 +128,7 @@ class GlobalSettingsTest(unittest.TestCase):
             dom0_updates = self.qapp.domains[
                 'dom0'].features['service.qubes-update-check']
         except KeyError:
-            self.skipTest("check_updates_dom0 property not implemented")
-            return
+            dom0_updates = True
 
         self.assertEqual(bool(dom0_updates),
                          self.dialog.updates_dom0.isChecked(),
