@@ -30,7 +30,7 @@ import sys
 import quamash
 from qubesadmin import events
 
-from PyQt5 import QtWidgets  # pylint: disable=import-error
+from PyQt5 import QtWidgets, QtCore  # pylint: disable=import-error
 from PyQt5.QtGui import QIcon  # pylint: disable=import-error
 
 
@@ -264,6 +264,15 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 
 def run_asynchronous(app_name, icon_name, window_class):
     qt_app = QtWidgets.QApplication(sys.argv)
+
+    translator = QtCore.QTranslator(qt_app)
+    locale = QtCore.QLocale.system().name()
+    i18n_dir = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        'i18n')
+    translator.load("qubesmanager_{!s}.qm".format(locale), i18n_dir)
+    qt_app.installTranslator(translator)
+
     qt_app.setOrganizationName("The Qubes Project")
     qt_app.setOrganizationDomain("http://qubes-os.org")
     qt_app.setApplicationName(app_name)
@@ -292,6 +301,15 @@ def run_asynchronous(app_name, icon_name, window_class):
 
 def run_synchronous(app_name, window_class):
     qt_app = QtWidgets.QApplication(sys.argv)
+
+    translator = QtCore.QTranslator(qt_app)
+    locale = QtCore.QLocale.system().name()
+    i18n_dir = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        'i18n')
+    translator.load("qubesmanager_{!s}.qm".format(locale), i18n_dir)
+    qt_app.installTranslator(translator)
+
     qt_app.setOrganizationName("The Qubes Project")
     qt_app.setOrganizationDomain("http://qubes-os.org")
     qt_app.setApplicationName(app_name)
