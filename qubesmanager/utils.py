@@ -96,10 +96,11 @@ def prepare_choice(widget, holder, propname, choice, default,
             default_string = str(default) if default is not None else 'none'
             if transform is not None:
                 default_string = transform(default_string)
-            text = 'default ({})'.format(default_string)
+            text = QtCore.QCoreApplication.translate(
+                "ManagerUtils", 'default ({})').format(default_string)
         # N+1: explicit None
         elif item is None:
-            text = '(none)'
+            text = QtCore.QCoreApplication.translate("ManagerUtils", '(none)')
         # 1..N: choices
         else:
             text = str(item)
@@ -107,7 +108,8 @@ def prepare_choice(widget, holder, propname, choice, default,
                 text = transform(text)
 
         if item == oldvalue:
-            text += ' (current)'
+            text += QtCore.QCoreApplication.translate(
+                "ManagerUtils", ' (current)')
             idx = i
 
         widget.insertItem(i, text)
@@ -206,7 +208,8 @@ def get_path_from_vm(vm, service_name):
         assert '../' not in untrusted_path
         assert '\0' not in untrusted_path
         return untrusted_path.strip()
-    raise ValueError('Unexpected characters in path.')
+    raise ValueError(QtCore.QCoreApplication.translate(
+        "ManagerUtils", 'Unexpected characters in path.'))
 
 
 def format_dependencies_list(dependencies):
@@ -216,9 +219,11 @@ def format_dependencies_list(dependencies):
     list_text = ""
     for (holder, prop) in dependencies:
         if holder is None:
-            list_text += "- Global property <b>{}</b> <br>".format(prop)
+            list_text += QtCore.QCoreApplication.translate(
+                "ManagerUtils", "- Global property <b>{}</b> <br>").format(prop)
         else:
-            list_text += "- <b>{}</b> for qube <b>{}</b> <br>".format(
+            list_text += QtCore.QCoreApplication.translate(
+                "ManagerUtils", "- <b>{0}</b> for qube <b>{1}</b> <br>").format(
                 prop, holder.name)
 
     return list_text
@@ -252,12 +257,13 @@ def handle_exception(exc_type, exc_value, exc_traceback):
     msg_box = QtWidgets.QMessageBox()
     msg_box.setDetailedText(strace)
     msg_box.setIcon(QtWidgets.QMessageBox.Critical)
-    msg_box.setWindowTitle("Houston, we have a problem...")
-    msg_box.setText("Whoops. A critical error has occured. "
+    msg_box.setWindowTitle(QtCore.QCoreApplication.translate(
+        "ManagerUtils", "Houston, we have a problem..."))
+    msg_box.setText(QtCore.QCoreApplication.translate(
+        "ManagerUtils", "Whoops. A critical error has occured. "
                     "This is most likely a bug in Qubes Manager.<br><br>"
-                    "<b><i>%s</i></b>" % error +
-                    "<br/>at line <b>%d</b><br/>of file %s.<br/><br/>"
-                    % (line, filename))
+                    "<b><i>{0}</i></b><br/>at line <b>{1}</b><br/>of file "
+                        "{2}.<br/><br/>").format(error, line, filename))
 
     msg_box.exec_()
 

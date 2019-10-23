@@ -207,24 +207,77 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>Clipboard</name>
+    <message>
+        <location filename="../clipboard.py" line="84"/>
+        <source>Warning!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../clipboard.py" line="84"/>
+        <source>Error while accessing Qubes clipboard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../clipboard.py" line="56"/>
+        <source>Error while locking Qubes clipboard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../clipboard.py" line="68"/>
+        <source>Error while writing to Qubes clipboard!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../clipboard.py" line="90"/>
+        <source>%n byte(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <location filename="../clipboard.py" line="100"/>
+        <source>? bytes</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>CloneVMThread</name>
+    <message>
+        <location filename="../common_threads.py" line="65"/>
+        <source>Sucess</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../common_threads.py" line="65"/>
+        <source>The qube was cloned sucessfully.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../common_threads.py" line="69"/>
+        <source>Error while cloning qube!</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>DevListWidgetItem</name>
     <message>
-        <location filename="../settings.py" line="1111"/>
+        <location filename="../settings.py" line="1109"/>
         <source>Service already on the list!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settings.py" line="1005"/>
+        <location filename="../settings.py" line="1003"/>
         <source>Error re-assigning device </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settings.py" line="1063"/>
+        <location filename="../settings.py" line="1061"/>
         <source>Refresh in progress...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settings.py" line="1074"/>
+        <location filename="../settings.py" line="1072"/>
         <source>Refresh Applications</source>
         <translation type="unfinished"></translation>
     </message>
@@ -394,32 +447,57 @@ p, li { white-space: pre-wrap; }
         <source>Community template updates (testing)</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../global_settings.py" line="47"/>
+        <source>qrexec call stderr was not empty</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../global_settings.py" line="52"/>
+        <source>qrexec call exited with non-zero return code</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>GlobalSettingsWindow</name>
     <message>
-        <location filename="../global_settings.py" line="310"/>
+        <location filename="../global_settings.py" line="317"/>
         <source>Change state of all qubes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../global_settings.py" line="299"/>
+        <location filename="../global_settings.py" line="306"/>
         <source>Are you sure you want to set all qubes to check for updates?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../global_settings.py" line="310"/>
+        <location filename="../global_settings.py" line="317"/>
         <source>Are you sure you want to set all qubes to not check for updates?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../global_settings.py" line="353"/>
+        <location filename="../global_settings.py" line="361"/>
         <source>ERROR!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../global_settings.py" line="353"/>
+        <location filename="../global_settings.py" line="361"/>
         <source>Error managing {repo} repository settings: {msg}</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../global_settings.py" line="287"/>
+        <source>Cannot detect enabled dom0 update repositories</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../global_settings.py" line="295"/>
+        <source>Cannot detect enabled ITL template update repositories</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../global_settings.py" line="350"/>
+        <source>qrexec call stdout did not contain &quot;ok&quot; as expected</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -475,6 +553,49 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui_templatemanager.py" line="99"/>
         <source>Clear Selection</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ManagerUtils</name>
+    <message>
+        <location filename="../utils.py" line="99"/>
+        <source>default ({})</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../utils.py" line="103"/>
+        <source>(none)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../utils.py" line="111"/>
+        <source> (current)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../utils.py" line="211"/>
+        <source>Unexpected characters in path.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../utils.py" line="222"/>
+        <source>- Global property &lt;b&gt;{}&lt;/b&gt; &lt;br&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../utils.py" line="225"/>
+        <source>- &lt;b&gt;{0}&lt;/b&gt; for qube &lt;b&gt;{1}&lt;/b&gt; &lt;br&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../utils.py" line="260"/>
+        <source>Houston, we have a problem...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../utils.py" line="262"/>
+        <source>Whoops. A critical error has occured. This is most likely a bug in Qubes Manager.&lt;br&gt;&lt;br&gt;&lt;b&gt;&lt;i&gt;{0}&lt;/i&gt;&lt;/b&gt;&lt;br/&gt;at line &lt;b&gt;{1}&lt;/b&gt;&lt;br/&gt;of file {2}.&lt;br/&gt;&lt;br/&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -675,53 +796,139 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>NewVmDlg</name>
     <message>
-        <location filename="../create_new_vm.py" line="142"/>
+        <location filename="../create_new_vm.py" line="143"/>
         <source>No template available!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../create_new_vm.py" line="142"/>
+        <location filename="../create_new_vm.py" line="143"/>
         <source>Cannot create a qube when no template exists.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../create_new_vm.py" line="149"/>
+        <location filename="../create_new_vm.py" line="150"/>
         <source>Qube based on a template (AppVM)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../create_new_vm.py" line="150"/>
+        <location filename="../create_new_vm.py" line="151"/>
         <source>Standalone qube copied from a template</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../create_new_vm.py" line="151"/>
+        <location filename="../create_new_vm.py" line="152"/>
         <source>Empty standalone qube (install your own OS)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../create_new_vm.py" line="169"/>
+        <location filename="../create_new_vm.py" line="170"/>
         <source>Incorrect qube name!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../create_new_vm.py" line="169"/>
+        <location filename="../create_new_vm.py" line="170"/>
         <source>A qube with the name &lt;b&gt;{}&lt;/b&gt; already exists in the system!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../create_new_vm.py" line="206"/>
-        <source>Creating new qube &lt;b&gt;{}&lt;/b&gt;...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../create_new_vm.py" line="216"/>
+        <location filename="../create_new_vm.py" line="217"/>
         <source>Error creating the qube!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../create_new_vm.py" line="216"/>
-        <source>ERROR: {}</source>
+        <location filename="../create_new_vm.py" line="207"/>
+        <source>Creating new qube &lt;b&gt;{0}&lt;/b&gt;...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../create_new_vm.py" line="217"/>
+        <source>ERROR: {0}</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>QubeManager</name>
+    <message>
+        <location filename="../table_widgets.py" line="480"/>
+        <source>n/a</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../table_widgets.py" line="342"/>
+        <source>Yes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../table_widgets.py" line="306"/>
+        <source>default ({})</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../table_widgets.py" line="421"/>
+        <source>Check updates</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../table_widgets.py" line="425"/>
+        <source>Updates pending!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../table_widgets.py" line="428"/>
+        <source>Qube outdated</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../table_widgets.py" line="432"/>
+        <source>The qube must be restarted for its filesystem to reflect the template&apos;s recent committed changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../table_widgets.py" line="437"/>
+        <source>Template running</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../table_widgets.py" line="441"/>
+        <source>The Template must be stopped before changes from its current session can be picked up by this qube.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>QubesFirewallRulesModel</name>
+    <message>
+        <location filename="../firewall.py" line="298"/>
+        <source>At least one rule must exist.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../firewall.py" line="305"/>
+        <source>Last rule must be either drop all or accept all.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../firewall.py" line="322"/>
+        <source>Rule type unknown!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../firewall.py" line="330"/>
+        <source>No blacklist support.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../firewall.py" line="338"/>
+        <source>it does not add up.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../firewall.py" line="343"/>
+        <source>ICMP must be allowed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../firewall.py" line="346"/>
+        <source>DNS must be allowed</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -732,12 +939,25 @@ p, li { white-space: pre-wrap; }
         <source>Refresh in progress (refreshing applications from {})</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../settings.py" line="115"/>
+        <source>Refresh failed!</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ReleaseNotesDialog</name>
     <message>
         <location filename="../ui_releasenotes.py" line="46"/>
         <source>Qubes Release Notes</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>RemoveVMThread</name>
+    <message>
+        <location filename="../common_threads.py" line="53"/>
+        <source>Error removing qube!</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -751,6 +971,11 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../settings.py" line="72"/>
         <source>Some properties could not be changed to the new name. The system has now both {} and {} qubes. To resolve this, please check and change the following properties and remove the qube {} manually.&lt;br&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../settings.py" line="84"/>
+        <source>Rename error!</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -899,6 +1124,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../restore.py" line="222"/>
         <source>Restore qubes</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>RunCommandThread</name>
+    <message>
+        <location filename="../qube_manager.py" line="326"/>
+        <source>Error while running command!</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1308,15 +1541,69 @@ The qube must be running to disable seamless mode; this setting is not persisten
     </message>
 </context>
 <context>
+    <name>StatusItem</name>
+    <message>
+        <location filename="../template_manager.py" line="262"/>
+        <source>Cannot change template on a running VM.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TemplateManager</name>
+    <message>
+        <location filename="../template_manager.py" line="335"/>
+        <source>qube is running</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>TemplateManagerWindow</name>
     <message>
-        <location filename="../template_manager.py" line="230"/>
+        <location filename="../template_manager.py" line="231"/>
         <source>Errors encountered!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../template_manager.py" line="230"/>
+        <location filename="../template_manager.py" line="231"/>
         <source>Errors encountered on template change in the following qubes: &lt;br&gt; {}.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../template_manager.py" line="69"/>
+        <source>(select template)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../template_manager.py" line="87"/>
+        <source>Qube</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../template_manager.py" line="87"/>
+        <source>Current</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../template_manager.py" line="87"/>
+        <source>New</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UpdateVMThread</name>
+    <message>
+        <location filename="../qube_manager.py" line="300"/>
+        <source>Debian DSA-4371 fix installed in {}</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qube_manager.py" line="307"/>
+        <source>Failed to apply DSA-4371 fix: {}</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qube_manager.py" line="313"/>
+        <source>Error on qube update!</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1456,48 +1743,79 @@ The qube must be running to disable seamless mode; this setting is not persisten
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settings.py" line="621"/>
+        <location filename="../settings.py" line="620"/>
         <source>Qube cannot be removed!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settings.py" line="621"/>
+        <location filename="../settings.py" line="620"/>
         <source>This qube cannot be removed. It is used as: &lt;br&gt; {} &lt;small&gt;If you want to  remove this qube, you should remove or change settings of each qube or setting that uses it.&lt;/small&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settings.py" line="631"/>
+        <location filename="../settings.py" line="630"/>
         <source>Delete qube</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settings.py" line="631"/>
+        <location filename="../settings.py" line="630"/>
         <source>Are you absolutely sure you want to delete this qube? &lt;br/&gt; All qube settings and data will be irrevocably deleted. &lt;br/&gt; If you are sure, please enter this qube&apos;s name below.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settings.py" line="645"/>
+        <location filename="../settings.py" line="644"/>
         <source>Removal cancelled</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settings.py" line="645"/>
+        <location filename="../settings.py" line="644"/>
         <source>The qube will not be removed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settings.py" line="652"/>
+        <location filename="../settings.py" line="651"/>
         <source>Clone qube</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settings.py" line="652"/>
+        <location filename="../settings.py" line="651"/>
         <source>Name for the cloned qube:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../settings.py" line="662"/>
+        <location filename="../settings.py" line="661"/>
         <source>Cloning Qube...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../settings.py" line="246"/>
+        <source>No finished thread found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../settings.py" line="281"/>
+        <source>Basic tab:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../settings.py" line="284"/>
+        <source>Advanced tab:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../settings.py" line="287"/>
+        <source>Devices tab:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../settings.py" line="290"/>
+        <source>Sevices tab:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../settings.py" line="744"/>
+        <source>Cannot change this setting while this qube is used as a NetVM by the following qubes:
+</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1529,17 +1847,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../backup.py" line="327"/>
-        <source>Backup error.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../backup.py" line="328"/>
-        <source>Backup error!</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../backup.py" line="364"/>
         <source>ERROR: {}</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1558,22 +1866,32 @@ The qube must be running to disable seamless mode; this setting is not persisten
         <source>Backup aborted!</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../backup.py" line="328"/>
+        <source>Backup error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../backup.py" line="364"/>
+        <source>ERROR: Aborted</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VmManagerWindow</name>
     <message>
-        <location filename="../qube_manager.py" line="468"/>
+        <location filename="../qube_manager.py" line="469"/>
         <source>Manager settings unreadable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="468"/>
+        <location filename="../qube_manager.py" line="469"/>
         <source>Qube Manager settings cannot be parsed. Previously saved display settings may not be restored correctly.
 Error: {}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="677"/>
+        <location filename="../qube_manager.py" line="678"/>
         <source>Loading Qube Manager...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1583,142 +1901,142 @@ Error: {}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="821"/>
+        <location filename="../qube_manager.py" line="822"/>
         <source>Warning!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="822"/>
+        <location filename="../qube_manager.py" line="823"/>
         <source>This qube cannot be removed. It is used as: &lt;br&gt; {} &lt;small&gt;If you want to  remove this qube, you should remove or change settings of each qube or setting that uses it.&lt;/small&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="832"/>
+        <location filename="../qube_manager.py" line="833"/>
         <source>Qube Removal Confirmation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="832"/>
+        <location filename="../qube_manager.py" line="833"/>
         <source>Are you sure you want to remove the Qube &lt;b&gt;&apos;{0}&apos;&lt;/b&gt;?&lt;br&gt; All data on this Qube&apos;s private storage will be lost!&lt;br&gt;&lt;br&gt;Type the name of the Qube (&lt;b&gt;{1}&lt;/b&gt;) below to confirm:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="845"/>
+        <location filename="../qube_manager.py" line="846"/>
         <source>Qube removal confirmation failed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="845"/>
+        <location filename="../qube_manager.py" line="846"/>
         <source>Entered name did not match! Not removing {0}.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="870"/>
+        <location filename="../qube_manager.py" line="871"/>
         <source>Qubes clone Qube</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="870"/>
+        <location filename="../qube_manager.py" line="871"/>
         <source>Enter name for Qube &lt;b&gt;{}&lt;/b&gt; clone:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="880"/>
+        <location filename="../qube_manager.py" line="881"/>
         <source>Name already in use!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="880"/>
+        <location filename="../qube_manager.py" line="881"/>
         <source>There already exists a qube called &apos;{}&apos;. Cloning aborted.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="886"/>
+        <location filename="../qube_manager.py" line="887"/>
         <source>Cloning Qube...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="908"/>
+        <location filename="../qube_manager.py" line="909"/>
         <source>Error unpausing Qube!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="964"/>
+        <location filename="../qube_manager.py" line="965"/>
         <source>ERROR: {0}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="937"/>
+        <location filename="../qube_manager.py" line="938"/>
         <source>Error pausing Qube!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="948"/>
+        <location filename="../qube_manager.py" line="949"/>
         <source>Qube Shutdown Confirmation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="948"/>
+        <location filename="../qube_manager.py" line="949"/>
         <source>Are you sure you want to power down the Qube &lt;b&gt;&apos;{0}&apos;&lt;/b&gt;?&lt;br&gt;&lt;small&gt;This will shutdown all the running applications within this Qube.&lt;/small&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="964"/>
+        <location filename="../qube_manager.py" line="965"/>
         <source>Error shutting down Qube!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="982"/>
+        <location filename="../qube_manager.py" line="983"/>
         <source>Qube Restart Confirmation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="982"/>
+        <location filename="../qube_manager.py" line="983"/>
         <source>Are you sure you want to restart the Qube &lt;b&gt;&apos;{0}&apos;&lt;/b&gt;?&lt;br&gt;&lt;small&gt;This will shutdown all the running applications within this Qube.&lt;/small&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="1001"/>
+        <location filename="../qube_manager.py" line="1002"/>
         <source>Qube &lt;b&gt;&apos;{0}&apos;&lt;/b&gt; is not running. Are you absolutely sure you want to try to kill it?&lt;br&gt;&lt;small&gt;This will end &lt;b&gt;(not shutdown!)&lt;/b&gt; all the running applications within this Qube.&lt;/small&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="1007"/>
+        <location filename="../qube_manager.py" line="1008"/>
         <source>Are you sure you want to kill the Qube &lt;b&gt;&apos;{0}&apos;&lt;/b&gt;?&lt;br&gt;&lt;small&gt;This will end &lt;b&gt;(not shutdown!)&lt;/b&gt; all the running applications within this Qube.&lt;/small&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="1012"/>
+        <location filename="../qube_manager.py" line="1013"/>
         <source>Qube Kill Confirmation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="1021"/>
+        <location filename="../qube_manager.py" line="1022"/>
         <source>Error while killing Qube!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="1021"/>
+        <location filename="../qube_manager.py" line="1022"/>
         <source>&lt;b&gt;An exception ocurred while killing {0}.&lt;/b&gt;&lt;br&gt;ERROR: {1}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="1072"/>
+        <location filename="../qube_manager.py" line="1073"/>
         <source>Qube Update Confirmation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="1072"/>
+        <location filename="../qube_manager.py" line="1073"/>
         <source>&lt;b&gt;{0}&lt;/b&gt;&lt;br&gt;The Qube has to be running to be updated.&lt;br&gt;Do you want to start it?&lt;br&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="1092"/>
+        <location filename="../qube_manager.py" line="1093"/>
         <source>Qubes command entry</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="1092"/>
+        <location filename="../qube_manager.py" line="1093"/>
         <source>Run command in &lt;b&gt;{}&lt;/b&gt;:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2171,45 +2489,83 @@ Template</source>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;DisposableVM Template&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Allows using this qube as a template for DisposableVMs. The DisposableVMs will inherit the VM&apos;s state (configuration, installed programs etc.), but their state will not persist between restarts. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../qube_manager.py" line="551"/>
+        <source>No finished thread found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qube_manager.py" line="892"/>
+        <source>Cloning qube...</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VmShutdownMonitor</name>
     <message>
-        <location filename="../qube_manager.py" line="232"/>
+        <location filename="../qube_manager.py" line="233"/>
         <source>Qube Shutdown</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="233"/>
+        <location filename="../qube_manager.py" line="234"/>
         <source>The Qube &lt;b&gt;&apos;{0}&apos;&lt;/b&gt; hasn&apos;t shutdown within the last {1} seconds, do you want to kill it?&lt;br&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="237"/>
+        <location filename="../qube_manager.py" line="238"/>
         <source>Kill it!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../qube_manager.py" line="239"/>
+        <location filename="../qube_manager.py" line="240"/>
         <source>Wait another {0} seconds...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>VmUpdateInfoItem</name>
+</context>
+<context>
+    <name>appname</name>
     <message>
-        <location filename="../table_widgets.py" line="421"/>
-        <source>Updates pending!</source>
+        <location filename="../backup.py" line="388"/>
+        <source>Qubes Backup VMs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../table_widgets.py" line="425"/>
-        <source>The qube must be restarted for its filesystem to reflect the template&apos;s recent committed changes.</source>
+        <location filename="../bootfromdevice.py" line="151"/>
+        <source>Boot Qube From Device</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../table_widgets.py" line="431"/>
-        <source>The Template must be stopped before changes from its current session can be picked up by this qube.</source>
+        <location filename="../create_new_vm.py" line="281"/>
+        <source>Create qube</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../global_settings.py" line="417"/>
+        <source>Qubes Global Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../qube_manager.py" line="1303"/>
+        <source>Qube Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../restore.py" line="295"/>
+        <source>Qubes Restore VMs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../settings.py" line="1235"/>
+        <source>Qube Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../template_manager.py" line="384"/>
+        <source>Template Manager</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2228,6 +2584,14 @@ Template</source>
     <message>
         <location filename="../backup_utils.py" line="95"/>
         <source>No file or directory selected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>exception</name>
+    <message>
+        <location filename="../appmenu_select.py" line="87"/>
+        <source>qvm-appmenus --set-whitelist failed</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

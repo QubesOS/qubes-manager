@@ -324,9 +324,9 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
 
     def backup_finished(self):
         if self.thread.msg:
-            self.progress_status.setText(self.tr("Backup error."))
+            self.progress_status.setText(self.tr("Backup error"))
             QtWidgets.QMessageBox.warning(
-                self, self.tr("Backup error!"),
+                self, self.tr("Backup error"),
                 self.tr("ERROR: {}").format(
                     self.thread.msg))
             self.button(self.CancelButton).setEnabled(False)
@@ -369,7 +369,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
             self.thread.wait()
             QtWidgets.QMessageBox.warning(
                 self, self.tr("Backup aborted!"),
-                self.tr("ERROR: {}").format("Aborted!"))
+                self.tr("ERROR: Aborted"))
 
         self.cleanup_temporary_files()
         self.done(0)
@@ -391,9 +391,10 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
 
 
 def main():
-    utils.run_asynchronous("Qubes Backup VMs",
-                           "qubes-manager",
-                           BackupVMsWindow)
+    utils.run_asynchronous(
+        QtCore.QCoreApplication.translate("appname", "Qubes Backup VMs"),
+        "qubes-manager",
+        BackupVMsWindow)
 
 
 if __name__ == "__main__":

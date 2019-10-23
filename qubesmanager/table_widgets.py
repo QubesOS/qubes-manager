@@ -295,15 +295,16 @@ class VMPropertyItem(QtWidgets.QTableWidgetItem):
         if self.empty_function(val):
             text = ""
         elif val is None:
-            text = "n/a"
+            text = QtCore.QCoreApplication.translate("QubeManager", "n/a")
         elif val is True:
-            text = "Yes"
+            text = QtCore.QCoreApplication.translate("QubeManager", "Yes")
         else:
             text = str(val)
 
         if self.check_default and hasattr(self.vm, self.property_name) and \
                 self.vm.property_is_default(self.property_name):
-            text = 'default (' + text + ')'
+            text = QtCore.QCoreApplication.translate(
+                "QubeManager", 'default ({})').format(text)
         self.setText(text)
 
     def __lt__(self, other):
@@ -338,7 +339,8 @@ class VmInternalItem(VMPropertyItem):
 
     def update(self):
         internal = self.vm.features.get('internal', False)
-        self.setText("Yes" if internal else "")
+        self.setText(QtCore.QCoreApplication.translate(
+            "QubeManager", "Yes") if internal else "")
 
 
 # features man qvm-features
@@ -416,19 +418,28 @@ class VmUpdateInfoWidget(QtWidgets.QWidget):
         self.value = state
         self.table_item.set_value(state)
         if state == "update":
-            label_text = "<font color=\"#CCCC00\">Check updates</font>"
+            label_text = "<font color=\"#CCCC00\">{}</font>".format(
+                QtCore.QCoreApplication.translate("QubeManager",
+                                                  "Check updates"))
             icon_path = ":/update-recommended.png"
-            tooltip_text = self.tr("Updates pending!")
+            tooltip_text = QtCore.QCoreApplication.translate("QubeManager",
+                                                             "Updates pending!")
         elif state == "outdated":
-            label_text = "<font color=\"red\">Qube outdated</font>"
+            label_text = "<font color=\"red\">{}</font>".format(
+                QtCore.QCoreApplication.translate("QubeManager",
+                                                  "Qube outdated"))
             icon_path = ":/outdated.png"
-            tooltip_text = self.tr(
+            tooltip_text = QtCore.QCoreApplication.translate(
+                "QubeManager",
                 "The qube must be restarted for its filesystem to reflect the "
                 "template's recent committed changes.")
         elif state == "to-be-outdated":
-            label_text = "<font color=\"#800000\">Template running</font>"
+            label_text = "<font color=\"#800000\">{}</font>".format(
+                QtCore.QCoreApplication.translate("QubeManager",
+                                                  "Template running"))
             icon_path = ":/to-be-outdated.png"
-            tooltip_text = self.tr(
+            tooltip_text = QtCore.QCoreApplication.translate(
+                "QubeManager",
                 "The Template must be stopped before changes from its "
                 "current session can be picked up by this qube.")
         else:
@@ -466,7 +477,8 @@ class VmSizeOnDiskItem(QtWidgets.QTableWidgetItem):
 
     def update(self):
         if self.vm.qid == 0:
-            self.setText("n/a")
+            self.setText(QtCore.QCoreApplication.translate("QubeManager",
+                                                           "n/a"))
         else:
             self.value = 10
             self.value = round(self.vm.get_disk_utilization()/(1024*1024), 2)

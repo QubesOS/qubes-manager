@@ -290,7 +290,9 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
 
 
 def main():
-    utils.run_synchronous("Qubes Restore VMs", RestoreVMsWindow)
+    utils.run_synchronous(
+        QtCore.QCoreApplication.translate("appname", "Qubes Restore VMs"),
+        RestoreVMsWindow)
 
 
 if __name__ == "__main__":

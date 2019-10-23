@@ -21,7 +21,7 @@ import functools
 import subprocess
 from . import utils
 from . import ui_bootfromdevice  # pylint: disable=no-name-in-module
-from PyQt5 import QtWidgets  # pylint: disable=import-error
+from PyQt5 import QtWidgets, QtCore  # pylint: disable=import-error
 from qubesadmin import tools
 from qubesadmin.tools import qvm_start
 
@@ -148,8 +148,9 @@ def main(args=None):
     args = parser.parse_args(args)
     vm = args.domains.pop()
 
-    utils.run_synchronous("Boot Qube From Device",
-                          functools.partial(VMBootFromDeviceWindow, vm))
+    utils.run_synchronous(
+        QtCore.QCoreApplication.translate("appname", "Boot Qube From Device"),
+        functools.partial(VMBootFromDeviceWindow, vm))
 
 
 if __name__ == "__main__":
