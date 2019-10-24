@@ -20,8 +20,6 @@
 #
 #
 
-import os
-import os.path
 import subprocess
 from PyQt5 import QtWidgets  # pylint: disable=import-error
 
@@ -245,15 +243,11 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 qmemman_config_file.close()
 
     def __init_updates__(self):
-        # TODO: remove workaround when it is no longer needed
-        self.dom0_updates_file_path = '/var/lib/qubes/updates/disable-updates'
-
         try:
             self.updates_dom0_val = bool(self.qvm_collection.domains[
                 'dom0'].features['service.qubes-update-check'])
         except KeyError:
-            self.updates_dom0_val =\
-                not os.path.isfile(self.dom0_updates_file_path)
+            self.updates_dom0_val = True
 
         self.updates_dom0.setChecked(self.updates_dom0_val)
 

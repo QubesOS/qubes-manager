@@ -357,9 +357,15 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
     def reject(self):
         if (self.currentPage() is self.commit_page) and \
                 self.button(self.CancelButton).isEnabled():
-            self.qubes_app.qubesd_call(
-                'dom0', 'admin.backup.Cancel',
-                backup_utils.get_profile_name(True))
+            try:
+                self.qubes_app.qubesd_call(
+                    'dom0', 'admin.backup.Cancel',
+                    backup_utils.get_profile_name(True))
+            except exc.QubesException as ex:
+                QtWidgets.QMessageBox.warning(
+                    self, self.tr("Error cancelling backup!"),
+                    self.tr("ERROR: {}").format(str(ex)))
+
             self.thread.wait()
             QtWidgets.QMessageBox.warning(
                 self, self.tr("Backup aborted!"),

@@ -20,21 +20,36 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 import logging.handlers
-import sys
 import unittest
 import unittest.mock
 
-from PyQt4 import QtGui, QtTest, QtCore
+from PyQt5 import QtTest, QtCore, QtWidgets
 from qubesadmin import Qubes, events, utils, exc
 from qubesmanager import backup
-import quamash
-import asyncio
-import gc
+from qubesmanager.tests import init_qtapp
 
 
 class BackupTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        qapp = Qubes()
+
+        cls.dom0_name = "dom0"
+
+        cls.vms = []
+        cls.running_vm = None
+
+        for vm in qapp.domains:
+            if vm.klass != "AdminVM" and vm.is_running():
+                cls.running_vm = vm.name
+            if vm.klass != "AdminVM" and vm.get_disk_utilization() > 0:
+                cls.vms.append(vm.name)
+            if cls.running_vm and len(cls.vms) >= 3:
+                break
+
     def setUp(self):
         super(BackupTest, self).setUp()
+        self.qtapp, self.loop = init_qtapp()
 
         # mock up nonexistence of saved backup settings
         self.patcher_open = unittest.mock.patch('builtins.open')
@@ -49,43 +64,14 @@ class BackupTest(unittest.TestCase):
         self.addCleanup(self.patcher_thread.stop)
 
         self.qapp = Qubes()
-        self.qtapp = QtGui.QApplication(["test", "-style", "cleanlooks"])
-
         self.dispatcher = events.EventsDispatcher(self.qapp)
-
-        self.loop = quamash.QEventLoop(self.qtapp)
 
         self.dialog = backup.BackupVMsWindow(
             self.qtapp, self.qapp, self.dispatcher)
-
         self.dialog.show()
 
     def tearDown(self):
-        self.dialog.hide()
-        # process any pending events before destroying the object
-        self.qtapp.processEvents()
-
-        # queue destroying the QApplication object, do that for any other QT
-        # related objects here too
-        self.qtapp.deleteLater()
-        self.dialog.deleteLater()
-
-        # process any pending events (other than just queued destroy),
-        # just in case
-        self.qtapp.processEvents()
-
-        # execute main loop, which will process all events, _
-        # including just queued destroy_
-        self.loop.run_until_complete(asyncio.sleep(0))
-
-        # at this point it QT objects are destroyed, cleanup all remaining
-        # references;
-        # del other QT object here too
-        self.loop.close()
-        del self.dialog
-        del self.qtapp
-        del self.loop
-        gc.collect()
+        self.dialog.done(0)
         super(BackupTest, self).tearDown()
 
     def test_00_window_loads(self):
@@ -106,16 +92,17 @@ class BackupTest(unittest.TestCase):
                         "Compress backup should be checked by default")
 
         # correct VMs are selected
-        include_in_backups_no = len([vm for vm in self.qapp.domains
-                                     if not vm.features.get('internal', False)
-                                     and getattr(vm, 'include_in_backups', True)])
+        include_in_backups_no = len(
+            [vm for vm in self.qapp.domains
+             if not vm.features.get('internal', False)
+             and getattr(vm, 'include_in_backups', True)])
         selected_no = self.dialog.select_vms_widget.selected_list.count()
         self.assertEqual(include_in_backups_no, selected_no,
                          "Incorrect VMs selected by default")
 
         # passphrase is empty
         self.assertEqual(self.dialog.passphrase_line_edit.text(), "",
-                          "Passphrase should be empty")
+                         "Passphrase should be empty")
 
         # save defaults
         self.assertTrue(self.dialog.save_profile_checkbox.isChecked(),
@@ -137,7 +124,7 @@ class BackupTest(unittest.TestCase):
                          self.dialog.select_vms_widget.available_list.count(),
                          "Remove All VMs does not work")
 
-        self._select_vm("work")
+        self._select_vm(self.vms[0])
 
         self.assertEqual(self.dialog.select_vms_widget.selected_list.count(),
                          1, "Select a single VM does not work")
@@ -206,12 +193,16 @@ class BackupTest(unittest.TestCase):
     def test_07_disk_space_correct(self):
         for i in range(self.dialog.select_vms_widget.available_list.count()):
             item = self.dialog.select_vms_widget.available_list.item(i)
-            if item.vm.name == "dom0" or item.vm.get_disk_utilization() > 0:
+            if item.vm.name == self.dom0_name or \
+                    item.vm.get_disk_utilization() > 0:
                 self.assertGreater(
                     item.size, 0,
                     "{} size incorrectly reported as 0".format(item.vm.name))
 
     def test_08_total_size_correct(self):
+        if len(self.vms) < 3:
+            self.skipTest("Insufficient number of VMs with positive "
+                          "disk utilization")
         # select nothing
         self.dialog.select_vms_widget.remove_all_button.click()
         self.assertEqual(self.dialog.total_size_label.text(), "0",
@@ -219,27 +210,27 @@ class BackupTest(unittest.TestCase):
 
         current_size = 0
         # select a single VM
-        self._select_vm("sys-net")
+        self._select_vm(self.vms[0])
 
-        current_size += self.qapp.domains["sys-net"].get_disk_utilization()
+        current_size += self.qapp.domains[self.vms[0]].get_disk_utilization()
         self.assertEqual(self.dialog.total_size_label.text(),
                          utils.size_to_human(current_size),
                          "Size incorrectly listed for a single VM")
 
         # add two more
-        self._select_vm("sys-firewall")
-        self._select_vm("work")
+        self._select_vm(self.vms[1])
+        self._select_vm(self.vms[2])
 
-        current_size += self.qapp.domains["sys-firewall"].get_disk_utilization()
-        current_size += self.qapp.domains["work"].get_disk_utilization()
+        current_size += self.qapp.domains[self.vms[1]].get_disk_utilization()
+        current_size += self.qapp.domains[self.vms[2]].get_disk_utilization()
 
         self.assertEqual(self.dialog.total_size_label.text(),
                          utils.size_to_human(current_size),
                          "Size incorrectly listed for several VMs")
 
         # remove one
-        self._deselect_vm("sys-net")
-        current_size -= self.qapp.domains["sys-net"].get_disk_utilization()
+        self._deselect_vm(self.vms[0])
+        current_size -= self.qapp.domains[self.vms[0]].get_disk_utilization()
         self.assertEqual(self.dialog.total_size_label.text(),
                          utils.size_to_human(current_size),
                          "Size incorrectly listed for several VMs")
@@ -252,7 +243,7 @@ class BackupTest(unittest.TestCase):
                         is self.dialog.select_vms_page)
 
         self.dialog.select_vms_widget.remove_all_button.click()
-        self._select_vm("work")
+        self._select_vm(self.vms[0])
 
         self._click_next()
 
@@ -260,16 +251,16 @@ class BackupTest(unittest.TestCase):
                         is self.dialog.select_dir_page)
 
         # setup backup
-        self._select_location("dom0")
+        self._select_location(self.dom0_name)
         self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("pass")
         self.dialog.passphrase_line_edit_verify.setText("pass")
         self.dialog.save_profile_checkbox.setChecked(True)
         self.dialog.turn_off_checkbox.setChecked(False)
         self.dialog.compress_checkbox.setChecked(False)
-        expected_settings = {'destination_vm': "dom0",
+        expected_settings = {'destination_vm': self.dom0_name,
                              'destination_path': "/home",
-                             'include': ["work"],
+                             'include': [self.vms[0]],
                              'passphrase_text': "pass",
                              'compression': False}
         with unittest.mock.patch.object(self.dialog.textEdit, 'setText')\
@@ -287,7 +278,8 @@ class BackupTest(unittest.TestCase):
 
         # make sure the backup is executed
         self._click_next()
-        self.mock_thread.assert_called_once_with(self.qapp.domains["dom0"])
+        self.mock_thread.assert_called_once_with(
+            self.qapp.domains[self.dom0_name])
         self.mock_thread().start.assert_called_once_with()
 
     @unittest.mock.patch('qubesmanager.backup_utils.write_backup_profile')
@@ -298,9 +290,9 @@ class BackupTest(unittest.TestCase):
                         is self.dialog.select_vms_page)
 
         self.dialog.select_vms_widget.remove_all_button.click()
-        self._select_vm("work")
-        self._select_vm("sys-net")
-        self._select_vm("dom0")
+        self._select_vm(self.dom0_name)
+        self._select_vm(self.vms[0])
+        self._select_vm(self.vms[1])
 
         self._click_next()
 
@@ -308,16 +300,17 @@ class BackupTest(unittest.TestCase):
                         is self.dialog.select_dir_page)
 
         # setup backup
-        self._select_location("sys-net")
+        self._select_location(self.running_vm)
         self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("longerPassPhrase")
         self.dialog.passphrase_line_edit_verify.setText("longerPassPhrase")
         self.dialog.save_profile_checkbox.setChecked(False)
         self.dialog.turn_off_checkbox.setChecked(False)
         self.dialog.compress_checkbox.setChecked(True)
-        expected_settings = {'destination_vm': "sys-net",
+        expected_settings = {'destination_vm': self.running_vm,
                              'destination_path': "/home",
-                             'include': ["dom0", "sys-net", "work"],
+                             'include': sorted([self.dom0_name, self.vms[0],
+                                         self.vms[1]]),
                              'passphrase_text': "longerPassPhrase",
                              'compression': True}
         with unittest.mock.patch.object(self.dialog.textEdit, 'setText')\
@@ -335,16 +328,17 @@ class BackupTest(unittest.TestCase):
 
         # make sure the backup is executed
         self._click_next()
-        self.mock_thread.assert_called_once_with(self.qapp.domains["sys-net"])
+        self.mock_thread.assert_called_once_with(
+            self.qapp.domains[self.running_vm])
         self.mock_thread().start.assert_called_once_with()
 
     @unittest.mock.patch('qubesmanager.backup_utils.load_backup_profile')
     def test_20_loading_settings(self, mock_load):
 
         mock_load.return_value = {
-            'destination_vm': "sys-net",
+            'destination_vm': self.running_vm,
             'destination_path': "/home",
-            'include': ["dom0", "sys-net", "work"],
+            'include': [self.dom0_name, self.vms[0], self.vms[1]],
             'passphrase_text': "longerPassPhrase",
             'compression': True
         }
@@ -358,7 +352,8 @@ class BackupTest(unittest.TestCase):
         self.dialog.show()
 
         # check if settings were loaded
-        self.assertEqual(self.dialog.appvm_combobox.currentText(), "sys-net",
+        self.assertEqual(self.dialog.appvm_combobox.currentText(),
+                         self.running_vm,
                          "Destination VM not loaded")
         self.assertEqual(self.dialog.dir_line_edit.text(), "/home",
                          "Destination path not loaded")
@@ -399,7 +394,7 @@ class BackupTest(unittest.TestCase):
         self.assertTrue(self.dialog.unrecognized_config_label.isVisible())
 
     @unittest.mock.patch('qubesmanager.backup_utils.load_backup_profile')
-    @unittest.mock.patch('PyQt4.QtGui.QMessageBox.information')
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.information')
     def test_22_loading_settings_exc(self, mock_info, mock_load):
 
         mock_load.side_effect = exc.QubesException('Error')
@@ -423,7 +418,7 @@ class BackupTest(unittest.TestCase):
         self.assertTrue(self.dialog.currentPage()
                         is self.dialog.select_dir_page)
 
-        self._select_location("dom0")
+        self._select_location(self.dom0_name)
         self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("pass")
         self.dialog.passphrase_line_edit_verify.setText("pass")
@@ -436,7 +431,7 @@ class BackupTest(unittest.TestCase):
             mock_remove.assert_called_once_with(
                 '/etc/qubes/backup/qubes-manager-backup-tmp.conf')
 
-    @unittest.mock.patch('PyQt4.QtGui.QMessageBox.warning')
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
     @unittest.mock.patch('qubesmanager.backup_utils.write_backup_profile')
     @unittest.mock.patch('qubesadmin.Qubes.qubesd_call',
                          return_value=b'backup output')
@@ -445,7 +440,7 @@ class BackupTest(unittest.TestCase):
         self.assertTrue(self.dialog.currentPage()
                         is self.dialog.select_dir_page)
 
-        self._select_location("dom0")
+        self._select_location(self.dom0_name)
         self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("pass")
         self.dialog.passphrase_line_edit_verify.setText("pass")
@@ -461,7 +456,7 @@ class BackupTest(unittest.TestCase):
             mock_remove.assert_called_once_with(
                 '/etc/qubes/backup/qubes-manager-backup-tmp.conf')
 
-    @unittest.mock.patch('PyQt4.QtGui.QMessageBox.warning')
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
     @unittest.mock.patch('os.system')
     @unittest.mock.patch('os.remove')
     @unittest.mock.patch('qubesmanager.backup_utils.write_backup_profile')
@@ -473,7 +468,7 @@ class BackupTest(unittest.TestCase):
         self.assertTrue(self.dialog.currentPage()
                         is self.dialog.select_dir_page)
 
-        self._select_location("dom0")
+        self._select_location(self.dom0_name)
         self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("pass")
         self.dialog.passphrase_line_edit_verify.setText("pass")
@@ -501,7 +496,7 @@ class BackupTest(unittest.TestCase):
         self.assertEqual(mock_warning.call_count, 0,
                          "Backup succeeded but received warning")
 
-    @unittest.mock.patch('PyQt4.QtGui.QMessageBox.warning')
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
     @unittest.mock.patch('os.system')
     @unittest.mock.patch('os.remove')
     @unittest.mock.patch('qubesmanager.backup_utils.write_backup_profile')
@@ -513,7 +508,7 @@ class BackupTest(unittest.TestCase):
         self.assertTrue(self.dialog.currentPage()
                         is self.dialog.select_dir_page)
 
-        self._select_location("dom0")
+        self._select_location(self.dom0_name)
         self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("pass")
         self.dialog.passphrase_line_edit_verify.setText("pass")
@@ -540,7 +535,7 @@ class BackupTest(unittest.TestCase):
         self.assertEqual(mock_warning.call_count, 0,
                          "Backup succeeded but received warning")
 
-    @unittest.mock.patch('PyQt4.QtGui.QMessageBox.warning')
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
     @unittest.mock.patch('os.system')
     @unittest.mock.patch('os.remove')
     @unittest.mock.patch('qubesmanager.backup_utils.write_backup_profile')
@@ -552,7 +547,7 @@ class BackupTest(unittest.TestCase):
         self.assertTrue(self.dialog.currentPage()
                         is self.dialog.select_dir_page)
 
-        self._select_location("dom0")
+        self._select_location(self.dom0_name)
         self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("pass")
         self.dialog.passphrase_line_edit_verify.setText("pass")
@@ -578,19 +573,19 @@ class BackupTest(unittest.TestCase):
                          "Attempted shutdown at failed backup")
         self.assertEqual(mock_warn.call_count, 1)
 
-    @unittest.mock.patch('PyQt4.QtGui.QMessageBox.warning')
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
     @unittest.mock.patch('os.system')
     @unittest.mock.patch('os.remove')
     @unittest.mock.patch('qubesmanager.backup_utils.write_backup_profile')
     @unittest.mock.patch('qubesadmin.Qubes.qubesd_call',
                          return_value=b'backup output')
     def test_28_progress(
-            self, _a, _b, mock_remove, mock_system, mock_warn):
+            self, _a, _b, _mock_remove, _mock_system, _mock_warn):
         self._click_next()
         self.assertTrue(self.dialog.currentPage()
                         is self.dialog.select_dir_page)
 
-        self._select_location("dom0")
+        self._select_location(self.dom0_name)
         self.dialog.dir_line_edit.setText("/home")
         self.dialog.passphrase_line_edit.setText("pass")
         self.dialog.passphrase_line_edit_verify.setText("pass")
@@ -626,11 +621,11 @@ class BackupTest(unittest.TestCase):
             widget.setCurrentIndex(widget.currentIndex() + 1)
 
     def _click_next(self):
-        next_widget = self.dialog.button(QtGui.QWizard.NextButton)
+        next_widget = self.dialog.button(QtWidgets.QWizard.NextButton)
         QtTest.QTest.mouseClick(next_widget, QtCore.Qt.LeftButton)
 
     def _click_cancel(self):
-        cancel_widget = self.dialog.button(QtGui.QWizard.CancelButton)
+        cancel_widget = self.dialog.button(QtWidgets.QWizard.CancelButton)
         QtTest.QTest.mouseClick(cancel_widget, QtCore.Qt.LeftButton)
 
     def _select_vm(self, name_starts_with):
