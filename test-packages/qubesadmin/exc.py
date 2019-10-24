@@ -13,3 +13,6 @@ class QubesPropertyAccessError(BaseException):
 
 class QubesDaemonNoResponseError(BaseException):
     pass
+
+class BackupCancelledError(BaseException):
+    pass

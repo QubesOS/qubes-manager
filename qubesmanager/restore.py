@@ -26,8 +26,6 @@ import os.path
 import logging
 import logging.handlers
 
-from qubes import backup
-
 from . import ui_restoredlg  # pylint: disable=no-name-in-module
 from . import multiselectwidget
 from . import backup_utils
@@ -53,7 +51,7 @@ class RestoreThread(QtCore.QThread):
         try:
             self.backup_restore.restore_do(self.vms_to_restore)
 
-        except backup.BackupCanceledError as ex:
+        except exc.BackupCancelledError as ex:
             self.canceled = True
             err_msg.append(str(ex))
         except Exception as ex:  # pylint: disable=broad-except
