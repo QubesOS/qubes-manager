@@ -28,7 +28,6 @@ import quamash
 from qubesadmin import Qubes, exc
 from qubesadmin import utils as admin_utils
 from qubesadmin import events
-from qubes.storage.file import get_disk_usage
 
 from PyQt4 import QtCore  # pylint: disable=import-error
 from PyQt4 import QtGui  # pylint: disable=import-error
@@ -44,6 +43,7 @@ import sys
 import os
 import asyncio
 from contextlib import suppress
+import shutil
 
 # pylint: disable=too-few-public-methods
 class BackupThread(QtCore.QThread):
@@ -223,7 +223,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
             if vm.qid == 0:
                 local_user = grp.getgrnam('qubes').gr_mem[0]
                 home_dir = pwd.getpwnam(local_user).pw_dir
-                self.size = get_disk_usage(home_dir)
+                self.size = shutil.disk_usage(home_dir)[1]
             else:
                 self.size = vm.get_disk_utilization()
             super(BackupVMsWindow.VmListItem, self).__init__(
