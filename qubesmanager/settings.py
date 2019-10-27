@@ -321,27 +321,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.netvm_no_firewall_label.setVisible(
             netvm is not None and
             not netvm.features.check_with_template('qubes-firewall', False))
-        if netvm is None:
-            QtWidgets.QMessageBox.warning(
-                self,
-                self.tr("Qube configuration problem!"),
-                self.tr('This qube has networking disabled '
-                        '(Basic -> Networking) - network will be disabled. '
-                        'If you want to use firewall, '
-                        'please enable networking.')
-            )
-        if netvm is not None and \
-                not netvm.features.check_with_template(
-                    'qubes-firewall', False):
-            QtWidgets.QMessageBox.warning(
-                self,
-                self.tr("Qube configuration problem!"),
-                self.tr("The '{vm}' qube is network connected to "
-                        "'{netvm}', which does not support firewall!<br/>"
-                        "You may edit the '{vm}' qube firewall rules, but "
-                        "these will not take any effect until you connect it "
-                        "to a working Firewall qube.").format(
-                    vm=self.vm.name, netvm=netvm.name))
 
     def current_tab_changed(self, idx):
         if idx == self.tabs_indices["firewall"]:
