@@ -159,18 +159,6 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         if not profile_data:
             return
 
-        if 'destination_vm' in profile_data:
-            dest_vm_name = profile_data['destination_vm']
-            dest_vm_idx = self.appvm_combobox.findText(dest_vm_name)
-            if dest_vm_idx > -1:
-                self.appvm_combobox.setCurrentIndex(dest_vm_idx)
-            else:
-                self.unrecognized_config_label.setVisible(True)
-
-        if 'destination_path' in profile_data:
-            dest_path = profile_data['destination_path']
-            self.dir_line_edit.setText(dest_path)
-
         if 'passphrase_text' in profile_data:
             self.passphrase_line_edit.setText(profile_data['passphrase_text'])
             self.passphrase_line_edit_verify.setText(
@@ -178,6 +166,20 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
 
         if 'compression' in profile_data:
             self.compress_checkbox.setChecked(profile_data['compression'])
+            
+        if 'destination_vm' in profile_data:
+            dest_vm_name = profile_data['destination_vm']
+            dest_vm_idx = self.appvm_combobox.findText(dest_vm_name)
+            if dest_vm_idx > -1:
+                self.appvm_combobox.setCurrentIndex(dest_vm_idx)
+            else:
+                # If the previous destination qube is missing use defaults
+                # for both the destination qube and destination path
+                return
+
+        if 'destination_path' in profile_data:
+            dest_path = profile_data['destination_path']
+            self.dir_line_edit.setText(dest_path)
 
     def save_settings(self, use_temp):
         """
