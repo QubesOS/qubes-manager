@@ -6,20 +6,24 @@ BuildArch:	noarch
 Group:		Qubes
 Vendor:		Invisible Things Lab
 License:	GPL
-URL:		http://fixme
-Requires:	python3
-Requires:	python3-PyQt5
-Requires:	python3-inotify
-Requires:	python3-qubesadmin >= 4.0.19
-Requires:	python3-Quamash
-Requires:   qubes-desktop-linux-common >= 4.0.16
+URL:		https://www.qubes-os.org
+Requires:	python%{python3_pkgversion}
+Requires:	python%{python3_pkgversion}-PyQt5
+Requires:	python%{python3_pkgversion}-inotify
+Requires:	python%{python3_pkgversion}-qubesadmin >= 4.0.19
+Requires:	python%{python3_pkgversion}-Quamash
+Requires:	qubes-desktop-linux-common >= 4.0.16
 Requires:	qubes-artwork
 Requires:	pmount
 Requires:	cryptsetup
 Requires:	wmctrl
-BuildRequires:	python3-PyQt5-devel
-BuildRequires:	python3-devel
+BuildRequires:	python%{python3_pkgversion}-PyQt5-devel
+BuildRequires:	python%{python3_pkgversion}-devel
+%if 0%{?rhel} == 7
+BuildRequires:  qt5-qtbase-devel
+%else
 BuildRequires:	qt5-devel
+%endif
 BuildRequires:  qt5-linguist
 AutoReq:	0
 
