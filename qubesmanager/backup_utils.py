@@ -81,15 +81,27 @@ def select_path_button_clicked(dialog, select_file=False, read_only=False):
                 file_dialog_function = file_dialog.getOpenFileName
             else:
                 file_dialog_function = file_dialog.getExistingDirectory
-            new_path, _ = file_dialog_function(
+            result = file_dialog_function(
                 dialog,
                 dialog.tr("Select backup location."),
                 backup_location if backup_location else '/')
+            if isinstance(result, tuple):
+                new_path = result[0]
+            else:
+                new_path = result
         else:
-            new_path = utils.get_path_from_vm(
-                vm,
-                "qubes.SelectFile" if select_file
-                else "qubes.SelectDirectory")
+            try:
+                new_path = utils.get_path_from_vm(
+                    vm,
+                    "qubes.SelectFile" if select_file
+                    else "qubes.SelectDirectory")
+            except ValueError:
+                QtWidgets.QMessageBox.warning(
+                    dialog,
+                    dialog.tr("Unexpected characters in path!"),
+                    dialog.tr("Backup path can only contain the following "
+                              "special characters: /:.,_+=() -"))
+
     except subprocess.CalledProcessError:
         if not read_only:
             QtWidgets.QMessageBox.warning(

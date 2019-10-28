@@ -65,7 +65,6 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
 
         self.qt_app = qt_app
         self.qubes_app = qubes_app
-        self.backup_settings = QtCore.QSettings()
 
         self.selected_vms = []
         self.thread = None
