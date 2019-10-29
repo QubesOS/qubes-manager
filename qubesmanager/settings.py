@@ -317,10 +317,15 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
     def check_network_availability(self):
         netvm = self.vm.netvm
-        self.no_netvm_label.setVisible(netvm is None)
+        try:
+            provides_network = self.vm.provides_network
+        except AttributeError:
+            provides_network = False
+        self.no_netvm_label.setVisible(netvm is None and not provides_network)
         self.netvm_no_firewall_label.setVisible(
             netvm is not None and
             not netvm.features.check_with_template('qubes-firewall', False))
+        self.sysnet_warning_label.setVisible(netvm is None and provides_network)
 
     def current_tab_changed(self, idx):
         if idx == self.tabs_indices["firewall"]:
