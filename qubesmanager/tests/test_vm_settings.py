@@ -475,6 +475,7 @@ class VMSettingsTest(unittest.TestCase):
         self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
         self.dialog = vm_settings.VMSettingsWindow(
             self.vm, self.qtapp, "advanced")
+        self.dialog.show()
 
         new_kernel = self._set_noncurrent(self.dialog.kernel)
         self._click_ok()
@@ -485,6 +486,7 @@ class VMSettingsTest(unittest.TestCase):
 
         self.dialog = vm_settings.VMSettingsWindow(
             self.vm, self.qtapp, "advanced")
+        self.dialog.show()
         self._set_default(self.dialog.kernel)
 
         self._click_ok()

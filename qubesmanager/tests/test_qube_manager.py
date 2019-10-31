@@ -207,7 +207,11 @@ class QubeManagerTest(unittest.TestCase):
             vm = self._get_table_item(row, "Name").vm
 
             def_dispvm_item = self._get_table_item(row, "Default DispVM")
-            def_dispvm_value = getattr(vm, "default_dispvm", None)
+            if vm.property_is_default("default_dispvm"):
+                def_dispvm_value = "default ({})".format(
+                    self.qapp.default_dispvm)
+            else:
+                def_dispvm_value = getattr(vm, "default_dispvm", None)
 
             self.assertEqual(
                 str(def_dispvm_value), def_dispvm_item.text(),
