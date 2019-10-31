@@ -304,7 +304,7 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
 
 def handle_exception(exc_type, exc_value, exc_traceback):
 
-    filename, line, dummy, dummy = traceback.extract_tb(exc_traceback).pop()
+    filename, line, _, _ = traceback.extract_tb(exc_traceback).pop()
     filename = os.path.basename(filename)
     error = "%s: %s" % (exc_type.__name__, exc_value)
 
