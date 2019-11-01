@@ -134,6 +134,10 @@ class KernelVersion:  # pylint: disable=too-few-public-methods
                 self.groups, other.groups):
             if self_content == other_content:
                 continue
+            if self_content is None:
+                return True
+            if other_content is None:
+                return False
             if self_content.isdigit() and other_content.isdigit():
                 return int(self_content) < int(other_content)
             return self_content < other_content
