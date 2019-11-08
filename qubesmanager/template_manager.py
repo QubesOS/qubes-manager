@@ -62,6 +62,10 @@ class TemplateManagerWindow(
 
         self.vm_list.show()
 
+    def setup_application(self):
+        self.qt_app.setApplicationName(self.tr("Template Manager"))
+        self.qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
+
     def prepare_lists(self):
         self.templates = [vm.name for vm in self.qubes_app.domains
                           if vm.klass == 'TemplateVM']
@@ -259,7 +263,8 @@ class StatusItem(QtWidgets.QTableWidgetItem):
 
         if self.state:
             self.setIcon(QtGui.QIcon.fromTheme('dialog-warning'))
-            self.setToolTip(self.tr("Cannot change template on a running VM."))
+            self.setToolTip(QtCore.QCoreApplication.translate(
+                "template-manager", "Cannot change template on a running VM."))
         else:
             self.setIcon(QtGui.QIcon())
             self.setToolTip("")
@@ -381,10 +386,7 @@ class VMRow:
 
 
 def main():
-    utils.run_asynchronous(
-        QtCore.QCoreApplication.translate("appname", "Template Manager"),
-        "qubes-manager",
-        TemplateManagerWindow)
+    utils.run_asynchronous(TemplateManagerWindow)
 
 
 if __name__ == "__main__":

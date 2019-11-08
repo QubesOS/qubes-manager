@@ -520,6 +520,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         # correctly initialized
         self.table.selectRow(0)
 
+    def setup_application(self):
+        self.qt_app.setApplicationName(self.tr("Qube Manager"))
+        self.qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
+
+
     def keyPressEvent(self, event):  # pylint: disable=invalid-name
         if event.key() == QtCore.Qt.Key_Escape:
             self.searchbox.clear()
@@ -1300,10 +1305,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
 
 
 def main():
-    manager_utils.run_asynchronous(
-        QtCore.QCoreApplication.translate("appname", "Qube Manager"),
-        "qubes-manager",
-        VmManagerWindow)
+    manager_utils.run_asynchronous(VmManagerWindow)
 
 
 if __name__ == "__main__":

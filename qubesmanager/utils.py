@@ -268,7 +268,7 @@ def handle_exception(exc_type, exc_value, exc_traceback):
     msg_box.exec_()
 
 
-def run_asynchronous(app_name, icon_name, window_class):
+def run_asynchronous(window_class):
     qt_app = QtWidgets.QApplication(sys.argv)
 
     translator = QtCore.QTranslator(qt_app)
@@ -278,11 +278,10 @@ def run_asynchronous(app_name, icon_name, window_class):
         'i18n')
     translator.load("qubesmanager_{!s}.qm".format(locale), i18n_dir)
     qt_app.installTranslator(translator)
+    QtCore.QCoreApplication.installTranslator(translator)
 
     qt_app.setOrganizationName("The Qubes Project")
     qt_app.setOrganizationDomain("http://qubes-os.org")
-    qt_app.setApplicationName(app_name)
-    qt_app.setWindowIcon(QIcon.fromTheme(icon_name))
     qt_app.lastWindowClosed.connect(loop_shutdown)
 
     qubes_app = qubesadmin.Qubes()
@@ -292,6 +291,10 @@ def run_asynchronous(app_name, icon_name, window_class):
     dispatcher = events.EventsDispatcher(qubes_app)
 
     window = window_class(qt_app, qubes_app, dispatcher)
+
+    if hasattr(window, "setup_application"):
+        window.setup_application()
+
     window.show()
 
     try:
@@ -305,7 +308,7 @@ def run_asynchronous(app_name, icon_name, window_class):
         handle_exception(exc_type, exc_value, exc_traceback)
 
 
-def run_synchronous(app_name, window_class):
+def run_synchronous(window_class):
     qt_app = QtWidgets.QApplication(sys.argv)
 
     translator = QtCore.QTranslator(qt_app)
@@ -315,16 +318,19 @@ def run_synchronous(app_name, window_class):
         'i18n')
     translator.load("qubesmanager_{!s}.qm".format(locale), i18n_dir)
     qt_app.installTranslator(translator)
+    QtCore.QCoreApplication.installTranslator(translator)
 
     qt_app.setOrganizationName("The Qubes Project")
     qt_app.setOrganizationDomain("http://qubes-os.org")
-    qt_app.setApplicationName(app_name)
 
     sys.excepthook = handle_exception
 
     qubes_app = qubesadmin.Qubes()
 
     window = window_class(qt_app, qubes_app)
+
+    if hasattr(window, "setup_application"):
+        window.setup_application()
 
     window.show()
 

@@ -20,7 +20,7 @@
 #
 #
 
-from PyQt5 import QtCore, QtWidgets  # pylint: disable=import-error
+from PyQt5 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
 import os
 import os.path
 import logging
@@ -109,6 +109,10 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
             self.select_vms_page.completeChanged.emit)
 
         backup_utils.fill_appvms_list(self)
+
+    def setup_application(self):
+        self.qt_app.setApplicationName(self.tr("Qubes Restore VMs"))
+        self.qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
 
     @QtCore.pyqtSlot(name='on_select_path_button_clicked')
     def select_path_button_clicked(self):
@@ -290,9 +294,7 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
 
 
 def main():
-    utils.run_synchronous(
-        QtCore.QCoreApplication.translate("appname", "Qubes Restore VMs"),
-        RestoreVMsWindow)
+    utils.run_synchronous(RestoreVMsWindow)
 
 
 if __name__ == "__main__":

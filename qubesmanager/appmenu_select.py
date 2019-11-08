@@ -85,7 +85,8 @@ class AppmenuSelectManager:
         p.communicate('\n'.join(new_whitelisted).encode())
         if p.returncode != 0:
             exception_text = QtCore.QCoreApplication.translate(
-                "exception", 'qvm-appmenus --set-whitelist failed')
+                "Command {command} failed", "exception").format(
+                command='qvm-appmenus --set-whitelist')
             raise RuntimeError(exception_text)
 
         return True

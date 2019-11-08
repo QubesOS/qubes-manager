@@ -24,7 +24,7 @@ import signal
 from qubesadmin import exc
 from qubesadmin import utils as admin_utils
 
-from PyQt5 import QtCore, QtWidgets  # pylint: disable=import-error
+from PyQt5 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
 from . import ui_backupdlg  # pylint: disable=no-name-in-module
 from . import multiselectwidget
 
@@ -120,6 +120,10 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         self.progress_bar.setMaximum(100)
         self.dispatcher = dispatcher
         dispatcher.add_handler('backup-progress', self.on_backup_progress)
+
+    def setup_application(self):
+        self.qt_app.setApplicationName(self.tr("Qubes Backup VMs"))
+        self.qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
 
     def on_backup_progress(self, __submitter, _event, **kwargs):
         self.progress_bar.setValue(int(float(kwargs['progress'])))
@@ -391,10 +395,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
 
 
 def main():
-    utils.run_asynchronous(
-        QtCore.QCoreApplication.translate("appname", "Qubes Backup VMs"),
-        "qubes-manager",
-        BackupVMsWindow)
+    utils.run_asynchronous(BackupVMsWindow)
 
 
 if __name__ == "__main__":

@@ -275,6 +275,7 @@ def main(args=None):
         'i18n')
     translator.load("qubesmanager_{!s}.qm".format(locale), i18n_dir)
     qtapp.installTranslator(translator)
+    QtCore.QCoreApplication.installTranslator(translator)
 
     qtapp.setOrganizationName('Invisible Things Lab')
     qtapp.setOrganizationDomain('https://www.qubes-os.org/')

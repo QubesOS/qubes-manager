@@ -222,6 +222,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.refresh_apps_button.clicked.connect(
                 self.refresh_apps_button_pressed)
 
+    def setup_application(self):
+        self.qt_app.setApplicationName(self.tr("Qube Settings"))
+        self.qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
+
     def clear_threads(self):
         for thread in self.threads_list:
             if thread.isFinished():
@@ -1211,9 +1215,7 @@ def main(args=None):
     args = parser.parse_args(args)
     vm = args.domains.pop()
 
-    utils.run_synchronous(
-        QtCore.QCoreApplication.translate("appname", "Qube Settings"),
-        functools.partial(VMSettingsWindow, vm, args.tab))
+    utils.run_synchronous(functools.partial(VMSettingsWindow, vm, args.tab))
 
 
 if __name__ == "__main__":

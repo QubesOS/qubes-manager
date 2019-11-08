@@ -21,7 +21,7 @@
 #
 
 import subprocess
-from PyQt5 import QtWidgets, QtCore  # pylint: disable=import-error
+from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
 
 from qubesadmin.utils import parse_size
 
@@ -74,6 +74,10 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.__init_kernel_defaults__()
         self.__init_mem_defaults__()
         self.__init_updates__()
+
+    def setup_application(self):
+        self.qt_app.setApplicationName(self.tr("Qubes Global Settings"))
+        self.qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
 
     def __init_system_defaults__(self):
         # set up updatevm choice
@@ -408,9 +412,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
 
 
 def main():
-    utils.run_synchronous(
-        QtCore.QCoreApplication.translate("appname", "Qubes Global Settings"),
-        GlobalSettingsWindow)
+    utils.run_synchronous(GlobalSettingsWindow)
 
 
 if __name__ == "__main__":
