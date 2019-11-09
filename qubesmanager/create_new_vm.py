@@ -21,6 +21,7 @@
 #
 #
 
+import os
 import sys
 import subprocess
 
@@ -204,7 +205,7 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
         self.thread.start()
 
         self.progress = QtWidgets.QProgressDialog(
-            self.tr("Creating new qube <b>{}</b>...").format(name), "", 0, 0)
+            self.tr("Creating new qube <b>{0}</b>...").format(name), "", 0, 0)
         self.progress.setCancelButton(None)
         self.progress.setModal(True)
         self.progress.show()
@@ -216,7 +217,7 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Error creating the qube!"),
-                self.tr("ERROR: {}").format(self.thread.msg))
+                self.tr("ERROR: {0}").format(self.thread.msg))
 
         self.done(0)
 
@@ -266,9 +267,20 @@ def main(args=None):
     args = parser.parse_args(args)
 
     qtapp = QtWidgets.QApplication(sys.argv)
+
+    translator = QtCore.QTranslator(qtapp)
+    locale = QtCore.QLocale.system().name()
+    i18n_dir = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        'i18n')
+    translator.load("qubesmanager_{!s}.qm".format(locale), i18n_dir)
+    qtapp.installTranslator(translator)
+    QtCore.QCoreApplication.installTranslator(translator)
+
     qtapp.setOrganizationName('Invisible Things Lab')
     qtapp.setOrganizationDomain('https://www.qubes-os.org/')
-    qtapp.setApplicationName('Create qube')
+    qtapp.setApplicationName(QtCore.QCoreApplication.translate(
+        "appname", 'Create qube'))
 
     dialog = NewVmDlg(qtapp, args.app)
     dialog.exec_()

@@ -159,6 +159,7 @@ class VmRowInTable:
             if not event or event.endswith(':netvm'):
                 self.netvm_widget.update()
             if not event or event.endswith(':internal'):
+                # this is a feature, not a property; TODO: fix event handling
                 self.internal_widget.update()
             if not event or event.endswith(':ip'):
                 self.ip_widget.update()
@@ -298,18 +299,18 @@ class UpdateVMThread(common_threads.QubesThread):
                 if stdout == b'changed=yes\n':
                     subprocess.call(
                         ['notify-send', '-i', 'dialog-information',
-                         'Debian DSA-4371 fix installed in {}'.format(
+                         self.tr('Debian DSA-4371 fix installed in {}').format(
                                 self.vm.name)])
                 elif stdout == b'changed=no\n':
                     pass
                 else:
                     raise exc.QubesException(
-                            "Failed to apply DSA-4371 fix: {}".format(
+                            self.tr("Failed to apply DSA-4371 fix: {}").format(
                                 stderr.decode('ascii')))
                 self.vm.run_service("qubes.InstallUpdatesGUI",
                                     user="root", wait=False)
         except (ChildProcessError, exc.QubesException) as ex:
-            self.msg = ("Error on qube update!", str(ex))
+            self.msg = (self.tr("Error on qube update!"), str(ex))
 
 
 # pylint: disable=too-few-public-methods
@@ -322,7 +323,7 @@ class RunCommandThread(common_threads.QubesThread):
         try:
             self.vm.run(self.command_to_run)
         except (ChildProcessError, exc.QubesException) as ex:
-            self.msg = ("Error while running command!", str(ex))
+            self.msg = (self.tr("Error while running command!"), str(ex))
 
 
 class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
@@ -519,6 +520,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         # correctly initialized
         self.table.selectRow(0)
 
+    def setup_application(self):
+        self.qt_app.setApplicationName(self.tr("Qube Manager"))
+        self.qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
+
+
     def keyPressEvent(self, event):  # pylint: disable=invalid-name
         if event.key() == QtCore.Qt.Key_Escape:
             self.searchbox.clear()
@@ -536,18 +542,18 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
                     if thread.msg_is_success:
                         QtWidgets.QMessageBox.information(
                             self,
-                            self.tr(title),
-                            self.tr(msg))
+                            title,
+                            msg)
                     else:
                         QtWidgets.QMessageBox.warning(
                             self,
-                            self.tr(title),
-                            self.tr(msg))
+                            title,
+                            msg)
 
                 self.threads_list.remove(thread)
                 return
 
-        raise RuntimeError('No finished thread found')
+        raise RuntimeError(self.tr('No finished thread found'))
 
     def closeEvent(self, event):
         # pylint: disable=invalid-name
@@ -888,7 +894,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
                 "Cloning Qube..."), "", 0, 0)
         self.progress.setCancelButton(None)
         self.progress.setModal(True)
-        self.progress.setWindowTitle("Cloning qube...")
+        self.progress.setWindowTitle(self.tr("Cloning qube..."))
         self.progress.show()
 
         thread = common_threads.CloneVMThread(vm, clone_name)
@@ -1299,10 +1305,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
 
 
 def main():
-    manager_utils.run_asynchronous(
-        "Qube Manager",
-        "qubes-manager",
-        VmManagerWindow)
+    manager_utils.run_asynchronous(VmManagerWindow)
 
 
 if __name__ == "__main__":

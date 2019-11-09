@@ -62,11 +62,15 @@ class TemplateManagerWindow(
 
         self.vm_list.show()
 
+    def setup_application(self):
+        self.qt_app.setApplicationName(self.tr("Template Manager"))
+        self.qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
+
     def prepare_lists(self):
         self.templates = [vm.name for vm in self.qubes_app.domains
                           if vm.klass == 'TemplateVM']
 
-        self.change_all_combobox.addItem('(select template)')
+        self.change_all_combobox.addItem(self.tr('(select template)'))
         for template in self.templates:
             self.change_all_combobox.addItem(template)
 
@@ -84,7 +88,8 @@ class TemplateManagerWindow(
             self.rows_in_table[vm.name] = row
             row_count += 1
 
-        self.vm_list.setHorizontalHeaderLabels(['', 'Qube', 'Current', 'New'])
+        self.vm_list.setHorizontalHeaderLabels(
+            ['', self.tr('Qube'), self.tr('Current'), self.tr('New')])
         self.vm_list.resizeColumnsToContents()
 
     def initialize_table_events(self):
@@ -258,7 +263,8 @@ class StatusItem(QtWidgets.QTableWidgetItem):
 
         if self.state:
             self.setIcon(QtGui.QIcon.fromTheme('dialog-warning'))
-            self.setToolTip("Cannot change template on a running VM.")
+            self.setToolTip(QtCore.QCoreApplication.translate(
+                "template-manager", "Cannot change template on a running VM."))
         else:
             self.setIcon(QtGui.QIcon())
             self.setToolTip("")
@@ -331,7 +337,9 @@ class VMRow:
                              self.current_item)
 
         # new template
-        self.dummy_new_item = QtWidgets.QTableWidgetItem("qube is running")
+        self.dummy_new_item = QtWidgets.QTableWidgetItem(
+            QtCore.QCoreApplication.translate("TemplateManager",
+                                              "qube is running"))
         self.new_item = NewTemplateItem(self.vm, templates, table_widget)
 
         table_widget.setItem(row_no, columns.index('New template'),
@@ -378,9 +386,7 @@ class VMRow:
 
 
 def main():
-    utils.run_asynchronous("Template Manager",
-                           "qubes-manager",
-                           TemplateManagerWindow)
+    utils.run_asynchronous(TemplateManagerWindow)
 
 
 if __name__ == "__main__":

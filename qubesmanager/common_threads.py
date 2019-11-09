@@ -50,7 +50,7 @@ class RemoveVMThread(QubesThread):
         try:
             del self.vm.app.domains[self.vm.name]
         except (exc.QubesException, KeyError) as ex:
-            self.msg = ("Error removing qube!", str(ex))
+            self.msg = (self.tr("Error removing qube!"), str(ex))
 
 
 # pylint: disable=too-few-public-methods
@@ -62,7 +62,8 @@ class CloneVMThread(QubesThread):
     def run(self):
         try:
             self.vm.app.clone_vm(self.vm, self.dst_name)
-            self.msg = ("Sucess", "The qube was cloned sucessfully.")
+            self.msg = (self.tr("Sucess"),
+                        self.tr("The qube was cloned sucessfully."))
             self.msg_is_success = True
         except exc.QubesException as ex:
-            self.msg = ("Error while cloning qube!", str(ex))
+            self.msg = (self.tr("Error while cloning qube!"), str(ex))

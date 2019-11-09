@@ -21,7 +21,7 @@ import functools
 import subprocess
 from . import utils
 from . import ui_bootfromdevice  # pylint: disable=no-name-in-module
-from PyQt5 import QtWidgets  # pylint: disable=import-error
+from PyQt5 import QtWidgets, QtGui  # pylint: disable=import-error
 from qubesadmin import tools
 from qubesadmin.tools import qvm_start
 
@@ -46,6 +46,10 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
         self.__init_buttons__()
         # warn user if the VM is currently running
         self.__warn_if_running__()
+
+    def setup_application(self):
+        self.qapp.setApplicationName(self.tr("Boot Qube From Device"))
+        self.qapp.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
 
     def reject(self):
         self.done(0)
@@ -148,8 +152,7 @@ def main(args=None):
     args = parser.parse_args(args)
     vm = args.domains.pop()
 
-    utils.run_synchronous("Boot Qube From Device",
-                          functools.partial(VMBootFromDeviceWindow, vm))
+    utils.run_synchronous(functools.partial(VMBootFromDeviceWindow, vm))
 
 
 if __name__ == "__main__":

@@ -79,9 +79,9 @@ class RenameVMThread(common_threads.QubesThread):
                                              self.vm.name) + list_text)
 
         except qubesadmin.exc.QubesException as ex:
-            self.msg = ("Rename error!", str(ex))
+            self.msg = (self.tr("Rename error!"), str(ex))
         except Exception as ex:  # pylint: disable=broad-except
-            self.msg = ("Rename error!", repr(ex))
+            self.msg = (self.tr("Rename error!"), repr(ex))
 
 
 # pylint: disable=too-few-public-methods
@@ -112,7 +112,7 @@ class RefreshAppsVMThread(common_threads.QubesThread):
                 if not_running:
                     vm.shutdown()
             except Exception as ex:  # pylint: disable=broad-except
-                self.msg = ("Refresh failed!", str(ex))
+                self.msg = (self.tr("Refresh failed!"), str(ex))
 
 
 # pylint: disable=too-many-instance-attributes
@@ -222,6 +222,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.refresh_apps_button.clicked.connect(
                 self.refresh_apps_button_pressed)
 
+    def setup_application(self):
+        self.qt_app.setApplicationName(self.tr("Qube Settings"))
+        self.qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
+
     def clear_threads(self):
         for thread in self.threads_list:
             if thread.isFinished():
@@ -233,8 +237,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     (title, msg) = thread.msg
                     QtWidgets.QMessageBox.warning(
                         self,
-                        self.tr(title),
-                        self.tr(msg))
+                        title,
+                        msg)
 
                 self.threads_list.remove(thread)
 
@@ -243,7 +247,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
                 return
 
-        raise RuntimeError('No finished thread found')
+        raise RuntimeError(self.tr('No finished thread found'))
 
     def keyPressEvent(self, event):  # pylint: disable=invalid-name
         if event.key() == QtCore.Qt.Key_Enter \
@@ -278,16 +282,16 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         try:
             ret_tmp = self.__apply_basic_tab__()
             if ret_tmp:
-                ret += ["Basic tab:"] + ret_tmp
+                ret += [self.tr("Basic tab:")] + ret_tmp
             ret_tmp = self.__apply_advanced_tab__()
             if ret_tmp:
-                ret += ["Advanced tab:"] + ret_tmp
+                ret += [self.tr("Advanced tab:")] + ret_tmp
             ret_tmp = self.__apply_devices_tab__()
             if ret_tmp:
-                ret += ["Devices tab:"] + ret_tmp
+                ret += [self.tr("Devices tab:")] + ret_tmp
             ret_tmp = self.__apply_services_tab__()
             if ret_tmp:
-                ret += ["Sevices tab:"] + ret_tmp
+                ret += [self.tr("Sevices tab:")] + ret_tmp
         except qubesadmin.exc.QubesException as qex:
             ret.append(self.tr('Error while saving changes: ') + str(qex))
         except Exception as ex:  # pylint: disable=broad-except
@@ -587,8 +591,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             thread.finished.connect(self.clear_threads)
 
             self.progress = QtWidgets.QProgressDialog(
-                self.tr(
-                    "Renaming Qube..."), "", 0, 0)
+                self.tr("Renaming Qube..."), "", 0, 0)
             self.progress.setCancelButton(None)
             self.progress.setModal(True)
             self.thread_closes = True
@@ -644,8 +647,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.threads_list.append(thread)
 
             self.progress = QtWidgets.QProgressDialog(
-                self.tr(
-                    "Cloning Qube..."), "", 0, 0)
+                self.tr("Cloning Qube..."), "", 0, 0)
             self.progress.setCancelButton(None)
             self.progress.setModal(True)
             self.thread_closes = True
@@ -727,9 +729,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             domains_using = [vm.name for vm in self.vm.connected_vms]
             if domains_using:
                 self.provides_network_checkbox.setEnabled(False)
-                self.provides_network_checkbox.setToolTip(
+                self.provides_network_checkbox.setToolTip(self.tr(
                     "Cannot change this setting while this qube is used as a "
-                    "NetVM by the following qubes:\n" +
+                    "NetVM by the following qubes:\n") +
                     "\n".join(domains_using))
 
     def enable_seamless(self):
@@ -1218,8 +1220,7 @@ def main(args=None):
     args = parser.parse_args(args)
     vm = args.domains.pop()
 
-    utils.run_synchronous("Qube Settings",
-                          functools.partial(VMSettingsWindow, vm, args.tab))
+    utils.run_synchronous(functools.partial(VMSettingsWindow, vm, args.tab))
 
 
 if __name__ == "__main__":

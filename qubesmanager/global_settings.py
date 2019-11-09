@@ -21,7 +21,7 @@
 #
 
 import subprocess
-from PyQt5 import QtWidgets  # pylint: disable=import-error
+from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
 
 from qubesadmin.utils import parse_size
 
@@ -42,12 +42,18 @@ def _run_qrexec_repo(service, arg=''):
         check=False
     )
     if p.stderr:
-        raise RuntimeError('qrexec call stderr was not empty',
-                           {'stderr': p.stderr.decode('utf-8')})
+        raise RuntimeError(
+            QtCore.QCoreApplication.translate(
+                "GlobalSettings", 'qrexec call stderr was not empty'),
+            {'stderr': p.stderr.decode('utf-8')})
     if p.returncode != 0:
-        raise RuntimeError('qrexec call exited with non-zero return code',
-                           {'returncode': p.returncode})
+        raise RuntimeError(
+            QtCore.QCoreApplication.translate(
+                "GlobalSettings",
+                'qrexec call exited with non-zero return code'),
+            {'returncode': p.returncode})
     return p.stdout.decode('utf-8')
+
 
 # pylint: disable=too-many-instance-attributes
 class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
@@ -68,6 +74,10 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.__init_kernel_defaults__()
         self.__init_mem_defaults__()
         self.__init_updates__()
+
+    def setup_application(self):
+        self.qt_app.setApplicationName(self.tr("Qubes Global Settings"))
+        self.qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
 
     def __init_system_defaults__(self):
         # set up updatevm choice
@@ -272,15 +282,16 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         elif repos['qubes-dom0-current']['enabled']:
             self.dom0_updates_repo.setCurrentIndex(0)
         else:
-            raise Exception('Cannot detect enabled dom0 update repositories')
+            raise Exception(
+                self.tr('Cannot detect enabled dom0 update repositories'))
 
         if repos['qubes-templates-itl-testing']['enabled']:
             self.itl_tmpl_updates_repo.setCurrentIndex(1)
         elif repos['qubes-templates-itl']['enabled']:
             self.itl_tmpl_updates_repo.setCurrentIndex(0)
         else:
-            raise Exception('Cannot detect enabled ITL template update '
-                            'repositories')
+            raise Exception(self.tr('Cannot detect enabled ITL template update '
+                            'repositories'))
 
         if repos['qubes-templates-community-testing']['enabled']:
             self.comm_tmpl_updates_repo.setCurrentIndex(2)
@@ -335,7 +346,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 result = _run_qrexec_repo('qubes.repos.' + action, name)
                 if result != 'ok\n':
                     raise RuntimeError(
-                        'qrexec call stdout did not contain "ok" as expected',
+                        self.tr('qrexec call stdout did not contain "ok"'
+                                ' as expected'),
                         {'stdout': result})
             except RuntimeError as ex:
                 msg = '{desc}; {args}'.format(desc=ex.args[0], args=', '.join(
@@ -400,7 +412,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
 
 
 def main():
-    utils.run_synchronous("Qubes Global Settings", GlobalSettingsWindow)
+    utils.run_synchronous(GlobalSettingsWindow)
 
 
 if __name__ == "__main__":

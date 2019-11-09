@@ -280,8 +280,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
             return str(rule.proto)
         return "unknown"
 
-    @staticmethod
-    def get_firewall_conf(vm):
+    def get_firewall_conf(self, vm):
         conf = {
             'allow': None,
             'expire': 0,
@@ -296,14 +295,15 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         last_rule = next(reversed_rules, None)
 
         if last_rule is None:
-            raise FirewallModifiedOutsideError('At least one rule must exist.')
+            raise FirewallModifiedOutsideError(
+                self.tr('At least one rule must exist.'))
 
         if last_rule == qubesadmin.firewall.Rule('action=accept') \
                 or last_rule == qubesadmin.firewall.Rule('action=drop'):
             common_action = last_rule.action
         else:
-            raise FirewallModifiedOutsideError('Last rule must be either '
-                                               'drop all or accept all.')
+            raise FirewallModifiedOutsideError(
+                self.tr('Last rule must be either drop all or accept all.'))
 
         dns_rule = qubesadmin.firewall.Rule(None,
                                         action='accept', specialtarget='dns')
@@ -319,29 +319,31 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
                 continue
 
             if rule.specialtarget is not None or rule.icmptype is not None:
-                raise FirewallModifiedOutsideError("Rule type unknown!")
+                raise FirewallModifiedOutsideError(
+                    self.tr("Rule type unknown!"))
 
             if (rule.dsthost is not None or rule.proto is not None) \
                     and rule.expire is None:
                 if rule.action == 'accept':
                     conf['rules'].insert(0, rule)
                     continue
-                raise FirewallModifiedOutsideError('No blacklist support.')
+                raise FirewallModifiedOutsideError(
+                    self.tr('No blacklist support.'))
 
             if rule.expire is not None and rule.dsthost is None \
                     and rule.proto is None:
                 conf['expire'] = int(str(rule.expire))
                 continue
 
-            raise FirewallModifiedOutsideError('it does not add up.')
+            raise FirewallModifiedOutsideError(self.tr('it does not add up.'))
 
         conf['allow'] = (common_action == 'accept')
 
         if not allow_icmp and not conf['allow']:
-            raise FirewallModifiedOutsideError('ICMP must be allowed.')
+            raise FirewallModifiedOutsideError(self.tr('ICMP must be allowed.'))
 
         if not allow_dns and not conf['allow']:
-            raise FirewallModifiedOutsideError('DNS must be allowed')
+            raise FirewallModifiedOutsideError(self.tr('DNS must be allowed'))
 
         return conf
 

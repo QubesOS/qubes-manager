@@ -24,7 +24,7 @@ import signal
 from qubesadmin import exc
 from qubesadmin import utils as admin_utils
 
-from PyQt5 import QtCore, QtWidgets  # pylint: disable=import-error
+from PyQt5 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
 from . import ui_backupdlg  # pylint: disable=no-name-in-module
 from . import multiselectwidget
 
@@ -119,6 +119,10 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         self.progress_bar.setMaximum(100)
         self.dispatcher = dispatcher
         dispatcher.add_handler('backup-progress', self.on_backup_progress)
+
+    def setup_application(self):
+        self.qt_app.setApplicationName(self.tr("Qubes Backup VMs"))
+        self.qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
 
     def on_backup_progress(self, __submitter, _event, **kwargs):
         self.progress_bar.setValue(int(float(kwargs['progress'])))
@@ -323,9 +327,9 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
 
     def backup_finished(self):
         if self.thread.msg:
-            self.progress_status.setText(self.tr("Backup error."))
+            self.progress_status.setText(self.tr("Backup error"))
             QtWidgets.QMessageBox.warning(
-                self, self.tr("Backup error!"),
+                self, self.tr("Backup error"),
                 self.tr("ERROR: {}").format(
                     self.thread.msg))
             self.button(self.CancelButton).setEnabled(False)
@@ -368,7 +372,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
             self.thread.wait()
             QtWidgets.QMessageBox.warning(
                 self, self.tr("Backup aborted!"),
-                self.tr("ERROR: {}").format("Aborted!"))
+                self.tr("ERROR: Aborted"))
 
         self.cleanup_temporary_files()
         self.done(0)
@@ -390,9 +394,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
 
 
 def main():
-    utils.run_asynchronous("Qubes Backup VMs",
-                           "qubes-manager",
-                           BackupVMsWindow)
+    utils.run_asynchronous(BackupVMsWindow)
 
 
 if __name__ == "__main__":
