@@ -43,7 +43,6 @@ def prepare_choice(widget, holder, propname, choice, default,
                    filter_function=None, *,
                    icon_getter=None, allow_internal=None, allow_default=False,
                    allow_none=False, transform=None):
-
     # for newly created vms, set propname to None
 
     debug(
@@ -156,6 +155,7 @@ def prepare_kernel_choice(widget, holder, propname, default, *args, **kwargs):
     return prepare_choice(
         widget, holder, propname, kernels, default, *args, **kwargs)
 
+
 def prepare_label_choice(widget, holder, propname, default, *args, **kwargs):
     try:
         app = holder.app
@@ -247,7 +247,6 @@ def loop_shutdown():
 # Bases on the original code by:
 # Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
 def handle_exception(exc_type, exc_value, exc_traceback):
-
     filename, line, _, _ = traceback.extract_tb(exc_traceback).pop()
     filename = os.path.basename(filename)
     error = "%s: %s" % (exc_type.__name__, exc_value)
@@ -269,8 +268,8 @@ def handle_exception(exc_type, exc_value, exc_traceback):
         "ManagerUtils", "Houston, we have a problem..."))
     msg_box.setText(QtCore.QCoreApplication.translate(
         "ManagerUtils", "Whoops. A critical error has occured. "
-                    "This is most likely a bug in Qubes Manager.<br><br>"
-                    "<b><i>{0}</i></b><br/>at line <b>{1}</b><br/>of file "
+                        "This is most likely a bug in Qubes Manager.<br><br>"
+                        "<b><i>{0}</i></b><br/>at line <b>{1}</b><br/>of file "
                         "{2}.<br/><br/>").format(error, line, filename))
 
     msg_box.exec_()
