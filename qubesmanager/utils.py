@@ -146,9 +146,13 @@ class KernelVersion:  # pylint: disable=too-few-public-methods
 
 
 def prepare_kernel_choice(widget, holder, propname, default, *args, **kwargs):
-    # TODO get from storage API (pool 'linux-kernel') (suggested by @marmarta)
-    kernels = sorted(os.listdir('/var/lib/qubes/vm-kernels'),
-                     key=KernelVersion)
+    try:
+        app = holder.app
+    except AttributeError:
+        app = holder
+    kernels = [kernel.vid for kernel in app.pools['linux-kernel'].volumes]
+    kernels = sorted(kernels, key=KernelVersion)
+
     return prepare_choice(
         widget, holder, propname, kernels, default, *args, **kwargs)
 
