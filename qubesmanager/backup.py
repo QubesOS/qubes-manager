@@ -52,6 +52,9 @@ class BackupThread(QtCore.QThread):
             self.vm.app.qubesd_call(
                 'dom0', 'admin.backup.Execute',
                 backup_utils.get_profile_name(True))
+        except exc.BackupAlreadyRunningError:
+            msg.append("This backup is already in progress! Cancel it "
+                       "or wait until it finishes.")
         except Exception as ex:  # pylint: disable=broad-except
             msg.append(str(ex))
 

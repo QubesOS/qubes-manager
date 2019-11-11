@@ -16,3 +16,7 @@ class QubesDaemonNoResponseError(BaseException):
 
 class BackupCancelledError(BaseException):
     pass
+
+
+class BackupAlreadyRunningError(BaseException):
+    pass
