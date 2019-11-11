@@ -20,6 +20,7 @@
 #
 #
 
+import os
 import subprocess
 from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
 
@@ -34,13 +35,18 @@ qmemman_config_path = '/etc/qubes/qmemman.conf'
 
 
 def _run_qrexec_repo(service, arg=''):
+    # Set default locale to C in order to prevent error msg
+    # in subprocess call related to falling back to C locale
+    env = os.environ
+    env['LC_ALL'] = 'C'
     # Fake up a "qrexec call" to dom0 because dom0 can't qrexec to itself yet
     cmd = '/etc/qubes-rpc/' + service
     p = subprocess.run(
         ['sudo', cmd, arg],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        check=False
+        check=False,
+        env=env
     )
     if p.stderr:
         raise RuntimeError(
