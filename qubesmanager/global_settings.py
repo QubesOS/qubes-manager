@@ -32,6 +32,7 @@ from configparser import ConfigParser
 
 qmemman_config_path = '/etc/qubes/qmemman.conf'
 
+
 def _run_qrexec_repo(service, arg=''):
     # Fake up a "qrexec call" to dom0 because dom0 can't qrexec to itself yet
     cmd = '/etc/qubes-rpc/' + service
@@ -131,13 +132,13 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 self.update_vm_vmlist[self.update_vm_combo.currentIndex()]
 
         # clockvm
-        if self.qvm_collection.clockvm !=\
+        if self.qvm_collection.clockvm != \
                 self.clock_vm_vmlist[self.clock_vm_combo.currentIndex()]:
             self.qvm_collection.clockvm = \
                 self.clock_vm_vmlist[self.clock_vm_combo.currentIndex()]
 
         # default netvm
-        if self.qvm_collection.default_netvm !=\
+        if self.qvm_collection.default_netvm != \
                 self.default_netvm_vmlist[
                     self.default_netvm_combo.currentIndex()]:
             self.qvm_collection.default_netvm = \
@@ -189,8 +190,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.vm_min_mem_val = parse_size(self.vm_min_mem_val)
         self.dom0_mem_boost_val = parse_size(self.dom0_mem_boost_val)
 
-        self.min_vm_mem.setValue(self.vm_min_mem_val/1024/1024)
-        self.dom0_mem_boost.setValue(self.dom0_mem_boost_val/1024/1024)
+        self.min_vm_mem.setValue(self.vm_min_mem_val / 1024 / 1024)
+        self.dom0_mem_boost.setValue(self.dom0_mem_boost_val / 1024 / 1024)
 
     def __apply_mem_defaults__(self):
 
@@ -198,11 +199,11 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         current_min_vm_mem = self.min_vm_mem.value()
         current_dom0_mem_boost = self.dom0_mem_boost.value()
 
-        if current_min_vm_mem*1024*1024 != self.vm_min_mem_val \
-                or current_dom0_mem_boost*1024*1024 != self.dom0_mem_boost_val:
+        if current_min_vm_mem * 1024 * 1024 != self.vm_min_mem_val or \
+                current_dom0_mem_boost * 1024 * 1024 != self.dom0_mem_boost_val:
 
-            current_min_vm_mem = str(current_min_vm_mem)+'MiB'
-            current_dom0_mem_boost = str(current_dom0_mem_boost)+'MiB'
+            current_min_vm_mem = str(current_min_vm_mem) + 'MiB'
+            current_dom0_mem_boost = str(current_dom0_mem_boost) + 'MiB'
 
             if not self.qmemman_config.has_section('global'):
                 # add the whole section
@@ -255,7 +256,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
     def __init_updates__(self):
         try:
             self.updates_dom0_val = bool(self.qvm_collection.domains[
-                'dom0'].features['service.qubes-update-check'])
+                                             'dom0'].features[
+                                             'service.qubes-update-check'])
         except KeyError:
             self.updates_dom0_val = True
 
@@ -291,7 +293,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             self.itl_tmpl_updates_repo.setCurrentIndex(0)
         else:
             raise Exception(self.tr('Cannot detect enabled ITL template update '
-                            'repositories'))
+                                    'repositories'))
 
         if repos['qubes-templates-community-testing']['enabled']:
             self.comm_tmpl_updates_repo.setCurrentIndex(2)
@@ -339,7 +341,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
     def _manage_repos(self, repolist, action):
         for name in repolist:
             if self.repos[name]['enabled'] and action == 'Enable' or \
-               not self.repos[name]['enabled'] and action == 'Disable':
+                    not self.repos[name]['enabled'] and action == 'Disable':
                 continue
 
             try:
@@ -351,10 +353,10 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                         {'stdout': result})
             except RuntimeError as ex:
                 msg = '{desc}; {args}'.format(desc=ex.args[0], args=', '.join(
-                      # This is kind of hard to mentally parse but really all
-                      # it does is pretty-print args[1], which is a dictionary
-                      ['{key}: {val}'.format(key=i[0], val=i[1]) for i in
-                       ex.args[1].items()]
+                    # This is kind of hard to mentally parse but really all
+                    # it does is pretty-print args[1], which is a dictionary
+                    ['{key}: {val}'.format(key=i[0], val=i[1]) for i in
+                     ex.args[1].items()]
                 ))
                 QtWidgets.QMessageBox.warning(
                     None,
