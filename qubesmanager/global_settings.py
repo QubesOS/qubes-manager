@@ -37,7 +37,7 @@ qmemman_config_path = '/etc/qubes/qmemman.conf'
 def _run_qrexec_repo(service, arg=''):
     # Set default locale to C in order to prevent error msg
     # in subprocess call related to falling back to C locale
-    env = os.environ
+    env = os.environ.copy()
     env['LC_ALL'] = 'C'
     # Fake up a "qrexec call" to dom0 because dom0 can't qrexec to itself yet
     cmd = '/etc/qubes-rpc/' + service
