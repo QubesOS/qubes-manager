@@ -10,7 +10,7 @@ URL:		http://fixme
 Requires:	python3
 Requires:	python3-PyQt4
 Requires:	python3-inotify
-Requires:	python3-qubesadmin >= 4.0.19
+Requires:	python3-qubesadmin >= 4.0.29
 Requires:	python3-Quamash
 Requires:   qubes-desktop-linux-common >= 4.0.16
 Requires:	qubes-artwork
