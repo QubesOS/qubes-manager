@@ -223,8 +223,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 self.refresh_apps_button_pressed)
 
     def setup_application(self):
-        self.qt_app.setApplicationName(self.tr("Qube Settings"))
-        self.qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
+        self.qapp.setApplicationName(self.tr("Qube Settings"))
+        self.qapp.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
 
     def clear_threads(self):
         for thread in self.threads_list:
