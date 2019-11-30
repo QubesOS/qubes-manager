@@ -83,8 +83,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.__init_updates__()
 
     def setup_application(self):
-        self.qt_app.setApplicationName(self.tr("Qubes Global Settings"))
-        self.qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
+        self.app.setApplicationName(self.tr("Qubes Global Settings"))
+        self.app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
 
     def __init_system_defaults__(self):
         # set up updatevm choice
