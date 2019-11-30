@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="2.0">
+<!DOCTYPE TS>
+<TS version="2.1" language="en">
 <context>
     <name>AboutDialog</name>
     <message>
@@ -236,8 +237,9 @@ p, li { white-space: pre-wrap; }
     <message numerus="yes">
         <location filename="../clipboard.py" line="90"/>
         <source>%n byte(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>byte</numerusform>
+            <numerusform>bytes</numerusform>
         </translation>
     </message>
     <message>
@@ -1569,9 +1571,6 @@ The qube must be running to disable seamless mode; this setting is not persisten
     </message>
 </context>
 <context>
-    <name>StatusItem</name>
-</context>
-<context>
     <name>TemplateManager</name>
     <message>
         <location filename="../template_manager.py" line="340"/>
@@ -2576,9 +2575,6 @@ Template</source>
         <source>No file or directory selected.</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>exception</name>
 </context>
 <context>
     <name>template-manager</name>
