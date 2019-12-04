@@ -1084,9 +1084,9 @@ class QubeManagerTest(unittest.TestCase):
 
         self.addCleanup(
             subprocess.call,
-            ["qvm-shutdown", target_vm_name])
+            ["qvm-shutdown", "--wait", target_vm_name])
         self._run_command_and_process_events(
-            ["qvm-start", target_vm_name], timeout=20)
+            ["qvm-start", target_vm_name], timeout=60)
 
         status_item = self._get_table_item(vm_row, "State")
 
@@ -1096,7 +1096,7 @@ class QubeManagerTest(unittest.TestCase):
                          "Power state failed to update on start")
 
         self._run_command_and_process_events(
-            ["qvm-shutdown", target_vm_name], timeout=20)
+            ["qvm-shutdown", "--wait", target_vm_name], timeout=30)
 
         displayed_power_state = status_item.on_icon.status
 
@@ -1122,9 +1122,9 @@ class QubeManagerTest(unittest.TestCase):
 
         self.addCleanup(
             subprocess.call,
-            ["qvm-shutdown", target_vm_name])
+            ["qvm-shutdown", "--wait", target_vm_name])
         self._run_command_and_process_events(
-            ["qvm-start", target_vm_name], timeout=20)
+            ["qvm-start", target_vm_name], timeout=60)
 
         for i in range(self.dialog.table.rowCount()):
             call_count = self._get_table_item(
@@ -1149,7 +1149,7 @@ class QubeManagerTest(unittest.TestCase):
             self.assertIn("hypervisor", c.text(),
                           "Log for dom0 does not contain 'hypervisor'")
 
-        selected_vm = self._select_non_admin_vm().name
+        selected_vm = self._select_non_admin_vm(running=True).name
 
         self.assertTrue(self.dialog.logs_menu.isEnabled())
 
