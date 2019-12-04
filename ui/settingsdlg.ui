@@ -1321,6 +1321,9 @@ The qube must be running to disable seamless mode; this setting is not persisten
            <property name="text">
             <string>This qube has direct network access and Qubes Firewall settings will not be used. Configure other qubes' network access in their network settings or in a dedicated firewall qube.</string>
            </property>
+           <property name="wordWrap">
+             <bool>true</bool>
+           </property>
           </widget>
          </item>
         </layout>
