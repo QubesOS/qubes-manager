@@ -506,14 +506,15 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         dispatcher.add_handler('property-load',
                                self.on_domain_changed)
 
+        dispatcher.add_handler('domain-feature-set:updates-available',
+                               self.on_domain_updates_available)
+        dispatcher.add_handler('domain-feature-delete:updates-available',
+                               self.on_domain_updates_available)
+
         # It needs to store threads until they finish
         self.threads_list = []
         self.progress = None
 
-        # Check Updates Timer
-        timer = QtCore.QTimer(self)
-        timer.timeout.connect(self.check_updates)
-        timer.start(1000 * 30)  # 30s
         self.check_updates()
 
         # select the first row of the table to make sure menu actions are
@@ -523,7 +524,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
     def setup_application(self):
         self.qt_app.setApplicationName(self.tr("Qube Manager"))
         self.qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
-
 
     def keyPressEvent(self, event):  # pylint: disable=invalid-name
         if event.key() == QtCore.Qt.Key_Escape:
@@ -561,15 +561,19 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         self.manager_settings.setValue("window_size", self.size())
         event.accept()
 
-    def check_updates(self):
-        for vm in self.qubes_app.domains:
-            if vm.klass in {'TemplateVM', 'StandaloneVM'}:
-                try:
-                    self.vms_in_table[vm.qid].info_widget.update_vm_state()
-                except (exc.QubesException, KeyError):
-                    # the VM might have vanished in the meantime or
-                    # the signal might have been handled in the wrong order
-                    pass
+    def check_updates(self, vm=None):
+        if vm is None:
+            for vm_iter in self.qubes_app.domains:
+                self.check_updates(vm_iter)
+            return
+
+        if vm.klass in {'TemplateVM', 'StandaloneVM'}:
+            try:
+                self.vms_in_table[vm.qid].info_widget.update_vm_state()
+            except (exc.QubesException, KeyError):
+                # the VM might have vanished in the meantime or
+                # the signal might have been handled in the wrong order
+                pass
 
     def on_domain_added(self, _submitter, _event, vm, **_kwargs):
         row_no = 0
@@ -614,6 +618,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
             for row in self.vms_in_table.values():
                 if getattr(row.vm, 'template', None) == vm:
                     row.info_widget.update_vm_state()
+
+    def on_domain_updates_available(self, vm, _event, **_kwargs):
+        self.check_updates(vm)
 
     def on_domain_changed(self, vm, event, **_kwargs):
         if not vm:  # change of global properties occured
