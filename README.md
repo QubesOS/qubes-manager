@@ -20,6 +20,15 @@ This will keep translated strings, but will add new ones.
 
 Commit updated `.ts` files into `i18n` directory.
 
+### Pushing translations to transifex
+You'll need a token (for your own transifex acount, to configure it just run
+tx config once).
+
+tx push -s
+
+### Getting translation from transifex
+tx pull
+
 
 Tests
 ----------------------
