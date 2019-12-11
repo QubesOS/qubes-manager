@@ -396,12 +396,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.include_in_backups.setChecked(self.vm.include_in_backups)
 
         try:
-            self.run_in_debug_mode.setChecked(self.vm.debug)
-            self.run_in_debug_mode.setVisible(True)
-        except AttributeError:
-            self.run_in_debug_mode.setVisible(False)
-
-        try:
             self.autostart_vm.setChecked(self.vm.autostart)
             self.autostart_vm.setVisible(True)
         except AttributeError:
@@ -474,14 +468,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             if self.vm.include_in_backups != \
                     self.include_in_backups.isChecked():
                 self.vm.include_in_backups = self.include_in_backups.isChecked()
-        except qubesadmin.exc.QubesException as ex:
-            msg.append(str(ex))
-
-        # run_in_debug_mode
-        try:
-            if self.run_in_debug_mode.isVisible():
-                if self.vm.debug != self.run_in_debug_mode.isChecked():
-                    self.vm.debug = self.run_in_debug_mode.isChecked()
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
@@ -732,6 +718,12 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     "NetVM by the following qubes:\n") +
                     "\n".join(domains_using))
 
+        try:
+            self.run_in_debug_mode.setChecked(self.vm.debug)
+            self.run_in_debug_mode.setVisible(True)
+        except AttributeError:
+            self.run_in_debug_mode.setVisible(False)
+
     def enable_seamless(self):
         self.vm.run_service_for_stdio("qubes.SetGuiMode", input=b'SEAMLESS')
 
@@ -809,6 +801,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     self.provides_network_checkbox.isChecked()
             except Exception as ex:  # pylint: disable=broad-except
                 msg.append(str(ex))
+
+        # run_in_debug_mode
+        try:
+            if self.run_in_debug_mode.isVisible():
+                if self.vm.debug != self.run_in_debug_mode.isChecked():
+                    self.vm.debug = self.run_in_debug_mode.isChecked()
+        except qubesadmin.exc.QubesException as ex:
+            msg.append(str(ex))
 
         return msg
 
@@ -1074,12 +1074,12 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         self.service_line_edit.addItem("")
 
-        supported_services = []
+        supported_services = set()
         service_prefix = "supported-service."
 
         for feature in self.vm.features:
             if feature.startswith(service_prefix):
-                supported_services.append(feature[len(service_prefix):])
+                supported_services.add(feature[len(service_prefix):])
         if getattr(self.vm, "template", None):
             for feature in self.vm.template.features:
                 if feature.startswith(service_prefix):

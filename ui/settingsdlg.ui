@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>5</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -370,13 +370,6 @@
                 </property>
                 <property name="checked">
                  <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="run_in_debug_mode">
-                <property name="text">
-                 <string>Run in debug mode</string>
                 </property>
                </widget>
               </item>
@@ -813,14 +806,14 @@ border-width: 1px;</string>
             <property name="topMargin">
              <number>15</number>
             </property>
-            <item row="1" column="0">
+            <item row="2" column="0">
              <widget class="QCheckBox" name="provides_network_checkbox">
               <property name="text">
                <string>Provides network</string>
               </property>
              </widget>
             </item>
-            <item row="2" column="0">
+            <item row="3" column="0">
              <widget class="QCheckBox" name="dvm_template_checkbox">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allows using this qube as a template for DisposableVMs. The DisposableVMs will inherit the VM's state (configuration, installed programs etc.), but their state will not persist between restarts. &lt;/p&gt;&lt;p&gt;Setting this option will cause this qube to be listed as an option in the &amp;quot;Default DisposableVM Template&amp;quot; dropdown for all other qubes. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -830,14 +823,14 @@ border-width: 1px;</string>
               </property>
              </widget>
             </item>
-            <item row="7" column="0" colspan="2">
+            <item row="8" column="0" colspan="2">
              <widget class="QPushButton" name="boot_from_device_button">
               <property name="text">
                <string>Boot qube from CDROM</string>
               </property>
              </widget>
             </item>
-            <item row="8" column="0" colspan="2">
+            <item row="9" column="0" colspan="2">
              <layout class="QHBoxLayout" name="horizontalLayout_8">
               <item>
                <widget class="QPushButton" name="seamless_on_button">
@@ -863,7 +856,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
               </item>
              </layout>
             </item>
-            <item row="5" column="0" colspan="2">
+            <item row="6" column="0" colspan="2">
              <layout class="QHBoxLayout" name="horizontalLayout_6">
               <item>
                <widget class="QLabel" name="label_26">
@@ -892,6 +885,13 @@ The qube must be running to disable seamless mode; this setting is not persisten
                </widget>
               </item>
              </layout>
+            </item>
+            <item row="1" column="0">
+             <widget class="QCheckBox" name="run_in_debug_mode">
+              <property name="text">
+               <string>Run in debug mode</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -1322,7 +1322,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
             <string>This qube has direct network access and Qubes Firewall settings will not be used. Configure other qubes' network access in their network settings or in a dedicated firewall qube.</string>
            </property>
            <property name="wordWrap">
-             <bool>true</bool>
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -1564,7 +1564,6 @@ The qube must be running to disable seamless mode; this setting is not persisten
   <tabstop>template_name</tabstop>
   <tabstop>netVM</tabstop>
   <tabstop>include_in_backups</tabstop>
-  <tabstop>run_in_debug_mode</tabstop>
   <tabstop>autostart_vm</tabstop>
   <tabstop>max_priv_storage</tabstop>
   <tabstop>root_resize</tabstop>
