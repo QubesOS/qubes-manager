@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>5</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -1573,6 +1573,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
   <tabstop>max_mem_size</tabstop>
   <tabstop>vcpus</tabstop>
   <tabstop>include_in_balancing</tabstop>
+  <tabstop>run_in_debug_mode</tabstop>
   <tabstop>provides_network_checkbox</tabstop>
   <tabstop>dvm_template_checkbox</tabstop>
   <tabstop>default_dispvm</tabstop>
@@ -1591,7 +1592,10 @@ The qube must be running to disable seamless mode; this setting is not persisten
   <tabstop>temp_full_access_time</tabstop>
   <tabstop>no_strict_reset_button</tabstop>
   <tabstop>refresh_apps_button</tabstop>
+  <tabstop>service_line_edit</tabstop>
+  <tabstop>add_srv_button</tabstop>
   <tabstop>services_list</tabstop>
+  <tabstop>remove_srv_button</tabstop>
  </tabstops>
  <resources>
   <include location="../resources.qrc"/>
