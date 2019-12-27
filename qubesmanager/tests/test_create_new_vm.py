@@ -20,25 +20,22 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 import logging.handlers
-import quamash
-import asyncio
 import unittest
 import unittest.mock
 import qubesadmin
-import gc
 
-from PyQt4 import QtGui, QtTest, QtCore
+from PyQt5 import QtTest, QtCore
 from qubesadmin import Qubes
+from qubesmanager.tests import init_qtapp
 from qubesmanager import create_new_vm
 
 
 class NewVmTest(unittest.TestCase):
     def setUp(self):
         super(NewVmTest, self).setUp()
+        self.qtapp, self.loop = init_qtapp()
 
         self.qapp = Qubes()
-        self.qtapp = QtGui.QApplication(["test", "-style", "cleanlooks"])
-        self.loop = quamash.QEventLoop(self.qtapp)
 
         # mock up the Create VM Thread to avoid changing system state
         self.patcher_thread = unittest.mock.patch(
@@ -48,40 +45,11 @@ class NewVmTest(unittest.TestCase):
 
         # mock the progress dialog to speed testing up
         self.patcher_progress = unittest.mock.patch(
-            'PyQt4.QtGui.QProgressDialog')
+            'PyQt5.QtWidgets.QProgressDialog')
         self.mock_progress = self.patcher_progress.start()
         self.addCleanup(self.patcher_progress.stop)
 
-        self.dialog = create_new_vm.NewVmDlg(
-            self.qtapp, self.qapp)
-
-    def tearDown(self):
-        # process any pending events before destroying the object
-        self.qtapp.processEvents()
-
-        # queue destroying the QApplication object, do that for any other QT
-        # related objects here too
-        self.qtapp.deleteLater()
-        self.dialog.deleteLater()
-
-        # process any pending events (other than just queued destroy),
-        # just in case
-        self.qtapp.processEvents()
-
-        # execute main loop, which will process all events, _
-        # including just queued destroy_
-        self.loop.run_until_complete(asyncio.sleep(0))
-
-        # at this point it QT objects are destroyed, cleanup all remaining
-        # references;
-        # del other QT object here too
-        self.loop.close()
-        del self.dialog
-        del self.qtapp
-        del self.loop
-        gc.collect()
-
-        super(NewVmTest, self).tearDown()
+        self.dialog = create_new_vm.NewVmDlg(self.qtapp, self.qapp)
 
     def test_00_window_loads(self):
         self.assertGreater(self.dialog.template_vm.count(), 0,
@@ -94,13 +62,13 @@ class NewVmTest(unittest.TestCase):
                          "Attempted to create VM on cancel")
 
     def test_02_create_simple_vm(self):
-        self.dialog.name.setText("testvm")
+        self.dialog.name.setText("test-vm")
         self.__click_ok()
 
         self.mock_thread.assert_called_once_with(
-            self.qapp, "AppVM", "testvm",
+            self.qapp, "AppVM", "test-vm",
             unittest.mock.ANY, qubesadmin.DEFAULT,
-            {'provides_network': False})
+            {'provides_network': False}, unittest.mock.ANY)
         self.mock_thread().start.assert_called_once_with()
 
     def test_03_label(self):
@@ -109,13 +77,13 @@ class NewVmTest(unittest.TestCase):
                 self.dialog.label.setCurrentIndex(i)
                 break
 
-        self.dialog.name.setText("testvm")
+        self.dialog.name.setText("test-vm")
         self.__click_ok()
 
         self.mock_thread.assert_called_once_with(
-            self.qapp, "AppVM", "testvm",
+            self.qapp, "AppVM", "test-vm",
             self.qapp.labels['blue'], qubesadmin.DEFAULT,
-            unittest.mock.ANY)
+            unittest.mock.ANY, unittest.mock.ANY)
         self.mock_thread().start.assert_called_once_with()
 
     def test_04_template(self):
@@ -126,13 +94,13 @@ class NewVmTest(unittest.TestCase):
                 template = self.dialog.template_vm.currentText()
                 break
 
-        self.dialog.name.setText("testvm")
+        self.dialog.name.setText("test-vm")
         self.__click_ok()
 
         self.mock_thread.assert_called_once_with(
-            self.qapp, "AppVM", "testvm",
+            self.qapp, "AppVM", "test-vm",
             unittest.mock.ANY, template,
-            unittest.mock.ANY)
+            unittest.mock.ANY, unittest.mock.ANY)
 
     def test_05_netvm(self):
         netvm = None
@@ -142,53 +110,53 @@ class NewVmTest(unittest.TestCase):
                 netvm = self.dialog.netvm.currentText()
                 break
 
-        self.dialog.name.setText("testvm")
+        self.dialog.name.setText("test-vm")
         self.__click_ok()
 
         self.mock_thread.assert_called_once_with(
-            self.qapp, "AppVM", "testvm",
+            self.qapp, "AppVM", "test-vm",
             unittest.mock.ANY, unittest.mock.ANY,
-            {'netvm': netvm, 'provides_network': False})
+            {'netvm': netvm, 'provides_network': False}, unittest.mock.ANY)
 
     def test_06_provides_network(self):
         self.dialog.provides_network.setChecked(True)
 
-        self.dialog.name.setText("testvm")
+        self.dialog.name.setText("test-vm")
         self.__click_ok()
 
         self.mock_thread.assert_called_once_with(
-            self.qapp, "AppVM", "testvm",
+            self.qapp, "AppVM", "test-vm",
             unittest.mock.ANY, unittest.mock.ANY,
-            {'provides_network': True})
+            {'provides_network': True}, unittest.mock.ANY)
 
     @unittest.mock.patch('subprocess.check_call')
     def test_07_launch_settings(self, mock_call):
         self.dialog.launch_settings.setChecked(True)
 
-        self.dialog.name.setText("testvm")
+        self.dialog.name.setText("test-vm")
 
         self.__click_ok()
 
         # make sure the thread is not reporting an error
         self.mock_thread.assert_called_once_with(
-            self.qapp, "AppVM", "testvm",
+            self.qapp, "AppVM", "test-vm",
             unittest.mock.ANY, unittest.mock.ANY,
-            unittest.mock.ANY)
+            unittest.mock.ANY, unittest.mock.ANY)
 
         self.mock_thread().msg = None
         self.dialog.create_finished()
 
-        mock_call.assert_called_once_with(['qubes-vm-settings', "testvm"])
+        mock_call.assert_called_once_with(['qubes-vm-settings', "test-vm"])
 
     def test_08_progress_hides(self):
-        self.dialog.name.setText("testvm")
+        self.dialog.name.setText("test-vm")
 
         self.__click_ok()
 
         self.mock_thread.assert_called_once_with(
-            self.qapp, "AppVM", "testvm",
+            self.qapp, "AppVM", "test-vm",
             unittest.mock.ANY, unittest.mock.ANY,
-            unittest.mock.ANY)
+            unittest.mock.ANY, unittest.mock.ANY)
 
         # make sure the thread is not reporting an error
         self.mock_thread().start.assert_called_once_with()
@@ -201,7 +169,7 @@ class NewVmTest(unittest.TestCase):
         self.mock_progress().hide.assert_called_once_with()
 
     def test_09_standalone_clone(self):
-        self.dialog.name.setText("testvm")
+        self.dialog.name.setText("test-vm")
         for i in range(self.dialog.vm_type.count()):
             opt_text = self.dialog.vm_type.itemText(i).lower()
             if "standalone" in opt_text and "template" in opt_text and\
@@ -211,13 +179,13 @@ class NewVmTest(unittest.TestCase):
 
         self.__click_ok()
         self.mock_thread.assert_called_once_with(
-            self.qapp, "StandaloneVM", "testvm",
+            self.qapp, "StandaloneVM", "test-vm",
             unittest.mock.ANY, unittest.mock.ANY,
-            unittest.mock.ANY)
+            unittest.mock.ANY, unittest.mock.ANY)
 
     @unittest.mock.patch('subprocess.check_call')
     def test_10_standalone_empty(self, mock_call):
-        self.dialog.name.setText("testvm")
+        self.dialog.name.setText("test-vm")
         for i in range(self.dialog.vm_type.count()):
             opt_text = self.dialog.vm_type.itemText(i).lower()
             if "standalone" in opt_text and\
@@ -227,19 +195,19 @@ class NewVmTest(unittest.TestCase):
 
         self.__click_ok()
         self.mock_thread.assert_called_once_with(
-            self.qapp, "StandaloneVM", "testvm",
+            self.qapp, "StandaloneVM", "test-vm",
             unittest.mock.ANY, None,
-            unittest.mock.ANY)
+            unittest.mock.ANY, unittest.mock.ANY)
 
         self.mock_thread().msg = None
         self.dialog.create_finished()
 
         mock_call.assert_called_once_with(['qubes-vm-boot-from-device',
-                                           'testvm'])
+                                           'test-vm'])
 
     @unittest.mock.patch('subprocess.check_call')
     def test_11_standalone_empty_not_install(self, mock_call):
-        self.dialog.name.setText("testvm")
+        self.dialog.name.setText("test-vm")
 
         for i in range(self.dialog.vm_type.count()):
             opt_text = self.dialog.vm_type.itemText(i).lower()
@@ -252,9 +220,9 @@ class NewVmTest(unittest.TestCase):
 
         self.__click_ok()
         self.mock_thread.assert_called_once_with(
-            self.qapp, "StandaloneVM", "testvm",
+            self.qapp, "StandaloneVM", "test-vm",
             unittest.mock.ANY, None,
-            unittest.mock.ANY)
+            unittest.mock.ANY, unittest.mock.ANY)
 
         self.mock_thread().msg = None
         self.dialog.create_finished()

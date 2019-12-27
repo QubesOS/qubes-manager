@@ -20,14 +20,10 @@
 #
 #
 
-import sys
 import os
-import os.path
-import traceback
 import subprocess
-from PyQt5 import QtWidgets  # pylint: disable=import-error
+from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
 
-from qubesadmin import Qubes
 from qubesadmin.utils import parse_size
 
 from . import ui_globalsettingsdlg  # pylint: disable=no-name-in-module
@@ -37,21 +33,34 @@ from configparser import ConfigParser
 
 qmemman_config_path = '/etc/qubes/qmemman.conf'
 
+
 def _run_qrexec_repo(service, arg=''):
+    # Set default locale to C in order to prevent error msg
+    # in subprocess call related to falling back to C locale
+    env = os.environ.copy()
+    env['LC_ALL'] = 'C'
     # Fake up a "qrexec call" to dom0 because dom0 can't qrexec to itself yet
     cmd = '/etc/qubes-rpc/' + service
     p = subprocess.run(
         ['sudo', cmd, arg],
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+        stderr=subprocess.PIPE,
+        check=False,
+        env=env
     )
     if p.stderr:
-        raise RuntimeError('qrexec call stderr was not empty',
-                           {'stderr': p.stderr.decode('utf-8')})
+        raise RuntimeError(
+            QtCore.QCoreApplication.translate(
+                "GlobalSettings", 'qrexec call stderr was not empty'),
+            {'stderr': p.stderr.decode('utf-8')})
     if p.returncode != 0:
-        raise RuntimeError('qrexec call exited with non-zero return code',
-                           {'returncode': p.returncode})
+        raise RuntimeError(
+            QtCore.QCoreApplication.translate(
+                "GlobalSettings",
+                'qrexec call exited with non-zero return code'),
+            {'returncode': p.returncode})
     return p.stdout.decode('utf-8')
+
 
 # pylint: disable=too-many-instance-attributes
 class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
@@ -72,6 +81,10 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.__init_kernel_defaults__()
         self.__init_mem_defaults__()
         self.__init_updates__()
+
+    def setup_application(self):
+        self.app.setApplicationName(self.tr("Qubes Global Settings"))
+        self.app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
 
     def __init_system_defaults__(self):
         # set up updatevm choice
@@ -125,13 +138,13 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 self.update_vm_vmlist[self.update_vm_combo.currentIndex()]
 
         # clockvm
-        if self.qvm_collection.clockvm !=\
+        if self.qvm_collection.clockvm != \
                 self.clock_vm_vmlist[self.clock_vm_combo.currentIndex()]:
             self.qvm_collection.clockvm = \
                 self.clock_vm_vmlist[self.clock_vm_combo.currentIndex()]
 
         # default netvm
-        if self.qvm_collection.default_netvm !=\
+        if self.qvm_collection.default_netvm != \
                 self.default_netvm_vmlist[
                     self.default_netvm_combo.currentIndex()]:
             self.qvm_collection.default_netvm = \
@@ -183,8 +196,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.vm_min_mem_val = parse_size(self.vm_min_mem_val)
         self.dom0_mem_boost_val = parse_size(self.dom0_mem_boost_val)
 
-        self.min_vm_mem.setValue(self.vm_min_mem_val/1024/1024)
-        self.dom0_mem_boost.setValue(self.dom0_mem_boost_val/1024/1024)
+        self.min_vm_mem.setValue(self.vm_min_mem_val / 1024 / 1024)
+        self.dom0_mem_boost.setValue(self.dom0_mem_boost_val / 1024 / 1024)
 
     def __apply_mem_defaults__(self):
 
@@ -192,11 +205,11 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         current_min_vm_mem = self.min_vm_mem.value()
         current_dom0_mem_boost = self.dom0_mem_boost.value()
 
-        if current_min_vm_mem*1024*1024 != self.vm_min_mem_val \
-                or current_dom0_mem_boost*1024*1024 != self.dom0_mem_boost_val:
+        if current_min_vm_mem * 1024 * 1024 != self.vm_min_mem_val or \
+                current_dom0_mem_boost * 1024 * 1024 != self.dom0_mem_boost_val:
 
-            current_min_vm_mem = str(current_min_vm_mem)+'MiB'
-            current_dom0_mem_boost = str(current_dom0_mem_boost)+'MiB'
+            current_min_vm_mem = str(current_min_vm_mem) + 'MiB'
+            current_dom0_mem_boost = str(current_dom0_mem_boost) + 'MiB'
 
             if not self.qmemman_config.has_section('global'):
                 # add the whole section
@@ -247,15 +260,12 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 qmemman_config_file.close()
 
     def __init_updates__(self):
-        # TODO: remove workaround when it is no longer needed
-        self.dom0_updates_file_path = '/var/lib/qubes/updates/disable-updates'
-
         try:
             self.updates_dom0_val = bool(self.qvm_collection.domains[
-                'dom0'].features['service.qubes-update-check'])
+                                             'dom0'].features[
+                                             'service.qubes-update-check'])
         except KeyError:
-            self.updates_dom0_val =\
-                not os.path.isfile(self.dom0_updates_file_path)
+            self.updates_dom0_val = True
 
         self.updates_dom0.setChecked(self.updates_dom0_val)
 
@@ -280,15 +290,16 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         elif repos['qubes-dom0-current']['enabled']:
             self.dom0_updates_repo.setCurrentIndex(0)
         else:
-            raise Exception('Cannot detect enabled dom0 update repositories')
+            raise Exception(
+                self.tr('Cannot detect enabled dom0 update repositories'))
 
         if repos['qubes-templates-itl-testing']['enabled']:
             self.itl_tmpl_updates_repo.setCurrentIndex(1)
         elif repos['qubes-templates-itl']['enabled']:
             self.itl_tmpl_updates_repo.setCurrentIndex(0)
         else:
-            raise Exception('Cannot detect enabled ITL template update '
-                            'repositories')
+            raise Exception(self.tr('Cannot detect enabled ITL template update '
+                                    'repositories'))
 
         if repos['qubes-templates-community-testing']['enabled']:
             self.comm_tmpl_updates_repo.setCurrentIndex(2)
@@ -336,21 +347,22 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
     def _manage_repos(self, repolist, action):
         for name in repolist:
             if self.repos[name]['enabled'] and action == 'Enable' or \
-               not self.repos[name]['enabled'] and action == 'Disable':
+                    not self.repos[name]['enabled'] and action == 'Disable':
                 continue
 
             try:
                 result = _run_qrexec_repo('qubes.repos.' + action, name)
                 if result != 'ok\n':
                     raise RuntimeError(
-                        'qrexec call stdout did not contain "ok" as expected',
+                        self.tr('qrexec call stdout did not contain "ok"'
+                                ' as expected'),
                         {'stdout': result})
             except RuntimeError as ex:
                 msg = '{desc}; {args}'.format(desc=ex.args[0], args=', '.join(
-                      # This is kind of hard to mentally parse but really all
-                      # it does is pretty-print args[1], which is a dictionary
-                      ['{key}: {val}'.format(key=i[0], val=i[1]) for i in
-                       ex.args[1].items()]
+                    # This is kind of hard to mentally parse but really all
+                    # it does is pretty-print args[1], which is a dictionary
+                    ['{key}: {val}'.format(key=i[0], val=i[1]) for i in
+                     ex.args[1].items()]
                 ))
                 QtWidgets.QMessageBox.warning(
                     None,
@@ -406,39 +418,9 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.__apply_updates__()
         self.__apply_repos__()
 
-# Bases on the original code by:
-# Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
-
-def handle_exception(exc_type, exc_value, exc_traceback):
-    filename, line, dummy, dummy = traceback.extract_tb(exc_traceback).pop()
-    filename = os.path.basename(filename)
-    error = "%s: %s" % (exc_type.__name__, exc_value)
-
-    QtWidgets.QMessageBox.critical(
-        None,
-        "Houston, we have a problem...",
-        "Whoops. A critical error has occured. This is most likely a bug "
-        "in Qubes Global Settings application.<br><br><b><i>%s</i></b>" %
-        error + "at <b>line %d</b> of file <b>%s</b>.<br/><br/>"
-        % (line, filename))
-
 
 def main():
-    qtapp = QtWidgets.QApplication(sys.argv)
-    qtapp.setOrganizationName("The Qubes Project")
-    qtapp.setOrganizationDomain("http://qubes-os.org")
-    qtapp.setApplicationName("Qubes Global Settings")
-
-    sys.excepthook = handle_exception
-
-    app = Qubes()
-
-    global_window = GlobalSettingsWindow(qtapp, app)
-
-    global_window.show()
-
-    qtapp.exec_()
-    qtapp.exit()
+    utils.run_synchronous(GlobalSettingsWindow)
 
 
 if __name__ == "__main__":

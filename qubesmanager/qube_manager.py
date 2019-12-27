@@ -21,21 +21,13 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #
-import sys
 import os
 import os.path
 import subprocess
 from datetime import datetime, timedelta
-import traceback
-from contextlib import suppress
 
-import quamash
-import asyncio
-
-from qubesadmin import Qubes
 from qubesadmin import exc
 from qubesadmin import utils
-from qubesadmin import events
 
 from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
 
@@ -247,6 +239,7 @@ class VmInfo():
                 if self.netvm:
                     self.netvm = self.netvm.name
             if not event or event.endswith(':internal'):
+                # this is a feature, not a property; TODO: fix event handling
                 self.internal = "Yes" if self.vm.features.get('internal', False) else ""
             if not event or event.endswith(':ip'):
                 self.ip = getattr(self.vm, 'ip', None)
@@ -496,18 +489,18 @@ class UpdateVMThread(common_threads.QubesThread):
                 if stdout == b'changed=yes\n':
                     subprocess.call(
                         ['notify-send', '-i', 'dialog-information',
-                         'Debian DSA-4371 fix installed in {}'.format(
+                         self.tr('Debian DSA-4371 fix installed in {}').format(
                                 self.vm.name)])
                 elif stdout == b'changed=no\n':
                     pass
                 else:
                     raise exc.QubesException(
-                            "Failed to apply DSA-4371 fix: {}".format(
+                            self.tr("Failed to apply DSA-4371 fix: {}").format(
                                 stderr.decode('ascii')))
                 self.vm.run_service("qubes.InstallUpdatesGUI",
                                     user="root", wait=False)
         except (ChildProcessError, exc.QubesException) as ex:
-            self.msg = ("Error on qube update!", str(ex))
+            self.msg = (self.tr("Error on qube update!"), str(ex))
 
 
 # pylint: disable=too-few-public-methods
@@ -520,7 +513,7 @@ class RunCommandThread(common_threads.QubesThread):
         try:
             self.vm.run(self.command_to_run)
         except (ChildProcessError, exc.QubesException) as ex:
-            self.msg = ("Error while running command!", str(ex))
+            self.msg = (self.tr("Error while running command!"), str(ex))
 
 
 class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
@@ -669,6 +662,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
 
         #self.fill_table()
 
+        self.table.resizeColumnsToContents()
+
         self.update_size_on_disk = False
         self.shutdown_monitor = {}
 
@@ -704,19 +699,24 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         dispatcher.add_handler('property-load',
                                self.on_domain_changed)
 
+        dispatcher.add_handler('domain-feature-set:updates-available',
+                               self.on_domain_updates_available)
+        dispatcher.add_handler('domain-feature-delete:updates-available',
+                               self.on_domain_updates_available)
+
         # It needs to store threads until they finish
         self.threads_list = []
         self.progress = None
 
-        # Check Updates Timer
-        timer = QtCore.QTimer(self)
-        timer.timeout.connect(self.check_updates)
-        timer.start(1000 * 30)  # 30s
         self.check_updates()
 
         # select the first row of the table to make sure menu actions are
         # correctly initialized
         self.table.selectRow(0)
+
+    def setup_application(self):
+        self.qt_app.setApplicationName(self.tr("Qube Manager"))
+        self.qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
 
     def keyPressEvent(self, event):  # pylint: disable=invalid-name
         if event.key() == QtCore.Qt.Key_Escape:
@@ -735,18 +735,18 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
                     if thread.msg_is_success:
                         QtWidgets.QMessageBox.information(
                             self,
-                            self.tr(title),
-                            self.tr(msg))
+                            title,
+                            msg)
                     else:
                         QtWidgets.QMessageBox.warning(
                             self,
-                            self.tr(title),
-                            self.tr(msg))
+                            title,
+                            msg)
 
                 self.threads_list.remove(thread)
                 return
 
-        raise RuntimeError('No finished thread found')
+        raise RuntimeError(self.tr('No finished thread found'))
 
     def closeEvent(self, event):
         # pylint: disable=invalid-name
@@ -754,15 +754,15 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         self.manager_settings.setValue("window_size", self.size())
         event.accept()
 
-    def check_updates(self):
-        for vm in self.qubes_app.domains:
-            if vm.klass in {'TemplateVM', 'StandaloneVM'}:
-                try:
-                    self.vms_in_table[vm.qid].info_widget.update_vm_state()
-                except (exc.QubesException, KeyError):
-                    # the VM might have vanished in the meantime or
-                    # the signal might have been handled in the wrong order
-                    pass
+    def check_updates(self, info=None):
+        if info is None:
+            for info_iter in self.qubes_model.info_list:
+                self.check_updates(info_iter)
+            return
+
+        if info.vm.klass in {'TemplateVM', 'StandaloneVM'} and \
+                info.vm.features.get('updates-available', False):
+            info.state.outdated = 'update'
 
     def on_domain_added(self, _submitter, _event, vm, **_kwargs):
         try:
@@ -790,9 +790,19 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         except KeyError:  # adding the VM failed for some reason
             self.on_domain_added(None, None, vm)
 
+    def on_domain_updates_available(self, vm, _event, **_kwargs):
+        self.check_updates(self.qubes_model.info_by_id[vm.qid])
+
     def on_domain_changed(self, vm, event, **_kwargs):
         if not vm:  # change of global properties occured
+            if event.endswith(':default_netvm'):
+                for vm_row in self.vms_in_table.values():
+                    vm_row.update(event='property-set:netvm')
+            if event.endswith(':default_dispvm'):
+                for vm_row in self.vms_in_table.values():
+                    vm_row.update(event='property-set:default_dispvm')
             return
+
         try:
             self.qubes_model.info_by_id[vm.qid].update(event=event)
             self.qubes_model.layoutChanged.emit()
@@ -830,7 +840,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
                                                 QtCore.QSize(1100, 600)))
 
     def get_vms_list(self):
-        return [vm for vm in self.qubes_app.domains]
+        return list(self.qubes_app.domains)
 
     def showhide_vms(self):
         if not self.search:
@@ -1027,7 +1037,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
                 "Cloning Qube..."), "", 0, 0)
         self.progress.setCancelButton(None)
         self.progress.setModal(True)
-        self.progress.setWindowTitle("Cloning qube...")
+        self.progress.setWindowTitle(self.tr("Cloning qube..."))
         self.progress.show()
 
         thread = common_threads.CloneVMThread(vm, clone_name)
@@ -1437,71 +1447,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         log_dlg.exec_()
 
 
-# Bases on the original code by:
-# Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
-
-def handle_exception(exc_type, exc_value, exc_traceback):
-
-    filename, line, dummy, dummy = traceback.extract_tb(exc_traceback).pop()
-    filename = os.path.basename(filename)
-    error = "%s: %s" % (exc_type.__name__, exc_value)
-
-    strace = ""
-    stacktrace = traceback.extract_tb(exc_traceback)
-    while stacktrace:
-        (filename, line, func, txt) = stacktrace.pop()
-        strace += "----\n"
-        strace += "line: %s\n" % txt
-        strace += "func: %s\n" % func
-        strace += "line no.: %d\n" % line
-        strace += "file: %s\n" % filename
-
-    msg_box = QtWidgets.QMessageBox()
-    msg_box.setDetailedText(strace)
-    msg_box.setIcon(QtWidgets.QMessageBox.Critical)
-    msg_box.setWindowTitle("Houston, we have a problem...")
-    msg_box.setText("Whoops. A critical error has occured. "
-                    "This is most likely a bug in Qubes Manager.<br><br>"
-                    "<b><i>%s</i></b>" % error +
-                    "<br/>at line <b>%d</b><br/>of file %s.<br/><br/>"
-                    % (line, filename))
-
-    msg_box.exec_()
-
-
-def loop_shutdown():
-    pending = asyncio.Task.all_tasks()
-    for task in pending:
-        with suppress(asyncio.CancelledError):
-            task.cancel()
-
-
 def main():
-    qt_app = QtWidgets.QApplication(sys.argv)
-    qt_app.setOrganizationName("The Qubes Project")
-    qt_app.setOrganizationDomain("http://qubes-os.org")
-    qt_app.setApplicationName("Qube Manager")
-    qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
-    qt_app.lastWindowClosed.connect(loop_shutdown)
-
-    qubes_app = Qubes()
-
-    loop = quamash.QEventLoop(qt_app)
-    asyncio.set_event_loop(loop)
-    dispatcher = events.EventsDispatcher(qubes_app)
-
-    manager_window = VmManagerWindow(qt_app, qubes_app, dispatcher)
-    manager_window.show()
-
-    try:
-        loop.run_until_complete(
-            asyncio.ensure_future(dispatcher.listen_for_events()))
-    except asyncio.CancelledError:
-        pass
-    except Exception:  # pylint: disable=broad-except
-        loop_shutdown()
-        exc_type, exc_value, exc_traceback = sys.exc_info()[:3]
-        handle_exception(exc_type, exc_value, exc_traceback)
+    manager_utils.run_asynchronous(VmManagerWindow)
 
 
 if __name__ == "__main__":

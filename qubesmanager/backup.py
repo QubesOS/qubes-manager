@@ -20,18 +20,11 @@
 #
 #
 
-import traceback
-
 import signal
-import quamash
-
-from qubesadmin import Qubes, exc
+from qubesadmin import exc
 from qubesadmin import utils as admin_utils
-from qubesadmin import events
-from qubes.storage.file import get_disk_usage
 
-from PyQt5 import QtCore  # pylint: disable=import-error
-from PyQt5 import QtWidgets  # pylint: disable=import-error
+from PyQt5 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
 from . import ui_backupdlg  # pylint: disable=no-name-in-module
 from . import multiselectwidget
 
@@ -40,10 +33,8 @@ from . import utils
 
 import grp
 import pwd
-import sys
 import os
-import asyncio
-from contextlib import suppress
+import shutil
 
 
 # pylint: disable=too-few-public-methods
@@ -61,6 +52,9 @@ class BackupThread(QtCore.QThread):
             self.vm.app.qubesd_call(
                 'dom0', 'admin.backup.Execute',
                 backup_utils.get_profile_name(True))
+        except exc.BackupAlreadyRunningError:
+            msg.append("This backup is already in progress! Cancel it "
+                       "or wait until it finishes.")
         except Exception as ex:  # pylint: disable=broad-except
             msg.append(str(ex))
 
@@ -74,7 +68,6 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
 
         self.qt_app = qt_app
         self.qubes_app = qubes_app
-        self.backup_settings = QtCore.QSettings()
 
         self.selected_vms = []
         self.thread = None
@@ -129,6 +122,10 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         self.progress_bar.setMaximum(100)
         self.dispatcher = dispatcher
         dispatcher.add_handler('backup-progress', self.on_backup_progress)
+
+    def setup_application(self):
+        self.qt_app.setApplicationName(self.tr("Qubes Backup VMs"))
+        self.qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
 
     def on_backup_progress(self, __submitter, _event, **kwargs):
         self.progress_bar.setValue(int(float(kwargs['progress'])))
@@ -211,7 +208,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
             if vm.qid == 0:
                 local_user = grp.getgrnam('qubes').gr_mem[0]
                 home_dir = pwd.getpwnam(local_user).pw_dir
-                self.size = get_disk_usage(home_dir)
+                self.size = shutil.disk_usage(home_dir)[1]
             else:
                 self.size = vm.get_disk_utilization()
             super(BackupVMsWindow.VmListItem, self).__init__(
@@ -333,9 +330,9 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
 
     def backup_finished(self):
         if self.thread.msg:
-            self.progress_status.setText(self.tr("Backup error."))
+            self.progress_status.setText(self.tr("Backup error"))
             QtWidgets.QMessageBox.warning(
-                self, self.tr("Backup error!"),
+                self, self.tr("Backup error"),
                 self.tr("ERROR: {}").format(
                     self.thread.msg))
             self.button(self.CancelButton).setEnabled(False)
@@ -366,13 +363,19 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
     def reject(self):
         if (self.currentPage() is self.commit_page) and \
                 self.button(self.CancelButton).isEnabled():
-            self.qubes_app.qubesd_call(
-                'dom0', 'admin.backup.Cancel',
-                backup_utils.get_profile_name(True))
+            try:
+                self.qubes_app.qubesd_call(
+                    'dom0', 'admin.backup.Cancel',
+                    backup_utils.get_profile_name(True))
+            except exc.QubesException as ex:
+                QtWidgets.QMessageBox.warning(
+                    self, self.tr("Error cancelling backup!"),
+                    self.tr("ERROR: {}").format(str(ex)))
+
             self.thread.wait()
             QtWidgets.QMessageBox.warning(
                 self, self.tr("Backup aborted!"),
-                self.tr("ERROR: {}").format("Aborted!"))
+                self.tr("ERROR: Aborted"))
 
         self.cleanup_temporary_files()
         self.done(0)
@@ -393,57 +396,8 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         self.select_dir_page.completeChanged.emit()
 
 
-# Bases on the original code by:
-# Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
-
-def handle_exception(exc_type, exc_value, exc_traceback):
-    filename, line, dummy, dummy = traceback.extract_tb(exc_traceback).pop()
-    filename = os.path.basename(filename)
-    error = "%s: %s" % (exc_type.__name__, exc_value)
-
-    QtWidgets.QMessageBox.critical(
-        None,
-        "Houston, we have a problem...",
-        "Whoops. A critical error has occured. This is most likely a bug "
-        "in Qubes Global Settings application.<br><br><b><i>%s</i></b>" %
-        error + "at <b>line %d</b> of file <b>%s</b>.<br/><br/>"
-        % (line, filename))
-
-
-def loop_shutdown():
-    pending = asyncio.Task.all_tasks()
-    for task in pending:
-        with suppress(asyncio.CancelledError):
-            task.cancel()
-
-
 def main():
-    qt_app = QtWidgets.QApplication(sys.argv)
-    qt_app.setOrganizationName("The Qubes Project")
-    qt_app.setOrganizationDomain("http://qubes-os.org")
-    qt_app.setApplicationName("Qubes Backup VMs")
-    qt_app.lastWindowClosed.connect(loop_shutdown)
-
-    sys.excepthook = handle_exception
-
-    qubes_app = Qubes()
-
-    loop = quamash.QEventLoop(qt_app)
-    asyncio.set_event_loop(loop)
-    dispatcher = events.EventsDispatcher(qubes_app)
-
-    backup_window = BackupVMsWindow(qt_app, qubes_app, dispatcher)
-    backup_window.show()
-
-    try:
-        loop.run_until_complete(
-            asyncio.ensure_future(dispatcher.listen_for_events()))
-    except asyncio.CancelledError:
-        pass
-    except Exception:  # pylint: disable=broad-except
-        loop_shutdown()
-        exc_type, exc_value, exc_traceback = sys.exc_info()[:3]
-        handle_exception(exc_type, exc_value, exc_traceback)
+    utils.run_asynchronous(BackupVMsWindow)
 
 
 if __name__ == "__main__":

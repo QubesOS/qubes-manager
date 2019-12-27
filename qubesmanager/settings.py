@@ -23,12 +23,10 @@
 #
 
 import collections
-import os.path
-import os
+import functools
 import re
 import subprocess
 import traceback
-import sys
 from qubesadmin.tools import QubesArgumentParser
 from qubesadmin import devices
 from qubesadmin import utils as admin_utils
@@ -81,9 +79,9 @@ class RenameVMThread(common_threads.QubesThread):
                                              self.vm.name) + list_text)
 
         except qubesadmin.exc.QubesException as ex:
-            self.msg = ("Rename error!", str(ex))
+            self.msg = (self.tr("Rename error!"), str(ex))
         except Exception as ex:  # pylint: disable=broad-except
-            self.msg = ("Rename error!", repr(ex))
+            self.msg = (self.tr("Rename error!"), repr(ex))
 
 
 # pylint: disable=too-few-public-methods
@@ -114,7 +112,7 @@ class RefreshAppsVMThread(common_threads.QubesThread):
                 if not_running:
                     vm.shutdown()
             except Exception as ex:  # pylint: disable=broad-except
-                self.msg = ("Refresh failed!", str(ex))
+                self.msg = (self.tr("Refresh failed!"), str(ex))
 
 
 # pylint: disable=too-many-instance-attributes
@@ -128,11 +126,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         ('services', 5),
         ))
 
-    def __init__(self, vm, qapp, init_page="basic", parent=None):
+    def __init__(self, vm, init_page="basic", qapp=None, qubesapp=None,
+                 parent=None):
         super(VMSettingsWindow, self).__init__(parent)
 
         self.vm = vm
         self.qapp = qapp
+        self.qubesapp = qubesapp
         self.threads_list = []
         self.progress = None
         self.thread_closes = False
@@ -222,6 +222,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.refresh_apps_button.clicked.connect(
                 self.refresh_apps_button_pressed)
 
+    def setup_application(self):
+        self.qapp.setApplicationName(self.tr("Qube Settings"))
+        self.qapp.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
+
     def clear_threads(self):
         for thread in self.threads_list:
             if thread.isFinished():
@@ -233,8 +237,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     (title, msg) = thread.msg
                     QtWidgets.QMessageBox.warning(
                         self,
-                        self.tr(title),
-                        self.tr(msg))
+                        title,
+                        msg)
 
                 self.threads_list.remove(thread)
 
@@ -243,7 +247,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
                 return
 
-        raise RuntimeError('No finished thread found')
+        raise RuntimeError(self.tr('No finished thread found'))
 
     def keyPressEvent(self, event):  # pylint: disable=invalid-name
         if event.key() == QtCore.Qt.Key_Enter \
@@ -278,16 +282,16 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         try:
             ret_tmp = self.__apply_basic_tab__()
             if ret_tmp:
-                ret += ["Basic tab:"] + ret_tmp
+                ret += [self.tr("Basic tab:")] + ret_tmp
             ret_tmp = self.__apply_advanced_tab__()
             if ret_tmp:
-                ret += ["Advanced tab:"] + ret_tmp
+                ret += [self.tr("Advanced tab:")] + ret_tmp
             ret_tmp = self.__apply_devices_tab__()
             if ret_tmp:
-                ret += ["Devices tab:"] + ret_tmp
+                ret += [self.tr("Devices tab:")] + ret_tmp
             ret_tmp = self.__apply_services_tab__()
             if ret_tmp:
-                ret += ["Sevices tab:"] + ret_tmp
+                ret += [self.tr("Sevices tab:")] + ret_tmp
         except qubesadmin.exc.QubesException as qex:
             ret.append(self.tr('Error while saving changes: ') + str(qex))
         except Exception as ex:  # pylint: disable=broad-except
@@ -317,31 +321,15 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
     def check_network_availability(self):
         netvm = self.vm.netvm
-        self.no_netvm_label.setVisible(netvm is None)
+        try:
+            provides_network = self.vm.provides_network
+        except AttributeError:
+            provides_network = False
+        self.no_netvm_label.setVisible(netvm is None and not provides_network)
         self.netvm_no_firewall_label.setVisible(
             netvm is not None and
             not netvm.features.check_with_template('qubes-firewall', False))
-        if netvm is None:
-            QtWidgets.QMessageBox.warning(
-                self,
-                self.tr("Qube configuration problem!"),
-                self.tr('This qube has networking disabled '
-                        '(Basic -> Networking) - network will be disabled. '
-                        'If you want to use firewall, '
-                        'please enable networking.')
-            )
-        if netvm is not None and \
-                not netvm.features.check_with_template(
-                    'qubes-firewall', False):
-            QtWidgets.QMessageBox.warning(
-                self,
-                self.tr("Qube configuration problem!"),
-                self.tr("The '{vm}' qube is network connected to "
-                        "'{netvm}', which does not support firewall!<br/>"
-                        "You may edit the '{vm}' qube firewall rules, but "
-                        "these will not take any effect until you connect it "
-                        "to a working Firewall qube.").format(
-                    vm=self.vm.name, netvm=netvm.name))
+        self.sysnet_warning_label.setVisible(netvm is None and provides_network)
 
     def current_tab_changed(self, idx):
         if idx == self.tabs_indices["firewall"]:
@@ -594,7 +582,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         new_vm_name, ok = QtWidgets.QInputDialog.getText(
             self,
             self.tr('Rename qube'),
-            self.tr('New name: (WARNING: all other changes will be discarded)'))
+            self.tr('New name: (WARNING: all other changes will be discarded)'),
+            text=self.vm.name)
 
         if ok:
             thread = RenameVMThread(self.vm, new_vm_name, dependencies)
@@ -602,8 +591,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             thread.finished.connect(self.clear_threads)
 
             self.progress = QtWidgets.QProgressDialog(
-                self.tr(
-                    "Renaming Qube..."), "", 0, 0)
+                self.tr("Renaming Qube..."), "", 0, 0)
             self.progress.setCancelButton(None)
             self.progress.setModal(True)
             self.thread_closes = True
@@ -659,8 +647,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.threads_list.append(thread)
 
             self.progress = QtWidgets.QProgressDialog(
-                self.tr(
-                    "Cloning Qube..."), "", 0, 0)
+                self.tr("Cloning Qube..."), "", 0, 0)
             self.progress.setCancelButton(None)
             self.progress.setModal(True)
             self.thread_closes = True
@@ -742,9 +729,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             domains_using = [vm.name for vm in self.vm.connected_vms]
             if domains_using:
                 self.provides_network_checkbox.setEnabled(False)
-                self.provides_network_checkbox.setToolTip(
+                self.provides_network_checkbox.setToolTip(self.tr(
                     "Cannot change this setting while this qube is used as a "
-                    "NetVM by the following qubes:\n" +
+                    "NetVM by the following qubes:\n") +
                     "\n".join(domains_using))
 
     def enable_seamless(self):
@@ -1218,38 +1205,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.fw_model.remove_child(i)
 
 
-# Bases on the original code by:
-# Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
-
-def handle_exception(exc_type, exc_value, exc_traceback):
-
-    filename, line, dummy, dummy = traceback.extract_tb(exc_traceback).pop()
-    filename = os.path.basename(filename)
-    error = "%s: %s" % (exc_type.__name__, exc_value)
-
-    strace = ""
-    stacktrace = traceback.extract_tb(exc_traceback)
-    while stacktrace:
-        (filename, line, func, txt) = stacktrace.pop()
-        strace += "----\n"
-        strace += "line: %s\n" % txt
-        strace += "func: %s\n" % func
-        strace += "line no.: %d\n" % line
-        strace += "file: %s\n" % filename
-
-    msg_box = QtWidgets.QMessageBox()
-    msg_box.setDetailedText(strace)
-    msg_box.setIcon(QtWidgets.QMessageBox.Critical)
-    msg_box.setWindowTitle("Houston, we have a problem...")
-    msg_box.setText("Whoops. A critical error has occured. "
-                    "This is most likely a bug in Qubes Manager.<br><br>"
-                    "<b><i>%s</i></b>" % error +
-                    "<br/>at line <b>%d</b><br/>of file %s.<br/><br/>"
-                    % (line, filename))
-
-    msg_box.exec_()
-
-
 parser = QubesArgumentParser(vmname_nargs=1)
 
 parser.add_argument('--tab', metavar='TAB',
@@ -1265,19 +1220,7 @@ def main(args=None):
     args = parser.parse_args(args)
     vm = args.domains.pop()
 
-    qapp = QtWidgets.QApplication(sys.argv)
-    qapp.setOrganizationName('Invisible Things Lab')
-    qapp.setOrganizationDomain("https://www.qubes-os.org/")
-    qapp.setApplicationName("Qube Settings")
-
-    if not utils.is_debug():
-        sys.excepthook = handle_exception
-
-    settings_window = VMSettingsWindow(vm, qapp, args.tab)
-    settings_window.show()
-
-    qapp.exec_()
-    qapp.exit()
+    utils.run_synchronous(functools.partial(VMSettingsWindow, vm, args.tab))
 
 
 if __name__ == "__main__":

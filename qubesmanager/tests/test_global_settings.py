@@ -20,24 +20,21 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 import logging.handlers
-import quamash
-import asyncio
 import unittest
 import unittest.mock
-import gc
 
-from PyQt4 import QtGui, QtTest, QtCore
+from PyQt5 import QtTest, QtCore, QtWidgets
 from qubesadmin import Qubes
+from qubesmanager.tests import init_qtapp
 import qubesmanager.global_settings as global_settings
 
 
 class GlobalSettingsTest(unittest.TestCase):
     def setUp(self):
         super(GlobalSettingsTest, self).setUp()
+        self.qtapp, self.loop = init_qtapp()
 
         self.qapp = Qubes()
-        self.qtapp = QtGui.QApplication(["test", "-style", "cleanlooks"])
-        self.loop = quamash.QEventLoop(self.qtapp)
         self.dialog = global_settings.GlobalSettingsWindow(self.qtapp,
                                                            self.qapp)
 
@@ -45,33 +42,6 @@ class GlobalSettingsTest(unittest.TestCase):
             type(self.dialog.qvm_collection), "__setattr__")
         self.setattr_mock = self.setattr_patcher.start()
         self.addCleanup(self.setattr_patcher.stop)
-
-    def tearDown(self):
-        # process any pending events before destroying the object
-        self.qtapp.processEvents()
-
-        # queue destroying the QApplication object, do that for any other QT
-        # related objects here too
-        self.qtapp.deleteLater()
-        self.dialog.deleteLater()
-
-        # process any pending events (other than just queued destroy),
-        # just in case
-        self.qtapp.processEvents()
-
-        # execute main loop, which will process all events, _
-        # including just queued destroy_
-        self.loop.run_until_complete(asyncio.sleep(0))
-
-        # at this point it QT objects are destroyed, cleanup all remaining
-        # references;
-        # del other QT object here too
-        self.loop.close()
-        del self.dialog
-        del self.qtapp
-        del self.loop
-        gc.collect()
-        super(GlobalSettingsTest, self).tearDown()
 
     def test_00_settings_started(self):
         # non-empty drop-downs
@@ -152,8 +122,7 @@ class GlobalSettingsTest(unittest.TestCase):
             dom0_updates = self.qapp.domains[
                 'dom0'].features['service.qubes-update-check']
         except KeyError:
-            self.skipTest("check_updates_dom0 property not implemented")
-            return
+            dom0_updates = True
 
         self.assertEqual(bool(dom0_updates),
                          self.dialog.updates_dom0.isChecked(),
@@ -290,8 +259,8 @@ class GlobalSettingsTest(unittest.TestCase):
         self.setattr_mock.assert_called_once_with('check_updates_vm',
                                                   not current_state)
 
-    @unittest.mock.patch("PyQt4.QtGui.QMessageBox.question",
-                         return_value=QtGui.QMessageBox.Yes)
+    @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox.question",
+                         return_value=QtWidgets.QMessageBox.Yes)
     @unittest.mock.patch('qubesadmin.features.Features.__setitem__')
     def test_72_set_all_vms_true(self, mock_features, msgbox):
 
@@ -308,8 +277,8 @@ class GlobalSettingsTest(unittest.TestCase):
         self.assertListEqual(call_list_expected,
                              mock_features.call_args_list)
 
-    @unittest.mock.patch("PyQt4.QtGui.QMessageBox.question",
-                         return_value=QtGui.QMessageBox.Yes)
+    @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox.question",
+                         return_value=QtWidgets.QMessageBox.Yes)
     @unittest.mock.patch('qubesadmin.features.Features.__setitem__')
     def test_73_set_all_vms_false(self, mock_features, msgbox):
 

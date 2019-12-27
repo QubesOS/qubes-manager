@@ -23,7 +23,14 @@ import itertools
 import os
 import re
 import qubesadmin
+import traceback
+import asyncio
+from contextlib import suppress
+import sys
+import quamash
+from qubesadmin import events
 
+from PyQt5 import QtWidgets, QtCore  # pylint: disable=import-error
 from PyQt5.QtGui import QIcon  # pylint: disable=import-error
 
 
@@ -36,7 +43,6 @@ def prepare_choice(widget, holder, propname, choice, default,
                    filter_function=None, *,
                    icon_getter=None, allow_internal=None, allow_default=False,
                    allow_none=False, transform=None):
-
     # for newly created vms, set propname to None
 
     debug(
@@ -89,10 +95,11 @@ def prepare_choice(widget, holder, propname, choice, default,
             default_string = str(default) if default is not None else 'none'
             if transform is not None:
                 default_string = transform(default_string)
-            text = 'default ({})'.format(default_string)
+            text = QtCore.QCoreApplication.translate(
+                "ManagerUtils", 'default ({})').format(default_string)
         # N+1: explicit None
         elif item is None:
-            text = '(none)'
+            text = QtCore.QCoreApplication.translate("ManagerUtils", '(none)')
         # 1..N: choices
         else:
             text = str(item)
@@ -100,7 +107,8 @@ def prepare_choice(widget, holder, propname, choice, default,
                 text = transform(text)
 
         if item == oldvalue:
-            text += ' (current)'
+            text += QtCore.QCoreApplication.translate(
+                "ManagerUtils", ' (current)')
             idx = i
 
         widget.insertItem(i, text)
@@ -127,17 +135,26 @@ class KernelVersion:  # pylint: disable=too-few-public-methods
                 self.groups, other.groups):
             if self_content == other_content:
                 continue
+            if self_content is None:
+                return True
+            if other_content is None:
+                return False
             if self_content.isdigit() and other_content.isdigit():
                 return int(self_content) < int(other_content)
             return self_content < other_content
 
 
 def prepare_kernel_choice(widget, holder, propname, default, *args, **kwargs):
-    # TODO get from storage API (pool 'linux-kernel') (suggested by @marmarta)
-    kernels = sorted(os.listdir('/var/lib/qubes/vm-kernels'),
-                     key=KernelVersion)
+    try:
+        app = holder.app
+    except AttributeError:
+        app = holder
+    kernels = [kernel.vid for kernel in app.pools['linux-kernel'].volumes]
+    kernels = sorted(kernels, key=KernelVersion)
+
     return prepare_choice(
         widget, holder, propname, kernels, default, *args, **kwargs)
+
 
 def prepare_label_choice(widget, holder, propname, default, *args, **kwargs):
     try:
@@ -199,7 +216,8 @@ def get_path_from_vm(vm, service_name):
         assert '../' not in untrusted_path
         assert '\0' not in untrusted_path
         return untrusted_path.strip()
-    raise ValueError('Unexpected characters in path.')
+    raise ValueError(QtCore.QCoreApplication.translate(
+        "ManagerUtils", 'Unexpected characters in path.'))
 
 
 def format_dependencies_list(dependencies):
@@ -209,9 +227,119 @@ def format_dependencies_list(dependencies):
     list_text = ""
     for (holder, prop) in dependencies:
         if holder is None:
-            list_text += "- Global property <b>{}</b> <br>".format(prop)
+            list_text += QtCore.QCoreApplication.translate(
+                "ManagerUtils", "- Global property <b>{}</b> <br>").format(prop)
         else:
-            list_text += "- <b>{}</b> for qube <b>{}</b> <br>".format(
+            list_text += QtCore.QCoreApplication.translate(
+                "ManagerUtils", "- <b>{0}</b> for qube <b>{1}</b> <br>").format(
                 prop, holder.name)
 
     return list_text
+
+
+def loop_shutdown():
+    pending = asyncio.Task.all_tasks()
+    for task in pending:
+        with suppress(asyncio.CancelledError):
+            task.cancel()
+
+
+# Bases on the original code by:
+# Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
+def handle_exception(exc_type, exc_value, exc_traceback):
+    filename, line, _, _ = traceback.extract_tb(exc_traceback).pop()
+    filename = os.path.basename(filename)
+    error = "%s: %s" % (exc_type.__name__, exc_value)
+
+    strace = ""
+    stacktrace = traceback.extract_tb(exc_traceback)
+    while stacktrace:
+        (filename, line, func, txt) = stacktrace.pop()
+        strace += "----\n"
+        strace += "line: %s\n" % txt
+        strace += "func: %s\n" % func
+        strace += "line no.: %d\n" % line
+        strace += "file: %s\n" % filename
+
+    msg_box = QtWidgets.QMessageBox()
+    msg_box.setDetailedText(strace)
+    msg_box.setIcon(QtWidgets.QMessageBox.Critical)
+    msg_box.setWindowTitle(QtCore.QCoreApplication.translate(
+        "ManagerUtils", "Houston, we have a problem..."))
+    msg_box.setText(QtCore.QCoreApplication.translate(
+        "ManagerUtils", "Whoops. A critical error has occured. "
+                        "This is most likely a bug in Qubes Manager.<br><br>"
+                        "<b><i>{0}</i></b><br/>at line <b>{1}</b><br/>of file "
+                        "{2}.<br/><br/>").format(error, line, filename))
+
+    msg_box.exec_()
+
+
+def run_asynchronous(window_class):
+    qt_app = QtWidgets.QApplication(sys.argv)
+
+    translator = QtCore.QTranslator(qt_app)
+    locale = QtCore.QLocale.system().name()
+    i18n_dir = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        'i18n')
+    translator.load("qubesmanager_{!s}.qm".format(locale), i18n_dir)
+    qt_app.installTranslator(translator)
+    QtCore.QCoreApplication.installTranslator(translator)
+
+    qt_app.setOrganizationName("The Qubes Project")
+    qt_app.setOrganizationDomain("http://qubes-os.org")
+    qt_app.lastWindowClosed.connect(loop_shutdown)
+
+    qubes_app = qubesadmin.Qubes()
+
+    loop = quamash.QEventLoop(qt_app)
+    asyncio.set_event_loop(loop)
+    dispatcher = events.EventsDispatcher(qubes_app)
+
+    window = window_class(qt_app, qubes_app, dispatcher)
+
+    if hasattr(window, "setup_application"):
+        window.setup_application()
+
+    window.show()
+
+    try:
+        loop.run_until_complete(
+            asyncio.ensure_future(dispatcher.listen_for_events()))
+    except asyncio.CancelledError:
+        pass
+    except Exception:  # pylint: disable=broad-except
+        loop_shutdown()
+        exc_type, exc_value, exc_traceback = sys.exc_info()[:3]
+        handle_exception(exc_type, exc_value, exc_traceback)
+
+
+def run_synchronous(window_class):
+    qt_app = QtWidgets.QApplication(sys.argv)
+
+    translator = QtCore.QTranslator(qt_app)
+    locale = QtCore.QLocale.system().name()
+    i18n_dir = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        'i18n')
+    translator.load("qubesmanager_{!s}.qm".format(locale), i18n_dir)
+    qt_app.installTranslator(translator)
+    QtCore.QCoreApplication.installTranslator(translator)
+
+    qt_app.setOrganizationName("The Qubes Project")
+    qt_app.setOrganizationDomain("http://qubes-os.org")
+
+    sys.excepthook = handle_exception
+
+    qubes_app = qubesadmin.Qubes()
+
+    window = window_class(qt_app, qubes_app)
+
+    if hasattr(window, "setup_application"):
+        window.setup_application()
+
+    window.show()
+
+    qt_app.exec_()
+    qt_app.exit()

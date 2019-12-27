@@ -20,13 +20,12 @@
 #
 
 import subprocess
-import PyQt5.QtWidgets  # pylint: disable=import-error
-
+from PyQt5 import QtWidgets, QtCore  # pylint: disable=import-error
 
 # TODO description in tooltip
 # TODO icon
 # pylint: disable=too-few-public-methods
-class AppListWidgetItem(PyQt5.QtWidgets.QListWidgetItem):
+class AppListWidgetItem(QtWidgets.QListWidgetItem):
     def __init__(self, name, ident, tooltip=None, parent=None):
         super(AppListWidgetItem, self).__init__(name, parent)
         if tooltip:
@@ -85,6 +84,9 @@ class AppmenuSelectManager:
             stdin=subprocess.PIPE)
         p.communicate('\n'.join(new_whitelisted).encode())
         if p.returncode != 0:
-            raise RuntimeError('qvm-appmenus --set-whitelist failed')
+            exception_text = QtCore.QCoreApplication.translate(
+                "Command {command} failed", "exception").format(
+                command='qvm-appmenus --set-whitelist')
+            raise RuntimeError(exception_text)
 
         return True
