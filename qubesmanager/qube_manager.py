@@ -785,6 +785,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         try:
             self.qubes_model.info_by_id[vm.qid].update()
             self.qubes_model.layoutChanged.emit()
+            self.table_selection_changed()
         except exc.QubesPropertyAccessError:
             return  # the VM was deleted before its status could be updated
         except KeyError:  # adding the VM failed for some reason
@@ -889,7 +890,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         self.action_run_command_in_vm.setEnabled(True)
         self.action_set_keyboard_layout.setEnabled(True)
 
-    def table_selection_changed(self, selection):
+    def table_selection_changed(self):
         # Since selection could have multiple domains  
         # enable all first and then filter them 
         self._enable_all()
@@ -956,110 +957,118 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
     @QtCore.pyqtSlot(name='on_action_removevm_triggered')
     def action_removevm_triggered(self):
         # pylint: disable=no-else-return
+        for index in self.table.selectionModel().selectedIndexes():
+            if index.column() != 0:
+                continue
+            vm = self.qubes_model.info_list[index.row()].vm
 
-        vm = self.get_selected_vm()
+            dependencies = utils.vm_dependencies(self.qubes_app, vm)
 
-        dependencies = utils.vm_dependencies(self.qubes_app, vm)
+            if dependencies:
+                list_text = "<br>" + \
+                            manager_utils.format_dependencies_list(dependencies) + \
+                            "<br>"
 
-        if dependencies:
-            list_text = "<br>" + \
-                        manager_utils.format_dependencies_list(dependencies) + \
-                        "<br>"
+                info_dialog = QtWidgets.QMessageBox(self)
+                info_dialog.setWindowTitle(self.tr("Warning!"))
+                info_dialog.setText(
+                    self.tr("This qube cannot be removed. It is used as:"
+                            " <br> {} <small>If you want to  remove this qube, "
+                            "you should remove or change settings of each qube "
+                            "or setting that uses it.</small>").format(list_text))
+                info_dialog.setModal(False)
+                info_dialog.show()
 
-            info_dialog = QtWidgets.QMessageBox(self)
-            info_dialog.setWindowTitle(self.tr("Warning!"))
-            info_dialog.setText(
-                self.tr("This qube cannot be removed. It is used as:"
-                        " <br> {} <small>If you want to  remove this qube, "
-                        "you should remove or change settings of each qube "
-                        "or setting that uses it.</small>").format(list_text))
-            info_dialog.setModal(False)
-            info_dialog.show()
+                return
 
-            return
+            (requested_name, ok) = QtWidgets.QInputDialog.getText(
+                self, self.tr("Qube Removal Confirmation"),
+                self.tr("Are you sure you want to remove the Qube <b>'{0}'</b>"
+                        "?<br> All data on this Qube's private storage will be "
+                        "lost!<br><br>Type the name of the Qube (<b>{1}</b>) below "
+                        "to confirm:").format(vm.name, vm.name))
 
-        (requested_name, ok) = QtWidgets.QInputDialog.getText(
-            self, self.tr("Qube Removal Confirmation"),
-            self.tr("Are you sure you want to remove the Qube <b>'{0}'</b>"
-                    "?<br> All data on this Qube's private storage will be "
-                    "lost!<br><br>Type the name of the Qube (<b>{1}</b>) below "
-                    "to confirm:").format(vm.name, vm.name))
+            if not ok:
+                # user clicked cancel
+                return
 
-        if not ok:
-            # user clicked cancel
-            return
+            if requested_name != vm.name:
+                # name did not match
+                QtWidgets.QMessageBox.warning(
+                    self,
+                    self.tr("Qube removal confirmation failed"),
+                    self.tr(
+                        "Entered name did not match! Not removing "
+                        "{0}.").format(vm.name))
+                return
 
-        if requested_name != vm.name:
-            # name did not match
-            QtWidgets.QMessageBox.warning(
-                self,
-                self.tr("Qube removal confirmation failed"),
-                self.tr(
-                    "Entered name did not match! Not removing "
-                    "{0}.").format(vm.name))
-            return
-
-        else:
-            # remove the VM
-            thread = common_threads.RemoveVMThread(vm)
-            self.threads_list.append(thread)
-            thread.finished.connect(self.clear_threads)
-            thread.start()
+            else:
+                # remove the VM
+                thread = common_threads.RemoveVMThread(vm)
+                self.threads_list.append(thread)
+                thread.finished.connect(self.clear_threads)
+                thread.start()
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_clonevm_triggered')
     def action_clonevm_triggered(self):
-        vm = self.get_selected_vm()
+        for index in self.table.selectionModel().selectedIndexes():
+            if index.column() != 0:
+                continue
+            vm = self.qubes_model.info_list[index.row()].vm
 
-        name_number = 1
-        name_format = vm.name + '-clone-%d'
-        while name_format % name_number in self.qubes_app.domains.keys():
-            name_number += 1
+            name_number = 1
+            name_format = vm.name + '-clone-%d'
+            while name_format % name_number in self.qubes_app.domains.keys():
+                name_number += 1
 
-        (clone_name, ok) = QtWidgets.QInputDialog.getText(
-            self, self.tr('Qubes clone Qube'),
-            self.tr('Enter name for Qube <b>{}</b> clone:').format(vm.name),
-            text=(name_format % name_number))
-        if not ok or clone_name == "":
-            return
+            (clone_name, ok) = QtWidgets.QInputDialog.getText(
+                self, self.tr('Qubes clone Qube'),
+                self.tr('Enter name for Qube <b>{}</b> clone:').format(vm.name),
+                text=(name_format % name_number))
+            if not ok or clone_name == "":
+                return
 
-        name_in_use = clone_name in self.qubes_app.domains
+            name_in_use = clone_name in self.qubes_app.domains
 
-        if name_in_use:
-            QtWidgets.QMessageBox.warning(
-                self, self.tr("Name already in use!"),
-                self.tr("There already exists a qube called '{}'. "
-                        "Cloning aborted.").format(clone_name))
-            return
+            if name_in_use:
+                QtWidgets.QMessageBox.warning(
+                    self, self.tr("Name already in use!"),
+                    self.tr("There already exists a qube called '{}'. "
+                            "Cloning aborted.").format(clone_name))
+                return
 
-        self.progress = QtWidgets.QProgressDialog(
-            self.tr(
-                "Cloning Qube..."), "", 0, 0)
-        self.progress.setCancelButton(None)
-        self.progress.setModal(True)
-        self.progress.setWindowTitle(self.tr("Cloning qube..."))
-        self.progress.show()
+            self.progress = QtWidgets.QProgressDialog(
+                self.tr(
+                    "Cloning Qube..."), "", 0, 0)
+            self.progress.setCancelButton(None)
+            self.progress.setModal(True)
+            self.progress.setWindowTitle(self.tr("Cloning qube..."))
+            self.progress.show()
 
-        thread = common_threads.CloneVMThread(vm, clone_name)
-        thread.finished.connect(self.clear_threads)
-        self.threads_list.append(thread)
-        thread.start()
+            thread = common_threads.CloneVMThread(vm, clone_name)
+            thread.finished.connect(self.clear_threads)
+            self.threads_list.append(thread)
+            thread.start()
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_resumevm_triggered')
     def action_resumevm_triggered(self):
-        vm = self.get_selected_vm()
+        for index in self.table.selectionModel().selectedIndexes():
+            if index.column() != 0:
+                continue
+            vm = self.qubes_model.info_list[index.row()].vm
 
-        if vm.get_power_state() in ["Paused", "Suspended"]:
-            try:
-                vm.unpause()
-            except exc.QubesException as ex:
-                QtWidgets.QMessageBox.warning(
-                    self, self.tr("Error unpausing Qube!"),
-                    self.tr("ERROR: {0}").format(ex))
-            return
+            if vm.get_power_state() in ["Paused", "Suspended"]:
+                try:
+                    vm.unpause()
+                except exc.QubesException as ex:
+                    QtWidgets.QMessageBox.warning(
+                        self, self.tr("Error unpausing Qube!"),
+                        self.tr("ERROR: {0}").format(ex))
+                return
 
-        self.start_vm(vm)
+            self.start_vm(vm)
 
     def start_vm(self, vm):
         if vm.is_running():
@@ -1079,31 +1088,37 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(name='on_action_pausevm_triggered')
     def action_pausevm_triggered(self):
-        vm = self.get_selected_vm()
-        try:
-            vm.pause()
-        except exc.QubesException as ex:
-            QtWidgets.QMessageBox.warning(
-                self,
-                self.tr("Error pausing Qube!"),
-                self.tr("ERROR: {0}").format(ex))
-            return
+        for index in self.table.selectionModel().selectedIndexes():
+            if index.column() != 0:
+                continue
+            vm = self.qubes_model.info_list[index.row()].vm
+            try:
+                vm.pause()
+            except exc.QubesException as ex:
+                QtWidgets.QMessageBox.warning(
+                    self,
+                    self.tr("Error pausing Qube!"),
+                    self.tr("ERROR: {0}").format(ex))
+                return
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_shutdownvm_triggered')
     def action_shutdownvm_triggered(self):
-        vm = self.get_selected_vm()
+        for index in self.table.selectionModel().selectedIndexes():
+            if index.column() != 0:
+                continue
+            vm = self.qubes_model.info_list[index.row()].vm
 
-        reply = QtWidgets.QMessageBox.question(
-            self, self.tr("Qube Shutdown Confirmation"),
-            self.tr("Are you sure you want to power down the Qube"
-                    " <b>'{0}'</b>?<br><small>This will shutdown all the "
-                    "running applications within this Qube.</small>").format(
-                     vm.name),
-            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel)
+            reply = QtWidgets.QMessageBox.question(
+                self, self.tr("Qube Shutdown Confirmation"),
+                self.tr("Are you sure you want to power down the Qube"
+                        " <b>'{0}'</b>?<br><small>This will shutdown all the "
+                        "running applications within this Qube.</small>").format(
+                         vm.name),
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel)
 
-        if reply == QtWidgets.QMessageBox.Yes:
-            self.shutdown_vm(vm)
+            if reply == QtWidgets.QMessageBox.Yes:
+                self.shutdown_vm(vm)
 
     def shutdown_vm(self, vm, shutdown_time=vm_shutdown_timeout,
                     check_time=vm_restart_check_timeout, and_restart=False):
@@ -1126,62 +1141,74 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_restartvm_triggered')
     def action_restartvm_triggered(self):
-        vm = self.get_selected_vm()
+        for index in self.table.selectionModel().selectedIndexes():
+            if index.column() != 0:
+                continue
+            vm = self.qubes_model.info_list[index.row()].vm
 
-        reply = QtWidgets.QMessageBox.question(
-            self, self.tr("Qube Restart Confirmation"),
-            self.tr("Are you sure you want to restart the Qube <b>'{0}'</b>?"
-                    "<br><small>This will shutdown all the running "
-                    "applications within this Qube.</small>").format(vm.name),
-            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel)
+            reply = QtWidgets.QMessageBox.question(
+                self, self.tr("Qube Restart Confirmation"),
+                self.tr("Are you sure you want to restart the Qube <b>'{0}'</b>?"
+                        "<br><small>This will shutdown all the running "
+                        "applications within this Qube.</small>").format(vm.name),
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel)
 
-        if reply == QtWidgets.QMessageBox.Yes:
-            # in case the user shut down the VM in the meantime
-            if vm.is_running():
-                self.shutdown_vm(vm, and_restart=True)
-            else:
-                self.start_vm(vm)
+            if reply == QtWidgets.QMessageBox.Yes:
+                # in case the user shut down the VM in the meantime
+                if vm.is_running():
+                    self.shutdown_vm(vm, and_restart=True)
+                else:
+                    self.start_vm(vm)
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_killvm_triggered')
     def action_killvm_triggered(self):
-        vm = self.get_selected_vm()
-        if not (vm.is_running() or vm.is_paused()):
-            info = self.tr("Qube <b>'{0}'</b> is not running. Are you "
-                           "absolutely sure you want to try to kill it?<br>"
-                           "<small>This will end <b>(not shutdown!)</b> all "
-                           "the running applications within this "
-                           "Qube.</small>").format(vm.name)
-        else:
-            info = self.tr("Are you sure you want to kill the Qube "
-                           "<b>'{0}'</b>?<br><small>This will end <b>(not "
-                           "shutdown!)</b> all the running applications within "
-                           "this Qube.</small>").format(vm.name)
+        for index in self.table.selectionModel().selectedIndexes():
+            if index.column() != 0:
+                continue
+            vm = self.qubes_model.info_list[index.row()].vm
 
-        reply = QtWidgets.QMessageBox.question(
-            self, self.tr("Qube Kill Confirmation"), info,
-            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel,
-            QtWidgets.QMessageBox.Cancel)
+            if not (vm.is_running() or vm.is_paused()):
+                info = self.tr("Qube <b>'{0}'</b> is not running. Are you "
+                               "absolutely sure you want to try to kill it?<br>"
+                               "<small>This will end <b>(not shutdown!)</b> all "
+                               "the running applications within this "
+                               "Qube.</small>").format(vm.name)
+            else:
+                info = self.tr("Are you sure you want to kill the Qube "
+                               "<b>'{0}'</b>?<br><small>This will end <b>(not "
+                               "shutdown!)</b> all the running applications within "
+                               "this Qube.</small>").format(vm.name)
 
-        if reply == QtWidgets.QMessageBox.Yes:
-            try:
-                vm.kill()
-            except exc.QubesException as ex:
-                QtWidgets.QMessageBox.critical(
-                    self, self.tr("Error while killing Qube!"),
-                    self.tr(
-                        "<b>An exception ocurred while killing {0}.</b><br>"
-                        "ERROR: {1}").format(vm.name, ex))
-                return
+            reply = QtWidgets.QMessageBox.question(
+                self, self.tr("Qube Kill Confirmation"), info,
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel,
+                QtWidgets.QMessageBox.Cancel)
+
+            if reply == QtWidgets.QMessageBox.Yes:
+                try:
+                    vm.kill()
+                except exc.QubesException as ex:
+                    QtWidgets.QMessageBox.critical(
+                        self, self.tr("Error while killing Qube!"),
+                        self.tr(
+                            "<b>An exception ocurred while killing {0}.</b><br>"
+                            "ERROR: {1}").format(vm.name, ex))
+                    return
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_settings_triggered')
     def action_settings_triggered(self):
-        vm = self.get_selected_vm()
-        if vm:
+        for index in self.table.selectionModel().selectedIndexes():
+            if index.column() != 0:
+                continue
+            vm = self.qubes_model.info_list[index.row()].vm
+
             with common_threads.busy_cursor():
+                print("Creating settings windows")
                 settings_window = settings.VMSettingsWindow(
                     vm, self.qt_app, "basic")
+            print("Opening settings windows")
             settings_window.exec_()
 
             vm_deleted = False
@@ -1205,62 +1232,77 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_appmenus_triggered')
     def action_appmenus_triggered(self):
-        vm = self.get_selected_vm()
-        if vm:
-            with common_threads.busy_cursor():
-                settings_window = settings.VMSettingsWindow(
-                    vm, self.qt_app, "applications")
-            settings_window.exec_()
+        for index in self.table.selectionModel().selectedIndexes():
+            if index.column() != 0:
+                continue
+            vm = self.qubes_model.info_list[index.row()].vm
+            if vm:
+                with common_threads.busy_cursor():
+                    settings_window = settings.VMSettingsWindow(
+                        vm, self.qt_app, "applications")
+                settings_window.exec_()
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_updatevm_triggered')
     def action_updatevm_triggered(self):
-        vm = self.get_selected_vm()
+        for index in self.table.selectionModel().selectedIndexes():
+            if index.column() != 0:
+                continue
+            vm = self.qubes_model.info_list[index.row()].vm
 
-        if not vm.is_running():
-            reply = QtWidgets.QMessageBox.question(
-                self, self.tr("Qube Update Confirmation"),
-                self.tr(
-                    "<b>{0}</b><br>The Qube has to be running to be updated."
-                    "<br>Do you want to start it?<br>").format(vm.name),
-                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel)
-            if reply != QtWidgets.QMessageBox.Yes:
-                return
+            if not vm.is_running():
+                reply = QtWidgets.QMessageBox.question(
+                    self, self.tr("Qube Update Confirmation"),
+                    self.tr(
+                        "<b>{0}</b><br>The Qube has to be running to be updated."
+                        "<br>Do you want to start it?<br>").format(vm.name),
+                    QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel)
+                if reply != QtWidgets.QMessageBox.Yes:
+                    return
 
-        thread = UpdateVMThread(vm)
-        self.threads_list.append(thread)
-        thread.finished.connect(self.clear_threads)
-        thread.start()
+            thread = UpdateVMThread(vm)
+            self.threads_list.append(thread)
+            thread.finished.connect(self.clear_threads)
+            thread.start()
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_run_command_in_vm_triggered')
     def action_run_command_in_vm_triggered(self):
         # pylint: disable=invalid-name
-        vm = self.get_selected_vm()
+        for index in self.table.selectionModel().selectedIndexes():
+            if index.column() != 0:
+                continue
+            vm = self.qubes_model.info_list[index.row()].vm
 
-        (command_to_run, ok) = QtWidgets.QInputDialog.getText(
-            self, self.tr('Qubes command entry'),
-            self.tr('Run command in <b>{}</b>:').format(vm.name))
-        if not ok or command_to_run == "":
-            return
+            (command_to_run, ok) = QtWidgets.QInputDialog.getText(
+                self, self.tr('Qubes command entry'),
+                self.tr('Run command in <b>{}</b>:').format(vm.name))
+            if not ok or command_to_run == "":
+                return
 
-        thread = RunCommandThread(vm, command_to_run)
-        self.threads_list.append(thread)
-        thread.finished.connect(self.clear_threads)
-        thread.start()
+            thread = RunCommandThread(vm, command_to_run)
+            self.threads_list.append(thread)
+            thread.finished.connect(self.clear_threads)
+            thread.start()
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_set_keyboard_layout_triggered')
     def action_set_keyboard_layout_triggered(self):
         # pylint: disable=invalid-name
-        vm = self.get_selected_vm()
-        vm.run('qubes-change-keyboard-layout')
+        for index in self.table.selectionModel().selectedIndexes():
+            if index.column() != 0:
+                continue
+            vm = self.qubes_model.info_list[index.row()].vm
+            vm.run('qubes-change-keyboard-layout')
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_editfwrules_triggered')
     def action_editfwrules_triggered(self):
         with common_threads.busy_cursor():
-            vm = self.get_selected_vm()
+            for index in self.table.selectionModel().selectedIndexes():
+                if index.column() != 0:
+                    continue
+            vm = self.qubes_model.info_list[index.row()].vm
             settings_window = settings.VMSettingsWindow(vm, self.qt_app,
                                                         "firewall")
         settings_window.exec_()
@@ -1401,44 +1443,49 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
 
     def update_logs_menu(self):
         try:
-            vm = self.get_selected_vm()
+            for index in self.table.selectionModel().selectedIndexes():
+                if index.column() != 0:
+                    continue
+                vm = self.qubes_model.info_list[index.row()].vm
 
-            # logs menu
-            self.logs_menu.clear()
+                # logs menu
+                self.logs_menu.clear()
 
-            if vm.qid == 0:
-                logfiles = ["/var/log/xen/console/hypervisor.log"]
-            else:
-                logfiles = [
-                    "/var/log/xen/console/guest-" + vm.name + ".log",
-                    "/var/log/xen/console/guest-" + vm.name + "-dm.log",
-                    "/var/log/qubes/guid." + vm.name + ".log",
-                    "/var/log/qubes/qrexec." + vm.name + ".log",
-                ]
+                if vm.qid == 0:
+                    logfiles = ["/var/log/xen/console/hypervisor.log"]
+                else:
+                    logfiles = [
+                        "/var/log/xen/console/guest-" + vm.name + ".log",
+                        "/var/log/xen/console/guest-" + vm.name + "-dm.log",
+                        "/var/log/qubes/guid." + vm.name + ".log",
+                        "/var/log/qubes/qrexec." + vm.name + ".log",
+                    ]
 
-            menu_empty = True
-            for logfile in logfiles:
-                if os.path.exists(logfile):
-                    action = self.logs_menu.addAction(QtGui.QIcon(":/log.png"),
-                                                      logfile)
-                    action.setData(logfile)
-                    menu_empty = False
+                menu_empty = True
+                for logfile in logfiles:
+                    if os.path.exists(logfile):
+                        action = self.logs_menu.addAction(QtGui.QIcon(":/log.png"),
+                                                          logfile)
+                        action.setData(logfile)
+                        menu_empty = False
 
-            self.logs_menu.setEnabled(not menu_empty)
-
+                self.logs_menu.setEnabled(not menu_empty)
         except exc.QubesPropertyAccessError:
             pass
 
     @QtCore.pyqtSlot('const QPoint&')
     def open_context_menu(self, point):
-        vm = self.get_selected_vm()
+        for index in self.table.selectionModel().selectedIndexes():
+            if index.column() != 0:
+                continue
+            vm = self.qubes_model.info_list[index.row()].vm
 
-        if vm.qid == 0:
-            self.dom0_context_menu.exec_(self.table.mapToGlobal(
-                point + QtCore.QPoint(10, 0)))
-        else:
-            self.context_menu.exec_(self.table.mapToGlobal(
-                point + QtCore.QPoint(10, 0)))
+            if vm.qid == 0:
+                self.dom0_context_menu.exec_(self.table.mapToGlobal(
+                    point + QtCore.QPoint(10, 0)))
+            else:
+                self.context_menu.exec_(self.table.mapToGlobal(
+                    point + QtCore.QPoint(10, 0)))
 
     @QtCore.pyqtSlot('QAction *')
     def show_log(self, action):
