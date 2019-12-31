@@ -781,9 +781,12 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
                 self.qubes_model.layoutChanged.emit()
                 return
 
-    def on_domain_status_changed(self, vm, _event, **_kwargs):
+    def on_domain_status_changed(self, vm, event, **_kwargs):
         try:
-            self.qubes_model.info_by_id[vm.qid].update()
+            self.qubes_model.info_by_id[vm.qid].update(event=event)
+            if vm.klass in {'TemplateVM'}:
+                for appvm in vm.appvms:
+                    self.qubes_model.info_by_id[vm.qid].update("outdated")
             self.qubes_model.layoutChanged.emit()
             self.table_selection_changed()
         except exc.QubesPropertyAccessError:
