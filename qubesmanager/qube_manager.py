@@ -660,8 +660,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
 
         self.settings_loaded = True
 
-        #self.fill_table()
-
         self.table.resizeColumnsToContents()
 
         self.update_size_on_disk = False
