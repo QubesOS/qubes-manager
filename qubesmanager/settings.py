@@ -655,8 +655,17 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
 
         if ok and answer == self.vm.name:
             thread = common_threads.RemoveVMThread(self.vm)
+            thread.finished.connect(self.clear_threads)
+            self.threads_list.append(thread)
+
+            self.progress = QtWidgets.QProgressDialog(
+                self.tr("Deleting Qube..."), "", 0, 0)
+            self.progress.setCancelButton(None)
+            self.progress.setModal(True)
+            self.thread_closes = True
+            self.progress.show()
+
             thread.start()
-            self.done(0)
 
         elif ok:
             QtGui.QMessageBox.warning(
