@@ -37,6 +37,11 @@ def prepare_choice(widget, holder, propname, choice, default,
 
     # for newly created vms, set propname to None
 
+    # clear the widget, so that prepare_choice functions can be used
+    # to refresh widget values
+    while widget.count() > 0:
+        widget.removeItem(0)
+
     debug(
         'prepare_choice(widget={widget!r}, '
         'holder={holder!r}, '
