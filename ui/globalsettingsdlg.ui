@@ -120,10 +120,10 @@
       </size>
      </property>
      <property name="title">
-      <string>Default memory settings</string>
+      <string>Memory Balancer Settings</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="0">
+      <item row="2" column="0">
        <widget class="QLabel" name="label_6">
         <property name="enabled">
          <bool>true</bool>
@@ -133,7 +133,7 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
+      <item row="2" column="1">
        <widget class="QSpinBox" name="min_vm_mem">
         <property name="enabled">
          <bool>true</bool>
@@ -149,20 +149,13 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_7">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
-        <property name="text">
-         <string>dom0 memory boost:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
+      <item row="3" column="1">
        <widget class="QSpinBox" name="dom0_mem_boost">
         <property name="enabled">
          <bool>true</bool>
+        </property>
+        <property name="toolTip">
+         <string>Additional memory allocated to dom0 by Qubes Memory Balancer.</string>
         </property>
         <property name="suffix">
          <string> MiB</string>
@@ -172,6 +165,29 @@
         </property>
         <property name="singleStep">
          <number>50</number>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_7">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="toolTip">
+         <string>Additional memory allocated to dom0 by Qubes Memory Balancer.</string>
+        </property>
+        <property name="text">
+         <string>Additional dom0 memory:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="2">
+       <widget class="QLabel" name="label_9">
+        <property name="text">
+         <string>Memory balancing is used for dom0 and all qubes that have memory balancing enabled (by default all qubes, except for those with PCI devices connected, such as sys-net and sys-usb).</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
         </property>
        </widget>
       </item>
