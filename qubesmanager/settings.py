@@ -209,8 +209,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         ####### services tab
         self.__init_services_tab__()
-        self.service_line_edit.lineEdit().returnPressed.connect(
-            self.__add_service__)
         self.add_srv_button.clicked.connect(self.__add_service__)
         self.remove_srv_button.clicked.connect(self.__remove_service__)
 
@@ -398,12 +396,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.include_in_backups.setChecked(self.vm.include_in_backups)
 
         try:
-            self.run_in_debug_mode.setChecked(self.vm.debug)
-            self.run_in_debug_mode.setVisible(True)
-        except AttributeError:
-            self.run_in_debug_mode.setVisible(False)
-
-        try:
             self.autostart_vm.setChecked(self.vm.autostart)
             self.autostart_vm.setVisible(True)
         except AttributeError:
@@ -476,14 +468,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             if self.vm.include_in_backups != \
                     self.include_in_backups.isChecked():
                 self.vm.include_in_backups = self.include_in_backups.isChecked()
-        except qubesadmin.exc.QubesException as ex:
-            msg.append(str(ex))
-
-        # run_in_debug_mode
-        try:
-            if self.run_in_debug_mode.isVisible():
-                if self.vm.debug != self.run_in_debug_mode.isChecked():
-                    self.vm.debug = self.run_in_debug_mode.isChecked()
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
@@ -734,6 +718,12 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     "NetVM by the following qubes:\n") +
                     "\n".join(domains_using))
 
+        try:
+            self.run_in_debug_mode.setChecked(self.vm.debug)
+            self.run_in_debug_mode.setVisible(True)
+        except AttributeError:
+            self.run_in_debug_mode.setVisible(False)
+
     def enable_seamless(self):
         self.vm.run_service_for_stdio("qubes.SetGuiMode", input=b'SEAMLESS')
 
@@ -811,6 +801,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     self.provides_network_checkbox.isChecked()
             except Exception as ex:  # pylint: disable=broad-except
                 msg.append(str(ex))
+
+        # run_in_debug_mode
+        try:
+            if self.run_in_debug_mode.isVisible():
+                if self.vm.debug != self.run_in_debug_mode.isChecked():
+                    self.vm.debug = self.run_in_debug_mode.isChecked()
+        except qubesadmin.exc.QubesException as ex:
+            msg.append(str(ex))
 
         return msg
 
@@ -1074,35 +1072,49 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.services_list.addItem(item)
             self.new_srv_dict[service] = self.vm.features[feature]
 
-        # add suggested services
-        self.service_line_edit.addItem('clocksync')
-        self.service_line_edit.addItem('crond')
-        self.service_line_edit.addItem('cups')
-        self.service_line_edit.addItem('disable-default-route')
-        self.service_line_edit.addItem('disable-dns-server')
-        self.service_line_edit.addItem('network-manager')
-        self.service_line_edit.addItem('qubes-firewall')
-        self.service_line_edit.addItem('qubes-network')
-        self.service_line_edit.addItem('qubes-update-check')
-        self.service_line_edit.addItem('qubes-updates-proxy')
-        self.service_line_edit.addItem('qubes-yum-proxy')
-        self.service_line_edit.addItem('updates-proxy-setup')
-        self.service_line_edit.addItem('yum-proxy-setup')
+        self.service_line_edit.addItem("")
+
+        supported_services = set()
+        service_prefix = "supported-service."
+
+        for feature in self.vm.features:
+            if feature.startswith(service_prefix):
+                supported_services.add(feature[len(service_prefix):])
+        if getattr(self.vm, "template", None):
+            for feature in self.vm.template.features:
+                if feature.startswith(service_prefix):
+                    supported_services.add(feature[len(service_prefix):])
+
+        for service in sorted(supported_services):
+            self.service_line_edit.addItem(service)
+
+        self.service_line_edit.addItem(self.tr('(custom...)'))
         self.service_line_edit.setEditText("")
 
     def __add_service__(self):
         srv = str(self.service_line_edit.currentText()).strip()
+
         if srv != "":
+            if self.service_line_edit.currentIndex() == \
+                    len(self.service_line_edit) - 1:
+                (custom_name, ok) = QtWidgets.QInputDialog.getText(
+                    self, self.tr("Custom service name"),
+                    self.tr(
+                        "Name of the service:"))
+                if ok:
+                    srv = custom_name.strip()
+                else:
+                    return
             if srv in self.new_srv_dict:
                 QtWidgets.QMessageBox.information(
                     self,
                     '',
                     self.tr('Service already on the list!'))
-            else:
-                item = QtWidgets.QListWidgetItem(srv)
-                item.setCheckState(ui_settingsdlg.QtCore.Qt.Checked)
-                self.services_list.addItem(item)
-                self.new_srv_dict[srv] = True
+                return
+            item = QtWidgets.QListWidgetItem(srv)
+            item.setCheckState(ui_settingsdlg.QtCore.Qt.Checked)
+            self.services_list.addItem(item)
+            self.new_srv_dict[srv] = True
 
     def __remove_service__(self):
         item = self.services_list.currentItem()

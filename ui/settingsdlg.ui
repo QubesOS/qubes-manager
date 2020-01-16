@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>5</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -370,13 +370,6 @@
                 </property>
                 <property name="checked">
                  <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="run_in_debug_mode">
-                <property name="text">
-                 <string>Run in debug mode</string>
                 </property>
                </widget>
               </item>
@@ -813,14 +806,14 @@ border-width: 1px;</string>
             <property name="topMargin">
              <number>15</number>
             </property>
-            <item row="1" column="0">
+            <item row="2" column="0">
              <widget class="QCheckBox" name="provides_network_checkbox">
               <property name="text">
                <string>Provides network</string>
               </property>
              </widget>
             </item>
-            <item row="2" column="0">
+            <item row="3" column="0">
              <widget class="QCheckBox" name="dvm_template_checkbox">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allows using this qube as a template for DisposableVMs. The DisposableVMs will inherit the VM's state (configuration, installed programs etc.), but their state will not persist between restarts. &lt;/p&gt;&lt;p&gt;Setting this option will cause this qube to be listed as an option in the &amp;quot;Default DisposableVM Template&amp;quot; dropdown for all other qubes. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -830,14 +823,14 @@ border-width: 1px;</string>
               </property>
              </widget>
             </item>
-            <item row="7" column="0" colspan="2">
+            <item row="8" column="0" colspan="2">
              <widget class="QPushButton" name="boot_from_device_button">
               <property name="text">
                <string>Boot qube from CDROM</string>
               </property>
              </widget>
             </item>
-            <item row="8" column="0" colspan="2">
+            <item row="9" column="0" colspan="2">
              <layout class="QHBoxLayout" name="horizontalLayout_8">
               <item>
                <widget class="QPushButton" name="seamless_on_button">
@@ -863,7 +856,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
               </item>
              </layout>
             </item>
-            <item row="5" column="0" colspan="2">
+            <item row="6" column="0" colspan="2">
              <layout class="QHBoxLayout" name="horizontalLayout_6">
               <item>
                <widget class="QLabel" name="label_26">
@@ -892,6 +885,13 @@ The qube must be running to disable seamless mode; this setting is not persisten
                </widget>
               </item>
              </layout>
+            </item>
+            <item row="1" column="0">
+             <widget class="QCheckBox" name="run_in_debug_mode">
+              <property name="text">
+               <string>Run in debug mode</string>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -1322,7 +1322,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
             <string>This qube has direct network access and Qubes Firewall settings will not be used. Configure other qubes' network access in their network settings or in a dedicated firewall qube.</string>
            </property>
            <property name="wordWrap">
-             <bool>true</bool>
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -1433,47 +1433,85 @@ The qube must be running to disable seamless mode; this setting is not persisten
          <string>Services</string>
         </attribute>
         <layout class="QGridLayout" name="gridLayout_5">
-         <item row="6" column="1">
-          <spacer name="verticalSpacer_5">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
+         <item row="8" column="0" rowspan="2">
+          <widget class="QListWidget" name="services_list">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
            </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>20</width>
-             <height>40</height>
-            </size>
-           </property>
-          </spacer>
+          </widget>
          </item>
-         <item row="5" column="0" rowspan="2">
-          <widget class="QListWidget" name="services_list"/>
-         </item>
-         <item row="7" column="0" colspan="2">
+         <item row="11" column="0" colspan="2">
           <widget class="QLabel" name="label_7">
            <property name="text">
             <string>Checked services will be turned on.</string>
            </property>
           </widget>
          </item>
-         <item row="8" column="0" colspan="2">
-          <widget class="QLabel" name="label_8">
-           <property name="text">
-            <string>Unchecked services will be turned off.</string>
-           </property>
-          </widget>
-         </item>
-         <item row="9" column="0" colspan="2">
+         <item row="13" column="0" colspan="2">
           <widget class="QLabel" name="label_9">
            <property name="text">
             <string>Unlisted services will follow default settings.</string>
            </property>
           </widget>
          </item>
-         <item row="5" column="1">
+         <item row="12" column="0" colspan="2">
+          <widget class="QLabel" name="label_8">
+           <property name="text">
+            <string>Unchecked services will be turned off.</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <layout class="QHBoxLayout" name="horizontalLayout_7">
+           <item>
+            <widget class="QLabel" name="label_6">
+             <property name="text">
+              <string>Select a service:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="service_line_edit">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="toolTip">
+              <string>Services listed here are explicitly supported by the qube. Additional services may be added with the '+' button on the right.</string>
+             </property>
+             <property name="currentText">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="add_srv_button">
+             <property name="text">
+              <string>Add</string>
+             </property>
+             <property name="icon">
+              <iconset resource="../resources.qrc">
+               <normaloff>:/add.png</normaloff>:/add.png</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>24</width>
+               <height>24</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item row="10" column="0">
           <widget class="QPushButton" name="remove_srv_button">
            <property name="text">
-            <string/>
+            <string>Remove service</string>
            </property>
            <property name="icon">
             <iconset resource="../resources.qrc">
@@ -1487,32 +1525,18 @@ The qube must be running to disable seamless mode; this setting is not persisten
            </property>
           </widget>
          </item>
-         <item row="1" column="0">
-          <widget class="QComboBox" name="service_line_edit">
-           <property name="toolTip">
-            <string>Services listed here are only base Qubes services - other services may be installed and implemented.</string>
+         <item row="9" column="1">
+          <spacer name="verticalSpacer_5">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
            </property>
-           <property name="editable">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QPushButton" name="add_srv_button">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset resource="../resources.qrc">
-             <normaloff>:/add.png</normaloff>:/add.png</iconset>
-           </property>
-           <property name="iconSize">
+           <property name="sizeHint" stdset="0">
             <size>
-             <width>24</width>
-             <height>24</height>
+             <width>20</width>
+             <height>40</height>
             </size>
            </property>
-          </widget>
+          </spacer>
          </item>
         </layout>
        </widget>
@@ -1540,7 +1564,6 @@ The qube must be running to disable seamless mode; this setting is not persisten
   <tabstop>template_name</tabstop>
   <tabstop>netVM</tabstop>
   <tabstop>include_in_backups</tabstop>
-  <tabstop>run_in_debug_mode</tabstop>
   <tabstop>autostart_vm</tabstop>
   <tabstop>max_priv_storage</tabstop>
   <tabstop>root_resize</tabstop>
@@ -1550,6 +1573,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
   <tabstop>max_mem_size</tabstop>
   <tabstop>vcpus</tabstop>
   <tabstop>include_in_balancing</tabstop>
+  <tabstop>run_in_debug_mode</tabstop>
   <tabstop>provides_network_checkbox</tabstop>
   <tabstop>dvm_template_checkbox</tabstop>
   <tabstop>default_dispvm</tabstop>
