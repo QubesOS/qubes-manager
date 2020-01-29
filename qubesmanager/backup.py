@@ -387,7 +387,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
                     'dom0', 'admin.backup.Cancel',
                     backup_utils.get_profile_name(True))
             except exc.QubesException as ex:
-                QtWidgets.QMessageBox.warning(
+                QtGui.QMessageBox.warning(
                     self, self.tr("Error cancelling backup!"),
                     self.tr("ERROR: {}").format(str(ex)))
 

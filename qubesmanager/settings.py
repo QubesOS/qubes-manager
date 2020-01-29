@@ -658,7 +658,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             thread.finished.connect(self.clear_threads)
             self.threads_list.append(thread)
 
-            self.progress = QtWidgets.QProgressDialog(
+            self.progress = QtGui.QProgressDialog(
                 self.tr("Deleting Qube..."), "", 0, 0)
             self.progress.setCancelButton(None)
             self.progress.setModal(True)
