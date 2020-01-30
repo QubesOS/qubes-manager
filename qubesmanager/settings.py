@@ -553,14 +553,15 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         # Linux specific limit: init memory must not be below
         # max_mem_size/10.79 in order to allow scaling up to
         # max_mem_size (or else "add_memory() failed: -17" problem)
-        if self.init_mem.value() * 10 < self.max_mem_size.value():
+        if self.vm.features.check_with_template('os', None) == 'Linux' and \
+                self.init_mem.value() * 10 < self.max_mem_size.value():
+            self.init_mem.setValue((self.max_mem_size.value() + 9) // 10)
             QtGui.QMessageBox.warning(
                 self,
                 self.tr("Warning!"),
-                self.tr("Initial memory can not be less than one tenth "
-                        "Max memory.<br>Setting initial memory to the minimum "
-                        "allowed value."))
-            self.init_mem.setValue((self.max_mem_size.value() + 9) // 10)
+                self.tr("For Linux qubes, Initial memory can not be less than "
+                        "one tenth Max memory.<br>Setting initial memory "
+                        "to the minimum allowed value."))
 
     def check_warn_dispvmnetvm(self):
         if not hasattr(self.vm, 'default_dispvm'):
