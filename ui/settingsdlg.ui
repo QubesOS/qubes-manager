@@ -1479,7 +1479,6 @@ The qube must be running to disable seamless mode; this setting is not persisten
   </layout>
  </widget>
  <tabstops>
-  <tabstop>tabWidget</tabstop>
   <tabstop>vmname</tabstop>
   <tabstop>rename_vm_button</tabstop>
   <tabstop>vmlabel</tabstop>
@@ -1518,6 +1517,8 @@ The qube must be running to disable seamless mode; this setting is not persisten
   <tabstop>add_srv_button</tabstop>
   <tabstop>services_list</tabstop>
   <tabstop>remove_srv_button</tabstop>
+  <tabstop>buttonBox</tabstop>
+  <tabstop>tabWidget</tabstop>
  </tabstops>
  <resources>
   <include location="../resources.qrc"/>
