@@ -391,8 +391,9 @@ class VmUpdateInfoWidget(QtGui.QWidget):
 
     def update_outdated(self):
         outdated_state = False
+        is_disposable = getattr(self.vm, 'auto_cleanup', False)
 
-        if self.vm.is_running():
+        if not is_disposable and self.vm.is_running():
             if hasattr(self.vm, 'template') and self.vm.template.is_running():
                 outdated_state = "to-be-outdated"
 
@@ -402,7 +403,8 @@ class VmUpdateInfoWidget(QtGui.QWidget):
                         outdated_state = "outdated"
                         break
 
-        if self.vm.klass in {'TemplateVM', 'StandaloneVM'} and \
+        if not is_disposable and \
+                self.vm.klass in {'TemplateVM', 'StandaloneVM'} and \
                 self.vm.features.get('updates-available', False):
             outdated_state = 'update'
 
