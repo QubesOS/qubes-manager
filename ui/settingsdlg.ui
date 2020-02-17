@@ -110,15 +110,15 @@
              <number>15</number>
             </property>
             <item row="1" column="1">
-             <widget class="QSpinBox" name="root_resize">
+             <widget class="SizeSpinBox" name="root_resize">
               <property name="enabled">
                <bool>true</bool>
               </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Values displayed using the binary definition of gigabyte and megabyte, i.e. 1024&lt;span style=&quot; vertical-align:super;&quot;&gt;3&lt;/span&gt; and 1024&lt;span style=&quot; vertical-align:super;&quot;&gt;2 &lt;/span&gt;bytes respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-              </property>
-              <property name="suffix">
-               <string>MiB</string>
               </property>
               <property name="maximum">
                <number>1048576</number>
@@ -129,15 +129,15 @@
              </widget>
             </item>
             <item row="0" column="1">
-             <widget class="QSpinBox" name="max_priv_storage">
+             <widget class="SizeSpinBox" name="max_priv_storage">
               <property name="enabled">
                <bool>true</bool>
               </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Values displayed using the binary definition of gigabyte and megabyte, i.e. 1024&lt;span style=&quot; vertical-align:super;&quot;&gt;3&lt;/span&gt; and 1024&lt;span style=&quot; vertical-align:super;&quot;&gt;2 &lt;/span&gt;bytes respectively.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
               <property name="alignment">
                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-              </property>
-              <property name="suffix">
-               <string>MiB</string>
               </property>
               <property name="minimum">
                <number>0</number>
@@ -1556,6 +1556,13 @@ The qube must be running to disable seamless mode; this setting is not persisten
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>SizeSpinBox</class>
+   <extends>QSpinBox</extends>
+   <header>qubesmanager/utils.h</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>tabWidget</tabstop>
   <tabstop>vmname</tabstop>
