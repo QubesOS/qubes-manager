@@ -30,13 +30,42 @@ import sys
 import quamash
 from qubesadmin import events
 
-from PyQt5 import QtWidgets, QtCore  # pylint: disable=import-error
-from PyQt5.QtGui import QIcon  # pylint: disable=import-error
+from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
 
 
 def _filter_internal(vm):
     return (not vm.klass == 'AdminVM'
             and not vm.features.get('internal', False))
+
+
+class SizeSpinBox(QtWidgets.QSpinBox):
+    # pylint: disable=invalid-name, no-self-use
+    def __init__(self, *args, **kwargs):
+        super(SizeSpinBox, self).__init__(*args, **kwargs)
+
+        self.pattern = r'(\d+\.?\d?) ?(GB|MB)'
+        self.regex = re.compile(self.pattern)
+        self.validator = QtGui.QRegExpValidator(QtCore.QRegExp(
+            self.pattern), self)
+
+    def textFromValue(self, v: int) -> str:
+        if v > 1024:
+            return '{:.1f} GB'.format(v / 1024)
+
+        return '{} MB'.format(v)
+
+    def validate(self, text: str, pos: int):
+        return self.validator.validate(text, pos)
+
+    def valueFromText(self, text: str) -> int:
+        value, unit = self.regex.fullmatch(text.strip()).groups()
+
+        if unit == 'GB':
+            multiplier = 1024
+        else:
+            multiplier = 1
+
+        return int(float(value) * multiplier)
 
 
 def prepare_choice(widget, holder, propname, choice, default,
@@ -171,7 +200,7 @@ def prepare_label_choice(widget, holder, propname, default, *args, **kwargs):
                           sorted(app.labels.values(), key=lambda l: l.index),
                           default, *args,
                           icon_getter=(lambda label:
-                                       QIcon.fromTheme(label.icon)),
+                                       QtGui.QIcon.fromTheme(label.icon)),
                           **kwargs)
 
 
