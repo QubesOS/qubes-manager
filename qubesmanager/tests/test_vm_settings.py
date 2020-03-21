@@ -128,10 +128,6 @@ class VMSettingsTest(unittest.TestCase):
                          self.vm.include_in_backups,
                          "Incorrect 'include in backups' state")
 
-        self.assertEqual(self.dialog.run_in_debug_mode.isChecked(),
-                         self.vm.debug,
-                         "Incorrect 'run in debug mode' state")
-
         self.assertEqual(self.dialog.autostart_vm.isChecked(),
                          self.vm.autostart,
                          "Incorrect 'autostart' state")
@@ -259,7 +255,6 @@ class VMSettingsTest(unittest.TestCase):
 
         self.dialog.include_in_backups.setChecked(True)
         self.dialog.autostart_vm.setChecked(True)
-        self.dialog.run_in_debug_mode.setChecked(True)
 
         self._click_ok()
 
@@ -267,8 +262,6 @@ class VMSettingsTest(unittest.TestCase):
                         "Include in backups not set to true")
         self.assertTrue(self.vm.autostart,
                         "Autostart not set to true")
-        self.assertTrue(self.vm.debug,
-                        "Debug mode not set to true")
 
     def test_09_basic_checkboxes_false(self):
         self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
@@ -278,7 +271,6 @@ class VMSettingsTest(unittest.TestCase):
 
         self.dialog.include_in_backups.setChecked(False)
         self.dialog.autostart_vm.setChecked(False)
-        self.dialog.run_in_debug_mode.setChecked(False)
 
         self._click_ok()
 
@@ -286,8 +278,6 @@ class VMSettingsTest(unittest.TestCase):
                          "Include in backups not set to false")
         self.assertFalse(self.vm.autostart,
                          "Autostart not set to false")
-        self.assertFalse(self.vm.debug,
-                         "Debug mode not set to false")
 
     def test_10_increase_private_storage(self):
         self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
@@ -378,6 +368,11 @@ class VMSettingsTest(unittest.TestCase):
                          "Incorrect number of VCPUs")
         self.assertTrue(self.dialog.include_in_balancing.isChecked(),
                         "Include in memory balancing incorrectly not checked")
+
+        # debug mode
+        self.assertEqual(self.dialog.run_in_debug_mode.isChecked(),
+                         self.vm.debug,
+                         "Incorrect 'run in debug mode' state")
 
         # kernel
         self.assertTrue(self.vm.kernel in self.dialog.kernel.currentText(),
@@ -529,6 +524,32 @@ class VMSettingsTest(unittest.TestCase):
 
         self.dialog.boot_from_device_button.click()
         mock_call.assert_called_with(['qubes-vm-boot-from-device', "test-vm"])
+
+    def test_28_advanced_debug_false(self):
+        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
+        self.dialog = vm_settings.VMSettingsWindow(
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
+        self.dialog.show()
+
+        self.dialog.run_in_debug_mode.setChecked(False)
+
+        self._click_ok()
+
+        self.assertFalse(self.vm.debug,
+                         "Debug mode not set to false")
+
+    def test_28_advanced_debug_true(self):
+        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
+        self.dialog = vm_settings.VMSettingsWindow(
+            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
+        self.dialog.show()
+
+        self.dialog.run_in_debug_mode.setChecked(True)
+
+        self._click_ok()
+
+        self.assertTrue(self.vm.debug,
+                        "Debug mode not set to true")
 
     def _click_ok(self):
         okwidget = self.dialog.buttonBox.button(

@@ -13,4 +13,5 @@ def init_qtapp():
         qtapp = QtWidgets.QApplication(sys.argv)
         loop = quamash.QEventLoop(qtapp)
         asyncio.set_event_loop(loop)
+    qtapp.processEvents()
     return qtapp, loop
