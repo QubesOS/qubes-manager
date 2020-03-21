@@ -1206,29 +1206,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
             vm = self.qubes_model.info_list[index.row()].vm
 
             with common_threads.busy_cursor():
-                print("Creating settings windows")
                 settings_window = settings.VMSettingsWindow(
                     vm, self.qt_app, "basic")
-            print("Opening settings windows")
             settings_window.exec_()
-
-            vm_deleted = False
-
-            try:
-                # the VM might not exist after running Settings - it might
-                # have been cloned or removed
-                self.vms_in_table[vm.qid].update()
-            except exc.QubesException:
-                # TODO: this will be replaced by proper signal handling once
-                # settings are migrated to AdminAPI
-                vm_deleted = True
-
-            if vm_deleted:
-                for row in self.vms_in_table:
-                    try:
-                        self.vms_in_table[row].update()
-                    except exc.QubesException:
-                        pass
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_appmenus_triggered')
