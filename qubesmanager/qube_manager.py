@@ -952,6 +952,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
     @QtCore.pyqtSlot(name='on_action_removevm_triggered')
     def action_removevm_triggered(self):
         # pylint: disable=no-else-return
+        remove_vms = []
+
         for index in self.table.selectionModel().selectedIndexes():
             if index.column() != 0:
                 continue
@@ -985,7 +987,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
 
             if not ok:
                 # user clicked cancel
-                return
+                continue
 
             if requested_name != vm.name:
                 # name did not match
@@ -998,11 +1000,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
                 return
 
             else:
-                # remove the VM
-                thread = common_threads.RemoveVMThread(vm)
-                self.threads_list.append(thread)
-                thread.finished.connect(self.clear_threads)
-                thread.start()
+                remove_vms.append(vm)
+
+        # remove the VMs
+        for vm in remove_vms:
+            thread = common_threads.RemoveVMThread(vm)
+            self.threads_list.append(thread)
+            thread.finished.connect(self.clear_threads)
+            thread.start()
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_clonevm_triggered')
