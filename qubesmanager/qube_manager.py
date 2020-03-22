@@ -611,14 +611,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         self.tools_context_menu.addAction(self.action_toolbar)
         self.tools_context_menu.addAction(self.action_menubar)
 
-        self.dom0_context_menu = QtWidgets.QMenu(self)
-        self.dom0_context_menu.addAction(self.action_global_settings)
-        self.dom0_context_menu.addAction(self.action_updatevm)
-        self.dom0_context_menu.addSeparator()
-
-        self.dom0_context_menu.addMenu(self.logs_menu)
-        self.dom0_context_menu.addSeparator()
-
         #self.connect(
         #    self.table.horizontalHeader(),
         #    QtCore.SIGNAL("sortIndicatorChanged(int, Qt::SortOrder)"),
@@ -672,6 +664,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         self.table.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.table.selectionModel().selectionChanged.connect(self.table_selection_changed)
 
+        self.table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self.open_context_menu)
 
         # Connect events
         self.dispatcher = dispatcher
@@ -1456,17 +1450,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot('const QPoint&')
     def open_context_menu(self, point):
-        for index in self.table.selectionModel().selectedIndexes():
-            if index.column() != 0:
-                continue
-            vm = self.qubes_model.info_list[index.row()].vm
-
-            if vm.qid == 0:
-                self.dom0_context_menu.exec_(self.table.mapToGlobal(
-                    point + QtCore.QPoint(10, 0)))
-            else:
-                self.context_menu.exec_(self.table.mapToGlobal(
-                    point + QtCore.QPoint(10, 0)))
+        self.context_menu.exec_(self.table.mapToGlobal(
+            point + QtCore.QPoint(10, 0)))
 
     @QtCore.pyqtSlot('QAction *')
     def show_log(self, action):
