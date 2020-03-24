@@ -418,6 +418,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
 
         self.context_menu.addAction(self.action_updatevm)
         self.context_menu.addAction(self.action_run_command_in_vm)
+        self.context_menu.addAction(self.action_open_console)
         self.context_menu.addAction(self.action_resumevm)
         self.context_menu.addAction(self.action_startvm_tools_install)
         self.context_menu.addAction(self.action_pausevm)
@@ -773,6 +774,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
                                             or vm.qid == 0)
             self.action_run_command_in_vm.setEnabled(
                 not vm.get_power_state() == "Paused" and vm.qid != 0)
+            self.action_open_console.setEnabled(
+                not vm.get_power_state() == "Paused" and vm.qid != 0)
             self.action_set_keyboard_layout.setEnabled(
                 vm.qid != 0 and
                 vm.get_power_state() != "Paused" and vm.is_running())
@@ -789,6 +792,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
             self.action_editfwrules.setEnabled(False)
             self.action_updatevm.setEnabled(False)
             self.action_run_command_in_vm.setEnabled(False)
+            self.action_open_console.setEnabled(False)
             self.action_set_keyboard_layout.setEnabled(False)
 
         self.update_logs_menu()
@@ -1112,6 +1116,15 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         self.threads_list.append(thread)
         thread.finished.connect(self.clear_threads)
         thread.start()
+
+    # noinspection PyArgumentList
+    @QtCore.pyqtSlot(name='on_action_open_console_triggered')
+    def action_open_console_triggered(self):
+        # pylint: disable=invalid-name
+
+        vm = self.get_selected_vm()
+        subprocess.Popen(['qvm-console-dispvm', vm.name],
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_set_keyboard_layout_triggered')
