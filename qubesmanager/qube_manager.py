@@ -633,10 +633,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         #             QtCore.SIGNAL("textChanged(const QString&)"),
         #             self.do_search)
 
-        #self.table.setContentsMargins(0, 0, 0, 0)
-        self.centralwidget.layout().setContentsMargins(0, 0, 0, 0)
-        self.layout().setContentsMargins(0, 0, 0, 0)
-
         self.action_menubar.toggled.connect(self.showhide_menubar)
         self.action_toolbar.toggled.connect(self.showhide_toolbar)
 
