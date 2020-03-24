@@ -263,6 +263,10 @@ class VmInfo():
             # AdminAPI
             pass
 
+class QubesSortProxy(QtCore.QSortFilterProxyModel):
+    def __init__(self):
+        QtCore.QSortFilterProxyModel.__init__(self)
+
 class QubesTableModel(QtCore.QAbstractTableModel):
     def __init__(self, qubes_app):
         QtCore.QAbstractTableModel.__init__(self)
@@ -654,7 +658,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         self.shutdown_monitor = {}
 
         self.qubes_model = QubesTableModel(qubes_app)
-        self.table.setModel(self.qubes_model)
+
+        self.proxy = QubesSortProxy()
+        self.proxy.setSourceModel(self.qubes_model)
+
+        self.table.setModel(self.proxy)
         self.table.setItemDelegateForColumn(3, StateIconDelegate())
         self.table.resizeColumnsToContents()
         self.table.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
@@ -662,6 +670,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
 
         self.table.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self.open_context_menu)
+        self.table.sortByColumn(2, 0)
 
         # Connect events
         self.dispatcher = dispatcher
@@ -757,7 +766,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
             domain = self.qubes_app.domains[vm]
             self.qubes_model.info_by_id[domain.qid] = VmInfo(domain)
             self.qubes_model.info_list.append(self.qubes_model.info_by_id[domain.qid])
-            self.qubes_model.layoutChanged.emit()
+            self.proxy.invalidate()
         except (exc.QubesException, KeyError):
             pass
 
@@ -766,7 +775,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
             if vm.name == kwargs['vm']:
                 self.qubes_model.info_list.remove(self.qubes_model.info_by_id[qid])
                 del self.qubes_model.info_by_id[qid]
-                self.qubes_model.layoutChanged.emit()
+                self.proxy.invalidate()
                 return
 
     def on_domain_status_changed(self, vm, event, **_kwargs):
@@ -775,7 +784,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
             if vm.klass in {'TemplateVM'}:
                 for appvm in vm.appvms:
                     self.qubes_model.info_by_id[vm.qid].update("outdated")
-            self.qubes_model.layoutChanged.emit()
+            self.proxy.invalidate()
             self.table_selection_changed()
         except exc.QubesPropertyAccessError:
             return  # the VM was deleted before its status could be updated
@@ -797,7 +806,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
 
         try:
             self.qubes_model.info_by_id[vm.qid].update(event=event)
-            self.qubes_model.layoutChanged.emit()
+            self.proxy.invalidate()
         except exc.QubesPropertyAccessError:
             return  # the VM was deleted before its status could be updated
 
@@ -893,7 +902,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
             # Update available actions:
             if index.column() != 0:
                 continue
-            vm = self.qubes_model.info_list[index.row()]
+            vm = self.qubes_model.info_list[self.proxy.mapToSource(index).row()]
             if vm.state.power in ["Running","Transient","Halting","Dying"]:
                 self.action_resumevm.setEnabled(False)
                 self.action_removevm.setEnabled(False)
@@ -953,7 +962,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         for index in self.table.selectionModel().selectedIndexes():
             if index.column() != 0:
                 continue
-            vm = self.qubes_model.info_list[index.row()].vm
+
+            vm = self.qubes_model.info_list[self.proxy.mapToSource(index).row()].vm
 
             dependencies = utils.vm_dependencies(self.qubes_app, vm)
 
@@ -1011,7 +1021,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         for index in self.table.selectionModel().selectedIndexes():
             if index.column() != 0:
                 continue
-            vm = self.qubes_model.info_list[index.row()].vm
+            vm = self.qubes_model.info_list[self.proxy.mapToSource(index).row()].vm
 
             name_number = 1
             name_format = vm.name + '-clone-%d'
@@ -1053,7 +1063,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         for index in self.table.selectionModel().selectedIndexes():
             if index.column() != 0:
                 continue
-            vm = self.qubes_model.info_list[index.row()].vm
+            vm = self.qubes_model.info_list[self.proxy.mapToSource(index).row()].vm
 
             if vm.get_power_state() in ["Paused", "Suspended"]:
                 try:
@@ -1087,7 +1097,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         for index in self.table.selectionModel().selectedIndexes():
             if index.column() != 0:
                 continue
-            vm = self.qubes_model.info_list[index.row()].vm
+            vm = self.qubes_model.info_list[self.proxy.mapToSource(index).row()].vm
             try:
                 vm.pause()
             except exc.QubesException as ex:
@@ -1103,7 +1113,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         for index in self.table.selectionModel().selectedIndexes():
             if index.column() != 0:
                 continue
-            vm = self.qubes_model.info_list[index.row()].vm
+            vm = self.qubes_model.info_list[self.proxy.mapToSource(index).row()].vm
 
             reply = QtWidgets.QMessageBox.question(
                 self, self.tr("Qube Shutdown Confirmation"),
@@ -1140,7 +1150,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         for index in self.table.selectionModel().selectedIndexes():
             if index.column() != 0:
                 continue
-            vm = self.qubes_model.info_list[index.row()].vm
+            vm = self.qubes_model.info_list[self.proxy.mapToSource(index).row()].vm
 
             reply = QtWidgets.QMessageBox.question(
                 self, self.tr("Qube Restart Confirmation"),
@@ -1162,7 +1172,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         for index in self.table.selectionModel().selectedIndexes():
             if index.column() != 0:
                 continue
-            vm = self.qubes_model.info_list[index.row()].vm
+            vm = self.qubes_model.info_list[self.proxy.mapToSource(index).row()].vm
 
             if not (vm.is_running() or vm.is_paused()):
                 info = self.tr("Qube <b>'{0}'</b> is not running. Are you "
@@ -1198,7 +1208,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         for index in self.table.selectionModel().selectedIndexes():
             if index.column() != 0:
                 continue
-            vm = self.qubes_model.info_list[index.row()].vm
+            vm = self.qubes_model.info_list[self.proxy.mapToSource(index).row()].vm
 
             with common_threads.busy_cursor():
                 settings_window = settings.VMSettingsWindow(
@@ -1211,7 +1221,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         for index in self.table.selectionModel().selectedIndexes():
             if index.column() != 0:
                 continue
-            vm = self.qubes_model.info_list[index.row()].vm
+            vm = self.qubes_model.info_list[self.proxy.mapToSource(index).row()].vm
             if vm:
                 with common_threads.busy_cursor():
                     settings_window = settings.VMSettingsWindow(
@@ -1224,7 +1234,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         for index in self.table.selectionModel().selectedIndexes():
             if index.column() != 0:
                 continue
-            vm = self.qubes_model.info_list[index.row()].vm
+            vm = self.qubes_model.info_list[self.proxy.mapToSource(index).row()].vm
 
             if not vm.is_running():
                 reply = QtWidgets.QMessageBox.question(
@@ -1248,7 +1258,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         for index in self.table.selectionModel().selectedIndexes():
             if index.column() != 0:
                 continue
-            vm = self.qubes_model.info_list[index.row()].vm
+            vm = self.qubes_model.info_list[self.proxy.mapToSource(index).row()].vm
 
             (command_to_run, ok) = QtWidgets.QInputDialog.getText(
                 self, self.tr('Qubes command entry'),
@@ -1268,7 +1278,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         for index in self.table.selectionModel().selectedIndexes():
             if index.column() != 0:
                 continue
-            vm = self.qubes_model.info_list[index.row()].vm
+            vm = self.qubes_model.info_list[self.proxy.mapToSource(index).row()].vm
             vm.run('qubes-change-keyboard-layout')
 
     # noinspection PyArgumentList
@@ -1278,7 +1288,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
             for index in self.table.selectionModel().selectedIndexes():
                 if index.column() != 0:
                     continue
-            vm = self.qubes_model.info_list[index.row()].vm
+            vm = self.qubes_model.info_list[self.proxy.mapToSource(index).row()].vm
             settings_window = settings.VMSettingsWindow(vm, self.qt_app,
                                                         "firewall")
         settings_window.exec_()
@@ -1422,7 +1432,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
             for index in self.table.selectionModel().selectedIndexes():
                 if index.column() != 0:
                     continue
-                vm = self.qubes_model.info_list[index.row()].vm
+                vm = self.qubes_model.info_list[self.proxy.mapToSource(index).row()].vm
 
                 # logs menu
                 self.logs_menu.clear()
