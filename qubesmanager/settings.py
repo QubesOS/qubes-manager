@@ -409,6 +409,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 self.vm.app.default_template,
                 (lambda vm: vm.klass == 'TemplateVM'),
                 allow_default=False, allow_none=False)
+        elif self.vm.klass == 'DispVM':
+            self.template_list, self.template_idx = utils.prepare_vm_choice(
+                self.template_name,
+                self.vm, 'template',
+                self.vm.app.default_dispvm,
+                (lambda vm: getattr(vm, 'template_for_dispvms', False)),
+                allow_default=False, allow_none=False)
         else:
             self.template_name.setEnabled(False)
             self.template_idx = -1
