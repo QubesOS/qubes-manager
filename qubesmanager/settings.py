@@ -420,6 +420,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
             self.template_name.setEnabled(False)
             self.template_idx = -1
 
+        if self.vm.is_running():
+            self.template_name.setEnabled(False)
+
         self.netvm_list, self.netvm_idx = utils.prepare_vm_choice(
             self.netVM,
             self.vm, 'netvm',
