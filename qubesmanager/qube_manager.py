@@ -64,7 +64,6 @@ row_height = 30
 size_multiplier = 1 #0.7
 
 
-
 class StateIconDelegate(QtWidgets.QStyledItemDelegate):
     lastIndex = None
     def __init__(self):
@@ -188,13 +187,18 @@ class StateIconDelegate(QtWidgets.QStyledItemDelegate):
 
 
 class StateInfo():
-    power = None
-    outdated = None
+    power = ""
+    outdated = ""
+
+    def __str__(self):
+        return self.power + self.outdated
+
 
 class VmInfo():
     def __init__(self, vm):
         self.vm = vm
         self.name = self.vm.name
+        self.label = self.vm.label
         self.klass = self.vm.klass
         self.state = StateInfo()
         self.qid = vm.qid
@@ -255,7 +259,8 @@ class VmInfo():
             if not event or event.endswith(':template_for_dispvms'):
                 self.dvm_template = getattr(self.vm, 'template_for_dispvms', None)
             if update_size_on_disk:
-                self.disk = str(round(self.vm.get_disk_utilization()/(1024*1024),2))+"MiB"
+                self.disk_float = float(self.vm.get_disk_utilization())
+                self.disk = str(round(self.disk_float/(1024*1024),2))+"MiB"
         except exc.QubesPropertyAccessError:
             pass
         except exc.QubesDaemonNoResponseError:
@@ -263,9 +268,6 @@ class VmInfo():
             # AdminAPI
             pass
 
-class QubesSortProxy(QtCore.QSortFilterProxyModel):
-    def __init__(self):
-        QtCore.QSortFilterProxyModel.__init__(self)
 
 class QubesTableModel(QtCore.QAbstractTableModel):
     def __init__(self, qubes_app):
@@ -333,7 +335,7 @@ class QubesTableModel(QtCore.QAbstractTableModel):
         if role == QtCore.Qt.DisplayRole:
             if col in [0,1]:
                 return None
-            if col == 2:
+            elif col == 2:
                 return self.info_list[index.row()].name
             elif col == 3:
                 return self.info_list[index.row()].state
@@ -363,12 +365,26 @@ class QubesTableModel(QtCore.QAbstractTableModel):
                     self.klass_pixmap[vm.klass].load(":/"+vm.klass.lower()+".png")
                     self.klass_pixmap[vm.klass] = self.klass_pixmap[vm.klass].scaled(row_height*size_multiplier,row_height*size_multiplier)
                     return self.klass_pixmap[vm.klass]
+
             if col == 1:
                 try:
                     return self.label_pixmap[vm.label]
                 except:
                     self.label_pixmap[vm.label] = QtGui.QIcon.fromTheme(vm.label.icon)
                     return self.label_pixmap[vm.label]
+
+        # Used for sorting
+        elif role == QtCore.Qt.UserRole:
+            if col == 0:
+                return self.info_list[index.row()].klass
+            elif col == 1:
+                return self.info_list[index.row()].label.name
+            elif col == 3:
+                return str(self.info_list[index.row()].state)
+            elif col == 6:
+                return self.info_list[index.row()].disk_float
+            else:
+                return self.data(index, QtCore.Qt.DisplayRole)
         return None
 
     def headerData(self, col, orientation, role):
@@ -524,7 +540,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
     # pylint: disable=too-many-instance-attributes
     row_height = 30
     column_width = 200
-    search = ""
     # suppress saving settings while initializing widgets
     settings_loaded = False
     columns_indices = {"Type": 0,
@@ -556,6 +571,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         self.searchbox = SearchBox()
         self.searchbox.setValidator(QtGui.QRegExpValidator(
             QtCore.QRegExp("[a-zA-Z0-9_-]*", QtCore.Qt.CaseInsensitive), None))
+        self.searchbox.textChanged.connect(self.do_search)
         self.searchContainer.addWidget(self.searchbox)
 
         self.sort_by_column = "Type"
@@ -633,10 +649,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         #self.connect(self.logs_menu, QtCore.SIGNAL("triggered(QAction *)"),
         #             self.show_log)
 
-        #self.connect(self.searchbox,
-        #             QtCore.SIGNAL("textChanged(const QString&)"),
-        #             self.do_search)
-
         self.action_menubar.toggled.connect(self.showhide_menubar)
         self.action_toolbar.toggled.connect(self.showhide_toolbar)
 
@@ -659,8 +671,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
 
         self.qubes_model = QubesTableModel(qubes_app)
 
-        self.proxy = QubesSortProxy()
+        self.proxy = QtCore.QSortFilterProxyModel()
         self.proxy.setSourceModel(self.qubes_model)
+        self.proxy.setSortRole(QtCore.Qt.UserRole)
+        self.proxy.setFilterKeyColumn(2)
+        self.proxy.setFilterCaseSensitivity(0)
 
         self.table.setModel(self.proxy)
         self.table.setItemDelegateForColumn(3, StateIconDelegate())
@@ -843,21 +858,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
     def get_vms_list(self):
         return list(self.qubes_app.domains)
 
-    def showhide_vms(self):
-        if not self.search:
-            for row_no in range(self.table.rowCount()):
-                self.table.setRowHidden(row_no, False)
-        else:
-            for row_no in range(self.table.rowCount()):
-                widget = self.table.cellWidget(row_no,
-                                               self.columns_indices["State"])
-                show = (self.search in widget.vm.name)
-                self.table.setRowHidden(row_no, not show)
-
     @QtCore.pyqtSlot(str)
     def do_search(self, search):
-        self.search = str(search)
-        self.showhide_vms()
+        self.proxy.setFilterFixedString(str(search))
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_search_triggered')
