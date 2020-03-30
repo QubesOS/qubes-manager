@@ -29,7 +29,16 @@ from datetime import datetime, timedelta
 from qubesadmin import exc
 from qubesadmin import utils
 
-from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
+# pylint: disable=import-error
+from PyQt5.QtCore import (Qt, QAbstractTableModel, QObject, pyqtSlot,
+    QSettings, QRegExp, QSortFilterProxyModel, QSize, QPoint)
+
+# pylint: disable=import-error
+from PyQt5.QtWidgets import (QLineEdit, QStyledItemDelegate, QToolTip,
+    QMenu, QInputDialog, QMainWindow, QProgressDialog, QStyleOptionViewItem,
+    QAbstractItemView)
+
+from PyQt5.QtGui import (QIcon, QPixmap, QRegExpValidator)  # pylint: disable=import-error
 
 from qubesmanager.about import AboutDialog
 
