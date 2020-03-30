@@ -24,8 +24,7 @@
   </property>
   <property name="windowIcon">
    <iconset theme="qubes-manager">
-    <normaloff/>
-   </iconset>
+    <normaloff>.</normaloff>.</iconset>
   </property>
   <property name="locale">
    <locale language="English" country="UnitedStates"/>
@@ -53,7 +52,16 @@
     <property name="sizeConstraint">
      <enum>QLayout::SetDefaultConstraint</enum>
     </property>
-    <property name="margin">
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
      <number>0</number>
     </property>
     <property name="spacing">
@@ -251,7 +259,7 @@ Template</string>
      <x>0</x>
      <y>0</y>
      <width>1100</width>
-     <height>23</height>
+     <height>24</height>
     </rect>
    </property>
    <property name="contextMenuPolicy">
@@ -320,6 +328,7 @@ Template</string>
     <addaction name="action_appmenus"/>
     <addaction name="action_updatevm"/>
     <addaction name="action_run_command_in_vm"/>
+    <addaction name="action_open_console"/>
     <addaction name="action_set_keyboard_layout"/>
     <addaction name="separator"/>
     <addaction name="logs_menu"/>
@@ -373,6 +382,7 @@ Template</string>
    <addaction name="action_appmenus"/>
    <addaction name="action_updatevm"/>
    <addaction name="action_set_keyboard_layout"/>
+   <addaction name="action_open_console"/>
    <addaction name="separator"/>
    <addaction name="action_global_settings"/>
    <addaction name="action_backup"/>
@@ -708,8 +718,7 @@ Template</string>
   <action name="action_about_qubes">
    <property name="icon">
     <iconset theme="qubes-manager">
-     <normaloff/>
-    </iconset>
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>&amp;Qubes OS</string>
@@ -876,6 +885,19 @@ Template</string>
    </property>
    <property name="text">
     <string>Virtualization Mode</string>
+   </property>
+  </action>
+  <action name="action_open_console">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/log.png</normaloff>
+     <normalon>:/log.png</normalon>:/log.png</iconset>
+   </property>
+   <property name="text">
+    <string>Open console in qube</string>
+   </property>
+   <property name="toolTip">
+    <string>Open a secure Xen console in the qube. Useful chiefly for debugging purposes: for normal operation, use &quot;Run Terminal&quot; from the Domains widget. </string>
    </property>
   </action>
  </widget>

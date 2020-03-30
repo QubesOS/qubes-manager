@@ -31,12 +31,12 @@ from qubesadmin import utils
 
 # pylint: disable=import-error
 from PyQt5.QtCore import (Qt, QAbstractTableModel, QObject, pyqtSlot,
-    QSettings, QRegExp, QSortFilterProxyModel, QSize, QPoint)
+    QSettings, QRegExp, QSortFilterProxyModel, QSize, QPoint, QTimer)
 
 # pylint: disable=import-error
 from PyQt5.QtWidgets import (QLineEdit, QStyledItemDelegate, QToolTip,
     QMenu, QInputDialog, QMainWindow, QProgressDialog, QStyleOptionViewItem,
-    QAbstractItemView)
+    QAbstractItemView, QMessageBox)
 
 from PyQt5.QtGui import (QIcon, QPixmap, QRegExpValidator)  # pylint: disable=import-error
 
@@ -621,6 +621,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         self.context_menu.addAction(self.action_updatevm)
         self.context_menu.addAction(self.action_run_command_in_vm)
+        self.context_menu.addAction(self.action_open_console)
         self.context_menu.addAction(self.action_resumevm)
         self.context_menu.addAction(self.action_startvm_tools_install)
         self.context_menu.addAction(self.action_pausevm)
@@ -1282,6 +1283,17 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             self.threads_list.append(thread)
             thread.finished.connect(self.clear_threads)
             thread.start()
+
+    # noinspection PyArgumentList
+    @pyqtSlot(name='on_action_open_console_triggered')
+    def action_open_console_triggered(self):
+        # pylint: disable=invalid-name
+        for index in self.table.selectionModel().selectedIndexes():
+            if index.column() != 0:
+                continue
+            vm = self.qubes_model.info_list[self.proxy.mapToSource(index).row()].vm
+            subprocess.Popen(['qvm-console-dispvm', vm.name],
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_set_keyboard_layout_triggered')
