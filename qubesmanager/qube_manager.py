@@ -30,7 +30,7 @@ from qubesadmin import exc
 from qubesadmin import utils
 
 # pylint: disable=import-error
-from PyQt5.QtCore import (Qt, QAbstractTableModel, QObject, pyqtSlot,
+from PyQt5.QtCore import (Qt, QAbstractTableModel, QObject, pyqtSlot, QEvent,
     QSettings, QRegExp, QSortFilterProxyModel, QSize, QPoint, QTimer)
 
 # pylint: disable=import-error
@@ -94,8 +94,8 @@ class StateIconDelegate(QStyledItemDelegate):
         self.outdatedTooltips = {
                 "update" : self.tr("Updates pending!"),
                 "outdated" : self.tr(
-                    "The qube must be restarted for its filesystem to reflect the "
-                    "template's recent committed changes."),
+                    "The qube must be restarted for its filesystem to reflect"
+                    " the template's recent committed changes."),
                 "to-be-outdated" : self.tr(
                     "The Template must be stopped before changes from its "
                     "current session can be picked up by this qube."),
@@ -147,18 +147,12 @@ class StateIconDelegate(QStyledItemDelegate):
                     self.outdatedIcons[index.data().outdated].pixmap(iconSize))
             left += delta
 
-        # cycle through roles, draw an icon if the index has that role set to True
-        #left = delta = margin + iconRect.width()
-        #for role, name, icon in self.extraIconData:
-        #    if index.data(role):
-        #        qp.drawPixmap(iconRect.translated(left, 0),
-        #            icon.pixmap(iconSize))
-        #        left += delta
         qp.restore()
 
     def helpEvent(self, event, view, option, index):
         if event.type() != QEvent.ToolTip:
-            return super(StateIconDelegate, self).helpEvent(event, view, option, index)
+            return super(StateIconDelegate, self).helpEvent(event, view,
+                    option, index)
         option = QStyleOptionViewItem(option)
         widget = option.widget
         style = widget.style()
@@ -211,7 +205,7 @@ class VmInfo():
         self.klass = self.vm.klass
         self.state = StateInfo()
         self.qid = vm.qid
-        self.updateable = getattr(vm, 'updateable', False) 
+        self.updateable = getattr(vm, 'updateable', False)
         self.update(True)
 
     def update(self, update_size_on_disk=False, event=None):
@@ -226,7 +220,8 @@ class VmInfo():
             self.state.power = self.vm.get_power_state()
 
             if self.vm.is_running():
-                if hasattr(self.vm, 'template') and self.vm.template.is_running():
+                if hasattr(self.vm, 'template') and \
+                        self.vm.template.is_running():
                     self.state.outdated = "to-be-outdated"
 
                 if not self.state.outdated:
@@ -269,7 +264,7 @@ class VmInfo():
                 self.dvm_template = getattr(self.vm, 'template_for_dispvms', None)
             if update_size_on_disk:
                 self.disk_float = float(self.vm.get_disk_utilization())
-                self.disk = str(round(self.disk_float/(1024*1024),2))+"MiB"
+                self.disk = str(round(self.disk_float/(1024*1024), 2)) + "MiB"
         except exc.QubesPropertyAccessError:
             pass
         except exc.QubesDaemonNoResponseError:
@@ -282,8 +277,8 @@ class QubesTableModel(QAbstractTableModel):
     def __init__(self, qubes_app):
         QAbstractTableModel.__init__(self)
         self.qubes_app = qubes_app
-        self.info_list =  []
-        self.info_by_id =  {}
+        self.info_list = []
+        self.info_by_id = {}
         self.template = {}
         self.klass_pixmap = {}
         self.label_pixmap = {}
@@ -327,10 +322,10 @@ class QubesTableModel(QAbstractTableModel):
     def _get_vms_list(self):
         return [vm for vm in self.qubes_app.domains]
 
-    def rowCount(self, parent):
-        return len(self.info_list) 
+    def rowCount(self, _):
+        return len(self.info_list)
 
-    def columnCount(self, parent):
+    def columnCount(self, _):
         return len(self.columns_indices)
 
     def data(self, index, role):
@@ -342,7 +337,7 @@ class QubesTableModel(QAbstractTableModel):
         vm = self.info_list[row]
 
         if role == Qt.DisplayRole:
-            if col in [0,1]:
+            if col in [0, 1]:
                 return None
             elif col == 2:
                 return self.info_list[index.row()].name
@@ -370,9 +365,11 @@ class QubesTableModel(QAbstractTableModel):
                 try:
                     return self.klass_pixmap[vm.klass]
                 except:
-                    self.klass_pixmap[vm.klass] =  QPixmap(row_height*size_multiplier,row_height*size_multiplier)
+                    self.klass_pixmap[vm.klass] =  QPixmap(row_height*size_multiplier,\
+                            row_height*size_multiplier)
                     self.klass_pixmap[vm.klass].load(":/"+vm.klass.lower()+".png")
-                    self.klass_pixmap[vm.klass] = self.klass_pixmap[vm.klass].scaled(row_height*size_multiplier,row_height*size_multiplier)
+                    self.klass_pixmap[vm.klass] = self.klass_pixmap[vm.klass].scaled(\
+                            row_height*size_multiplier,row_height*size_multiplier)
                     return self.klass_pixmap[vm.klass]
 
             if col == 1:
@@ -808,7 +805,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             self.qubes_model.info_by_id[vm.qid].update(event=event)
             if vm.klass in {'TemplateVM'}:
                 for appvm in vm.appvms:
-                    self.qubes_model.info_by_id[vm.qid].update("outdated")
+                    self.qubes_model.info_by_id[appvm.qid].update("outdated")
             self.proxy.invalidate()
             self.table_selection_changed()
         except exc.QubesPropertyAccessError:
