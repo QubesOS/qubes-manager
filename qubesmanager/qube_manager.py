@@ -240,7 +240,7 @@ class VmInfo():
             if not event or event.endswith(':template'):
                 try:
                     self.template = self.vm.template.name
-                except:
+                except exc.QubesNoSuchPropertyError:
                     self.template = self.vm.klass
             if not event or event.endswith(':netvm'):
                 self.netvm = getattr(self.vm, 'netvm', None)
@@ -360,12 +360,11 @@ class QubesTableModel(QAbstractTableModel):
                 return self.info_list[index.row()].dvm
             if col == 12:
                 return self.info_list[index.row()].dvm_template
-
         elif role == Qt.DecorationRole:
             if col == 0:
                 try:
                     return self.klass_pixmap[vm.klass]
-                except:
+                except KeyError:
                     self.klass_pixmap[vm.klass] =  QPixmap(row_height*size_multiplier,\
                             row_height*size_multiplier)
                     self.klass_pixmap[vm.klass].load(":/"+vm.klass.lower()+".png")
@@ -376,7 +375,7 @@ class QubesTableModel(QAbstractTableModel):
             if col == 1:
                 try:
                     return self.label_pixmap[vm.label]
-                except:
+                except KeyError:
                     self.label_pixmap[vm.label] = QIcon.fromTheme(vm.label.icon)
                     return self.label_pixmap[vm.label]
         # Used for get VM
@@ -809,7 +808,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 for appvm in vm.appvms:
                     self.qubes_model.info_by_id[appvm.qid].update("outdated")
             self.proxy.invalidate()
-            self.table_selection_changed(self.table.selectionModel().selection())
+            self.table_selection_changed()
         except exc.QubesPropertyAccessError:
             return  # the VM was deleted before its status could be updated
         except KeyError:  # adding the VM failed for some reason
@@ -915,7 +914,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         return vms
 
-    def table_selection_changed(self, selection):
+    def table_selection_changed(self):
         # Since selection could have multiple domains  
         # enable all first and then filter them 
         self._enable_all()
@@ -1011,7 +1010,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 # user clicked cancel
                 continue
 
-            if requested_name != vm.name:
+            if requested_name == vm.name:
+                remove_vms.append(vm)
+            else:
                 # name did not match
                 QMessageBox.warning(
                     self,
@@ -1019,10 +1020,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     self.tr(
                         "Entered name did not match! Not removing "
                         "{0}.").format(vm.name))
-                return
-
-            else:
-                remove_vms.append(vm)
 
         # remove the VMs
         for vm in remove_vms:
@@ -1120,9 +1117,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             vm = vm_info.vm
             reply = QMessageBox.question(
                 self, self.tr("Qube Shutdown Confirmation"),
-                self.tr("Are you sure you want to power down the Qube"
-                        " <b>'{0}'</b>?<br><small>This will shutdown all the "
-                        "running applications within this Qube.</small>").format(
+                self.tr("Are you sure you want to power down the Qube <b>'{0}'"
+                        "</b>?<br><small>This will shutdown all the running"
+                        " applications within this Qube.</small>").format(
                          vm.name),
                 QMessageBox.Yes | QMessageBox.Cancel)
 
@@ -1154,9 +1151,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             vm = vm_info.vm
             reply = QMessageBox.question(
                 self, self.tr("Qube Restart Confirmation"),
-                self.tr("Are you sure you want to restart the Qube <b>'{0}'</b>?"
-                        "<br><small>This will shutdown all the running "
-                        "applications within this Qube.</small>").format(vm.name),
+                self.tr("Are you sure you want to restart the Qube <b>'{0}'</b>"
+                        "?<br><small>This will shutdown all the running applica"
+                        "tions within this Qube.</small>").format(vm.name),
                 QMessageBox.Yes | QMessageBox.Cancel)
 
             if reply == QMessageBox.Yes:
@@ -1174,14 +1171,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             if not (vm.is_running() or vm.is_paused()):
                 info = self.tr("Qube <b>'{0}'</b> is not running. Are you "
                                "absolutely sure you want to try to kill it?<br>"
-                               "<small>This will end <b>(not shutdown!)</b> all "
-                               "the running applications within this "
+                               "<small>This will end <b>(not shutdown!)</b> "
+                               "all the running applications within this "
                                "Qube.</small>").format(vm.name)
             else:
                 info = self.tr("Are you sure you want to kill the Qube "
                                "<b>'{0}'</b>?<br><small>This will end <b>(not "
-                               "shutdown!)</b> all the running applications within "
-                               "this Qube.</small>").format(vm.name)
+                               "shutdown!)</b> all the running applications "
+                               "within this Qube.</small>").format(vm.name)
 
             reply = QMessageBox.question(
                 self, self.tr("Qube Kill Confirmation"), info,
@@ -1226,7 +1223,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 reply = QMessageBox.question(
                     self, self.tr("Qube Update Confirmation"),
                     self.tr(
-                        "<b>{0}</b><br>The Qube has to be running to be updated."
+                        "<b>{0}</b>"
+                        "<br>The Qube has to be running to be updated."
                         "<br>Do you want to start it?<br>").format(vm.name),
                     QMessageBox.Yes | QMessageBox.Cancel)
                 if reply != QMessageBox.Yes:
@@ -1259,7 +1257,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         # pylint: disable=invalid-name
         for vm in self.get_selected_vms():
             subprocess.Popen(['qvm-console-dispvm', vm.name],
-                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                             stdout=subprocess.DEVNULL,
+                             stderr=subprocess.DEVNULL)
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_set_keyboard_layout_triggered')
