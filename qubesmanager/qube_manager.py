@@ -223,17 +223,17 @@ class VmInfo():
                 if hasattr(self.vm, 'template') and \
                         self.vm.template.is_running():
                     self.state.outdated = "to-be-outdated"
-
-                if not self.state.outdated:
+                else:
                     for vol in self.vm.volumes.values():
                         if vol.is_outdated():
                             self.state.outdated = "outdated"
                             break
+            else:
+                self.state.outdated = ""
 
             if self.vm.klass in {'TemplateVM', 'StandaloneVM'} and \
                     self.vm.features.get('updates-available', False):
                 self.state.outdated = 'update'
-
 
             if not event or event.endswith(':label'):
                 self.label = self.vm.label
@@ -806,7 +806,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             self.qubes_model.info_by_id[vm.qid].update(event=event)
             if vm.klass in {'TemplateVM'}:
                 for appvm in vm.appvms:
-                    self.qubes_model.info_by_id[appvm.qid].update("outdated")
+                    self.qubes_model.info_by_id[appvm.qid].update(event="outdated")
             self.proxy.invalidate()
             self.table_selection_changed()
         except exc.QubesPropertyAccessError:
