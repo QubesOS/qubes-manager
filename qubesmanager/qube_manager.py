@@ -886,21 +886,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             self.manager_settings.setValue('view/sort_order', self.sort_order)
             self.manager_settings.sync()
 
-    def _enable_all(self):
-        self.action_settings.setEnabled(True)
-        self.action_removevm.setEnabled(True)
-        self.action_clonevm.setEnabled(True)
-        self.action_resumevm.setEnabled(True)
-        self.action_pausevm.setEnabled(True)
-        self.action_shutdownvm.setEnabled(True)
-        self.action_restartvm.setEnabled(True)
-        self.action_killvm.setEnabled(True)
-        self.action_appmenus.setEnabled(True)
-        self.action_editfwrules.setEnabled(True)
-        self.action_updatevm.setEnabled(True)
-        self.action_run_command_in_vm.setEnabled(True)
-        self.action_set_keyboard_layout.setEnabled(True)
-
     def get_selected_vms(self):
         vms = []
 
@@ -917,7 +902,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     def table_selection_changed(self):
         # Since selection could have multiple domains  
         # enable all first and then filter them 
-        self._enable_all()
+        for action in self.toolbar.actions():
+            action.setEnabled(True)
 
         for vm in self.get_selected_vms():
             #  TODO: add boot from device to menu and add windows tools there
