@@ -902,7 +902,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     def table_selection_changed(self):
         # Since selection could have multiple domains  
         # enable all first and then filter them 
-        for action in self.toolbar.actions():
+        for action in self.toolbar.actions() + self.context_menu.actions():
             action.setEnabled(True)
 
         for vm in self.get_selected_vms():
