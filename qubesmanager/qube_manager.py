@@ -289,14 +289,14 @@ class QubesCache(QAbstractTableModel):
         self._info_by_id[vm.qid] = vm_info
 
     def remove_vm(self, name):
-        vm_info = self.get_vm(name = name)
+        vm_info = self.get_vm(name=name)
         self._info_list.remove(vm_info)
         del self._info_by_id[vm_info.qid]
 
-    def get_vm(self, row = None, qid = None, name = None):
+    def get_vm(self, row=None, qid=None, name=None):
         if not row is None:
             return self._info_list[row]
-        elif not qid is None:
+        if not qid is None:
             return self._info_by_id[qid]
         else:
             return next(x for x in self._info_list if x.name == name)
@@ -703,8 +703,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.table.setItemDelegateForColumn(3, StateIconDelegate())
         self.table.resizeColumnsToContents()
         self.table.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        selectionModel = self.table.selectionModel()
-        selectionModel.selectionChanged.connect(self.table_selection_changed)
+        selection_model = self.table.selectionModel()
+        selection_model.selectionChanged.connect(self.table_selection_changed)
 
         self.table.setContextMenuPolicy(Qt.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self.open_context_menu)
@@ -825,7 +825,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             pass
 
     def on_domain_removed(self, _submitter, _event, **kwargs):
-        self.qubes_cache.remove_vm(name = kwargs['vm'])
+        self.qubes_cache.remove_vm(name=kwargs['vm'])
         self.proxy.invalidate()
 
     def on_domain_status_changed(self, vm, event, **_kwargs):
