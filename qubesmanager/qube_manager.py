@@ -73,6 +73,7 @@ row_height = 30
 size_multiplier = 1 #0.7
 
 
+# pylint: disable=invalid-name
 class StateIconDelegate(QStyledItemDelegate):
     lastIndex = None
     def __init__(self):
@@ -298,8 +299,7 @@ class QubesCache(QAbstractTableModel):
             return self._info_list[row]
         if not qid is None:
             return self._info_by_id[qid]
-        else:
-            return next(x for x in self._info_list if x.name == name)
+        return next(x for x in self._info_list if x.name == name)
 
     def __len__(self):
         return len(self._info_list)
