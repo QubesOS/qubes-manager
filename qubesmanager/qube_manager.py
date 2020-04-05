@@ -248,7 +248,10 @@ class VmInfo():
                     self.netvm = self.netvm.name
             if not event or event.endswith(':internal'):
                 # this is a feature, not a property; TODO: fix event handling
-                self.internal = "Yes" if self.vm.features.get('internal', False) else ""
+                if self.vm.features.get('internal', False):
+                    self.internal = "Yes"
+                else:
+                    self.internal = ""
             if not event or event.endswith(':ip'):
                 self.ip = getattr(self.vm, 'ip', None)
             if not event or event.endswith(':include_in_backups'):
@@ -261,7 +264,8 @@ class VmInfo():
             if not event or event.endswith(':default_dispvm'):
                 self.dvm = getattr(self.vm, 'default_dispvm', None)
             if not event or event.endswith(':template_for_dispvms'):
-                self.dvm_template = getattr(self.vm, 'template_for_dispvms', None)
+                self.dvm_template = getattr(self.vm, 'template_for_dispvms',
+                                            None)
             if update_size_on_disk:
                 self.disk_float = float(self.vm.get_disk_utilization())
                 self.disk = str(round(self.disk_float/(1024*1024), 2)) + "MiB"
@@ -314,7 +318,7 @@ class QubesTableModel(QAbstractTableModel):
         for vm in vms_list:
             progress.setValue(row_no)
             self.info_list.append(VmInfo(vm))
-            self.info_by_id[vm.qid]  = self.info_list[row_no]
+            self.info_by_id[vm.qid] = self.info_list[row_no]
             row_no += 1
 
         progress.setValue(row_no)
@@ -322,9 +326,11 @@ class QubesTableModel(QAbstractTableModel):
     def _get_vms_list(self):
         return [vm for vm in self.qubes_app.domains]
 
+    # pylint: disable=invalid-name
     def rowCount(self, _):
         return len(self.info_list)
 
+    # pylint: disable=invalid-name
     def columnCount(self, _):
         return len(self.columns_indices)
 
@@ -394,10 +400,11 @@ class QubesTableModel(QAbstractTableModel):
             return self.data(index, Qt.DisplayRole)
         return None
 
+    # pylint: disable=invalid-name
     def headerData(self, col, orientation, role):
-        if(col < 2):
+        if col < 2:
             return None
-        if(orientation == Qt.Horizontal and role == Qt.DisplayRole):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return self.columns_indices[col]
         return None
 
@@ -689,7 +696,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.table.setItemDelegateForColumn(3, StateIconDelegate())
         self.table.resizeColumnsToContents()
         self.table.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.table.selectionModel().selectionChanged.connect(self.table_selection_changed)
+        selectionModel = self.table.selectionModel()
+        selectionModel.selectionChanged.connect(self.table_selection_changed)
 
         self.table.setContextMenuPolicy(Qt.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self.open_context_menu)
@@ -729,10 +737,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.progress = None
 
         self.check_updates()
-
-        # select the first row of the table to make sure menu actions are
-        # correctly initialized
-        self.table.selectRow(0)
 
     def setup_application(self):
         self.qt_app.setApplicationName(self.tr("Qube Manager"))
@@ -900,15 +904,15 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         return vms
 
     def table_selection_changed(self):
-        # Since selection could have multiple domains  
-        # enable all first and then filter them 
+        # Since selection could have multiple domains
+        # enable all first and then filter them
         for action in self.toolbar.actions() + self.context_menu.actions():
             action.setEnabled(True)
 
         for vm in self.get_selected_vms():
             #  TODO: add boot from device to menu and add windows tools there
             # Update available actions:
-            if vm.state.power in ["Running","Transient","Halting","Dying"]:
+            if vm.state.power in ["Running", "Transient", "Halting", "Dying"]:
                 self.action_resumevm.setEnabled(False)
                 self.action_removevm.setEnabled(False)
             elif vm.state.power == "Paused":
@@ -993,8 +997,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self, self.tr("Qube Removal Confirmation"),
                 self.tr("Are you sure you want to remove the Qube <b>'{0}'</b>"
                         "?<br> All data on this Qube's private storage will be "
-                        "lost!<br><br>Type the name of the Qube (<b>{1}</b>) below "
-                        "to confirm:").format(vm.name, vm.name))
+                        "lost!<br><br>Type the name of the Qube (<b>{1}</b>) be"
+                        "low to confirm:").format(vm.name, vm.name))
 
             if not ok:
                 # user clicked cancel
