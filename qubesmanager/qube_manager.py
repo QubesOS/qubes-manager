@@ -69,9 +69,7 @@ class SearchBox(QLineEdit):
             self.selectAll()
             self.focusing = False
 
-row_height = 30
-size_multiplier = 1 #0.7
-
+icon_size = QSize(30, 30)
 
 # pylint: disable=invalid-name
 class StateIconDelegate(QStyledItemDelegate):
@@ -110,7 +108,6 @@ class StateIconDelegate(QStyledItemDelegate):
         style = widget.style()
         iconRect = style.subElementRect(style.SE_ItemViewItemDecoration,
             option, widget)
-        margin = iconRect.left() - option.rect.left()
         width = iconRect.width() * 3 # Nº of possible icons
         hint.setWidth(width)
         return hint
@@ -375,11 +372,9 @@ class QubesTableModel(QAbstractTableModel):
                 try:
                     return self.klass_pixmap[vm.klass]
                 except KeyError:
-                    self.klass_pixmap[vm.klass] =  QPixmap(row_height*size_multiplier,\
-                            row_height*size_multiplier)
-                    self.klass_pixmap[vm.klass].load(":/"+vm.klass.lower()+".png")
-                    self.klass_pixmap[vm.klass] = self.klass_pixmap[vm.klass].scaled(\
-                            row_height*size_multiplier,row_height*size_multiplier)
+                    pixmap = QPixmap()
+                    pixmap.load(":/"+vm.klass.lower()+".png")
+                    self.klass_pixmap[vm.klass] = pixmap.scaled(icon_size)
                     return self.klass_pixmap[vm.klass]
 
             if col == 1:
@@ -833,7 +828,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             self.qubes_cache.get_vm(qid=vm.qid).update(event=event)
             if vm.klass in {'TemplateVM'}:
                 for appvm in vm.appvms:
-                    self.qubes_cache.get_vm(qid=appvm.qid).update(event="outdated")
+                    self.qubes_cache.get_vm(qid=appvm.qid).\
+                            update(event="outdated")
             self.proxy.invalidate()
             self.table_selection_changed()
         except exc.QubesPropertyAccessError:
@@ -1001,16 +997,16 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
             if dependencies:
                 list_text = "<br>" + \
-                            manager_utils.format_dependencies_list(dependencies) + \
-                            "<br>"
+                            manager_utils.format_dependencies_list \
+                            (dependencies) + "<br>"
 
                 info_dialog = QMessageBox(self)
                 info_dialog.setWindowTitle(self.tr("Warning!"))
                 info_dialog.setText(
-                    self.tr("This qube cannot be removed. It is used as:"
-                            " <br> {} <small>If you want to  remove this qube, "
-                            "you should remove or change settings of each qube "
-                            "or setting that uses it.</small>").format(list_text))
+                    self.tr("This qube cannot be removed. It is used as: <br> "
+                            "{} <small>If you want to  remove this qube, you "
+                            "should remove or change settings of each qube or "
+                            "setting that uses it.</small>").format(list_text))
                 info_dialog.setModal(False)
                 info_dialog.show()
 
