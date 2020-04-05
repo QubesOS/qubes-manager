@@ -276,13 +276,41 @@ class VmInfo():
             # AdminAPI
             pass
 
-
-class QubesTableModel(QAbstractTableModel):
+class QubesCache(QAbstractTableModel):
     def __init__(self, qubes_app):
         QAbstractTableModel.__init__(self)
-        self.qubes_app = qubes_app
-        self.info_list = []
-        self.info_by_id = {}
+        self._qubes_app = qubes_app
+        self._info_list = []
+        self._info_by_id = {}
+
+    def add_vm(self, vm):
+        vm_info = VmInfo(vm)
+        self._info_list.append(vm_info)
+        self._info_by_id[vm.qid] = vm_info
+
+    def remove_vm(self, name):
+        vm_info = self.get_vm(name = name)
+        self._info_list.remove(vm_info)
+        del self._info_by_id[vm_info.qid]
+
+    def get_vm(self, row = None, qid = None, name = None):
+        if not row is None:
+            return self._info_list[row]
+        elif not qid is None:
+            return self._info_by_id[qid]
+        else:
+            return next(x for x in self._info_list if x.name == name)
+
+    def __len__(self):
+        return len(self._info_list)
+
+    def __iter__(self):
+        return iter(self._info_list)
+
+class QubesTableModel(QAbstractTableModel):
+    def __init__(self, qubes_cache):
+        QAbstractTableModel.__init__(self)
+        self.qubes_cache = qubes_cache
         self.template = {}
         self.klass_pixmap = {}
         self.label_pixmap = {}
@@ -302,33 +330,9 @@ class QubesTableModel(QAbstractTableModel):
                 "Is DVM Template"
                 ]
 
-        self.fill_list()
-
-    def fill_list(self):
-        vms_list = self._get_vms_list()
-
-        progress = QProgressDialog(
-            self.tr(
-                "Loading Qube Manager..."), "", 0, len(vms_list))
-        progress.setWindowTitle(self.tr("Qube Manager"))
-        progress.setMinimumDuration(1000)
-        progress.setCancelButton(None)
-
-        row_no = 0
-        for vm in vms_list:
-            progress.setValue(row_no)
-            self.info_list.append(VmInfo(vm))
-            self.info_by_id[vm.qid] = self.info_list[row_no]
-            row_no += 1
-
-        progress.setValue(row_no)
-
-    def _get_vms_list(self):
-        return [vm for vm in self.qubes_app.domains]
-
     # pylint: disable=invalid-name
     def rowCount(self, _):
-        return len(self.info_list)
+        return len(self.qubes_cache)
 
     # pylint: disable=invalid-name
     def columnCount(self, _):
@@ -341,31 +345,31 @@ class QubesTableModel(QAbstractTableModel):
 
         col = index.column()
         row = index.row()
-        vm = self.info_list[row]
+        vm = self.qubes_cache.get_vm(row)
 
         if role == Qt.DisplayRole:
             if col in [0, 1]:
                 return None
             if col == 2:
-                return self.info_list[index.row()].name
+                return vm.name
             if col == 3:
-                return self.info_list[index.row()].state
+                return vm.state
             if col == 4:
-                return self.info_list[index.row()].template
+                return vm.template
             if col == 5:
-                return self.info_list[index.row()].netvm
+                return vm.netvm
             if col == 6:
-                return self.info_list[index.row()].disk
+                return vm.disk
             if col == 8:
-                return self.info_list[index.row()].ip
+                return vm.ip
             if col == 9:
-                return self.info_list[index.row()].inc_backup
+                return vm.inc_backup
             if col == 10:
-                return self.info_list[index.row()].last_backup
+                return vm.last_backup
             if col == 11:
-                return self.info_list[index.row()].dvm
+                return vm.dvm
             if col == 12:
-                return self.info_list[index.row()].dvm_template
+                return vm.dvm_template
         elif role == Qt.DecorationRole:
             if col == 0:
                 try:
@@ -390,13 +394,13 @@ class QubesTableModel(QAbstractTableModel):
         # Used for sorting
         elif role == Qt.UserRole + 1:
             if col == 0:
-                return self.info_list[index.row()].klass
+                return vm.klass
             if col == 1:
-                return self.info_list[index.row()].label.name
+                return vm.label.name
             if col == 3:
-                return str(self.info_list[index.row()].state)
+                return str(vm.state)
             if col == 6:
-                return self.info_list[index.row()].disk_float
+                return vm.disk_float
             return self.data(index, Qt.DisplayRole)
         return None
 
@@ -684,7 +688,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.update_size_on_disk = False
         self.shutdown_monitor = {}
 
-        self.qubes_model = QubesTableModel(qubes_app)
+
+        self.qubes_cache = QubesCache(qubes_app)
+        self.fill_cache()
+        self.qubes_model = QubesTableModel(self.qubes_cache)
 
         self.proxy = QSortFilterProxyModel()
         self.proxy.setSourceModel(self.qubes_model)
@@ -738,6 +745,27 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         self.check_updates()
 
+    def _get_vms_list(self):
+        return [vm for vm in self.qubes_app.domains]
+
+    def fill_cache(self):
+        vms_list = self._get_vms_list()
+
+        progress = QProgressDialog(
+            self.tr(
+                "Loading Qube Manager..."), "", 0, len(vms_list))
+        progress.setWindowTitle(self.tr("Qube Manager"))
+        progress.setMinimumDuration(1000)
+        progress.setCancelButton(None)
+
+        row_no = 0
+        for vm in vms_list:
+            progress.setValue(row_no)
+            self.qubes_cache.add_vm(vm)
+            row_no += 1
+
+        progress.setValue(row_no)
+
     def setup_application(self):
         self.qt_app.setApplicationName(self.tr("Qube Manager"))
         self.qt_app.setWindowIcon(QIcon.fromTheme("qubes-manager"))
@@ -780,7 +808,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
     def check_updates(self, info=None):
         if info is None:
-            for info_iter in self.qubes_model.info_list:
+            for info_iter in self.qubes_cache:
                 self.check_updates(info_iter)
             return
 
@@ -791,19 +819,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     def on_domain_added(self, _submitter, _event, vm, **_kwargs):
         try:
             domain = self.qubes_app.domains[vm]
-            self.qubes_model.info_by_id[domain.qid] = VmInfo(domain)
-            self.qubes_model.info_list.append(self.qubes_model.info_by_id[domain.qid])
+            self.qubes_cache.add_vm(domain)
             self.proxy.invalidate()
         except (exc.QubesException, KeyError):
             pass
 
     def on_domain_removed(self, _submitter, _event, **kwargs):
-        for qid, vm in self.qubes_model.info_by_id.items():
-            if vm.name == kwargs['vm']:
-                self.qubes_model.info_list.remove(self.qubes_model.info_by_id[qid])
-                del self.qubes_model.info_by_id[qid]
-                self.proxy.invalidate()
-                return
+        self.qubes_cache.remove_vm(name = kwargs['vm'])
+        self.proxy.invalidate()
 
     def on_domain_status_changed(self, vm, event, **_kwargs):
         try:
@@ -832,7 +855,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             return
 
         try:
-            self.qubes_model.info_by_id[vm.qid].update(event=event)
+            self.qubes_cache.get_vm(qid=vm.qid).update(event=event)
             self.proxy.invalidate()
         except exc.QubesPropertyAccessError:
             return  # the VM was deleted before its status could be updated
@@ -1193,10 +1216,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_settings_triggered')
     def action_settings_triggered(self):
-        for vm in self.get_selected_vms():
+        for vm_info in self.get_selected_vms():
             with common_threads.busy_cursor():
                 settings_window = settings.VMSettingsWindow(
-                    vm, self.qt_app, "basic")
+                    vm_info.vm, self.qt_app, "basic")
             settings_window.exec_()
 
     # noinspection PyArgumentList
