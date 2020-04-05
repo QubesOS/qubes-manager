@@ -830,10 +830,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
     def on_domain_status_changed(self, vm, event, **_kwargs):
         try:
-            self.qubes_model.info_by_id[vm.qid].update(event=event)
+            self.qubes_cache.get_vm(qid=vm.qid).update(event=event)
             if vm.klass in {'TemplateVM'}:
                 for appvm in vm.appvms:
-                    self.qubes_model.info_by_id[appvm.qid].update(event="outdated")
+                    self.qubes_cache.get_vm(qid=appvm.qid).update(event="outdated")
             self.proxy.invalidate()
             self.table_selection_changed()
         except exc.QubesPropertyAccessError:
@@ -842,7 +842,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             self.on_domain_added(None, None, vm)
 
     def on_domain_updates_available(self, vm, _event, **_kwargs):
-        self.check_updates(self.qubes_model.info_by_id[vm.qid])
+        self.check_updates(self.qubes_cache.get_vm(qid=vm.qid))
 
     def on_domain_changed(self, vm, event, **_kwargs):
         if not vm:  # change of global properties occured
