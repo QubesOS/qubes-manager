@@ -553,6 +553,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         return msg
 
     def check_mem_changes(self):
+        if not self.include_in_balancing.isChecked():
+            # do not interfere with settings if the VM is not included in memory
+            # balancing
+            return
         if self.max_mem_size.value() < self.init_mem.value():
             QtGui.QMessageBox.warning(
                 self,
@@ -874,6 +878,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                 self.dmm_warning_adv.hide()
                 self.dmm_warning_dev.hide()
         self.max_mem_size.setEnabled(self.include_in_balancing.isChecked())
+        if self.include_in_balancing.isChecked():
+            self.check_mem_changes()
 
     def boot_from_cdrom_button_pressed(self):
         self.save_and_apply()
