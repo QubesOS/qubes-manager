@@ -137,12 +137,13 @@ class StateIconDelegate(QStyledItemDelegate):
 
         # draw the main state icon, assuming all items have one
         qp.drawPixmap(iconRect,
-            self.stateIcons[index.data().power].pixmap(iconSize))
+            self.stateIcons[index.data()['power']].pixmap(iconSize))
 
         left = delta = margin + iconRect.width()
-        if index.data().outdated:
+        if index.data()['outdated']:
             qp.drawPixmap(iconRect.translated(left, 0),
-                    self.outdatedIcons[index.data().outdated].pixmap(iconSize))
+                    self.outdatedIcons[index.data()['outdated']]\
+                           .pixmap(iconSize))
             left += delta
 
         qp.restore()
@@ -168,7 +169,7 @@ class StateIconDelegate(QStyledItemDelegate):
             if index != self.lastIndex:
                 QToolTip.showText(QPoint(), ' ')
             QToolTip.showText(event.globalPos(),
-                index.data().power, view)
+                index.data()['power'], view)
         else:
             margin = iconRect.left() - option.rect.left()
             left = delta = margin + iconRect.width()
@@ -179,7 +180,8 @@ class StateIconDelegate(QStyledItemDelegate):
                     if index != self.lastIndex:
                         QToolTip.showText(QPoint(), ' ')
                     QToolTip.showText(event.globalPos(),
-                            self.outdatedTooltips[index.data().outdated], view)
+                            self.outdatedTooltips[index.data()['outdated']],
+                            view)
                 # shift the left *only* if the role is True, otherwise we
                 # can assume that that icon doesn't exist at all
             left += delta
@@ -187,22 +189,16 @@ class StateIconDelegate(QStyledItemDelegate):
         return True
 
 
-class StateInfo():
-    power = ""
-    outdated = ""
-
-    def __str__(self):
-        return self.power + self.outdated
-
-
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-few-public-methods
 class VmInfo():
     def __init__(self, vm):
         self.vm = vm
+        self.qid = vm.qid
         self.name = self.vm.name
         self.label = self.vm.label
         self.klass = self.vm.klass
-        self.state = StateInfo()
-        self.qid = vm.qid
+        self.state = {'power': "", 'outdated': ""}
         self.updateable = getattr(vm, 'updateable', False)
         self.update(True)
 
@@ -215,23 +211,23 @@ class VmInfo():
         :return: None
         """
         try:
-            self.state.power = self.vm.get_power_state()
+            self.state['power'] = self.vm.get_power_state()
 
             if self.vm.is_running():
                 if hasattr(self.vm, 'template') and \
                         self.vm.template.is_running():
-                    self.state.outdated = "to-be-outdated"
+                    self.state['outdated'] = "to-be-outdated"
                 else:
                     for vol in self.vm.volumes.values():
                         if vol.is_outdated():
-                            self.state.outdated = "outdated"
+                            self.state['outdated'] = "outdated"
                             break
             else:
-                self.state.outdated = ""
+                self.state['outdated'] = ""
 
             if self.vm.klass in {'TemplateVM', 'StandaloneVM'} and \
                     self.vm.features.get('updates-available', False):
-                self.state.outdated = 'update'
+                self.state['outdated'] = 'update'
 
             if not event or event.endswith(':label'):
                 self.label = self.vm.label
@@ -571,8 +567,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                        "Virtualization Mode": 13
                       }
 
-    def __init__(self, qt_app, qubes_app, dispatcher, parent=None):
-        # pylint: disable=unused-argument
+    def __init__(self, qt_app, qubes_app, dispatcher, _parent=None):
         super(VmManagerWindow, self).__init__()
         self.setupUi(self)
 
@@ -809,7 +804,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         if info.vm.klass in {'TemplateVM', 'StandaloneVM'} and \
                 info.vm.features.get('updates-available', False):
-            info.state.outdated = 'update'
+            info.state['outdated'] = 'update'
 
     def on_domain_added(self, _submitter, _event, vm, **_kwargs):
         try:
@@ -931,20 +926,21 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         for vm in self.get_selected_vms():
             #  TODO: add boot from device to menu and add windows tools there
             # Update available actions:
-            if vm.state.power in ["Running", "Transient", "Halting", "Dying"]:
+            if vm.state['power'] in \
+                    ['Running', 'Transient', 'Halting', 'Dying']:
                 self.action_resumevm.setEnabled(False)
                 self.action_removevm.setEnabled(False)
-            elif vm.state.power == "Paused":
+            elif vm.state['power'] == 'Paused':
                 self.action_removevm.setEnabled(False)
                 self.action_pausevm.setEnabled(False)
                 self.action_set_keyboard_layout.setEnabled(False)
                 self.action_restartvm.setEnabled(False)
                 self.action_open_console.setEnabled(False)
-            elif vm.state.power == "Suspend":
+            elif vm.state['power'] == 'Suspend':
                 self.action_removevm.setEnabled(False)
                 self.action_pausevm.setEnabled(False)
                 self.action_open_console.setEnabled(False)
-            elif vm.state.power == "Halted":
+            elif vm.state['power'] == 'Halted':
                 self.action_pausevm.setEnabled(False)
                 self.action_shutdownvm.setEnabled(False)
                 self.action_restartvm.setEnabled(False)
