@@ -646,11 +646,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         #             SIGNAL("customContextMenuRequested(const QPoint&)"),
         #             lambda pos: self.open_tools_context_menu(self.toolbar,
         #                                                      pos))
-        #self.connect(self.logs_menu, SIGNAL("triggered(QAction *)"),
-        #             self.show_log)
 
         self.action_menubar.toggled.connect(self.showhide_menubar)
         self.action_toolbar.toggled.connect(self.showhide_toolbar)
+        self.logs_menu.triggered.connect(self.show_log)
 
 
         self.table.resizeColumnsToContents()
@@ -949,8 +948,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             if not vm.updateable and vm.qid != 0:
                 self.action_updatevm.setEnabled(False)
 
-        #else:
-        #    self.update_logs_menu()
+        self.update_logs_menu()
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_createvm_triggered')
@@ -1398,9 +1396,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.tools_context_menu.exec_(widget.mapToGlobal(point))
 
     def update_logs_menu(self):
+        self.logs_menu.clear()
+        menu_empty = True
+
         try:
-            for vm in self.get_selected_vms():
-                self.logs_menu.clear()
+            vm_info = self.get_selected_vms()
+
+            if len(vm_info) == 1:
+                vm = vm_info[0].vm
 
                 if vm.qid == 0:
                     logfiles = ["/var/log/xen/console/hypervisor.log"]
@@ -1412,7 +1415,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                         "/var/log/qubes/qrexec." + vm.name + ".log",
                     ]
 
-                menu_empty = True
                 for logfile in logfiles:
                     if os.path.exists(logfile):
                         action = self.logs_menu.addAction(QIcon(":/log.png"),
@@ -1420,7 +1422,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                         action.setData(logfile)
                         menu_empty = False
 
-                self.logs_menu.setEnabled(not menu_empty)
+            self.logs_menu.setEnabled(not menu_empty)
         except exc.QubesPropertyAccessError:
             pass
 
