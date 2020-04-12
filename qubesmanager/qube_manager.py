@@ -583,9 +583,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.searchbox.textChanged.connect(self.do_search)
         self.searchContainer.addWidget(self.searchbox)
 
-        self.sort_by_column = "Type"
-        self.sort_order = Qt.AscendingOrder
-
         self.vms_list = []
         self.vms_in_table = {}
 
@@ -641,10 +638,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.tools_context_menu.addAction(self.action_toolbar)
         self.tools_context_menu.addAction(self.action_menubar)
 
-        #self.connect(
-        #    self.table.horizontalHeader(),
-        #    SIGNAL("sortIndicatorChanged(int, Qt::SortOrder)"),
-        #    self.sort_indicator_changed)
         #self.connect(self.table,
         #             SIGNAL("customContextMenuRequested(const QPoint&)"),
         #             self.open_context_menu)
@@ -662,17 +655,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.action_menubar.toggled.connect(self.showhide_menubar)
         self.action_toolbar.toggled.connect(self.showhide_toolbar)
 
-        try:
-            self.load_manager_settings()
-        except Exception as ex:  # pylint: disable=broad-except
-            QMessageBox.warning(
-                self,
-                self.tr("Manager settings unreadable"),
-                self.tr("Qube Manager settings cannot be parsed. Previously "
-                        "saved display settings may not be restored "
-                        "correctly.\nError: {}".format(str(ex))))
-
-        self.settings_loaded = True
 
         self.table.resizeColumnsToContents()
 
@@ -699,7 +681,18 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         self.table.setContextMenuPolicy(Qt.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self.open_context_menu)
-        self.table.sortByColumn(2, 0)
+
+        try:
+            self.load_manager_settings()
+        except Exception as ex:  # pylint: disable=broad-except
+            QMessageBox.warning(
+                self,
+                self.tr("Manager settings unreadable"),
+                self.tr("Qube Manager settings cannot be parsed. Previously "
+                        "saved display settings may not be restored "
+                        "correctly.\nError: {}".format(str(ex))))
+
+        self.settings_loaded = True
 
         # Connect events
         self.dispatcher = dispatcher
@@ -787,10 +780,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         raise RuntimeError(self.tr('No finished thread found'))
 
+    # pylint: disable=invalid-name
     def closeEvent(self, event):
-        # pylint: disable=invalid-name
-        # save window size at close
+        # save settings at close
         self.manager_settings.setValue("window_size", self.size())
+        self.manager_settings.setValue('view/sort_column',
+                self.proxy.sortColumn())
+        self.manager_settings.setValue('view/sort_order',
+                self.proxy.sortOrder())
         event.accept()
 
     def check_updates(self, info=None):
@@ -860,12 +857,13 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     defaultValue="true")
                 self.columns_actions[col_no].setChecked(visible == "true")
 
-        self.sort_by_column = str(
-            self.manager_settings.value("view/sort_column",
-                                        defaultValue=self.sort_by_column))
-        self.sort_order = Qt.SortOrder(
-            self.manager_settings.value("view/sort_order",
-                                        defaultValue=self.sort_order))
+        sort_column = int(self.manager_settings.value("view/sort_column"))
+        order = Qt.SortOrder(self.manager_settings.value("view/sort_order"))
+
+        if not sort_column:
+            self.table.sortByColumn(2, Qt.AscendingOrder) # Sort by name
+        else:
+            self.table.sortByColumn(sort_column, order)
 
         if not self.manager_settings.value("view/menubar_visible",
                                            defaultValue=True):
