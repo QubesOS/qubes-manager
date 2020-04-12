@@ -234,6 +234,7 @@ class VmInfo():
             if not event or event.endswith(':template'):
                 try:
                     self.template = self.vm.template.name
+                # pylint: disable=no-member
                 except exc.QubesNoSuchPropertyError:
                     self.template = self.vm.klass
             if not event or event.endswith(':netvm'):
@@ -735,21 +736,17 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         self.check_updates()
 
-    def _get_vms_list(self):
-        return [vm for vm in self.qubes_app.domains]
-
     def fill_cache(self):
-        vms_list = self._get_vms_list()
-
         progress = QProgressDialog(
             self.tr(
-                "Loading Qube Manager..."), "", 0, len(vms_list))
+                "Loading Qube Manager..."), "", 0,
+                len(self.qubes_app.domains.keys()))
         progress.setWindowTitle(self.tr("Qube Manager"))
         progress.setMinimumDuration(1000)
         progress.setCancelButton(None)
 
         row_no = 0
-        for vm in vms_list:
+        for vm in self.qubes_app.domains:
             progress.setValue(row_no)
             self.qubes_cache.add_vm(vm)
             row_no += 1
@@ -1280,9 +1277,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot(name='on_action_editfwrules_triggered')
     def action_editfwrules_triggered(self):
         with common_threads.busy_cursor():
-            for vm in self.get_selected_vms():
-                settings_window = settings.VMSettingsWindow(vm, self.qt_app,
-                                                        "firewall")
+            for vm_info in self.get_selected_vms():
+                settings_window = settings.VMSettingsWindow(vm_info.vm,
+                                        self.qt_app, "firewall")
                 settings_window.exec_()
 
     # noinspection PyArgumentList
