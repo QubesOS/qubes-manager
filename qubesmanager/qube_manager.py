@@ -635,18 +635,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.tools_context_menu.addAction(self.action_toolbar)
         self.tools_context_menu.addAction(self.action_menubar)
 
-        #self.connect(self.table,
-        #             SIGNAL("customContextMenuRequested(const QPoint&)"),
-        #             self.open_context_menu)
-        #self.connect(self.menubar,
-        #             SIGNAL("customContextMenuRequested(const QPoint&)"),
-        #             lambda pos: self.open_tools_context_menu(self.menubar,
-        #                                                      pos))
-        #self.connect(self.toolbar,
-        #             SIGNAL("customContextMenuRequested(const QPoint&)"),
-        #             lambda pos: self.open_tools_context_menu(self.toolbar,
-        #                                                      pos))
-
+        self.menubar.customContextMenuRequested.connect(
+                lambda pos: self.open_tools_context_menu(self.menubar,pos))
+        self.toolbar.customContextMenuRequested.connect(
+                lambda pos: self.open_tools_context_menu(self.toolbar,pos))
         self.action_menubar.toggled.connect(self.showhide_menubar)
         self.action_toolbar.toggled.connect(self.showhide_toolbar)
         self.logs_menu.triggered.connect(self.show_log)
