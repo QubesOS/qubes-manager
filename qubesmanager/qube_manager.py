@@ -174,7 +174,7 @@ class StateIconDelegate(QStyledItemDelegate):
             margin = iconRect.left() - option.rect.left()
             left = delta = margin + iconRect.width()
 
-            if index.data().outdated:
+            if index.data()['outdated']:
                 if event.pos() in iconRect.translated(left, 0):
                     # see above (*)
                     if index != self.lastIndex:
@@ -636,19 +636,17 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.tools_context_menu.addAction(self.action_menubar)
 
         self.menubar.customContextMenuRequested.connect(
-                lambda pos: self.open_tools_context_menu(self.menubar,pos))
+                lambda pos: self.open_tools_context_menu(self.menubar, pos))
         self.toolbar.customContextMenuRequested.connect(
-                lambda pos: self.open_tools_context_menu(self.toolbar,pos))
+                lambda pos: self.open_tools_context_menu(self.toolbar, pos))
         self.action_menubar.toggled.connect(self.showhide_menubar)
         self.action_toolbar.toggled.connect(self.showhide_toolbar)
         self.logs_menu.triggered.connect(self.show_log)
-
 
         self.table.resizeColumnsToContents()
 
         self.update_size_on_disk = False
         self.shutdown_monitor = {}
-
 
         self.qubes_cache = QubesCache(qubes_app)
         self.fill_cache()
@@ -944,7 +942,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_createvm_triggered')
-    def action_createvm_triggered(self):  # pylint: disable=no-self-use
+    def action_createvm_triggered(self):
         with common_threads.busy_cursor():
             create_window = create_new_vm.NewVmDlg(self.qt_app, self.qubes_app)
         create_window.exec_()
@@ -1265,7 +1263,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_manage_templates_triggered')
     def action_manage_templates_triggered(self):
-        # pylint: disable=invalid-name, no-self-use
+        # pylint: disable=no-self-use
         subprocess.check_call('qubes-template-manager')
 
     # noinspection PyArgumentList
