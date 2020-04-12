@@ -547,9 +547,6 @@ class RunCommandThread(common_threads.QubesThread):
 
 
 class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
-    # pylint: disable=too-many-instance-attributes
-    row_height = 30
-    column_width = 200
     # suppress saving settings while initializing widgets
     settings_loaded = False
     columns_indices = {"Type": 0,
