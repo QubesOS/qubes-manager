@@ -876,28 +876,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.resize(self.manager_settings.value("window_size",
                                                 QSize(1100, 600)))
 
-    def get_vms_list(self):
-        return list(self.qubes_app.domains)
-
     @pyqtSlot(str)
     def do_search(self, search):
-        self.proxy.setFilterFixedString(str(search))
+        self.proxy.setFilterFixedString(search)
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_search_triggered')
     def action_search_triggered(self):
         self.searchbox.setFocus()
-
-    # noinspection PyPep8Naming
-    def sort_indicator_changed(self, column, order):
-        self.sort_by_column = [name for name in self.columns_indices if
-                               self.columns_indices[name] == column][0]
-        self.sort_order = order
-        if self.settings_loaded:
-            self.manager_settings.setValue('view/sort_column',
-                                           self.sort_by_column)
-            self.manager_settings.setValue('view/sort_order', self.sort_order)
-            self.manager_settings.sync()
 
     def get_selected_vms(self):
         vms = []
