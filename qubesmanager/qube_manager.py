@@ -722,6 +722,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 len(self.qubes_app.domains.keys()))
         progress.setWindowTitle(self.tr("Qube Manager"))
         progress.setMinimumDuration(1000)
+        progress.setWindowModality(Qt.WindowModal)
         progress.setCancelButton(None)
 
         row_no = 0
