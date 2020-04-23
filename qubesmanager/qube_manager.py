@@ -263,6 +263,11 @@ class VmInfo():
             if update_size_on_disk:
                 self.disk_float = float(self.vm.get_disk_utilization())
                 self.disk = str(round(self.disk_float/(1024*1024), 2)) + "MiB"
+
+            if self.qid != 0:
+                self.virt_mode = self.vm.virt_mode
+            else:
+                self.virt_mode = None
         except exc.QubesPropertyAccessError:
             pass
         except exc.QubesDaemonNoResponseError:
@@ -320,7 +325,8 @@ class QubesTableModel(QAbstractTableModel):
                 "Include in backups",
                 "Last backup",
                 "Default DispVM",
-                "Is DVM Template"
+                "Is DVM Template",
+                "Virt Mode"
                 ]
 
     # pylint: disable=invalid-name
@@ -363,6 +369,8 @@ class QubesTableModel(QAbstractTableModel):
                 return vm.dvm
             if col == 12:
                 return vm.dvm_template
+            if col == 13:
+                return vm.virt_mode
         elif role == Qt.DecorationRole:
             if col == 0:
                 try:
@@ -584,6 +592,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         self.frame_width = 0
         self.frame_height = 0
+
 
         self.columns_actions = {
             self.columns_indices["Type"]: self.action_vm_type,
