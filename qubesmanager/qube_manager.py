@@ -234,7 +234,6 @@ class VmInfo():
             if not event or event.endswith(':template'):
                 try:
                     self.template = self.vm.template.name
-                # pylint: disable=no-member
                 except exc.QubesNoSuchPropertyError:
                     self.template = self.vm.klass
             if not event or event.endswith(':netvm'):
