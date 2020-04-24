@@ -344,35 +344,39 @@ class QubesTableModel(QAbstractTableModel):
 
         col = index.column()
         row = index.row()
+
+        col_name = self.columns_indices[col]
         vm = self.qubes_cache.get_vm(row)
 
         if role == Qt.DisplayRole:
             if col in [0, 1]:
                 return None
-            if col == 2:
+            if col_name == "Name":
                 return vm.name
-            if col == 3:
+            if col_name == "State":
                 return vm.state
-            if col == 4:
+            if col_name == "Template":
                 return vm.template
-            if col == 5:
+            if col_name == "NetVM":
                 return vm.netvm
-            if col == 6:
+            if col_name == "Size":
                 return vm.disk
-            if col == 8:
+            if col_name == "Internal":
+                return vm.internal
+            if col_name == "IP":
                 return vm.ip
-            if col == 9:
+            if col_name == "Include in backups":
                 return vm.inc_backup
-            if col == 10:
+            if col_name == "Last backup":
                 return vm.last_backup
-            if col == 11:
+            if col_name == "Default DispVM":
                 return vm.dvm
-            if col == 12:
+            if col_name == "Is DVM Template":
                 return vm.dvm_template
-            if col == 13:
+            if col_name == "Virt Mode":
                 return vm.virt_mode
         elif role == Qt.DecorationRole:
-            if col == 0:
+            if col_name == "Type":
                 try:
                     return self.klass_pixmap[vm.klass]
                 except KeyError:
@@ -381,7 +385,7 @@ class QubesTableModel(QAbstractTableModel):
                     self.klass_pixmap[vm.klass] = pixmap.scaled(icon_size)
                     return self.klass_pixmap[vm.klass]
 
-            if col == 1:
+            if col_name == "Label":
                 try:
                     return self.label_pixmap[vm.label]
                 except KeyError:
@@ -392,13 +396,13 @@ class QubesTableModel(QAbstractTableModel):
             return vm
         # Used for sorting
         elif role == Qt.UserRole + 1:
-            if col == 0:
+            if col_name == "Type":
                 return vm.klass
-            if col == 1:
+            if col_name == "Label":
                 return vm.label.name
-            if col == 3:
+            if col_name == "State":
                 return str(vm.state)
-            if col == 6:
+            if col_name == "Size":
                 return vm.disk_float
             return self.data(index, Qt.DisplayRole)
         return None
