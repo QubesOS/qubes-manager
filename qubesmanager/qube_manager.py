@@ -25,6 +25,7 @@ import os
 import os.path
 import subprocess
 from datetime import datetime, timedelta
+from functools import partial
 
 from qubesadmin import exc
 from qubesadmin import utils
@@ -560,21 +561,6 @@ class RunCommandThread(common_threads.QubesThread):
 class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     # suppress saving settings while initializing widgets
     settings_loaded = False
-    columns_indices = {"Type": 0,
-                       "Label": 1,
-                       "Name": 2,
-                       "State": 3,
-                       "Template": 4,
-                       "NetVM": 5,
-                       "Size": 6,
-                       "Internal": 7,
-                       "IP": 8,
-                       "Include in backups": 9,
-                       "Last backup": 10,
-                       "Default DispVM": 11,
-                       "Is DVM Template": 12,
-                       "Virtualization Mode": 13
-                      }
 
     def __init__(self, qt_app, qubes_app, dispatcher, _parent=None):
         super(VmManagerWindow, self).__init__()
@@ -597,27 +583,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.frame_width = 0
         self.frame_height = 0
 
-
-        self.columns_actions = {
-            self.columns_indices["Type"]: self.action_vm_type,
-            self.columns_indices["Label"]: self.action_label,
-            self.columns_indices["Name"]: self.action_name,
-            self.columns_indices["State"]: self.action_state,
-            self.columns_indices["Template"]: self.action_template,
-            self.columns_indices["NetVM"]: self.action_netvm,
-            self.columns_indices["Size"]: self.action_size_on_disk,
-            self.columns_indices["Internal"]: self.action_internal,
-            self.columns_indices["IP"]: self.action_ip,
-            self.columns_indices["Include in backups"]: self.action_backups,
-            self.columns_indices["Last backup"]: self.action_last_backup,
-            self.columns_indices["Default DispVM"]: self.action_dispvm_template,
-            self.columns_indices["Is DVM Template"]:
-                self.action_is_dvm_template,
-            self.columns_indices["Virtualization Mode"]: self.action_virt_mode
-        }
-
         self.context_menu = QMenu(self)
-        self.visible_columns_count = len(self.columns_indices)
 
         self.context_menu.addAction(self.action_settings)
         self.context_menu.addAction(self.action_editfwrules)
@@ -787,6 +753,13 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self.proxy.sortColumn())
         self.manager_settings.setValue('view/sort_order',
                 self.proxy.sortOrder())
+
+        for col_no in range(len(self.qubes_model.columns_indices)):
+            col_name = self.qubes_model.columns_indices[col_no]
+            show = not self.table.isColumnHidden(col_no)
+            self.manager_settings.setValue('columns/%s' % col_name, show)
+            col_no += 1
+
         event.accept()
 
     def check_updates(self, info=None):
@@ -845,22 +818,31 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             return  # the VM was deleted before its status could be updated
 
     def load_manager_settings(self):
-        for col in self.columns_indices:
-            col_no = self.columns_indices[col]
-            if col == 'Name':
+        # Load view menu
+        for col_no in range(len(self.qubes_model.columns_indices)):
+            column = self.qubes_model.columns_indices[col_no]
+            action = self.menu_view.addAction(column)
+            action.setCheckable(True)
+            action.toggled.connect(partial(self.showhide_column, col_no))
+            if column == 'Name':
                 # 'Name' column should be always visible
-                self.columns_actions[col_no].setChecked(True)
+                action.setChecked(True)
             else:
-                visible = self.manager_settings.value(
-                    'columns/%s' % col,
+                visible = self.manager_settings.value('columns/%s' % column,
                     defaultValue="true")
-                self.columns_actions[col_no].setChecked(visible == "true")
+                action.setChecked(visible == "true")
+                self.showhide_column(col_no, visible == "true")
 
+        self.menu_view.addSeparator()
+        self.menu_view.addAction(self.action_toolbar)
+        self.menu_view.addAction(self.action_menubar)
+
+        # Restore sorting
         sort_column = int(self.manager_settings.value("view/sort_column"))
         order = Qt.SortOrder(self.manager_settings.value("view/sort_order"))
 
-        if not sort_column:
-            self.table.sortByColumn(2, Qt.AscendingOrder) # Sort by name
+        if not sort_column: # Default sort by name
+            self.table.sortByColumn(2, Qt.AscendingOrder) 
         else:
             self.table.sortByColumn(sort_column, order)
 
@@ -1330,50 +1312,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
     def showhide_column(self, col_num, show):
         self.table.setColumnHidden(col_num, not show)
-
-        if self.settings_loaded:
-            col_name = [name for name in self.columns_indices if
-                        self.columns_indices[name] == col_num][0]
-            self.manager_settings.setValue('columns/%s' % col_name, show)
-            self.manager_settings.sync()
-
-    def on_action_vm_type_toggled(self, checked):
-        self.showhide_column(self.columns_indices['Type'], checked)
-
-    def on_action_label_toggled(self, checked):
-        self.showhide_column(self.columns_indices['Label'], checked)
-
-    def on_action_name_toggled(self, checked):
-        self.showhide_column(self.columns_indices['Name'], checked)
-
-    def on_action_state_toggled(self, checked):
-        self.showhide_column(self.columns_indices['State'], checked)
-
-    def on_action_internal_toggled(self, checked):
-        self.showhide_column(self.columns_indices['Internal'], checked)
-
-    def on_action_ip_toggled(self, checked):
-        self.showhide_column(self.columns_indices['IP'], checked)
-
-    def on_action_backups_toggled(self, checked):
-        self.showhide_column(
-            self.columns_indices['Include in backups'], checked)
-
-    def on_action_last_backup_toggled(self, checked):
-        self.showhide_column(self.columns_indices['Last backup'], checked)
-
-    def on_action_template_toggled(self, checked):
-        self.showhide_column(self.columns_indices['Template'], checked)
-
-    def on_action_netvm_toggled(self, checked):
-        self.showhide_column(self.columns_indices['NetVM'], checked)
-
-    def on_action_size_on_disk_toggled(self, checked):
-        self.showhide_column(self.columns_indices['Size'], checked)
-
-    def on_action_virt_mode_toggled(self, checked):
-        self.showhide_column(self.columns_indices['Virtualization Mode'],
-                             checked)
 
     # pylint: disable=invalid-name
     def on_action_dispvm_template_toggled(self, checked):
