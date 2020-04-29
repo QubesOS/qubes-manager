@@ -842,7 +842,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         order = Qt.SortOrder(self.manager_settings.value("view/sort_order"))
 
         if not sort_column: # Default sort by name
-            self.table.sortByColumn(2, Qt.AscendingOrder) 
+            self.table.sortByColumn(2, Qt.AscendingOrder)
         else:
             self.table.sortByColumn(sort_column, order)
 
