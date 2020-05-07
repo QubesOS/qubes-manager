@@ -1182,10 +1182,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_appmenus_triggered')
     def action_appmenus_triggered(self):
-        for vm in self.get_selected_vms():
+        for vm_info in self.get_selected_vms():
             with common_threads.busy_cursor():
                 settings_window = settings.VMSettingsWindow(
-                    vm, 'applications', self.qt_app)
+                    vm_info.vm, 'applications', self.qt_app)
             settings_window.show()
             self.settings_windows[vm_info.name] = settings_window
 
