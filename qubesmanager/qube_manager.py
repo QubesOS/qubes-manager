@@ -1175,7 +1175,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         for vm_info in self.get_selected_vms():
             with common_threads.busy_cursor():
                 settings_window = settings.VMSettingsWindow(
-                    vm_info.vm, self.qt_app, "basic")
+                    vm_info.vm, 'basic', self.qt_app)
             settings_window.show()
             self.settings_windows[vm_info.name] = settings_window
 
@@ -1185,7 +1185,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         for vm in self.get_selected_vms():
             with common_threads.busy_cursor():
                 settings_window = settings.VMSettingsWindow(
-                    vm, self.qt_app, "applications")
+                    vm, 'applications', self.qt_app)
             settings_window.show()
             self.settings_windows[vm_info.name] = settings_window
 
@@ -1248,7 +1248,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         with common_threads.busy_cursor():
             for vm_info in self.get_selected_vms():
                 settings_window = settings.VMSettingsWindow(vm_info.vm,
-                                        self.qt_app, "firewall")
+                                        'firewall', self.qt_app)
                 settings_window.show()
                 self.settings_windows[vm_info.name] = settings_window
 
