@@ -1001,7 +1001,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_clonevm_triggered')
     def action_clonevm_triggered(self):
-        for vm in self.get_selected_vms():
+        for vm_info in self.get_selected_vms():
+            vm = vm_info.vm
             name_number = 1
             name_format = vm.name + '-clone-%d'
             while name_format % name_number in self.qubes_app.domains.keys():
@@ -1209,14 +1210,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot(name='on_action_run_command_in_vm_triggered')
     def action_run_command_in_vm_triggered(self):
         # pylint: disable=invalid-name
-        for vm in self.get_selected_vms():
+        for vm_info in self.get_selected_vms():
             (command_to_run, ok) = QInputDialog.getText(
                 self, self.tr('Qubes command entry'),
-                self.tr('Run command in <b>{}</b>:').format(vm.name))
+                self.tr('Run command in <b>{}</b>:').format(vm_info.name))
             if not ok or command_to_run == "":
                 return
 
-            thread = RunCommandThread(vm, command_to_run)
+            thread = RunCommandThread(vm_info.vm, command_to_run)
             self.threads_list.append(thread)
             thread.finished.connect(self.clear_threads)
             thread.start()
@@ -1234,8 +1235,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot(name='on_action_set_keyboard_layout_triggered')
     def action_set_keyboard_layout_triggered(self):
         # pylint: disable=invalid-name
-        for vm in self.get_selected_vms():
-            vm.run('qubes-change-keyboard-layout')
+        for vm_info in self.get_selected_vms():
+            vm_info.vm.run('qubes-change-keyboard-layout')
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_editfwrules_triggered')
