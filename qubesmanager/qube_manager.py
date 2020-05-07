@@ -580,6 +580,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.vms_list = []
         self.vms_in_table = {}
 
+        self.settings_windows = {}
+
         self.frame_width = 0
         self.frame_height = 0
 
@@ -1174,7 +1176,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             with common_threads.busy_cursor():
                 settings_window = settings.VMSettingsWindow(
                     vm_info.vm, self.qt_app, "basic")
-            settings_window.exec_()
+            settings_window.show()
+            self.settings_windows[vm_info.name] = settings_window
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_appmenus_triggered')
@@ -1183,7 +1186,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             with common_threads.busy_cursor():
                 settings_window = settings.VMSettingsWindow(
                     vm, self.qt_app, "applications")
-            settings_window.exec_()
+            settings_window.show()
+            self.settings_windows[vm_info.name] = settings_window
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_updatevm_triggered')
@@ -1245,7 +1249,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             for vm_info in self.get_selected_vms():
                 settings_window = settings.VMSettingsWindow(vm_info.vm,
                                         self.qt_app, "firewall")
-                settings_window.exec_()
+                settings_window.show()
+                self.settings_windows[vm_info.name] = settings_window
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_global_settings_triggered')
@@ -1254,7 +1259,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             global_settings_window = global_settings.GlobalSettingsWindow(
                 self.qt_app,
                 self.qubes_app)
-        global_settings_window.exec_()
+        global_settings_window.show()
+        self.settings_windows['global_settings_window'] = global_settings_window
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_manage_templates_triggered')
