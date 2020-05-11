@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>816</width>
+    <width>836</width>
     <height>656</height>
    </rect>
   </property>
@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>5</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -390,6 +390,19 @@
              <widget class="QLabel" name="warn_netvm_dispvm">
               <property name="toolTip">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Caution:&lt;/span&gt; The Default DisposableVM Template (see the Advanced tab) has a different Networking setting than this qube. This configuration may result in unexpected network access. For example, you may have set this qube's Networking to &amp;quot;none&amp;quot; in order to prevent any data from being transmitted out. However, if the Default DisposableVM Template's Networking is set to &amp;quot;sys-firewall,&amp;quot; then a DisposableVM started from this qube may be able to transmit data out, contrary to your intention. You may wish to set the Default DisposableVM Template for this qube to one with equally restrictive Networking settings.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="pixmap">
+               <pixmap resource="../resources.qrc">:/warning.png</pixmap>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="3">
+             <widget class="QLabel" name="warn_template_missing_apps">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some applications enabled in the Applications tab cannot be found in the current template. The most likely cause is a template change - to restore them, install them in the template.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
                <string/>
