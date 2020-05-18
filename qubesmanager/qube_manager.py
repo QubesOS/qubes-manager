@@ -577,9 +577,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.searchbox.textChanged.connect(self.do_search)
         self.searchContainer.addWidget(self.searchbox)
 
-        self.vms_list = []
-        self.vms_in_table = {}
-
         self.settings_windows = {}
 
         self.frame_width = 0
@@ -806,11 +803,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     def on_domain_changed(self, vm, event, **_kwargs):
         if not vm:  # change of global properties occured
             if event.endswith(':default_netvm'):
-                for vm_row in self.vms_in_table.values():
-                    vm_row.update(event='property-set:netvm')
+                for vm_info in self.qubes_cache:
+                    vm_info.update(event='property-set:netvm')
             if event.endswith(':default_dispvm'):
-                for vm_row in self.vms_in_table.values():
-                    vm_row.update(event='property-set:default_dispvm')
+                for vm_info in self.qubes_cache:
+                    vm_info.update(event='property-set:default_dispvm')
             return
 
         try:
