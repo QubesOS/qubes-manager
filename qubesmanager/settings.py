@@ -220,6 +220,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.refresh_apps_button.clicked.connect(
                 self.refresh_apps_button_pressed)
 
+            # template change
+            if self.template_name.isEnabled():
+                self.template_name.currentIndexChanged.connect(
+                    self.template_apps_change)
+            self.warn_template_missing_apps.setVisible(
+                self.app_list_manager.has_missing)
+
+
     def setup_application(self):
         self.qapp.setApplicationName(self.tr("Qube Settings"))
         self.qapp.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
@@ -451,6 +459,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 self.tr("To change system storage size, change properties "
                         "of the underlying template."))
         self.root_resize_label.setEnabled(self.root_resize.isEnabled())
+
+        self.warn_template_missing_apps.setVisible(False)
 
     def __apply_basic_tab__(self):
         msg = []
@@ -1091,6 +1101,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
         self.refresh_apps_button.setEnabled(True)
         self.refresh_apps_button.setText(self.tr('Refresh Applications'))
+
+    def template_apps_change(self):
+        if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
+            self.app_list_manager.fill_apps_list(
+                template=self.template_list[self.template_name.currentIndex()])
+            # add a label to show
+            self.warn_template_missing_apps.setVisible(
+                self.app_list_manager.has_missing)
 
     ######## services tab
 

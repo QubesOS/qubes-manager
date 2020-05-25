@@ -37,18 +37,34 @@ class AppListWidgetItem(QtWidgets.QListWidgetItem):
         ident, name, comment = line.split('|', maxsplit=3)
         return cls(name=name, ident=ident, tooltip=comment)
 
+    @classmethod
+    def from_ident(cls, ident):
+        name = 'Application missing in template! ({})'.format(ident)
+        comment = 'The listed application was available at some point to ' \
+                  'this qube, but not any more. The most likely cause is ' \
+                  'template change. Install the application in the template ' \
+                  'if you want to restore it.'
+        return cls(name=name, ident=ident, tooltip=comment)
+
 
 class AppmenuSelectManager:
     def __init__(self, vm, apps_multiselect):
         self.vm = vm
         self.app_list = apps_multiselect # this is a multiselect wiget
         self.whitelisted = None
-        self.fill_apps_list()
+        self.has_missing = False
+        self.fill_apps_list(template=None)
 
-    def fill_apps_list(self):
+    def fill_apps_list(self, template=None):
         self.whitelisted = [line for line in subprocess.check_output(
                 ['qvm-appmenus', '--get-whitelist', self.vm.name]
             ).decode().strip().split('\n') if line]
+
+        currently_selected = [
+            self.app_list.selected_list.item(i).ident
+            for i in range(self.app_list.selected_list.count())]
+
+        whitelist = set(self.whitelisted + currently_selected)
 
         # Check if appmenu entry is really installed
         # whitelisted = [a for a in whitelisted
@@ -57,17 +73,29 @@ class AppmenuSelectManager:
 
         self.app_list.clear()
 
-        available_appmenus = [AppListWidgetItem.from_line(line)
-            for line in subprocess.check_output(
-                ['qvm-appmenus', '--get-available',
-                 '--i-understand-format-is-unstable', '--file-field',
-                 'Comment', self.vm.name]).decode().splitlines()]
+        command = ['qvm-appmenus', '--get-available',
+                   '--i-understand-format-is-unstable', '--file-field',
+                   'Comment']
+        if template:
+            command.extend(['--template', template.name])
+        command.append(self.vm.name)
+
+        available_appmenus = [
+            AppListWidgetItem.from_line(line)
+            for line in subprocess.check_output(command).decode().splitlines()]
 
         for app in available_appmenus:
-            if app.ident in self.whitelisted:
+            if app.ident in whitelist:
                 self.app_list.selected_list.addItem(app)
+                whitelist.remove(app.ident)
             else:
                 self.app_list.available_list.addItem(app)
+
+        self.has_missing = bool(whitelist)
+
+        for app in whitelist:
+            item = AppListWidgetItem.from_ident(app)
+            self.app_list.selected_list.addItem(item)
 
         self.app_list.available_list.sortItems()
         self.app_list.selected_list.sortItems()
