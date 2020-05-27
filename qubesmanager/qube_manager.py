@@ -235,7 +235,7 @@ class VmInfo():
             if not event or event.endswith(':template'):
                 try:
                     self.template = self.vm.template.name
-                except exc.QubesNoSuchPropertyError:
+                except AttributeError:
                     self.template = self.vm.klass
             if not event or event.endswith(':netvm'):
                 self.netvm = getattr(self.vm, 'netvm', None)
@@ -952,9 +952,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             dependencies = utils.vm_dependencies(self.qubes_app, vm)
 
             if dependencies:
-                list_text = "<br>" + \
-                            manager_utils.format_dependencies_list \
-                            (dependencies) + "<br>"
+                list_deps = manager_utils.format_dependencies_list(dependencies)
+                list_text = "<br>" + list_deps + "<br>"
 
                 info_dialog = QMessageBox(self)
                 info_dialog.setWindowTitle(self.tr("Warning!"))
