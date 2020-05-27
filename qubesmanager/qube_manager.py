@@ -1042,43 +1042,51 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
                         "ERROR: {1}").format(vm.name, ex))
                 return
 
+    def open_settings(self, vm, tab='basic'):
+        try:
+            with common_threads.busy_cursor():
+                settings_window = settings.VMSettingsWindow(
+                    vm, self.qt_app, tab)
+            settings_window.exec_()
+        except exc.QubesException as ex:
+            QtWidgets.QMessageBox.warning(
+                self,
+                self.tr("Qube settings unavailable"),
+                self.tr(
+                    "Qube settings cannot be opened. The qube might have "
+                    "been removed or unavailable due to policy settings."
+                    "\nError: {}".format(str(ex))))
+            return
+
+        vm_deleted = False
+
+        try:
+            # the VM might not exist after running Settings - it might
+            # have been cloned or removed
+            self.vms_in_table[vm.qid].update()
+        except exc.QubesException:
+            vm_deleted = True
+
+        if vm_deleted:
+            for row in self.vms_in_table:
+                try:
+                    self.vms_in_table[row].update()
+                except exc.QubesException:
+                    pass
+
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_settings_triggered')
     def action_settings_triggered(self):
         vm = self.get_selected_vm()
         if vm:
-            with common_threads.busy_cursor():
-                settings_window = settings.VMSettingsWindow(
-                    vm, self.qt_app, "basic")
-            settings_window.exec_()
-
-            vm_deleted = False
-
-            try:
-                # the VM might not exist after running Settings - it might
-                # have been cloned or removed
-                self.vms_in_table[vm.qid].update()
-            except exc.QubesException:
-                # TODO: this will be replaced by proper signal handling once
-                # settings are migrated to AdminAPI
-                vm_deleted = True
-
-            if vm_deleted:
-                for row in self.vms_in_table:
-                    try:
-                        self.vms_in_table[row].update()
-                    except exc.QubesException:
-                        pass
+            self.open_settings(vm, "basic")
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_appmenus_triggered')
     def action_appmenus_triggered(self):
         vm = self.get_selected_vm()
         if vm:
-            with common_threads.busy_cursor():
-                settings_window = settings.VMSettingsWindow(
-                    vm, self.qt_app, "applications")
-            settings_window.exec_()
+            self.open_settings(vm, "applications")
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_updatevm_triggered')
@@ -1136,11 +1144,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_editfwrules_triggered')
     def action_editfwrules_triggered(self):
-        with common_threads.busy_cursor():
-            vm = self.get_selected_vm()
-            settings_window = settings.VMSettingsWindow(vm, self.qt_app,
-                                                        "firewall")
-        settings_window.exec_()
+        vm = self.get_selected_vm()
+        if vm:
+            self.open_settings(vm, "firewall")
 
     # noinspection PyArgumentList
     @QtCore.pyqtSlot(name='on_action_global_settings_triggered')
