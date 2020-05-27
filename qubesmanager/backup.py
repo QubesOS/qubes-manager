@@ -20,6 +20,10 @@
 #
 #
 
+# pylint: disable=wrong-import-position
+import os
+os.environ['QUQMASH_QTIMPL'] = 'PyQt4'
+
 import traceback
 
 import signal
@@ -40,7 +44,6 @@ from . import utils
 import grp
 import pwd
 import sys
-import os
 import asyncio
 from contextlib import suppress
 import shutil

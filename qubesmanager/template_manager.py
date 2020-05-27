@@ -19,10 +19,12 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #
-
-import sys
+# pylint: disable=wrong-import-position
 import os
 import os.path
+os.environ['QUQMASH_QTIMPL'] = 'PyQt4'
+
+import sys
 import traceback
 import quamash
 import asyncio
