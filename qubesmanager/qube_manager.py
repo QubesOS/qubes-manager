@@ -294,9 +294,9 @@ class QubesCache(QAbstractTableModel):
         del self._info_by_id[vm_info.qid]
 
     def get_vm(self, row=None, qid=None, name=None):
-        if not row is None:
+        if row is not None:
             return self._info_list[row]
-        if not qid is None:
+        if qid is not None:
             return self._info_by_id[qid]
         return next(x for x in self._info_list if x.name == name)
 
