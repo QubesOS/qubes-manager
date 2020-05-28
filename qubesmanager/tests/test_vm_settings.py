@@ -429,12 +429,12 @@ class VMSettingsTest(unittest.TestCase):
 
     def test_21_nondefaultmaxmem(self):
         self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
-        self.vm.maxmem = 5000
+        self.vm.maxmem = 3500
 
         self.dialog = vm_settings.VMSettingsWindow(
             self.vm, self.qtapp, "advanced")
 
-        self.assertEqual(self.dialog.max_mem_size.value(), 5000)
+        self.assertEqual(self.dialog.max_mem_size.value(), 3500)
 
         self.dialog.include_in_balancing.setChecked(False)
         self._click_ok()
@@ -449,10 +449,10 @@ class VMSettingsTest(unittest.TestCase):
         self.assertFalse(self.dialog.include_in_balancing.isChecked())
 
         self.dialog.include_in_balancing.setChecked(True)
-        self.assertEqual(self.dialog.max_mem_size.value(), 5000)
+        self.assertEqual(self.dialog.max_mem_size.value(), 3500)
         self._click_ok()
 
-        self.assertEqual(self.vm.maxmem, 5000)
+        self.assertEqual(self.vm.maxmem, 3500)
 
     def test_22_initmem(self):
         self.vm = self.qapp.add_new_vm("AppVM", "testvm", "blue")
