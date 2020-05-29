@@ -39,7 +39,8 @@ from PyQt5.QtWidgets import (QLineEdit, QStyledItemDelegate, QToolTip,
     QMenu, QInputDialog, QMainWindow, QProgressDialog, QStyleOptionViewItem,
     QAbstractItemView, QMessageBox)
 
-from PyQt5.QtGui import (QIcon, QPixmap, QRegExpValidator)  # pylint: disable=import-error
+# pylint: disable=import-error
+from PyQt5.QtGui import (QIcon, QPixmap, QRegExpValidator, QFont, QColor)
 
 from qubesmanager.about import AboutDialog
 
@@ -236,7 +237,7 @@ class VmInfo():
                 try:
                     self.template = self.vm.template.name
                 except AttributeError:
-                    self.template = self.vm.klass
+                    self.template = None
             if not event or event.endswith(':netvm'):
                 self.netvm = getattr(self.vm, 'netvm', None)
                 if self.netvm:
@@ -357,6 +358,8 @@ class QubesTableModel(QAbstractTableModel):
             if col_name == "State":
                 return vm.state
             if col_name == "Template":
+                if vm.template is None:
+                    return vm.klass
                 return vm.template
             if col_name == "NetVM":
                 return vm.netvm
@@ -392,9 +395,23 @@ class QubesTableModel(QAbstractTableModel):
                 except KeyError:
                     self.label_pixmap[vm.label] = QIcon.fromTheme(vm.label.icon)
                     return self.label_pixmap[vm.label]
-        # Used for get VM
+
+        elif role == Qt.FontRole:
+            if col_name == "Template":
+                if vm.template is None:
+                    font = QFont()
+                    font.setItalic(True)
+                    return font
+
+        elif role == Qt.ForegroundRole:
+            if col_name == "Template":
+                if vm.template is None:
+                    return QColor("gray")
+
+        # Used for get VM Object
         elif role == Qt.UserRole:
             return vm
+
         # Used for sorting
         elif role == Qt.UserRole + 1:
             if col_name == "Type":
