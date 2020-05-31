@@ -385,7 +385,10 @@ class QubesTableModel(QAbstractTableModel):
                     return self.klass_pixmap[vm.klass]
                 except KeyError:
                     pixmap = QPixmap()
-                    pixmap.load(":/"+vm.klass.lower()+".png")
+                    icon_name = ":/"+vm.klass.lower()+".png"
+                    icon_name = icon_name.replace("adminvm", "dom0")
+                    icon_name = icon_name.replace("dispvm", "appvm")
+                    pixmap.load(icon_name)
                     self.klass_pixmap[vm.klass] = pixmap.scaled(icon_size)
                     return self.klass_pixmap[vm.klass]
 
