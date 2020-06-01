@@ -71,7 +71,7 @@ class SearchBox(QLineEdit):
             self.selectAll()
             self.focusing = False
 
-icon_size = QSize(32, 32)
+icon_size = QSize(24, 24)
 
 # pylint: disable=invalid-name
 class StateIconDelegate(QStyledItemDelegate):
@@ -396,7 +396,8 @@ class QubesTableModel(QAbstractTableModel):
                 try:
                     return self.label_pixmap[vm.label]
                 except KeyError:
-                    self.label_pixmap[vm.label] = QIcon.fromTheme(vm.label.icon)
+                    icon = QIcon.fromTheme(vm.label.icon)
+                    self.label_pixmap[vm.label] = icon.pixmap(icon_size)
                     return self.label_pixmap[vm.label]
 
         elif role == Qt.FontRole:
