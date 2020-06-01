@@ -244,10 +244,7 @@ class VmInfo():
                     self.netvm = self.netvm.name
             if not event or event.endswith(':internal'):
                 # this is a feature, not a property; TODO: fix event handling
-                if self.vm.features.get('internal', False):
-                    self.internal = "Yes"
-                else:
-                    self.internal = ""
+                self.internal = self.vm.features.get('internal', False)
             if not event or event.endswith(':ip'):
                 self.ip = getattr(self.vm, 'ip', None)
             if not event or event.endswith(':include_in_backups'):
@@ -366,17 +363,17 @@ class QubesTableModel(QAbstractTableModel):
             if col_name == "Size":
                 return vm.disk
             if col_name == "Internal":
-                return vm.internal
+                return "Yes" if vm.internal else ""
             if col_name == "IP":
                 return vm.ip
             if col_name == "Include in backups":
-                return vm.inc_backup
+                return "Yes" if vm.inc_backup else ""
             if col_name == "Last backup":
                 return vm.last_backup
             if col_name == "Default DispVM":
                 return vm.dvm
             if col_name == "Is DVM Template":
-                return vm.dvm_template
+                return "Yes" if vm.dvm_template else ""
             if col_name == "Virt Mode":
                 return vm.virt_mode
         elif role == Qt.DecorationRole:
