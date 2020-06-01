@@ -376,7 +376,7 @@ class QubesTableModel(QAbstractTableModel):
                 return "Yes" if vm.dvm_template else ""
             if col_name == "Virt Mode":
                 return vm.virt_mode
-        elif role == Qt.DecorationRole:
+        if role == Qt.DecorationRole:
             if col_name == "Type":
                 try:
                     return self.klass_pixmap[vm.klass]
@@ -397,24 +397,24 @@ class QubesTableModel(QAbstractTableModel):
                     self.label_pixmap[vm.label] = icon.pixmap(icon_size)
                     return self.label_pixmap[vm.label]
 
-        elif role == Qt.FontRole:
+        if role == Qt.FontRole:
             if col_name == "Template":
                 if vm.template is None:
                     font = QFont()
                     font.setItalic(True)
                     return font
 
-        elif role == Qt.ForegroundRole:
+        if role == Qt.ForegroundRole:
             if col_name == "Template":
                 if vm.template is None:
                     return QColor("gray")
 
         # Used for get VM Object
-        elif role == Qt.UserRole:
+        if role == Qt.UserRole:
             return vm
 
         # Used for sorting
-        elif role == Qt.UserRole + 1:
+        if role == Qt.UserRole + 1:
             if col_name == "Type":
                 return vm.klass
             if col_name == "Label":
