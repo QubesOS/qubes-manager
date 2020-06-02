@@ -862,8 +862,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     self.showhide_column(col_no, visible == "true")
 
         # Restore sorting
-        sort_column = int(self.manager_settings.value("view/sort_column"))
-        order = Qt.SortOrder(self.manager_settings.value("view/sort_order"))
+        sort_column = int(self.manager_settings.value("view/sort_column",
+                                 defaultValue=2))
+        order = Qt.SortOrder(self.manager_settings.value("view/sort_order",
+                                 defaultValue=Qt.AscendingOrder))
 
         if not sort_column: # Default sort by name
             self.table.sortByColumn(2, Qt.AscendingOrder)
@@ -1340,14 +1342,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
     def showhide_column(self, col_num, show):
         self.table.setColumnHidden(col_num, not show)
-
-    # pylint: disable=invalid-name
-    def on_action_dispvm_template_toggled(self, checked):
-        self.showhide_column(self.columns_indices['Default DispVM'], checked)
-
-    # pylint: disable=invalid-name
-    def on_action_is_dvm_template_toggled(self, checked):
-        self.showhide_column(self.columns_indices['Is DVM Template'], checked)
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_about_qubes_triggered')
