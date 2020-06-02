@@ -318,7 +318,7 @@ class QubesTableModel(QAbstractTableModel):
                 "State",
                 "Template",
                 "NetVM",
-                "Size",
+                "Disk Usage",
                 "Internal",
                 "IP",
                 "Include in backups",
@@ -360,7 +360,7 @@ class QubesTableModel(QAbstractTableModel):
                 return vm.template
             if col_name == "NetVM":
                 return vm.netvm
-            if col_name == "Size":
+            if col_name == "Disk Usage":
                 return vm.disk
             if col_name == "Internal":
                 return "Yes" if vm.internal else ""
@@ -421,7 +421,7 @@ class QubesTableModel(QAbstractTableModel):
                 return vm.label.name
             if col_name == "State":
                 return str(vm.state)
-            if col_name == "Size":
+            if col_name == "Disk Usage":
                 return vm.disk_float
             return self.data(index, Qt.DisplayRole)
         return None
