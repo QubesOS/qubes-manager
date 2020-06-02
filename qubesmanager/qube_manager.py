@@ -663,6 +663,18 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.table.setContextMenuPolicy(Qt.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self.open_context_menu)
 
+        # Create view menu
+        for col_no in range(len(self.qubes_model.columns_indices)):
+            column = self.qubes_model.columns_indices[col_no]
+            action = self.menu_view.addAction(column)
+            action.setData(column)
+            action.setCheckable(True)
+            action.toggled.connect(partial(self.showhide_column, col_no))
+
+        self.menu_view.addSeparator()
+        self.menu_view.addAction(self.action_toolbar)
+        self.menu_view.addAction(self.action_menubar)
+
         try:
             self.load_manager_settings()
         except Exception as ex:  # pylint: disable=broad-except
@@ -835,24 +847,19 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             return  # the VM was deleted before its status could be updated
 
     def load_manager_settings(self):
-        # Load view menu
-        for col_no in range(len(self.qubes_model.columns_indices)):
-            column = self.qubes_model.columns_indices[col_no]
-            action = self.menu_view.addAction(column)
-            action.setCheckable(True)
-            action.toggled.connect(partial(self.showhide_column, col_no))
-            if column == 'Name':
-                # 'Name' column should be always visible
-                action.setChecked(True)
-            else:
-                visible = self.manager_settings.value('columns/%s' % column,
-                    defaultValue="true")
-                action.setChecked(visible == "true")
-                self.showhide_column(col_no, visible == "true")
-
-        self.menu_view.addSeparator()
-        self.menu_view.addAction(self.action_toolbar)
-        self.menu_view.addAction(self.action_menubar)
+        # Load view menu settings
+        for action in self.menu_view.actions():
+            column = action.data()
+            if column is not None:
+                col_no = self.qubes_model.columns_indices.index(column)
+                if column == 'Name':
+                    # 'Name' column should be always visible
+                    action.setChecked(True)
+                else:
+                    visible = self.manager_settings.value('columns/%s' % column,
+                        defaultValue="true")
+                    action.setChecked(visible == "true")
+                    self.showhide_column(col_no, visible == "true")
 
         # Restore sorting
         sort_column = int(self.manager_settings.value("view/sort_column"))
