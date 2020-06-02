@@ -22,7 +22,7 @@ Depends:
   python3-qubesadmin,
   python3-pyqt5,
   python3-pyinotify,
-  python3-quamash,
+  python3-qasync,
   qubes-desktop-linux-common,
   qubes-artwork,
   pmount,

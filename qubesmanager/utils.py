@@ -29,7 +29,7 @@ import traceback
 import asyncio
 from contextlib import suppress
 import sys
-import quamash
+import qasync
 from qubesadmin import events
 
 from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
@@ -484,7 +484,7 @@ def run_asynchronous(window_class):
 
     qubes_app = qubesadmin.Qubes()
 
-    loop = quamash.QEventLoop(qt_app)
+    loop = qasync.QEventLoop(qt_app)
     asyncio.set_event_loop(loop)
     dispatcher = events.EventsDispatcher(qubes_app)
 

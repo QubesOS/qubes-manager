@@ -8,4 +8,4 @@ lxml
 pylint
 sphinx
 PyYAML
-Quamash
+qasync
