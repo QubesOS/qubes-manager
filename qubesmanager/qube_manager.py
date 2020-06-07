@@ -421,6 +421,8 @@ class QubesTableModel(QAbstractTableModel):
 
         # Used for sorting
         if role == Qt.UserRole + 1:
+            if vm.qid == 0:
+                return ""
             if col_name == "Type":
                 return vm.klass
             if col_name == "Label":
