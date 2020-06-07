@@ -242,6 +242,10 @@ class VmInfo():
                 self.netvm = getattr(self.vm, 'netvm', None)
                 if self.netvm:
                     self.netvm = self.netvm.name
+                else:
+                    self.netvm = "n/a"
+                if self.qid != 0 and self.vm.property_is_default("netvm"):
+                    self.netvm = "default (" + self.netvm + ")"
             if not event or event.endswith(':internal'):
                 # this is a feature, not a property; TODO: fix event handling
                 self.internal = self.vm.features.get('internal', False)
@@ -256,6 +260,8 @@ class VmInfo():
                         self.last_backup))
             if not event or event.endswith(':default_dispvm'):
                 self.dvm = getattr(self.vm, 'default_dispvm', None)
+                if self.vm.property_is_default("default_dispvm"):
+                    self.dvm = "default (" + self.dvm.name + ")"
             if not event or event.endswith(':template_for_dispvms'):
                 self.dvm_template = getattr(self.vm, 'template_for_dispvms',
                                             None)
