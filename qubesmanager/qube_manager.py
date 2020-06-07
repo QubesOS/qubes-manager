@@ -656,8 +656,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.proxy = QSortFilterProxyModel()
         self.proxy.setSourceModel(self.qubes_model)
         self.proxy.setSortRole(Qt.UserRole + 1)
+        self.proxy.setSortCaseSensitivity(Qt.CaseInsensitive)
         self.proxy.setFilterKeyColumn(2)
-        self.proxy.setFilterCaseSensitivity(0)
+        self.proxy.setFilterCaseSensitivity(Qt.CaseInsensitive)
         self.proxy.layoutChanged.connect(self.save_sorting)
 
         self.table.setModel(self.proxy)
