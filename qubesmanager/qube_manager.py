@@ -652,6 +652,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.proxy.setSortRole(Qt.UserRole + 1)
         self.proxy.setFilterKeyColumn(2)
         self.proxy.setFilterCaseSensitivity(0)
+        self.proxy.layoutChanged.connect(self.save_sorting)
 
         self.table.setModel(self.proxy)
         self.table.setItemDelegateForColumn(3, StateIconDelegate())
@@ -722,6 +723,12 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         self.check_updates()
 
+    def save_sorting(self):
+        self.manager_settings.setValue('view/sort_column',
+                self.proxy.sortColumn())
+        self.manager_settings.setValue('view/sort_order',
+                self.proxy.sortOrder())
+
     def fill_cache(self):
         progress = QProgressDialog(
             self.tr(
@@ -775,21 +782,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         raise RuntimeError(self.tr('No finished thread found'))
 
     # pylint: disable=invalid-name
-    def closeEvent(self, event):
-        # save settings at close
-        self.manager_settings.setValue("window_size", self.size())
-        self.manager_settings.setValue('view/sort_column',
-                self.proxy.sortColumn())
-        self.manager_settings.setValue('view/sort_order',
-                self.proxy.sortOrder())
-
-        for col_no in range(len(self.qubes_model.columns_indices)):
-            col_name = self.qubes_model.columns_indices[col_no]
-            show = not self.table.isColumnHidden(col_no)
-            self.manager_settings.setValue('columns/%s' % col_name, show)
-            col_no += 1
-
-        event.accept()
+    def resizeEvent(self, event):
+        self.manager_settings.setValue("window_size", event.size())
 
     def check_updates(self, info=None):
         if info is None:
@@ -1328,7 +1322,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             self.context_menu.removeAction(self.action_menubar)
         if self.settings_loaded:
             self.manager_settings.setValue('view/menubar_visible', checked)
-            self.manager_settings.sync()
 
     def showhide_toolbar(self, checked):
         self.toolbar.setVisible(checked)
@@ -1338,10 +1331,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             self.context_menu.removeAction(self.action_toolbar)
         if self.settings_loaded:
             self.manager_settings.setValue('view/toolbar_visible', checked)
-            self.manager_settings.sync()
 
     def showhide_column(self, col_num, show):
         self.table.setColumnHidden(col_num, not show)
+        col_name = self.qubes_model.columns_indices[col_num]
+        self.manager_settings.setValue('columns/%s' % col_name, show)
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_about_qubes_triggered')
