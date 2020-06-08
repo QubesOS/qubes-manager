@@ -1195,25 +1195,34 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                             "ERROR: {1}").format(vm.name, ex))
                     return
 
+    def open_settings(self, vm, tab='basic'):
+        try:
+            with common_threads.busy_cursor():
+                settings_window = settings.VMSettingsWindow(
+                    vm, self.qt_app, tab)
+            settings_window.show()
+            self.settings_windows[vm.name] = settings_window
+        except exc.QubesException as ex:
+            QMessageBox.warning(
+                self,
+                self.tr("Qube settings unavailable"),
+                self.tr(
+                    "Qube settings cannot be opened. The qube might have "
+                    "been removed or unavailable due to policy settings."
+                    "\nError: {}".format(str(ex))))
+            return
+
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_settings_triggered')
     def action_settings_triggered(self):
         for vm_info in self.get_selected_vms():
-            with common_threads.busy_cursor():
-                settings_window = settings.VMSettingsWindow(
-                    vm_info.vm, 'basic', self.qt_app)
-            settings_window.show()
-            self.settings_windows[vm_info.name] = settings_window
+            self.open_settings(vm_info.vm, "basic")
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_appmenus_triggered')
     def action_appmenus_triggered(self):
         for vm_info in self.get_selected_vms():
-            with common_threads.busy_cursor():
-                settings_window = settings.VMSettingsWindow(
-                    vm_info.vm, 'applications', self.qt_app)
-            settings_window.show()
-            self.settings_windows[vm_info.name] = settings_window
+            self.open_settings(vm_info.vm, "applications")
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_updatevm_triggered')
@@ -1271,12 +1280,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_editfwrules_triggered')
     def action_editfwrules_triggered(self):
-        with common_threads.busy_cursor():
-            for vm_info in self.get_selected_vms():
-                settings_window = settings.VMSettingsWindow(vm_info.vm,
-                                        'firewall', self.qt_app)
-                settings_window.show()
-                self.settings_windows[vm_info.name] = settings_window
+        for vm_info in self.get_selected_vms():
+            self.open_settings(vm_info.vm, "firewall")
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_global_settings_triggered')

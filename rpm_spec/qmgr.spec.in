@@ -12,7 +12,7 @@ Requires:	python%{python3_pkgversion}-PyQt5
 Requires:	python%{python3_pkgversion}-inotify
 Requires:	python%{python3_pkgversion}-qubesadmin >= 4.1.1
 Requires:	python%{python3_pkgversion}-Quamash
-Requires:	qubes-desktop-linux-common >= 4.0.16
+Requires:	qubes-desktop-linux-common >= 4.1.2
 Requires:	qubes-artwork
 Requires:	pmount
 Requires:	cryptsetup
