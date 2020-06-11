@@ -449,10 +449,18 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.priv_img_size = self.vm.volumes['private'].size // 1024**2
         self.max_priv_storage.setMinimum(self.priv_img_size)
         self.max_priv_storage.setValue(self.priv_img_size)
+        self.max_priv_storage.setMaximum(
+            max(self.priv_img_size,
+                self.qubesapp.pools[self.vm.volumes['private'].pool].size
+                // 1024**2))
 
         self.root_img_size = self.vm.volumes['root'].size // 1024**2
         self.root_resize.setValue(self.root_img_size)
         self.root_resize.setMinimum(self.root_img_size)
+        self.root_resize.setMaximum(
+            max(self.root_img_size,
+                self.qubesapp.pools[self.vm.volumes['root'].pool].size
+                // 1024**2))
         self.root_resize.setEnabled(self.vm.volumes['root'].save_on_stop)
         if not self.root_resize.isEnabled():
             self.root_resize.setToolTip(
