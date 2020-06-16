@@ -1,0 +1,18 @@
+#!/usr/bin/make -f
+
+include /usr/share/dpkg/default.mk
+export DESTDIR=$(shell pwd)/debian/tmp
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	make ui res translations
+	make python
+
+override_dh_auto_install:
+	make python_install
+	make install
+
+override_dh_install:
+	dh_install --fail-missing

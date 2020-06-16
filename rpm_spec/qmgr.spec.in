@@ -1,6 +1,6 @@
 Name:		qubes-manager
 Version:	@VERSION@
-Release:	1%{?dist}
+Release:	@REL@%{?dist}
 Summary:	The Graphical Qubes VM Manager.
 BuildArch:	noarch
 Group:		Qubes
@@ -40,27 +40,8 @@ make ui res translations
 make python
 
 %install
-make python_install \
-    DESTDIR=$RPM_BUILD_ROOT
-
-mkdir -p $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
-cp qubesmanager/mount_for_backup.sh $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
-cp qubesmanager/qvm_about.sh $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
-cp qubesmanager/dsa-4371-update $RPM_BUILD_ROOT/usr/libexec/qubes-manager/
-
-mkdir -p $RPM_BUILD_ROOT/usr/share/applications
-cp qubes-global-settings.desktop $RPM_BUILD_ROOT/usr/share/applications/
-cp qubes-vm-create.desktop $RPM_BUILD_ROOT/usr/share/applications/
-cp qubes-backup.desktop $RPM_BUILD_ROOT/usr/share/applications/
-cp qubes-backup-restore.desktop $RPM_BUILD_ROOT/usr/share/applications/
-cp qubes-qube-manager.desktop $RPM_BUILD_ROOT/usr/share/applications/
-cp qubes-template-manager.desktop $RPM_BUILD_ROOT/usr/share/applications/
-
-mkdir -p $RPM_BUILD_ROOT/usr/share/desktop-directories/
-cp qubes-tools.directory $RPM_BUILD_ROOT/usr/share/desktop-directories/
-
-mkdir -p $RPM_BUILD_ROOT/etc/xdg/menus/applications-merged/
-cp qubes-tools.menu $RPM_BUILD_ROOT/etc/xdg/menus/applications-merged/
+make python_install DESTDIR=$RPM_BUILD_ROOT
+make install DESTDIR=$RPM_BUILD_ROOT
 
 %post
 update-desktop-database &> /dev/null || :
