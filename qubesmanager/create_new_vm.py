@@ -196,14 +196,16 @@ class NewVmDlg(QtGui.QDialog, Ui_NewVMDlg):
         # AppVM
         if self.vm_type.currentIndex() == 0:
             self.template_vm.setEnabled(True)
-            self.template_vm.setCurrentIndex(0)
+            if self.template_vm.currentIndex() == -1:
+                self.template_vm.setCurrentIndex(0)
             self.install_system.setEnabled(False)
             self.install_system.setChecked(False)
 
         # Standalone - based on a template
         if self.vm_type.currentIndex() == 1:
             self.template_vm.setEnabled(True)
-            self.template_vm.setCurrentIndex(0)
+            if self.template_vm.currentIndex() == -1:
+                self.template_vm.setCurrentIndex(0)
             self.install_system.setEnabled(False)
             self.install_system.setChecked(False)
 
