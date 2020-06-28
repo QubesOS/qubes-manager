@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "configure" ]; then
+    update-desktop-database &> /dev/null || :
+fi
+
+#DEBHELPER#
+
+exit 0

@@ -1,23 +1,11 @@
-RPMS_DIR=rpm/
 VERSION := $(shell cat version)
 
 PYTHON ?= python3
 
-help:
-	@echo "make rpms                  -- generate binary rpm packages"
-	@echo "make res                   -- compile resources"
-	@echo "make update-repo-current   -- copy newly generated rpms to qubes yum repo"
-	@echo "make update-repo-unstable  -- same, but to -testing repo"
-	@echo "make update-repo-installer -- copy dom0 rpms to installer repo"
+LRELEASE_QT5 ?= $(if $(wildcard /etc/debian_version),lrelease,lrelease-qt5)
 
-
-rpms: rpms-dom0
-
-rpms-vm:
-
-rpms-dom0:
-	rpmbuild --define "_rpmdir $(RPMS_DIR)" -bb rpm_spec/qmgr.spec
-	rpm --addsign $(RPMS_DIR)/x86_64/qubes-manager*$(VERSION)*.rpm
+SETUPTOOLS_OPTS =
+SETUPTOOLS_OPTS += $(if $(wildcard /etc/debian_version),--install-layout=deb,)
 
 qubesmanager/ui_%.py: ui/%.ui
 	pyuic5 --from-imports -o $@ $<
@@ -28,28 +16,38 @@ res:
 	pyrcc5 -o qubesmanager/resources_rc.py resources.qrc
 
 translations:
-	lrelease-qt5 qubesmanager.pro
+	$(LRELEASE_QT5) qubesmanager.pro
 
 python:
 	$(PYTHON) ./setup.py build
 
 python_install:
-	$(PYTHON) ./setup.py install -O1 --skip-build --root $(DESTDIR)
+	$(PYTHON) ./setup.py install -O1 --skip-build --root $(DESTDIR) $(SETUPTOOLS_OPTS)
 
 update_ts: res
 	pylupdate5 qubesmanager.pro
 
-update-repo-current:
-	ln -f $(RPMS_DIR)/x86_64/qubes-manager-*$(VERSION)*.rpm ../yum/current-release/current/dom0/rpm/
+install:
+	mkdir -p $(DESTDIR)/usr/libexec/qubes-manager/
+	cp qubesmanager/mount_for_backup.sh $(DESTDIR)/usr/libexec/qubes-manager/
+	cp qubesmanager/qvm_about.sh $(DESTDIR)/usr/libexec/qubes-manager/
+	cp qubesmanager/dsa-4371-update $(DESTDIR)/usr/libexec/qubes-manager/
 
-update-repo-current-testing:
-	ln -f $(RPMS_DIR)/x86_64/qubes-manager-*$(VERSION)*.rpm ../yum/current-release/current-testing/dom0/rpm/
+	mkdir -p $(DESTDIR)/usr/share/applications
+	cp qubes-global-settings.desktop $(DESTDIR)/usr/share/applications/
+	cp qubes-vm-create.desktop $(DESTDIR)/usr/share/applications/
+	cp qubes-backup.desktop $(DESTDIR)/usr/share/applications/
+	cp qubes-backup-restore.desktop $(DESTDIR)/usr/share/applications/
+	cp qubes-qube-manager.desktop $(DESTDIR)/usr/share/applications/
+	cp qubes-template-manager.desktop $(DESTDIR)/usr/share/applications/
 
-update-repo-unstable:
-	ln -f $(RPMS_DIR)/x86_64/qubes-manager-*$(VERSION)*.rpm ../yum/current-release/unstable/dom0/rpm/
+	mkdir -p $(DESTDIR)/usr/share/desktop-directories/
+	cp qubes-tools.directory $(DESTDIR)/usr/share/desktop-directories/
 
-update-repo-installer:
-	ln -f $(RPMS_DIR)/x86_64/qubes-manager-*$(VERSION)*.rpm ../installer/yum/qubes-dom0/rpm/
+	mkdir -p $(DESTDIR)/etc/xdg/menus/applications-merged/
+	cp qubes-tools.menu $(DESTDIR)/etc/xdg/menus/applications-merged/
 
 clean:
 	rm -f qubesmanager/ui_*.py
+	rm -rf debian/changelog.*
+	rm -rf pkgs
