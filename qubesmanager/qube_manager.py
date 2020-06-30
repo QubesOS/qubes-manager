@@ -1046,7 +1046,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtWidgets.QMainWindow):
         try:
             with common_threads.busy_cursor():
                 settings_window = settings.VMSettingsWindow(
-                    vm, self.qt_app, tab)
+                    vm, init_page=tab, qapp=self.qt_app,
+                    qubesapp=self.qubes_app)
             settings_window.exec_()
         except exc.QubesException as ex:
             QtWidgets.QMessageBox.warning(
