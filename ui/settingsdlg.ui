@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>836</width>
-    <height>656</height>
+    <height>665</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -444,9 +444,293 @@ border-width: 1px;</string>
         <attribute name="title">
          <string>Advanced</string>
         </attribute>
-        <layout class="QGridLayout" name="gridLayout_9">
-         <item row="0" column="1" rowspan="2" colspan="2">
-          <layout class="QVBoxLayout" name="verticalLayout_4">
+        <layout class="QHBoxLayout" name="horizontalLayout_9">
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout_9">
+           <item>
+            <widget class="QGroupBox" name="groupBox_2">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="title">
+              <string>Memory/CPU</string>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_4">
+              <property name="topMargin">
+               <number>15</number>
+              </property>
+              <item row="2" column="1">
+               <widget class="QSpinBox" name="vcpus">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+                <property name="value">
+                 <number>1</number>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="label_4">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>VCPUs no.:</string>
+                </property>
+                <property name="buddy">
+                 <cstring>vcpus</cstring>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QSpinBox" name="max_mem_size">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+                <property name="suffix">
+                 <string> MB</string>
+                </property>
+                <property name="minimum">
+                 <number>0</number>
+                </property>
+                <property name="maximum">
+                 <number>10000000</number>
+                </property>
+                <property name="singleStep">
+                 <number>50</number>
+                </property>
+                <property name="value">
+                 <number>400</number>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QSpinBox" name="init_mem">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+                <property name="suffix">
+                 <string> MB</string>
+                </property>
+                <property name="minimum">
+                 <number>0</number>
+                </property>
+                <property name="maximum">
+                 <number>1000000</number>
+                </property>
+                <property name="singleStep">
+                 <number>50</number>
+                </property>
+                <property name="value">
+                 <number>256</number>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0" colspan="2">
+               <widget class="QCheckBox" name="include_in_balancing">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="text">
+                 <string>Include in memory balancing</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0" colspan="3">
+               <widget class="QLabel" name="dmm_warning_adv">
+                <property name="font">
+                 <font>
+                  <weight>75</weight>
+                  <italic>true</italic>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">color:rgb(255, 0, 0)</string>
+                </property>
+                <property name="text">
+                 <string>Dynamic memory balancing can result in some devices not working!</string>
+                </property>
+                <property name="wordWrap">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_15">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>Initial memory:</string>
+                </property>
+                <property name="buddy">
+                 <cstring>init_mem</cstring>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_17">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>Max memory:</string>
+                </property>
+                <property name="buddy">
+                 <cstring>max_mem_size</cstring>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="other_groupbox">
+             <property name="title">
+              <string>Other</string>
+             </property>
+             <layout class="QFormLayout" name="formLayout_2">
+              <property name="fieldGrowthPolicy">
+               <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+              </property>
+              <property name="topMargin">
+               <number>15</number>
+              </property>
+              <item row="2" column="0">
+               <widget class="QCheckBox" name="provides_network_checkbox">
+                <property name="text">
+                 <string>Provides network</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QCheckBox" name="dvm_template_checkbox">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allows using this qube as a template for DisposableVMs. The DisposableVMs will inherit the VM's state (configuration, installed programs etc.), but their state will not persist between restarts. &lt;/p&gt;&lt;p&gt;Setting this option will cause this qube to be listed as an option in the &amp;quot;Default DisposableVM Template&amp;quot; dropdown for all other qubes. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>Disposable VM Template</string>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="0" colspan="2">
+               <widget class="QPushButton" name="boot_from_device_button">
+                <property name="text">
+                 <string>Boot qube from CDROM</string>
+                </property>
+               </widget>
+              </item>
+              <item row="9" column="0" colspan="2">
+               <layout class="QHBoxLayout" name="horizontalLayout_8">
+                <item>
+                 <widget class="QPushButton" name="seamless_on_button">
+                  <property name="toolTip">
+                   <string>Windows (with Qubes Windows Tools installed) only.
+The qube must be running to enable seamless mode;  this setting is not persistent.</string>
+                  </property>
+                  <property name="text">
+                   <string>Enable seamless mode</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="seamless_off_button">
+                  <property name="toolTip">
+                   <string>Windows (with Qubes Windows Tools installed) only.
+The qube must be running to disable seamless mode; this setting is not persistent.</string>
+                  </property>
+                  <property name="text">
+                   <string>Disable seamless mode</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item row="6" column="0" colspan="2">
+               <layout class="QHBoxLayout" name="horizontalLayout_6">
+                <item>
+                 <widget class="QLabel" name="label_26">
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Which qube should be used by default as a template for DisposableVMs started from this one? DisposableVMs will inherit their template's configuration and installed programs.&lt;br/&gt;For a qube to to appear in this list, it must have the &amp;quot;DisposableVM Template&amp;quot; checkbox enabled. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="text">
+                   <string>Default DisposableVM Template</string>
+                  </property>
+                  <property name="buddy">
+                   <cstring>default_dispvm</cstring>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QComboBox" name="default_dispvm">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Which qube should be used by default as a template for DisposableVMs started from this one? DisposableVMs will inherit their template's configuration and installed programs.&lt;br/&gt;For a qube to to appear in this list, it must have the &amp;quot;DisposableVM Template&amp;quot; checkbox enabled. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+              <item row="1" column="0">
+               <widget class="QCheckBox" name="run_in_debug_mode">
+                <property name="text">
+                 <string>Run in debug mode</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_3">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout_7">
            <property name="sizeConstraint">
             <enum>QLayout::SetDefaultConstraint</enum>
            </property>
@@ -454,12 +738,65 @@ border-width: 1px;</string>
             <number>0</number>
            </property>
            <item>
+            <widget class="QGroupBox" name="window_groupbox">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="title">
+              <string>Window Options</string>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_12">
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_16">
+                <property name="text">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allow fullscreen&lt;span style=&quot; color:#ef2929;&quot;&gt;*&lt;/span&gt;:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QComboBox" name="allow_fullscreen"/>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_24">
+                <property name="text">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allow UTF-8 window titles&lt;span style=&quot; color:#ef2929;&quot;&gt;*&lt;/span&gt;:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QComboBox" name="allow_utf8"/>
+              </item>
+              <item row="2" column="0" colspan="2">
+               <widget class="QLabel" name="requires_restart_label">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="font">
+                 <font>
+                  <italic>true</italic>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#ef2929;&quot;&gt;*&lt;/span&gt;&lt;span style=&quot; font-style:normal; color:#000000;&quot;&gt; Requires restart&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
             <widget class="QGroupBox" name="kernel_groupbox">
              <property name="enabled">
               <bool>true</bool>
              </property>
              <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+              <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
@@ -489,6 +826,12 @@ border-width: 1px;</string>
               </item>
               <item row="1" column="1">
                <widget class="QLabel" name="pvh_kernel_version_warning">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="font">
                  <font>
                   <weight>75</weight>
@@ -506,6 +849,12 @@ border-width: 1px;</string>
               </item>
               <item row="2" column="0">
                <widget class="QLabel" name="label_20">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>Kernel opts:</string>
                 </property>
@@ -513,6 +862,12 @@ border-width: 1px;</string>
               </item>
               <item row="2" column="1">
                <widget class="QLabel" name="kernel_opts">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="font">
                  <font>
                   <weight>50</weight>
@@ -528,23 +883,13 @@ border-width: 1px;</string>
              </layout>
             </widget>
            </item>
-          </layout>
-         </item>
-         <item row="2" column="1" rowspan="2" colspan="2">
-          <layout class="QVBoxLayout" name="verticalLayout_7">
-           <property name="sizeConstraint">
-            <enum>QLayout::SetDefaultConstraint</enum>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
            <item>
             <widget class="QGroupBox" name="virt_groupbox">
              <property name="enabled">
               <bool>true</bool>
              </property>
              <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+              <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
@@ -574,6 +919,12 @@ border-width: 1px;</string>
               </item>
               <item row="2" column="1">
                <widget class="QLabel" name="pv_warning">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="font">
                  <font>
                   <weight>75</weight>
@@ -594,6 +945,12 @@ border-width: 1px;</string>
               </item>
               <item row="3" column="1">
                <widget class="QLabel" name="pvh_mode_hidden">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="font">
                  <font>
                   <weight>75</weight>
@@ -611,6 +968,12 @@ border-width: 1px;</string>
               </item>
               <item row="0" column="0" colspan="2">
                <widget class="QLabel" name="label_21">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="font">
                  <font>
                   <italic>true</italic>
@@ -627,287 +990,20 @@ border-width: 1px;</string>
              </layout>
             </widget>
            </item>
+           <item>
+            <spacer name="verticalSpacer_2">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
           </layout>
-         </item>
-         <item row="0" column="0" rowspan="2">
-          <widget class="QGroupBox" name="groupBox_2">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="title">
-            <string>Memory/CPU</string>
-           </property>
-           <layout class="QGridLayout" name="gridLayout_4">
-            <property name="topMargin">
-             <number>15</number>
-            </property>
-            <item row="0" column="0">
-             <widget class="QLabel" name="label_15">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string>Initial memory:</string>
-              </property>
-              <property name="buddy">
-               <cstring>init_mem</cstring>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="QSpinBox" name="init_mem">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-              </property>
-              <property name="suffix">
-               <string> MB</string>
-              </property>
-              <property name="minimum">
-               <number>0</number>
-              </property>
-              <property name="maximum">
-               <number>1000000</number>
-              </property>
-              <property name="singleStep">
-               <number>50</number>
-              </property>
-              <property name="value">
-               <number>256</number>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
-             <widget class="QSpinBox" name="max_mem_size">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-              </property>
-              <property name="suffix">
-               <string> MB</string>
-              </property>
-              <property name="minimum">
-               <number>0</number>
-              </property>
-              <property name="maximum">
-               <number>10000000</number>
-              </property>
-              <property name="singleStep">
-               <number>50</number>
-              </property>
-              <property name="value">
-               <number>400</number>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="0">
-             <widget class="QLabel" name="label_4">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string>VCPUs no.:</string>
-              </property>
-              <property name="buddy">
-               <cstring>vcpus</cstring>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="1">
-             <widget class="QSpinBox" name="vcpus">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-              </property>
-              <property name="value">
-               <number>1</number>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="0" colspan="2">
-             <widget class="QCheckBox" name="include_in_balancing">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="text">
-               <string>Include in memory balancing</string>
-              </property>
-             </widget>
-            </item>
-            <item row="4" column="0" colspan="3">
-             <widget class="QLabel" name="dmm_warning_adv">
-              <property name="font">
-               <font>
-                <weight>75</weight>
-                <italic>true</italic>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="styleSheet">
-               <string notr="true">color:rgb(255, 0, 0)</string>
-              </property>
-              <property name="text">
-               <string>Dynamic memory balancing can result in some devices not working!</string>
-              </property>
-              <property name="wordWrap">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="label_17">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string>Max memory:</string>
-              </property>
-              <property name="buddy">
-               <cstring>max_mem_size</cstring>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item row="4" column="0">
-          <spacer name="verticalSpacer_2">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>20</width>
-             <height>40</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="2" column="0">
-          <widget class="QGroupBox" name="other_groupbox">
-           <property name="title">
-            <string>Other</string>
-           </property>
-           <layout class="QFormLayout" name="formLayout_2">
-            <property name="fieldGrowthPolicy">
-             <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
-            </property>
-            <property name="topMargin">
-             <number>15</number>
-            </property>
-            <item row="2" column="0">
-             <widget class="QCheckBox" name="provides_network_checkbox">
-              <property name="text">
-               <string>Provides network</string>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="0">
-             <widget class="QCheckBox" name="dvm_template_checkbox">
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allows using this qube as a template for DisposableVMs. The DisposableVMs will inherit the VM's state (configuration, installed programs etc.), but their state will not persist between restarts. &lt;/p&gt;&lt;p&gt;Setting this option will cause this qube to be listed as an option in the &amp;quot;Default DisposableVM Template&amp;quot; dropdown for all other qubes. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="text">
-               <string>Disposable VM Template</string>
-              </property>
-             </widget>
-            </item>
-            <item row="8" column="0" colspan="2">
-             <widget class="QPushButton" name="boot_from_device_button">
-              <property name="text">
-               <string>Boot qube from CDROM</string>
-              </property>
-             </widget>
-            </item>
-            <item row="9" column="0" colspan="2">
-             <layout class="QHBoxLayout" name="horizontalLayout_8">
-              <item>
-               <widget class="QPushButton" name="seamless_on_button">
-                <property name="toolTip">
-                 <string>Windows (with Qubes Windows Tools installed) only.
-The qube must be running to enable seamless mode;  this setting is not persistent.</string>
-                </property>
-                <property name="text">
-                 <string>Enable seamless mode</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="seamless_off_button">
-                <property name="toolTip">
-                 <string>Windows (with Qubes Windows Tools installed) only.
-The qube must be running to disable seamless mode; this setting is not persistent.</string>
-                </property>
-                <property name="text">
-                 <string>Disable seamless mode</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item row="6" column="0" colspan="2">
-             <layout class="QHBoxLayout" name="horizontalLayout_6">
-              <item>
-               <widget class="QLabel" name="label_26">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Which qube should be used by default as a template for DisposableVMs started from this one? DisposableVMs will inherit their template's configuration and installed programs.&lt;br/&gt;For a qube to to appear in this list, it must have the &amp;quot;DisposableVM Template&amp;quot; checkbox enabled. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="text">
-                 <string>Default DisposableVM Template</string>
-                </property>
-                <property name="buddy">
-                 <cstring>default_dispvm</cstring>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QComboBox" name="default_dispvm">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Which qube should be used by default as a template for DisposableVMs started from this one? DisposableVMs will inherit their template's configuration and installed programs.&lt;br/&gt;For a qube to to appear in this list, it must have the &amp;quot;DisposableVM Template&amp;quot; checkbox enabled. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item row="1" column="0">
-             <widget class="QCheckBox" name="run_in_debug_mode">
-              <property name="text">
-               <string>Run in debug mode</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
          </item>
         </layout>
        </widget>
@@ -1600,16 +1696,18 @@ The qube must be running to disable seamless mode; this setting is not persisten
   <tabstop>boot_from_device_button</tabstop>
   <tabstop>seamless_on_button</tabstop>
   <tabstop>seamless_off_button</tabstop>
+  <tabstop>allow_fullscreen</tabstop>
+  <tabstop>allow_utf8</tabstop>
   <tabstop>kernel</tabstop>
   <tabstop>virt_mode</tabstop>
   <tabstop>policy_allow_radio_button</tabstop>
   <tabstop>policy_deny_radio_button</tabstop>
   <tabstop>rulesTreeView</tabstop>
+  <tabstop>temp_full_access</tabstop>
+  <tabstop>temp_full_access_time</tabstop>
   <tabstop>new_rule_button</tabstop>
   <tabstop>edit_rule_button</tabstop>
   <tabstop>delete_rule_button</tabstop>
-  <tabstop>temp_full_access</tabstop>
-  <tabstop>temp_full_access_time</tabstop>
   <tabstop>no_strict_reset_button</tabstop>
   <tabstop>refresh_apps_button</tabstop>
   <tabstop>service_line_edit</tabstop>

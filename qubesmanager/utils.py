@@ -68,6 +68,39 @@ class SizeSpinBox(QtWidgets.QSpinBox):
         return int(float(value) * multiplier)
 
 
+def get_boolean_feature(vm, feature_name):
+    result = vm.features.get(feature_name, None)
+    if result is not None:
+        try:
+            result = bool(result)
+        except ValueError:
+            result = None
+    return result
+
+def prepare_choice_data(widget,
+                        choices,
+                        selected_value=None):
+    """
+    populates widget (ListBox or ComboBox) with items
+    :param widget: widget to populate
+    :param choices: list of tuples (text, value) to use to populate widget
+    :param selected_value: value to populate widget with
+    :return:
+    """
+
+    while widget.count() > 0:
+        widget.removeItem(0)
+
+    for (name, value) in choices:
+        widget.addItem(name, value)
+
+    if widget.findData(selected_value) > -1:
+        widget.setCurrentIndex(widget.findData(selected_value))
+    else:
+        widget.addItem(selected_value, selected_value)
+        widget.setCurrentIndex(widget.findData(selected_value))
+
+
 def prepare_choice(widget, holder, propname, choice, default,
                    filter_function=None, *,
                    icon_getter=None, allow_internal=None, allow_default=False,

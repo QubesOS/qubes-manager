@@ -775,6 +775,27 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         except AttributeError:
             self.run_in_debug_mode.setVisible(False)
 
+        utils.prepare_choice_data(
+            widget=self.allow_fullscreen,
+            choices=[
+                ('(use system default)', None),
+                ('allow', True),
+                ('disallow', False)
+            ],
+            selected_value=utils.get_boolean_feature(self.vm,
+                                                     'gui-allow-fullscreen'))
+        self.allow_fullscreen_initial = self.allow_fullscreen.currentIndex()
+        utils.prepare_choice_data(
+            widget=self.allow_utf8,
+            choices=[
+                ('(use system default)', None),
+                ('allow', True),
+                ('disallow', False)
+            ],
+            selected_value=utils.get_boolean_feature(self.vm,
+                                                     'gui-allow-utf8-titles'))
+        self.allow_utf8_initial = self.allow_utf8.currentIndex()
+
     def enable_seamless(self):
         self.vm.run_service_for_stdio("qubes.SetGuiMode", input=b'SEAMLESS')
 
@@ -860,6 +881,28 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     self.vm.debug = self.run_in_debug_mode.isChecked()
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
+
+        if self.allow_fullscreen_initial !=\
+                self.allow_fullscreen.currentIndex():
+            try:
+                if self.allow_fullscreen.currentData() is None:
+                    del self.vm.features['gui-allow-fullscreen']
+                else:
+                    self.vm.features['gui-allow-fullscreen'] = \
+                        self.allow_fullscreen.currentData()
+            except qubesadmin.exc.QubesException as ex:
+                msg.append(str(ex))
+
+        if self.allow_utf8_initial !=\
+                self.allow_utf8.currentIndex():
+            try:
+                if self.allow_utf8.currentData() is None:
+                    del self.vm.features['gui-allow-utf8-titles']
+                else:
+                    self.vm.features['gui-allow-utf8-titles'] = \
+                        self.allow_utf8.currentData()
+            except qubesadmin.exc.QubesException as ex:
+                msg.append(str(ex))
 
         return msg
 
