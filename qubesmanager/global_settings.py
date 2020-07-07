@@ -71,6 +71,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
 
         self.app = app
         self.qvm_collection = qvm_collection
+        self.vm = self.qvm_collection.domains[self.qvm_collection.local_name]
 
         self.setupUi(self)
 
@@ -81,6 +82,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.__init_kernel_defaults__()
         self.__init_mem_defaults__()
         self.__init_updates__()
+        self.__init_gui_defaults()
 
     def setup_application(self):
         self.app.setApplicationName(self.tr("Qubes Global Settings"))
@@ -179,6 +181,94 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 self.kernels_list[self.default_kernel_combo.currentIndex()]:
             self.qvm_collection.default_kernel = \
                 self.kernels_list[self.default_kernel_combo.currentIndex()]
+
+    def __init_gui_defaults(self):
+
+        utils.prepare_choice_data(
+            widget=self.allow_fullscreen,
+            choices=[
+                ('default (disallow)', None),
+                ('allow', True),
+                ('disallow', False)
+            ],
+            selected_value=utils.get_boolean_feature(
+                self.vm,
+                'gui-default-allow-fullscreen'))
+        self.allow_fullscreen_initial = self.allow_fullscreen.currentIndex()
+
+        utils.prepare_choice_data(
+            widget=self.allow_utf8,
+            choices=[
+                ('default (disallow)', None),
+                ('allow', True),
+                ('disallow', False)
+            ],
+            selected_value=utils.get_boolean_feature(
+                self.vm,
+                'gui-default-allow-utf8-titles'))
+        self.allow_utf8_initial = self.allow_utf8.currentIndex()
+
+        utils.prepare_choice_data(
+            widget=self.trayicon,
+            choices=[
+                ('default (thin border)', None),
+                ('full background', 'bg'),
+                ('thin border', 'border1'),
+                ('thick border', 'border2'),
+                ('tinted icon', 'tint'),
+                ('tinted icon with modified white', 'tint+whitehack'),
+                ('tinted icon with 50% saturation', 'tint+saturation50')
+            ],
+            selected_value=self.vm.features.get('gui-default-trayicon-mode',
+                                                None))
+        self.trayicon_initial = self.trayicon.currentIndex()
+
+        utils.prepare_choice_data(
+            widget=self.securecopy,
+            choices=[
+                ('default (Ctrl+Shift+C)', None),
+                ('Ctrl+Shift+C', 'Ctrl-Shift-c'),
+                ('Ctrl+Win+C', 'Ctrl-Mod4-c'),
+            ],
+            selected_value=self.vm.features.get(
+                'gui-default-secure-copy-sequence', None))
+        self.securecopy_initial = self.securecopy.currentIndex()
+
+        utils.prepare_choice_data(
+            widget=self.securepaste,
+            choices=[
+                ('default (Ctrl+Shift+V)', None),
+                ('Ctrl+Shift+V', 'Ctrl-Shift-V'),
+                ('Ctrl+Win+V', 'Ctrl-Mod4-v'),
+                ('Ctrl+Insert', 'Ctrl-Ins'),
+            ],
+            selected_value=self.vm.features.get(
+                'gui-default-secure-paste-sequence', None))
+        self.securepaste_initial = self.securepaste.currentIndex()
+
+    def __apply_feature_change(self, widget, feature, inital_index):
+        if inital_index != widget.currentIndex():
+            if widget.currentData() is None:
+                del self.vm.features[feature]
+            else:
+                self.vm.features[feature] = widget.currentData()
+
+    def __apply_gui_defaults(self):
+        self.__apply_feature_change(widget=self.allow_fullscreen,
+                                    feature='gui-default-allow-fullscreen',
+                                    inital_index=self.allow_fullscreen_initial)
+        self.__apply_feature_change(widget=self.allow_utf8,
+                                    feature='gui-default-allow-utf8-titles',
+                                    inital_index=self.allow_utf8_initial)
+        self.__apply_feature_change(widget=self.trayicon,
+                                    feature='gui-default-trayicon-mode',
+                                    inital_index=self.trayicon_initial)
+        self.__apply_feature_change(widget=self.securecopy,
+                                    feature='gui-default-secure-copy-sequence',
+                                    inital_index=self.securecopy_initial)
+        self.__apply_feature_change(widget=self.securepaste,
+                                    feature='gui-default-secure-paste-sequence',
+                                    inital_index=self.securepaste_initial)
 
     def __init_mem_defaults__(self):
         # qmemman settings
@@ -417,6 +507,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.__apply_mem_defaults__()
         self.__apply_updates__()
         self.__apply_repos__()
+        self.__apply_gui_defaults()
 
 
 def main():
