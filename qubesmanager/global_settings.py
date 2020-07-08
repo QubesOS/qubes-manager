@@ -62,16 +62,15 @@ def _run_qrexec_repo(service, arg=''):
     return p.stdout.decode('utf-8')
 
 
-# pylint: disable=too-many-instance-attributes
 class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                            QtWidgets.QDialog):
 
-    def __init__(self, app, qvm_collection, parent=None):
+    def __init__(self, app, qubes_app, parent=None):
         super(GlobalSettingsWindow, self).__init__(parent)
 
         self.app = app
-        self.qvm_collection = qvm_collection
-        self.vm = self.qvm_collection.domains[self.qvm_collection.local_name]
+        self.qubes_app = qubes_app
+        self.vm = self.qubes_app.domains[self.qubes_app.local_name]
 
         self.setupUi(self)
 
@@ -90,101 +89,95 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
 
     def __init_system_defaults__(self):
         # set up updatevm choice
-        self.update_vm_vmlist, self.update_vm_idx = utils.prepare_vm_choice(
-            self.update_vm_combo, self.qvm_collection, 'updatevm',
-            None, allow_none=True,
-            filter_function=(lambda vm: vm.klass != 'TemplateVM')
+        utils.initialize_widget_with_vms(
+            widget=self.update_vm_combo,
+            qubes_app=self.qubes_app,
+            filter_function=(lambda vm: vm.klass != 'TemplateVM'),
+            allow_none=True,
+            holder=self.qubes_app,
+            property_name="updatevm"
         )
 
         # set up clockvm choice
-        self.clock_vm_vmlist, self.clock_vm_idx = utils.prepare_vm_choice(
-            self.clock_vm_combo, self.qvm_collection, 'clockvm',
-            None, allow_none=True,
-            filter_function=(lambda vm: vm.klass != 'TemplateVM')
+        utils.initialize_widget_with_vms(
+            widget=self.clock_vm_combo,
+            qubes_app=self.qubes_app,
+            filter_function=(lambda vm: vm.klass != 'TemplateVM'),
+            allow_none=True,
+            holder=self.qubes_app,
+            property_name="clockvm"
         )
 
         # set up default netvm
-        self.default_netvm_vmlist, self.default_netvm_idx = \
-            utils.prepare_vm_choice(
-                self.default_netvm_combo,
-                self.qvm_collection, 'default_netvm',
-                None,
-                filter_function=(lambda vm: vm.provides_network),
-                allow_none=True)
+        utils.initialize_widget_with_vms(
+            widget=self.default_netvm_combo,
+            qubes_app=self.qubes_app,
+            filter_function=(lambda vm: vm.provides_network),
+            allow_none=True,
+            holder=self.qubes_app,
+            property_name="default_netvm"
+        )
 
         # default template
-        self.default_template_vmlist, self.default_template_idx = \
-            utils.prepare_vm_choice(
-                self.default_template_combo,
-                self.qvm_collection, 'default_template',
-                None,
-                filter_function=(lambda vm: vm.klass == 'TemplateVM'),
-                allow_none=True
-            )
+        utils.initialize_widget_with_vms(
+            widget=self.default_template_combo,
+            qubes_app=self.qubes_app,
+            filter_function=(lambda vm: vm.klass == 'TemplateVM'),
+            allow_none=True,
+            holder=self.qubes_app,
+            property_name="default_template"
+        )
 
         # default dispvm
-        self.default_dispvm_vmlist, self.default_dispvm_idx = \
-            utils.prepare_vm_choice(
-                self.default_dispvm_combo,
-                self.qvm_collection, 'default_dispvm',
-                None,
-                (lambda vm: getattr(vm, 'template_for_dispvms', False)),
-                allow_none=True
-            )
+        utils.initialize_widget_with_vms(
+            widget=self.default_dispvm_combo,
+            qubes_app=self.qubes_app,
+            filter_function=(lambda vm: getattr(
+                vm, 'template_for_dispvms', False)),
+            allow_none=True,
+            holder=self.qubes_app,
+            property_name="default_dispvm"
+        )
 
     def __apply_system_defaults__(self):
         # updatevm
-        if self.qvm_collection.updatevm != \
-                self.update_vm_vmlist[self.update_vm_combo.currentIndex()]:
-            self.qvm_collection.updatevm = \
-                self.update_vm_vmlist[self.update_vm_combo.currentIndex()]
+        if utils.did_widget_selection_change(self.update_vm_combo):
+            self.qubes_app.updatevm = self.update_vm_combo.currentData()
 
         # clockvm
-        if self.qvm_collection.clockvm != \
-                self.clock_vm_vmlist[self.clock_vm_combo.currentIndex()]:
-            self.qvm_collection.clockvm = \
-                self.clock_vm_vmlist[self.clock_vm_combo.currentIndex()]
+        if utils.did_widget_selection_change(self.clock_vm_combo):
+            self.qubes_app.clockvm = self.clock_vm_combo.currentData()
 
         # default netvm
-        if self.qvm_collection.default_netvm != \
-                self.default_netvm_vmlist[
-                    self.default_netvm_combo.currentIndex()]:
-            self.qvm_collection.default_netvm = \
-                self.default_netvm_vmlist[
-                    self.default_netvm_combo.currentIndex()]
+        if utils.did_widget_selection_change(self.default_netvm_combo):
+            self.qubes_app.default_netvm = \
+                self.default_netvm_combo.currentData()
 
         # default template
-        if self.qvm_collection.default_template != \
-                self.default_template_vmlist[
-                    self.default_template_combo.currentIndex()]:
-            self.qvm_collection.default_template = \
-                self.default_template_vmlist[
-                    self.default_template_combo.currentIndex()]
+        if utils.did_widget_selection_change(self.default_template_combo):
+            self.qubes_app.default_template = \
+                self.default_template_combo.currentData()
 
         # default_dispvm
-        if self.qvm_collection.default_dispvm != \
-                self.default_dispvm_vmlist[
-                    self.default_dispvm_combo.currentIndex()]:
-            self.qvm_collection.default_dispvm = \
-                self.default_dispvm_vmlist[
-                    self.default_dispvm_combo.currentIndex()]
+        if utils.did_widget_selection_change(self.default_dispvm_combo):
+            self.qubes_app.default_dispvm = \
+                self.default_dispvm_combo.currentData()
 
     def __init_kernel_defaults__(self):
-        self.kernels_list, self.kernels_idx = utils.prepare_kernel_choice(
-            self.default_kernel_combo, self.qvm_collection, 'default_kernel',
-            None,
-            allow_none=True
-        )
+        utils.initialize_widget_with_kernels(
+            widget=self.default_kernel_combo,
+            qubes_app=self.qubes_app,
+            allow_none=True,
+            holder=self.qubes_app,
+            property_name='default_kernel')
 
     def __apply_kernel_defaults__(self):
-        if self.qvm_collection.default_kernel != \
-                self.kernels_list[self.default_kernel_combo.currentIndex()]:
-            self.qvm_collection.default_kernel = \
-                self.kernels_list[self.default_kernel_combo.currentIndex()]
+        if utils.did_widget_selection_change(self.default_kernel_combo):
+            self.qubes_app.default_kernel = \
+                self.default_kernel_combo.currentData()
 
     def __init_gui_defaults(self):
-
-        utils.prepare_choice_data(
+        utils.initialize_widget(
             widget=self.allow_fullscreen,
             choices=[
                 ('default (disallow)', None),
@@ -194,9 +187,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             selected_value=utils.get_boolean_feature(
                 self.vm,
                 'gui-default-allow-fullscreen'))
-        self.allow_fullscreen_initial = self.allow_fullscreen.currentIndex()
 
-        utils.prepare_choice_data(
+        utils.initialize_widget(
             widget=self.allow_utf8,
             choices=[
                 ('default (disallow)', None),
@@ -206,9 +198,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             selected_value=utils.get_boolean_feature(
                 self.vm,
                 'gui-default-allow-utf8-titles'))
-        self.allow_utf8_initial = self.allow_utf8.currentIndex()
 
-        utils.prepare_choice_data(
+        utils.initialize_widget(
             widget=self.trayicon,
             choices=[
                 ('default (thin border)', None),
@@ -221,9 +212,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             ],
             selected_value=self.vm.features.get('gui-default-trayicon-mode',
                                                 None))
-        self.trayicon_initial = self.trayicon.currentIndex()
 
-        utils.prepare_choice_data(
+        utils.initialize_widget(
             widget=self.securecopy,
             choices=[
                 ('default (Ctrl+Shift+C)', None),
@@ -232,9 +222,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             ],
             selected_value=self.vm.features.get(
                 'gui-default-secure-copy-sequence', None))
-        self.securecopy_initial = self.securecopy.currentIndex()
 
-        utils.prepare_choice_data(
+        utils.initialize_widget(
             widget=self.securepaste,
             choices=[
                 ('default (Ctrl+Shift+V)', None),
@@ -244,10 +233,9 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             ],
             selected_value=self.vm.features.get(
                 'gui-default-secure-paste-sequence', None))
-        self.securepaste_initial = self.securepaste.currentIndex()
 
-    def __apply_feature_change(self, widget, feature, inital_index):
-        if inital_index != widget.currentIndex():
+    def __apply_feature_change(self, widget, feature):
+        if utils.did_widget_selection_change(widget):
             if widget.currentData() is None:
                 del self.vm.features[feature]
             else:
@@ -255,20 +243,15 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
 
     def __apply_gui_defaults(self):
         self.__apply_feature_change(widget=self.allow_fullscreen,
-                                    feature='gui-default-allow-fullscreen',
-                                    inital_index=self.allow_fullscreen_initial)
+                                    feature='gui-default-allow-fullscreen')
         self.__apply_feature_change(widget=self.allow_utf8,
-                                    feature='gui-default-allow-utf8-titles',
-                                    inital_index=self.allow_utf8_initial)
+                                    feature='gui-default-allow-utf8-titles')
         self.__apply_feature_change(widget=self.trayicon,
-                                    feature='gui-default-trayicon-mode',
-                                    inital_index=self.trayicon_initial)
+                                    feature='gui-default-trayicon-mode')
         self.__apply_feature_change(widget=self.securecopy,
-                                    feature='gui-default-secure-copy-sequence',
-                                    inital_index=self.securecopy_initial)
+                                    feature='gui-default-secure-copy-sequence')
         self.__apply_feature_change(widget=self.securepaste,
-                                    feature='gui-default-secure-paste-sequence',
-                                    inital_index=self.securepaste_initial)
+                                    feature='gui-default-secure-paste-sequence')
 
     def __init_mem_defaults__(self):
         # qmemman settings
@@ -350,16 +333,13 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 qmemman_config_file.close()
 
     def __init_updates__(self):
-        try:
-            self.updates_dom0_val = bool(self.qvm_collection.domains[
-                                             'dom0'].features[
-                                             'service.qubes-update-check'])
-        except KeyError:
-            self.updates_dom0_val = True
+        self.updates_dom0_val = bool(
+            self.qubes_app.domains['dom0'].features.get(
+                'service.qubes-update-check', True))
 
         self.updates_dom0.setChecked(self.updates_dom0_val)
 
-        self.updates_vm.setChecked(self.qvm_collection.check_updates_vm)
+        self.updates_vm.setChecked(self.qubes_app.check_updates_vm)
         self.enable_updates_all.clicked.connect(self.__enable_updates_all)
         self.disable_updates_all.clicked.connect(self.__disable_updates_all)
 
@@ -421,18 +401,18 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.__set_updates_all(False)
 
     def __set_updates_all(self, state):
-        for vm in self.qvm_collection.domains:
+        for vm in self.qubes_app.domains:
             if vm.klass != "AdminVM":
                 vm.features['service.qubes-update-check'] = state
 
     def __apply_updates__(self):
         if self.updates_dom0.isChecked() != self.updates_dom0_val:
-            self.qvm_collection.domains['dom0'].features[
+            self.qubes_app.domains['dom0'].features[
                 'service.qubes-update-check'] = \
                 self.updates_dom0.isChecked()
 
-        if self.qvm_collection.check_updates_vm != self.updates_vm.isChecked():
-            self.qvm_collection.check_updates_vm = self.updates_vm.isChecked()
+        if self.qubes_app.check_updates_vm != self.updates_vm.isChecked():
+            self.qubes_app.check_updates_vm = self.updates_vm.isChecked()
 
     def _manage_repos(self, repolist, action):
         for name in repolist:

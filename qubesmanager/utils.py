@@ -33,9 +33,20 @@ from qubesadmin import events
 from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
 
 
+#TODO: remove
 def _filter_internal(vm):
     return (not vm.klass == 'AdminVM'
             and not vm.features.get('internal', False))
+
+
+def is_internal(vm):
+    return (vm.klass == 'AdminVM'
+            or vm.features.get('internal', False))
+
+
+def translate(string):
+    return QtCore.QCoreApplication.translate(
+        "ManagerUtils", string)
 
 
 class SizeSpinBox(QtWidgets.QSpinBox):
@@ -71,34 +82,109 @@ class SizeSpinBox(QtWidgets.QSpinBox):
 def get_boolean_feature(vm, feature_name):
     result = vm.features.get(feature_name, None)
     if result is not None:
-        try:
-            result = bool(result)
-        except ValueError:
-            result = None
+        result = bool(result)
     return result
 
-def prepare_choice_data(widget,
-                        choices,
-                        selected_value=None):
+# TODO: doublecheck translation
+
+
+def did_widget_selection_change(widget):
+    return not translate(" (current)") in widget.currentText()
+
+
+def initialize_widget(widget, choices,
+                      selected_value=None):
     """
-    populates widget (ListBox or ComboBox) with items
+    populates widget (ListBox or ComboBox) with items. Previous widget contents
+    are erased.
     :param widget: widget to populate
     :param choices: list of tuples (text, value) to use to populate widget
     :param selected_value: value to populate widget with
     :return:
     """
 
-    while widget.count() > 0:
-        widget.removeItem(0)
+    widget.clear()
+    selected_item = None
 
     for (name, value) in choices:
+        if value == selected_value:
+            selected_item = name
         widget.addItem(name, value)
 
-    if widget.findData(selected_value) > -1:
-        widget.setCurrentIndex(widget.findData(selected_value))
+    if selected_item is not None:
+        widget.setCurrentIndex(widget.findText(selected_item))
     else:
-        widget.addItem(selected_value, selected_value)
-        widget.setCurrentIndex(widget.findData(selected_value))
+        widget.addItem(str(selected_value), selected_value)
+        widget.setCurrentIndex(widget.findText(str(selected_value)))
+
+    widget.setItemText(widget.currentIndex(),
+                       widget.currentText() + translate(" (current)"))
+
+
+def initialize_widget_for_property(
+        widget, choices, holder, property_name, allow_default=False):
+    # potentially add default
+    if allow_default:
+        default_property = holder.property_get_default(property_name)
+        if default_property is None:
+            default_property = "none"
+        choices.append(
+            (translate("default ({})").format(default_property),
+             qubesadmin.DEFAULT))
+
+    # calculate current (can be default)
+    if holder.property_is_default(property_name):
+        current_value = qubesadmin.DEFAULT
+    else:
+        current_value = getattr(holder, property_name)
+
+    initialize_widget(widget, choices, selected_value=current_value)
+
+
+def initialize_widget_with_vms(widget,
+                               qubes_app,
+                               filter_function=(lambda x: True),
+                               allow_none=False,
+                               holder=None,
+                               property_name=None,
+                               allow_default=False,
+                               allow_internal=False):
+    choices = []
+
+    for vm in qubes_app.domains:
+        if not allow_internal and is_internal(vm):
+            continue
+        if not filter_function(vm):
+            continue
+        else:
+            choices.append((vm.name, vm))
+
+    if allow_none:
+        choices.append((translate("(none)"), None))
+
+    initialize_widget_for_property(
+        widget=widget, choices=choices, holder=holder,
+        property_name=property_name, allow_default=allow_default)
+
+
+def initialize_widget_with_kernels(widget,
+                                   qubes_app,
+                                   allow_none=False,
+                                   holder=None,
+                                   property_name=None,
+                                   allow_default=False
+                                   ):
+    kernels = [kernel.vid for kernel in qubes_app.pools['linux-kernel'].volumes]
+    kernels = sorted(kernels, key=KernelVersion)
+
+    choices = [(kernel, kernel) for kernel in kernels]
+
+    if allow_none:
+        choices.append((translate("(none)"), None))
+
+    initialize_widget_for_property(
+        widget=widget, choices=choices, holder=holder,
+        property_name=property_name, allow_default=allow_default)
 
 
 def prepare_choice(widget, holder, propname, choice, default,

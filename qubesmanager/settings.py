@@ -775,7 +775,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         except AttributeError:
             self.run_in_debug_mode.setVisible(False)
 
-        utils.prepare_choice_data(
+        utils.initialize_widget(
             widget=self.allow_fullscreen,
             choices=[
                 ('(use system default)', None),
@@ -785,7 +785,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             selected_value=utils.get_boolean_feature(self.vm,
                                                      'gui-allow-fullscreen'))
         self.allow_fullscreen_initial = self.allow_fullscreen.currentIndex()
-        utils.prepare_choice_data(
+        utils.initialize_widget(
             widget=self.allow_utf8,
             choices=[
                 ('(use system default)', None),

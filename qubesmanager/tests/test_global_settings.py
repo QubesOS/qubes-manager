@@ -39,7 +39,7 @@ class GlobalSettingsTest(unittest.TestCase):
                                                            self.qapp)
 
         self.setattr_patcher = unittest.mock.patch.object(
-            type(self.dialog.qvm_collection), "__setattr__")
+            type(self.dialog.qubes_app), "__setattr__")
         self.setattr_mock = self.setattr_patcher.start()
         self.addCleanup(self.setattr_patcher.stop)
 
@@ -244,7 +244,7 @@ class GlobalSettingsTest(unittest.TestCase):
         self.dialog.updates_dom0.setChecked(not current_state)
 
         with unittest.mock.patch.object(
-                type(self.dialog.qvm_collection.domains['dom0'].features),
+                type(self.dialog.qubes_app.domains['dom0'].features),
                 '__setitem__') as mock_features:
             self.__click_ok()
             mock_features.assert_called_once_with('service.qubes-update-check',
