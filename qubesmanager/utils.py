@@ -92,7 +92,7 @@ def did_widget_selection_change(widget):
     return not translate(" (current)") in widget.currentText()
 
 
-def initialize_widget(widget, choices, selected_value=None, icon_getter=None):
+def initialize_widget(widget, choices, selected_value=None, icon_getter=None, add_current_label=True):
     """
     populates widget (ListBox or ComboBox) with items. Previous widget contents
     are erased.
@@ -120,13 +120,14 @@ def initialize_widget(widget, choices, selected_value=None, icon_getter=None):
         widget.addItem(str(selected_value), selected_value)
         widget.setCurrentIndex(widget.findText(str(selected_value)))
 
-    widget.setItemText(widget.currentIndex(),
-                       widget.currentText() + translate(" (current)"))
+    if add_current_label:
+        widget.setItemText(widget.currentIndex(),
+                           widget.currentText() + translate(" (current)"))
 
 
 def initialize_widget_for_property(
         widget, choices, holder, property_name, allow_default=False,
-        icon_getter=None):
+        icon_getter=None, add_current_label=True):
     # potentially add default
     if allow_default:
         default_property = holder.property_get_default(property_name)
@@ -145,7 +146,8 @@ def initialize_widget_for_property(
     initialize_widget(widget,
                       choices,
                       selected_value=current_value,
-                      icon_getter=icon_getter)
+                      icon_getter=icon_getter,
+                      add_current_label=add_current_label)
 
 
 # TODO: add use icons here
@@ -172,6 +174,44 @@ def initialize_widget_with_vms(widget,
     initialize_widget_for_property(
         widget=widget, choices=choices, holder=holder,
         property_name=property_name, allow_default=allow_default)
+
+
+def initialize_widget_with_default(widget,
+                                   item_list,
+                                   filter_function=(lambda x: True),
+                                   add_none=False,
+                                   add_qubes_default=False,  # refers to qubesdamin.default
+                                   mark_existing_as_default=False, # needed because the default value can be none
+                                   default_value=None):
+    choices = []
+
+    for item in item_list:
+        if not filter_function(item):
+            continue
+        if mark_existing_as_default and item == default_value:
+            choices.append((translate("default ({})").format(item), item))
+        else:
+            choices.append((str(item), item))
+
+    if add_qubes_default:
+        choices.insert(0, (translate("default ({})").format(default_value),
+                           qubesadmin.DEFAULT))
+
+    if add_none:
+        if mark_existing_as_default and default_value is None:
+            choices.append((translate("default (none)"), None))
+        else:
+            choices.append((translate("(none)"), None))
+
+    if add_qubes_default:
+        selected_value = qubesadmin.DEFAULT
+    elif mark_existing_as_default:
+        selected_value = default_value
+    else:
+        selected_value = choices[0][1]
+
+    initialize_widget(
+        widget=widget, choices=choices, selected_value=selected_value, add_current_label=False)
 
 
 def initialize_widget_with_kernels(widget,
@@ -201,13 +241,23 @@ def initialize_widget_with_labels(widget,
     labels = sorted(qubes_app.labels.values(), key=lambda l: l.index)
     choices = [(label.name, label) for label in labels]
 
-    initialize_widget_for_property(
-        widget=widget,
-        choices=choices,
-        holder=holder,
-        property_name=property_name,
-        icon_getter=(lambda label:
-                     QtGui.QIcon.fromTheme(label.icon)))
+    icon_getter = (lambda label:
+                   QtGui.QIcon.fromTheme(label.icon))
+
+    if holder:
+        initialize_widget_for_property(
+            widget=widget,
+            choices=choices,
+            holder=holder,
+            property_name=property_name,
+            icon_getter=icon_getter)
+    else:
+        initialize_widget(widget=widget,
+                          choices=choices,
+                          selected_value=labels[0],
+                          icon_getter=icon_getter,
+                          add_current_label=False)
+
 
 
 def prepare_choice(widget, holder, propname, choice, default,

@@ -41,6 +41,7 @@ class CreateVMThread(QtCore.QThread):
     def __init__(self, app, vmclass, name, label, template, properties,
                  pool):
         QtCore.QThread.__init__(self)
+        print(vmclass, name, label, template, properties, pool)
         self.app = app
         self.vmclass = vmclass
         self.name = name
@@ -100,46 +101,38 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
         self.thread = None
         self.progress = None
 
-        # Theoretically we should be locking for writing here and unlock
-        # only after the VM creation finished. But the code would be
-        # more messy...
-        # Instead we lock for writing in the actual worker thread
-        self.label_list, self.label_idx = utils.prepare_label_choice(
-            self.label,
-            self.app, None,
-            None,
-            allow_default=False)
+        utils.initialize_widget_with_labels(
+            widget=self.label,
+            qubes_app=self.app)
 
-        self.template_list, self.template_idx = utils.prepare_vm_choice(
-            self.template_vm,
-            self.app, None,
-            self.app.default_template,
-            (lambda vm: vm.klass == 'TemplateVM'),
-            allow_internal=False, allow_default=True, allow_none=False)
+        utils.initialize_widget_with_default(
+            widget=self.template_vm,
+            item_list=self.app.domains,
+            filter_function=(lambda vm: not utils.is_internal(vm) and vm.klass == 'TemplateVM'),
+            mark_existing_as_default=True,
+            default_value=self.app.default_template)
 
-        self.netvm_list, self.netvm_idx = utils.prepare_vm_choice(
-            self.netvm,
-            self.app, None,
-            self.app.default_netvm,
-            (lambda vm: vm.provides_network),
-            allow_internal=False, allow_default=True, allow_none=True)
+        utils.initialize_widget_with_default(
+            widget=self.netvm,
+            item_list=self.app.domains,
+            filter_function=(lambda vm: not utils.is_internal(vm) and vm.provides_network),
+            add_none=True,
+            add_qubes_default=True,
+            default_value=self.app.default_netvm)
 
-        self.pool_list, self.pool_idx = utils.prepare_choice(
+        utils.initialize_widget_with_default(
             widget=self.storage_pool,
-            holder=None,
-            propname=None,
-            choice=self.app.pools.values(),
-            default=self.app.default_pool,
-            allow_default=True,
-            allow_none=False
-        )
+            item_list=self.app.pools.values(),
+            add_qubes_default=True,
+            mark_existing_as_default=True,
+            default_value=self.app.default_pool)
 
         self.name.setValidator(QtGui.QRegExpValidator(
             QtCore.QRegExp("[a-zA-Z0-9_-]*", QtCore.Qt.CaseInsensitive), None))
         self.name.selectAll()
         self.name.setFocus()
 
-        if not self.template_list:
+        if self.template_vm.count() < 1:
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr('No template available!'),
@@ -147,10 +140,16 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
 
         # Order of types is important and used elsewhere; if it's changed
         # check for changes needed in self.type_change
-        type_list = [self.tr("Qube based on a template (AppVM)"),
-                     self.tr("Standalone qube copied from a template"),
-                     self.tr("Empty standalone qube (install your own OS)")]
-        self.vm_type.addItems(type_list)
+        type_list = [
+            (self.tr("Qube based on a template (AppVM)"), 'AppVM'),
+            (self.tr("Standalone qube copied from a template"),
+             'StandaloneVM-copy'),
+            (self.tr("Empty standalone qube (install your own OS)"),
+             'StandaloneVM-empty')]
+        utils.initialize_widget(widget=self.vm_type,
+                                choices=type_list,
+                                selected_value='AppVM',
+                                add_current_label=False)
 
         self.vm_type.currentIndexChanged.connect(self.type_change)
 
@@ -161,8 +160,8 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
         self.done(0)
 
     def accept(self):
-        vmclass = ('AppVM' if self.vm_type.currentIndex() == 0
-                   else 'StandaloneVM')
+        selected_type = self.vm_type.currentData()
+        vmclass = selected_type.split('-')[0]
 
         name = str(self.name.text())
 
@@ -174,25 +173,21 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
                         'system!').format(name))
             return
 
-        label = self.label_list[self.label.currentIndex()]
+        label = self.label.currentData()
 
-        if self.template_vm.currentIndex() == -1:
-            template = None
-        else:
-            template = self.template_list[self.template_vm.currentIndex()]
+        template = self.template_vm.currentData()
 
         properties = {'provides_network': self.provides_network.isChecked()}
         if self.netvm.currentIndex() != 0:
-            properties['netvm'] = self.netvm_list[self.netvm.currentIndex()]
+            properties['netvm'] = self.netvm.currentData()
 
         # Standalone - not based on a template
-        if self.vm_type.currentIndex() == 2:
+        if selected_type == 'StandaloneVM-empty':
             properties['virt_mode'] = 'hvm'
             properties['kernel'] = None
 
-        if self.pool_list[self.storage_pool.currentIndex()] is not \
-                qubesadmin.DEFAULT:
-            pool = self.pool_list[self.storage_pool.currentIndex()]
+        if self.storage_pool.currentData() is not qubesadmin.DEFAULT:
+            pool = self.storage_pool.currentData()
         else:
             pool = None
 
@@ -230,24 +225,21 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
                     ['qubes-vm-boot-from-device', str(self.name.text())])
 
     def type_change(self):
-        # AppVM
-        if self.vm_type.currentIndex() == 0:
+        if self.vm_type.currentData() == 'AppVM':
             self.template_vm.setEnabled(True)
             if self.template_vm.currentIndex() == -1:
                 self.template_vm.setCurrentIndex(0)
             self.install_system.setEnabled(False)
             self.install_system.setChecked(False)
 
-        # Standalone - based on a template
-        if self.vm_type.currentIndex() == 1:
+        if self.vm_type.currentData() == 'Standalone-copy':
             self.template_vm.setEnabled(True)
             if self.template_vm.currentIndex() == -1:
                 self.template_vm.setCurrentIndex(0)
             self.install_system.setEnabled(False)
             self.install_system.setChecked(False)
 
-        # Standalone - not based on a template
-        if self.vm_type.currentIndex() == 2:
+        if self.vm_type.currentData() == 'Standalone-empty':
             self.template_vm.setEnabled(False)
             self.template_vm.setCurrentIndex(-1)
             self.install_system.setEnabled(True)
