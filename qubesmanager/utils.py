@@ -92,14 +92,14 @@ def did_widget_selection_change(widget):
     return not translate(" (current)") in widget.currentText()
 
 
-def initialize_widget(widget, choices,
-                      selected_value=None):
+def initialize_widget(widget, choices, selected_value=None, icon_getter=None):
     """
     populates widget (ListBox or ComboBox) with items. Previous widget contents
     are erased.
     :param widget: widget to populate
     :param choices: list of tuples (text, value) to use to populate widget
     :param selected_value: value to populate widget with
+    :param icon_getter: function of value that returns desired icon
     :return:
     """
 
@@ -109,7 +109,10 @@ def initialize_widget(widget, choices,
     for (name, value) in choices:
         if value == selected_value:
             selected_item = name
-        widget.addItem(name, value)
+        if icon_getter is not None:
+            widget.addItem(icon_getter(value), name, userData=value)
+        else:
+            widget.addItem(name, userData=value)
 
     if selected_item is not None:
         widget.setCurrentIndex(widget.findText(selected_item))
@@ -122,7 +125,8 @@ def initialize_widget(widget, choices,
 
 
 def initialize_widget_for_property(
-        widget, choices, holder, property_name, allow_default=False):
+        widget, choices, holder, property_name, allow_default=False,
+        icon_getter=None):
     # potentially add default
     if allow_default:
         default_property = holder.property_get_default(property_name)
@@ -138,9 +142,13 @@ def initialize_widget_for_property(
     else:
         current_value = getattr(holder, property_name)
 
-    initialize_widget(widget, choices, selected_value=current_value)
+    initialize_widget(widget,
+                      choices,
+                      selected_value=current_value,
+                      icon_getter=icon_getter)
 
 
+# TODO: add use icons here
 def initialize_widget_with_vms(widget,
                                qubes_app,
                                filter_function=(lambda x: True),
@@ -156,8 +164,7 @@ def initialize_widget_with_vms(widget,
             continue
         if not filter_function(vm):
             continue
-        else:
-            choices.append((vm.name, vm))
+        choices.append((vm.name, vm))
 
     if allow_none:
         choices.append((translate("(none)"), None))
@@ -185,6 +192,22 @@ def initialize_widget_with_kernels(widget,
     initialize_widget_for_property(
         widget=widget, choices=choices, holder=holder,
         property_name=property_name, allow_default=allow_default)
+
+
+def initialize_widget_with_labels(widget,
+                                  qubes_app,
+                                  holder=None,
+                                  property_name='label'):
+    labels = sorted(qubes_app.labels.values(), key=lambda l: l.index)
+    choices = [(label.name, label) for label in labels]
+
+    initialize_widget_for_property(
+        widget=widget,
+        choices=choices,
+        holder=holder,
+        property_name=property_name,
+        icon_getter=(lambda label:
+                     QtGui.QIcon.fromTheme(label.icon)))
 
 
 def prepare_choice(widget, holder, propname, choice, default,

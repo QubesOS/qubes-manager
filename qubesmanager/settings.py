@@ -153,17 +153,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         self.tabWidget.currentChanged.connect(self.current_tab_changed)
 
-        # Initialize several auxillary variables for pylint's sake
-        self.netvm_idx = None
-        self.kernel_idx = None
-        self.label_idx = None
-        self.template_idx = None
-        self.root_img_size = None
-        self.priv_img_size = None
-        self.default_dispvm_idx = None
-        self.virt_mode_idx = None
-        self.virt_mode_list = None
-
         ###### basic tab
         self.__init_basic_tab__()
         self.rename_vm_button.clicked.connect(self.rename_vm)
@@ -226,7 +215,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     self.template_apps_change)
             self.warn_template_missing_apps.setVisible(
                 self.app_list_manager.has_missing)
-
 
     def setup_application(self):
         self.qapp.setApplicationName(self.tr("Qube Settings"))
@@ -361,9 +349,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
     # netvm -> networking_groupbox
     # hvm -> include_in_balancing
 
-    # TODO REMOVE
-    # other_groupbox
-
     def __init_basic_tab__(self):
         self.vmname.setText(self.vm.name)
         self.vmname.setValidator(
@@ -381,42 +366,41 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         if self.vm.qid == 0:
             self.vmlabel.setVisible(False)
         else:
-            self.label_list, self.label_idx = utils.prepare_label_choice(
-                self.vmlabel,
-                self.vm, 'label',
-                None,
-                allow_default=False
-                )
+            utils.initialize_widget_with_labels(
+                widget=self.vmlabel,
+                qubes_app=self.qubesapp,
+                holder=self.vm)
             self.vmlabel.setVisible(True)
             self.vmlabel.setEnabled(not self.vm.is_running())
 
         if self.vm.klass == 'AppVM':
-            self.template_list, self.template_idx = utils.prepare_vm_choice(
-                self.template_name,
-                self.vm, 'template',
-                self.vm.app.default_template,
-                (lambda vm: vm.klass == 'TemplateVM'),
-                allow_default=False, allow_none=False)
+            utils.initialize_widget_with_vms(
+                widget=self.template_name,
+                qubes_app=self.qubesapp,
+                filter_function=(lambda vm: vm.klass == 'TemplateVM'),
+                holder=self.vm,
+                property_name='template')
         elif self.vm.klass == 'DispVM':
-            self.template_list, self.template_idx = utils.prepare_vm_choice(
-                self.template_name,
-                self.vm, 'template',
-                self.vm.app.default_dispvm,
-                (lambda vm: getattr(vm, 'template_for_dispvms', False)),
-                allow_default=False, allow_none=False)
+            utils.initialize_widget_with_vms(
+                widget=self.template_name,
+                qubes_app=self.qubesapp,
+                filter_function=(lambda vm:
+                                 getattr(vm, 'template_for_dispvms', False)),
+                holder=self.vm,
+                property_name='template')
         else:
             self.template_name.setEnabled(False)
-            self.template_idx = -1
 
         if self.vm.is_running():
             self.template_name.setEnabled(False)
 
-        self.netvm_list, self.netvm_idx = utils.prepare_vm_choice(
-            self.netVM,
-            self.vm, 'netvm',
-            self.vm.app.default_netvm,
-            (lambda vm: vm.provides_network),
-            allow_default=True, allow_none=True)
+        utils.initialize_widget_with_vms(
+            widget=self.netVM,
+            qubes_app=self.qubesapp,
+            filter_function=(lambda vm: vm.provides_network),
+            holder=self.vm,
+            property_name='netvm',
+            allow_default=True)
 
         self.netVM.currentIndexChanged.connect(self.check_warn_dispvmnetvm)
 
@@ -476,27 +460,22 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         # vm label changed
         try:
             if self.vmlabel.isVisible():
-                if self.vmlabel.currentIndex() != self.label_idx:
-                    label = self.label_list[self.vmlabel.currentIndex()]
-                    self.vm.label = label
-                    self.label_idx = self.vmlabel.currentIndex()
+                if utils.did_widget_selection_change(self.vmlabel):
+                    self.vm.label = self.vmlabel.currentData()
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
         # vm template changed
         try:
-            if self.template_name.currentIndex() != self.template_idx:
-                self.vm.template = \
-                    self.template_list[self.template_name.currentIndex()]
-                self.template_idx = self.template_name.currentIndex()
+            if utils.did_widget_selection_change(self.template_name):
+                self.vm.template = self.template_name.currentData()
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
         # vm netvm changed
         try:
-            if self.netVM.currentIndex() != self.netvm_idx:
-                self.vm.netvm = self.netvm_list[self.netVM.currentIndex()]
-                self.netvm_idx = self.netVM.currentIndex()
+            if utils.did_widget_selection_change(self.netVM):
+                self.vm.netvm = self.netVM.currentData()
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
@@ -565,9 +544,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         if not hasattr(self.vm, 'default_dispvm'):
             self.warn_netvm_dispvm.setVisible(False)
             return
-        dispvm = self.default_dispvm_list[
-            self.default_dispvm.currentIndex()]
-        own_netvm = self.netvm_list[self.netVM.currentIndex()]
+        dispvm = self.default_dispvm.currentData()
+        own_netvm = self.netVM.currentData()
 
         if dispvm == qubesadmin.DEFAULT:
             dispvm = self.vm.property_get_default('default_dispvm')
@@ -687,7 +665,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.progress.setModal(True)
             self.thread_closes = True
             self.progress.show()
-
+# TODO: maybe this can not be repeated all the time?
             thread.start()
 
     ######### advanced tab
@@ -715,10 +693,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         # in case VM is HVM
         if hasattr(self.vm, "kernel"):
             self.kernel_groupbox.setVisible(True)
-            self.kernel_list, self.kernel_idx = utils.prepare_kernel_choice(
-                self.kernel, self.vm, 'kernel',
-                None,
-                allow_default=True, allow_none=True)
+            utils.initialize_widget_with_kernels(
+                widget=self.kernel,
+                qubes_app=self.qubesapp,
+                allow_none=True,
+                allow_default=True,
+                holder=self.vm,
+                property_name='kernel')
             self.kernel.currentIndexChanged.connect(self.kernel_changed)
             self.kernel_opts.setText(getattr(self.vm, 'kernelopts', '-'))
         else:
@@ -730,13 +711,16 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.other_groupbox.setVisible(False)
         else:
             self.other_groupbox.setVisible(True)
-            self.default_dispvm_list, self.default_dispvm_idx = \
-                utils.prepare_vm_choice(
-                    self.default_dispvm,
-                    self.vm, 'default_dispvm',
-                    None,
-                    (lambda vm: getattr(vm, 'template_for_dispvms', False)),
-                    allow_default=True, allow_none=True)
+            utils.initialize_widget_with_vms(
+                widget=self.default_dispvm,
+                qubes_app=self.qubesapp,
+                filter_function=(lambda vm:
+                                 getattr(vm, 'template_for_dispvms', False)),
+                allow_none=True,
+                allow_default=True,
+                holder=self.vm,
+                property_name='default_dispvm'
+            )
             self.default_dispvm.currentIndexChanged.connect(
                 self.check_warn_dispvmnetvm)
 
@@ -831,26 +815,20 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         # in case VM is not Linux
         if hasattr(self.vm, "kernel") and self.kernel_groupbox.isVisible():
             try:
-                if self.kernel.currentIndex() != self.kernel_idx:
-                    self.vm.kernel = self.kernel_list[
-                        self.kernel.currentIndex()]
-                    self.kernel_idx = self.kernel.currentIndex()
+                if utils.did_widget_selection_change(self.kernel):
+                    self.vm.kernel = self.kernel.currentData()
             except qubesadmin.exc.QubesException as ex:
                 msg.append(str(ex))
 
         # vm default_dispvm changed
         try:
-            if self.default_dispvm.currentIndex() != self.default_dispvm_idx:
-                self.vm.default_dispvm = \
-                    self.default_dispvm_list[self.default_dispvm.currentIndex()]
-                self.default_dispvm_idx = self.default_dispvm.currentIndex()
+            if utils.did_widget_selection_change(self.default_dispvm):
+                self.vm.default_dispvm = self.default_dispvm.currentData()
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
-
         try:
-            if self.virt_mode.currentIndex() != self.virt_mode_idx:
-                self.vm.virt_mode = self.selected_virt_mode()
-                self.virt_mode_idx = self.virt_mode.currentIndex()
+            if utils.did_widget_selection_change(self.virt_mode):
+                self.vm.virt_mode = self.virt_mode.currentData()
         except Exception as ex:  # pylint: disable=broad-except
             msg.append(str(ex))
 
@@ -922,22 +900,20 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.save_and_apply()
         subprocess.check_call(['qubes-vm-boot-from-device', self.vm.name])
 
-    def selected_virt_mode(self):
-        return self.virt_mode_list[self.virt_mode.currentIndex()]
-
     def virt_mode_changed(self, new_idx):  # pylint: disable=unused-argument
         self.update_pv_warning()
         self.update_pvh_dont_support_devs()
         self.update_pvh_kernel_ver_warning()
 
     def update_pv_warning(self):
-        if self.selected_virt_mode() == 'PV':
+        if self.virt_mode.currentData() == 'pv':
             self.pv_warning.show()
         else:
             self.pv_warning.hide()
 
     def update_virt_mode_list(self):
-        choices = ['HVM', 'PV']
+        choices = [('HVM', 'hvm'),
+                   ('PV', 'pv')]
 
         if hasattr(self, "dev_list"):
             devs_attached = self.dev_list.selected_list.count() != 0
@@ -947,23 +923,22 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         if devs_attached:
             self.pvh_mode_hidden.show()
         else:
-            choices.insert(0, 'PVH')
+            choices.insert(0, ('PVH', 'pvh'))
             self.pvh_mode_hidden.hide()
 
-        if self.virt_mode_list:
-            old_mode = self.selected_virt_mode()
+        old_mode = self.virt_mode.currentData()
+        if old_mode:
             self.virt_mode.currentIndexChanged.disconnect()
-        else:
-            old_mode = None
 
-        self.virt_mode.clear()
-
-        self.virt_mode_list, self.virt_mode_idx = utils.prepare_choice(
-            self.virt_mode, self.vm, 'virt_mode', choices, None,
-            allow_default=True, transform=(lambda x: str(x).upper()))
+        utils.initialize_widget_for_property(
+            widget=self.virt_mode,
+            choices=choices,
+            holder=self.vm,
+            property_name='virt_mode',
+            allow_default=True)
 
         if old_mode is not None:
-            self.virt_mode.setCurrentIndex(self.virt_mode_list.index(old_mode))
+            self.virt_mode.setCurrentIndex(self.virt_mode.findData(old_mode))
 
         self.virt_mode.currentIndexChanged.connect(self.virt_mode_changed)
 
@@ -971,11 +946,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.update_pvh_kernel_ver_warning()
 
     def update_pvh_kernel_ver_warning(self):
-        if self.selected_virt_mode() != 'PVH':
+        if self.virt_mode.currentData() != 'pvh':
             self.pvh_kernel_version_warning.hide()
             return
 
-        kernel = self.kernel_list[self.kernel.currentIndex()]
+        kernel = self.kernel.currentData()
 
         if self.pvh_kernel_version_ok(kernel):
             self.pvh_kernel_version_warning.hide()
@@ -1116,7 +1091,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.update_virt_mode_list()
 
     def update_pvh_dont_support_devs(self):
-        if self.selected_virt_mode() == 'PVH':
+        if self.virt_mode.currentData() == 'pvh':
             self.dev_list.setEnabled(False)
             self.pvh_dont_support_devs.setVisible(True)
         else:
@@ -1156,7 +1131,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
     def template_apps_change(self):
         if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
             self.app_list_manager.fill_apps_list(
-                template=self.template_list[self.template_name.currentIndex()])
+                template=self.template_name.currentData())
             # add a label to show
             self.warn_template_missing_apps.setVisible(
                 self.app_list_manager.has_missing)
