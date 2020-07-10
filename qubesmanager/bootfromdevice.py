@@ -58,8 +58,7 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
         if self.blockDeviceRadioButton.isChecked():
             cdrom_location = self.blockDeviceComboBox.currentText()
         elif self.fileRadioButton.isChecked():
-            cdrom_location = str(
-                self.vm_list[self.fileVM.currentIndex()]) + \
+            cdrom_location = str(self.fileVM.currentData()) + \
                              ":" + self.pathText.text()
         else:
             QtWidgets.QMessageBox.warning(
@@ -93,22 +92,20 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
         self.fileRadioButton.clicked.connect(self.radio_button_clicked)
         self.selectFileButton.clicked.connect(self.select_file_dialog)
 
-        self.vm_list, self.vm_idx = utils.prepare_vm_choice(
-            self.fileVM,
-            self.vm, None,
-            None,
-            None,
-            allow_default=False, allow_none=False)
+        utils.initialize_widget_with_vms(
+            widget=self.fileVM,
+            qubes_app=self.qubesapp,
+            allow_internal=True
+        )
 
-        self.block_list, self.block_idx = utils.prepare_choice(
-            self.blockDeviceComboBox,
-            self.vm,
-            None,
-            [device for domain in self.vm.app.domains
-             for device in domain.devices["block"]],
-            None,
-            None,
-            allow_default=False, allow_none=False
+        device_choice = [(str(device), device) for domain in self.vm.app.domains
+             for device in domain.devices["block"]]
+
+        utils.initialize_widget(
+            widget=self.blockDeviceComboBox,
+            choices=device_choice,
+            selected_value=device_choice[0][1],
+            add_current_label=False
         )
 
     def radio_button_clicked(self):
@@ -119,7 +116,7 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
         self.pathText.setEnabled(self.fileRadioButton.isChecked())
 
     def select_file_dialog(self):
-        backend_vm = self.vm_list[self.fileVM.currentIndex()]
+        backend_vm = self.fileVM.currentData()
         error_occurred = False
 
         try:

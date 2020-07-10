@@ -41,7 +41,6 @@ class CreateVMThread(QtCore.QThread):
     def __init__(self, app, vmclass, name, label, template, properties,
                  pool):
         QtCore.QThread.__init__(self)
-        print(vmclass, name, label, template, properties, pool)
         self.app = app
         self.vmclass = vmclass
         self.name = name
@@ -54,18 +53,14 @@ class CreateVMThread(QtCore.QThread):
     def run(self):
         try:
             if self.vmclass == 'StandaloneVM' and self.template is not None:
-                if self.template is qubesadmin.DEFAULT:
-                    src_vm = self.app.default_template
-                else:
-                    src_vm = self.template
-
                 args = {
                     'ignore_volumes': ['private']
                 }
                 if self.pool:
                     args['pool'] = self.pool
 
-                vm = self.app.clone_vm(src_vm, self.name, self.vmclass, **args)
+                vm = self.app.clone_vm(self.template, self.name,
+                                       self.vmclass, **args)
 
                 vm.label = self.label
                 for k, v in self.properties.items():
@@ -107,22 +102,22 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
 
         utils.initialize_widget_with_default(
             widget=self.template_vm,
-            item_list=self.app.domains,
-            filter_function=(lambda vm: not utils.is_internal(vm) and vm.klass == 'TemplateVM'),
+            choices=[(vm.name, vm) for vm in self.app.domains
+                     if not utils.is_internal(vm) and vm.klass == 'TemplateVM'],
             mark_existing_as_default=True,
             default_value=self.app.default_template)
 
         utils.initialize_widget_with_default(
             widget=self.netvm,
-            item_list=self.app.domains,
-            filter_function=(lambda vm: not utils.is_internal(vm) and vm.provides_network),
+            choices=[(vm.name, vm) for vm in self.app.domains
+                     if not utils.is_internal(vm) and vm.provides_network],
             add_none=True,
             add_qubes_default=True,
             default_value=self.app.default_netvm)
 
         utils.initialize_widget_with_default(
             widget=self.storage_pool,
-            item_list=self.app.pools.values(),
+            choices=[(str(pool), pool) for pool in self.app.pools.values()],
             add_qubes_default=True,
             mark_existing_as_default=True,
             default_value=self.app.default_pool)
@@ -232,14 +227,14 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
             self.install_system.setEnabled(False)
             self.install_system.setChecked(False)
 
-        if self.vm_type.currentData() == 'Standalone-copy':
+        if self.vm_type.currentData() == 'StandaloneVM-copy':
             self.template_vm.setEnabled(True)
             if self.template_vm.currentIndex() == -1:
                 self.template_vm.setCurrentIndex(0)
             self.install_system.setEnabled(False)
             self.install_system.setChecked(False)
 
-        if self.vm_type.currentData() == 'Standalone-empty':
+        if self.vm_type.currentData() == 'StandaloneVM-empty':
             self.template_vm.setEnabled(False)
             self.template_vm.setCurrentIndex(-1)
             self.install_system.setEnabled(True)

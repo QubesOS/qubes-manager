@@ -137,7 +137,7 @@ class GlobalSettingsTest(unittest.TestCase):
                 or widget.currentText().startswith("(none)"):
             widget.setCurrentIndex(widget.currentIndex() + 1)
 
-        return widget.currentText()
+        return widget.currentData()
 
     def __set_none(self, widget):
         widget.setCurrentIndex(0)

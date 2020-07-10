@@ -98,18 +98,17 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
 
         self.total_size = 0
 
-        self.target_vm_list, self.target_vm_idx = utils.prepare_vm_choice(
-            self.appvm_combobox,
-            self.qubes_app,
-            None,
-            self.qubes_app.domains['dom0'],
+        utils.initialize_widget_with_vms(
+            widget=self.appvm_combobox,
+            qubes_app=self.qubes_app,
             filter_function=(lambda vm:
                              vm.klass != 'TemplateVM'
                              and vm.is_running()
                              and not vm.features.get('internal', False)),
-            allow_default=False,
-            allow_none=False
+            allow_internal=True,
         )
+        self.appvm_combobox.setCurrentIndex(
+            self.appvm_combobox.findText("dom0"))
 
         self.unrecognized_config_label.setVisible(False)
         self.load_settings()

@@ -5,6 +5,8 @@
 # Copyright (C) 2012  Marek Marczykowski-Górecki
 #                       <marmarek@invisiblethingslab.com>
 # Copyright (C) 2017  Wojtek Porczyk <woju@invisiblethingslab.com>
+# Copyright (C) 2020  Marta Marczykowska-Górecka
+#                       <marmarta@invisiblethingslab.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,23 +35,33 @@ from qubesadmin import events
 from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
 
 
-#TODO: remove
-def _filter_internal(vm):
-    return (not vm.klass == 'AdminVM'
-            and not vm.features.get('internal', False))
-
+# important usage note: which initialize_widget should I use?
+# - if you want a list of VMs, use initialize_widget_with_vms, optionally
+#   adding a property if you want to handle qubesadmin.DEFAULT and the
+#   current (potentially default) value
+# - if you want a list of labels or kernals, use
+#       initialize_widget_with_kernels/labels
+# - list of some things, but associated with a definite property (optionally
+#       with qubesadmin.DEFAULT) - initialize_widget_for_property
+# - list of some things, not associated with a property, but still having a
+#       default - initialize_widget_with_default
+# - just a list, no properties or defaults, just a nice list with a "current"
+#       value - initialize_widget
 
 def is_internal(vm):
+    """checks if the VM is either an AdminVM or has the 'internal' features"""
     return (vm.klass == 'AdminVM'
             or vm.features.get('internal', False))
 
 
 def translate(string):
+    """helper function for translations"""
     return QtCore.QCoreApplication.translate(
         "ManagerUtils", string)
 
 
 class SizeSpinBox(QtWidgets.QSpinBox):
+    """A SpinBox subclass with extended handling for sizes in MB and GB"""
     # pylint: disable=invalid-name, no-self-use
     def __init__(self, *args, **kwargs):
         super(SizeSpinBox, self).__init__(*args, **kwargs)
@@ -80,26 +92,32 @@ class SizeSpinBox(QtWidgets.QSpinBox):
 
 
 def get_boolean_feature(vm, feature_name):
+    """heper function to get a feature converted to a Bool if it does exist.
+    Necessary because of the true/false in features being coded as 1/empty
+    string."""
     result = vm.features.get(feature_name, None)
     if result is not None:
         result = bool(result)
     return result
 
-# TODO: doublecheck translation
-
 
 def did_widget_selection_change(widget):
+    """a simple heuristic to check if the widget text contains appropriately
+    translated 'current'"""
     return not translate(" (current)") in widget.currentText()
 
 
-def initialize_widget(widget, choices, selected_value=None, icon_getter=None, add_current_label=True):
+def initialize_widget(widget, choices, selected_value=None,
+                      icon_getter=None, add_current_label=True):
     """
     populates widget (ListBox or ComboBox) with items. Previous widget contents
     are erased.
-    :param widget: widget to populate
-    :param choices: list of tuples (text, value) to use to populate widget
-    :param selected_value: value to populate widget with
+    :param widget: QListBox or QComboBox; must support addItem and findText
+    :param choices: list of tuples (text, value) to use to populate widget.
+        text should be a string, value can be of any type, including None
+    :param selected_value: initial widget value
     :param icon_getter: function of value that returns desired icon
+    :param add_current_label: if initial value should be labelled as (current)
     :return:
     """
 
@@ -128,7 +146,23 @@ def initialize_widget(widget, choices, selected_value=None, icon_getter=None, ad
 def initialize_widget_for_property(
         widget, choices, holder, property_name, allow_default=False,
         icon_getter=None, add_current_label=True):
-    # potentially add default
+    """
+    populates widget (ListBox or ComboBox) with items, based on a listed
+    property. Supports discovering the system default for the given property
+    and handling qubesadmin.DEFAULT special value. Value of holder.property
+    will be set as current item. Previous widget contents are erased.
+    :param widget: QListBox or QComboBox; must support addItem and findText
+    :param choices: list of tuples (text, value) to use to populate widget.
+        text should be a string, value can be of any type, including None
+    :param holder: object to use as property_name's holder
+    :param property_name: name of the property
+    :param allow_default: boolean, should a position with qubesadmin.DEFAULT
+        be added; default False
+    :param icon_getter: a function applied to values (from choices) that
+        returns a QIcon to be used as a item icon; default None
+    :param add_current_label: if initial value should be labelled as (current)
+    :return:
+    """
     if allow_default:
         default_property = holder.property_get_default(property_name)
         if default_property is None:
@@ -150,15 +184,28 @@ def initialize_widget_for_property(
                       add_current_label=add_current_label)
 
 
-# TODO: add use icons here
-def initialize_widget_with_vms(widget,
-                               qubes_app,
-                               filter_function=(lambda x: True),
-                               allow_none=False,
-                               holder=None,
-                               property_name=None,
-                               allow_default=False,
-                               allow_internal=False):
+# TODO: improvement: add optional icon support
+def initialize_widget_with_vms(
+        widget, qubes_app, filter_function=(lambda x: True),
+        allow_none=False, holder=None, property_name=None,
+        allow_default=False, allow_internal=False):
+    """
+    populates widget (ListBox or ComboBox) with vm items, optionally based on
+    a given property. Supports discovering the system default for the property
+    and handling qubesadmin.DEFAULT special value. Value of holder.property
+    will be set as current item. Previous widget contents are erased.
+    :param widget: QListBox or QComboBox; must support addItem and findText
+    :param qubes_app: Qubes() object
+    :param filter_function: function used to filter vms; optional
+    :param allow_none: should a None option be added; default False
+    :param holder: object to use as property_name's holder
+    :param property_name: name of the property
+    :param allow_default: should a position with qubesadmin.DEFAULT be added;
+        default False
+    :param allow_internal: should AdminVMs and vms with feature 'internal' be
+        used
+    :return:
+    """
     choices = []
 
     for vm in qubes_app.domains:
@@ -171,34 +218,61 @@ def initialize_widget_with_vms(widget,
     if allow_none:
         choices.append((translate("(none)"), None))
 
-    initialize_widget_for_property(
-        widget=widget, choices=choices, holder=holder,
-        property_name=property_name, allow_default=allow_default)
+    if holder is None:
+        initialize_widget(widget,
+                          choices,
+                          selected_value=choices[0][1],
+                          add_current_label=False)
+    else:
+        initialize_widget_for_property(
+            widget=widget, choices=choices, holder=holder,
+            property_name=property_name, allow_default=allow_default)
 
 
-def initialize_widget_with_default(widget,
-                                   item_list,
-                                   filter_function=(lambda x: True),
-                                   add_none=False,
-                                   add_qubes_default=False,  # refers to qubesdamin.default
-                                   mark_existing_as_default=False, # needed because the default value can be none
-                                   default_value=None):
-    choices = []
+def initialize_widget_with_default(
+        widget, choices, add_none=False, add_qubes_default=False,
+        mark_existing_as_default=False, default_value=None):
+    """
+    populates widget (ListBox or ComboBox) with items. Used when there is no
+    corresponding property, but support for special qubesadmin.DEFAULT value
+    is still needed.
+    :param widget: QListBox or QComboBox; must support addItem and findText
+    :param choices: list of tuples (text, value) to use to populate widget.
+        text should be a string, value can be of any type, including None
+    :param add_none: should a 'None' position be added
+    :param add_qubes_default: should a qubesadmin.DEFAULT position be added
+        (requires default_value to be set to something meaningful)
+    :param mark_existing_as_default: should an existing value be marked
+        as default. If used with conjuction with add_qubes_default, the
+        default_value listed will be replaced by qubesadmin.DEFAULT
+    :param default_value: what value should be used as the default
+    :return:
+    """
+    added_existing = False
 
-    for item in item_list:
-        if not filter_function(item):
-            continue
-        if mark_existing_as_default and item == default_value:
-            choices.append((translate("default ({})").format(item), item))
-        else:
-            choices.append((str(item), item))
+    if mark_existing_as_default:
+        existing_default = [item for item in choices
+                            if item[1] == default_value]
+        if existing_default:
+            choices = [item for item in choices if item not in existing_default]
 
-    if add_qubes_default:
+            if add_qubes_default:
+                # if for some reason (e.g. storage pools) we want to mark an
+                # actual value as default and replace it with qubesadmin.DEFAULT
+                default_value = qubesadmin.DEFAULT
+
+            choices.insert(
+                0, (translate("default ({})").format(existing_default[0][0]),
+                    default_value))
+            added_existing = True
+
+    elif add_qubes_default:
         choices.insert(0, (translate("default ({})").format(default_value),
                            qubesadmin.DEFAULT))
 
     if add_none:
-        if mark_existing_as_default and default_value is None:
+        if mark_existing_as_default and default_value is None and \
+                not added_existing:
             choices.append((translate("default (none)"), None))
         else:
             choices.append((translate("(none)"), None))
@@ -211,16 +285,26 @@ def initialize_widget_with_default(widget,
         selected_value = choices[0][1]
 
     initialize_widget(
-        widget=widget, choices=choices, selected_value=selected_value, add_current_label=False)
+        widget=widget, choices=choices, selected_value=selected_value,
+        add_current_label=False)
 
 
-def initialize_widget_with_kernels(widget,
-                                   qubes_app,
-                                   allow_none=False,
-                                   holder=None,
-                                   property_name=None,
-                                   allow_default=False
-                                   ):
+def initialize_widget_with_kernels(
+        widget, qubes_app, allow_none=False, holder=None,
+        property_name=None, allow_default=False):
+    """
+    populates widget (ListBox or ComboBox) with kernel items, based on a given
+    property. Supports discovering the system default for the property
+    and handling qubesadmin.DEFAULT special value. Value of holder.property
+    will be set as current item. Previous widget contents are erased.
+    :param widget: QListBox or QComboBox; must support addItem and findText
+    :param qubes_app: Qubes() object
+    :param allow_none: should a None item be added
+    :param holder: object to use as property_name's holder
+    :param property_name: name of the property
+    :param allow_default: should a qubesadmin.DEFAULT item be added
+    :return:
+    """
     kernels = [kernel.vid for kernel in qubes_app.pools['linux-kernel'].volumes]
     kernels = sorted(kernels, key=KernelVersion)
 
@@ -234,10 +318,18 @@ def initialize_widget_with_kernels(widget,
         property_name=property_name, allow_default=allow_default)
 
 
-def initialize_widget_with_labels(widget,
-                                  qubes_app,
-                                  holder=None,
-                                  property_name='label'):
+def initialize_widget_with_labels(widget, qubes_app,
+                                  holder=None, property_name='label'):
+    """
+    populates widget (ListBox or ComboBox) with label items, optionally based
+    on a given property. Value of holder.property will be set as current item.
+    Previous widget contents are erased.
+    :param widget: QListBox or QComboBox; must support addItem and findText
+    :param qubes_app: Qubes() object
+    :param holder: object to use as property_name's holder; can be None
+    :param property_name: name of the property
+    :return:
+    """
     labels = sorted(qubes_app.labels.values(), key=lambda l: l.index)
     choices = [(label.name, label) for label in labels]
 
@@ -245,108 +337,17 @@ def initialize_widget_with_labels(widget,
                    QtGui.QIcon.fromTheme(label.icon))
 
     if holder:
-        initialize_widget_for_property(
-            widget=widget,
-            choices=choices,
-            holder=holder,
-            property_name=property_name,
-            icon_getter=icon_getter)
+        initialize_widget_for_property(widget=widget,
+                                       choices=choices,
+                                       holder=holder,
+                                       property_name=property_name,
+                                       icon_getter=icon_getter)
     else:
         initialize_widget(widget=widget,
                           choices=choices,
                           selected_value=labels[0],
                           icon_getter=icon_getter,
                           add_current_label=False)
-
-
-
-def prepare_choice(widget, holder, propname, choice, default,
-                   filter_function=None, *,
-                   icon_getter=None, allow_internal=None, allow_default=False,
-                   allow_none=False, transform=None):
-    # for newly created vms, set propname to None
-
-    # clear the widget, so that prepare_choice functions can be used
-    # to refresh widget values
-    while widget.count() > 0:
-        widget.removeItem(0)
-
-    debug(
-        'prepare_choice(widget={widget!r}, '
-        'holder={holder!r}, '
-        'propname={propname!r}, '
-        'choice={choice!r}, '
-        'default={default!r}, '
-        'filter_function={filter_function!r}, '
-        'icon_getter={icon_getter!r}, '
-        'allow_internal={allow_internal!r}, '
-        'allow_default={allow_default!r}, '
-        'allow_none={allow_none!r})'.format(**locals()))
-
-    if propname is not None and allow_default:
-        default = holder.property_get_default(propname)
-
-    if allow_internal is None:
-        allow_internal = propname is None or not propname.endswith('vm')
-
-    if propname is not None:
-        if holder.property_is_default(propname):
-            oldvalue = qubesadmin.DEFAULT
-        else:
-            oldvalue = getattr(holder, propname)
-            if oldvalue == '':
-                oldvalue = None
-            if transform is not None and oldvalue is not None:
-                oldvalue = transform(oldvalue)
-    else:
-        oldvalue = object()  # won't match for identity
-    idx = 0
-
-    choice_list = list(choice)[:]
-    if not allow_internal:
-        choice_list = filter(_filter_internal, choice_list)
-    if filter_function is not None:
-        choice_list = filter(filter_function, choice_list)
-    choice_list = list(choice_list)
-
-    if allow_default:
-        choice_list.insert(0, qubesadmin.DEFAULT)
-    if allow_none:
-        choice_list.append(None)
-
-    for i, item in enumerate(choice_list):
-        debug('i={} item={}'.format(i, item))
-        # 0: default (unset)
-        if item is qubesadmin.DEFAULT:
-            default_string = str(default) if default is not None else 'none'
-            if transform is not None:
-                default_string = transform(default_string)
-            text = QtCore.QCoreApplication.translate(
-                "ManagerUtils", 'default ({})').format(default_string)
-        # N+1: explicit None
-        elif item is None:
-            text = QtCore.QCoreApplication.translate("ManagerUtils", '(none)')
-        # 1..N: choices
-        else:
-            text = str(item)
-            if transform is not None:
-                text = transform(text)
-
-        if item == oldvalue:
-            text += QtCore.QCoreApplication.translate(
-                "ManagerUtils", ' (current)')
-            idx = i
-
-        widget.insertItem(i, text)
-
-        if icon_getter is not None:
-            icon = icon_getter(item)
-            if icon is not None:
-                widget.setItemIcon(i, icon)
-
-    widget.setCurrentIndex(idx)
-
-    return choice_list, idx
 
 
 class KernelVersion:  # pylint: disable=too-few-public-methods
@@ -368,42 +369,6 @@ class KernelVersion:  # pylint: disable=too-few-public-methods
             if self_content.isdigit() and other_content.isdigit():
                 return int(self_content) < int(other_content)
             return self_content < other_content
-
-
-def prepare_kernel_choice(widget, holder, propname, default, *args, **kwargs):
-    try:
-        app = holder.app
-    except AttributeError:
-        app = holder
-    kernels = [kernel.vid for kernel in app.pools['linux-kernel'].volumes]
-    kernels = sorted(kernels, key=KernelVersion)
-
-    return prepare_choice(
-        widget, holder, propname, kernels, default, *args, **kwargs)
-
-
-def prepare_label_choice(widget, holder, propname, default, *args, **kwargs):
-    try:
-        app = holder.app
-    except AttributeError:
-        app = holder
-
-    return prepare_choice(widget, holder, propname,
-                          sorted(app.labels.values(), key=lambda l: l.index),
-                          default, *args,
-                          icon_getter=(lambda label:
-                                       QtGui.QIcon.fromTheme(label.icon)),
-                          **kwargs)
-
-
-def prepare_vm_choice(widget, holder, propname, default, *args, **kwargs):
-    try:
-        app = holder.app
-    except AttributeError:
-        app = holder
-
-    return prepare_choice(widget, holder, propname, app.domains, default,
-                          *args, **kwargs)
 
 
 def is_debug():

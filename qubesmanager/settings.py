@@ -153,6 +153,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         self.tabWidget.currentChanged.connect(self.current_tab_changed)
 
+        # Initialize several auxillary variables for pylint's sake
+        self.root_img_size = None
+        self.priv_img_size = None
+
         ###### basic tab
         self.__init_basic_tab__()
         self.rename_vm_button.clicked.connect(self.rename_vm)
@@ -665,7 +669,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.progress.setModal(True)
             self.thread_closes = True
             self.progress.show()
-# TODO: maybe this can not be repeated all the time?
+# TODO: improvement: maybe this can be refactored into less repetition?
             thread.start()
 
     ######### advanced tab

@@ -67,7 +67,7 @@ class NewVmTest(unittest.TestCase):
 
         self.mock_thread.assert_called_once_with(
             self.qapp, "AppVM", "test-vm",
-            unittest.mock.ANY, qubesadmin.DEFAULT,
+            unittest.mock.ANY, self.qapp.default_template,
             {'provides_network': False}, unittest.mock.ANY)
         self.mock_thread().start.assert_called_once_with()
 
@@ -82,7 +82,7 @@ class NewVmTest(unittest.TestCase):
 
         self.mock_thread.assert_called_once_with(
             self.qapp, "AppVM", "test-vm",
-            self.qapp.labels['blue'], qubesadmin.DEFAULT,
+            self.qapp.labels['blue'], self.qapp.default_template,
             unittest.mock.ANY, unittest.mock.ANY)
         self.mock_thread().start.assert_called_once_with()
 
