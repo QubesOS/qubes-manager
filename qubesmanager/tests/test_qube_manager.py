@@ -30,6 +30,8 @@ import datetime
 import time
 
 from PyQt5 import QtTest, QtCore, QtWidgets
+from PyQt5.QtCore import (Qt)
+
 from qubesadmin import Qubes, events, exc
 import qubesmanager.qube_manager as qube_manager
 from qubesmanager.tests import init_qtapp
@@ -58,14 +60,14 @@ class QubeManagerTest(unittest.TestCase):
     def test_001_correct_vms_listed(self):
         vms_in_table = []
 
-        for row in range(self.dialog.table.rowCount()):
-            vm = self._get_table_item(row, "Name").vm
+        for row in range(self.dialog.table.model().rowCount()):
+            vm = self._get_table_vminfo(row)
             self.assertIsNotNone(vm)
             vms_in_table.append(vm.name)
 
             # check that name is listed correctly
             name_item = self._get_table_item(row, "Name")
-            self.assertEqual(name_item.text(), vm.name,
+            self.assertEqual(name_item, vm.name,
                              "Incorrect VM name for {}".format(vm.name))
 
         actual_vms = [vm.name for vm in self.qapp.domains]
@@ -76,39 +78,39 @@ class QubeManagerTest(unittest.TestCase):
                              "Incorrect VMs loaded")
 
     def test_002_correct_template_listed(self):
-        for row in range(self.dialog.table.rowCount()):
-            vm = self._get_table_item(row, "Name").vm
+        for row in range(self.dialog.table.model().rowCount()):
+            vm = self._get_table_vminfo(row)
             # check that template is listed correctly
             template_item = self._get_table_item(row, "Template")
             if getattr(vm, "template", None):
                 self.assertEqual(vm.template,
-                                 template_item.text(),
+                                 template_item,
                                  "Incorrect template for {}".format(vm.name))
             else:
-                self.assertEqual(vm.klass, template_item.text(),
+                self.assertEqual(vm.klass, template_item,
                                  "Incorrect class for {}".format(vm.name))
 
     def test_003_correct_netvm_listed(self):
-        for row in range(self.dialog.table.rowCount()):
-            vm = self._get_table_item(row, "Name").vm
+        for row in range(self.dialog.table.model().rowCount()):
+            vm = self._get_table_vminfo(row)
 
             # check that netvm is listed correctly
             netvm_item = self._get_table_item(row, "NetVM")
-            netvm_value = getattr(vm, "netvm", None)
-            netvm_value = "n/a" if not netvm_value else netvm_value
-            if netvm_value and hasattr(vm, "netvm") \
-                    and vm.property_is_default("netvm"):
-                netvm_value = "default ({})".format(netvm_value)
+            netvm_value = getattr(vm, "netvm", "n/a")
+
+            #if netvm_value and hasattr(vm, "netvm") \
+            #        and vm.property_is_default("netvm"):
+            #    netvm_value = "default ({})".format(netvm_value)
 
             self.assertEqual(netvm_value,
-                             netvm_item.text(),
+                             netvm_item,
                              "Incorrect netvm for {}".format(vm.name))
 
     def test_004_correct_disk_usage_listed(self):
-        for row in range(self.dialog.table.rowCount()):
-            vm = self._get_table_item(row, "Name").vm
+        for row in range(self.dialog.table.model().rowCount()):
+            vm = self._get_table_vminfo(row)
 
-            size_item = self._get_table_item(row, "Size")
+            size_item = self._get_table_item(row, "Disk Usage")
             if vm.klass == 'AdminVM':
                 size_value = "n/a"
             else:
@@ -116,22 +118,22 @@ class QubeManagerTest(unittest.TestCase):
                 size_value = str(size_value) + " MiB"
 
             self.assertEqual(size_value,
-                             size_item.text(),
+                             size_item,
                              "Incorrect size for {}".format(vm.name))
 
     def test_005_correct_internal_listed(self):
-        for row in range(self.dialog.table.rowCount()):
-            vm = self._get_table_item(row, "Name").vm
+        for row in range(self.dialog.table.model().rowCount()):
+            vm = self._get_table_vminfo(row)
 
             internal_item = self._get_table_item(row, "Internal")
             internal_value = "Yes" if vm.features.get('internal', False) else ""
 
-            self.assertEqual(internal_item.text(), internal_value,
+            self.assertEqual(internal_item, internal_value,
                              "Incorrect internal value for {}".format(vm.name))
 
     def test_006_correct_ip_listed(self):
-        for row in range(self.dialog.table.rowCount()):
-            vm = self._get_table_item(row, "Name").vm
+        for row in range(self.dialog.table.model().rowCount()):
+            vm = self._get_table_vminfo(row)
 
             ip_item = self._get_table_item(row, "IP")
             if hasattr(vm, 'ip'):
@@ -140,24 +142,24 @@ class QubeManagerTest(unittest.TestCase):
             else:
                 ip_value = "n/a"
 
-            self.assertEqual(ip_value, ip_item.text(),
+            self.assertEqual(ip_value, ip_item,
                              "Incorrect ip value for {}".format(vm.name))
 
     def test_007_incl_in_backups_listed(self):
-        for row in range(self.dialog.table.rowCount()):
-            vm = self._get_table_item(row, "Name").vm
+        for row in range(self.dialog.table.model().rowCount()):
+            vm = self._get_table_vminfo(row)
 
             incl_backups_item = self._get_table_item(row, "Include in backups")
             incl_backups_value = getattr(vm, 'include_in_backups', False)
             incl_backups_value = "Yes" if incl_backups_value else ""
 
             self.assertEqual(
-                incl_backups_value, incl_backups_item.text(),
+                incl_backups_value, incl_backups_item,
                 "Incorrect include in backups value for {}".format(vm.name))
 
     def test_008_last_backup_listed(self):
-        for row in range(self.dialog.table.rowCount()):
-            vm = self._get_table_item(row, "Name").vm
+        for row in range(self.dialog.table.model().rowCount()):
+            vm = self._get_table_vminfo(row)
 
             last_backup_item = self._get_table_item(row, "Last backup")
             last_backup_value = getattr(vm, 'backup_timestamp', None)
@@ -165,16 +167,14 @@ class QubeManagerTest(unittest.TestCase):
             if last_backup_value:
                 last_backup_value = str(
                     datetime.datetime.fromtimestamp(last_backup_value))
-            else:
-                last_backup_value = ""
 
             self.assertEqual(
-                last_backup_value, last_backup_item.text(),
+                last_backup_value, last_backup_item,
                 "Incorrect last backup value for {}".format(vm.name))
 
     def test_009_def_dispvm_listed(self):
-        for row in range(self.dialog.table.rowCount()):
-            vm = self._get_table_item(row, "Name").vm
+        for row in range(self.dialog.table.model().rowCount()):
+            vm = self._get_table_vminfo(row)
 
             def_dispvm_item = self._get_table_item(row, "Default DispVM")
             if vm.property_is_default("default_dispvm"):
@@ -184,32 +184,32 @@ class QubeManagerTest(unittest.TestCase):
                 def_dispvm_value = getattr(vm, "default_dispvm", None)
 
             self.assertEqual(
-                str(def_dispvm_value), def_dispvm_item.text(),
+                def_dispvm_value, def_dispvm_item,
                 "Incorrect default dispvm value for {}".format(vm.name))
 
     def test_010_is_dvm_template_listed(self):
-        for row in range(self.dialog.table.rowCount()):
-            vm = self._get_table_item(row, "Name").vm
+        for row in range(self.dialog.table.model().rowCount()):
+            vm = self._get_table_vminfo(row)
 
             is_dvm_template_item = self._get_table_item(row, "Is DVM Template")
             is_dvm_template_value = "Yes" if \
                 getattr(vm, "template_for_dispvms", False) else ""
 
             self.assertEqual(
-                is_dvm_template_value, is_dvm_template_item.text(),
+                is_dvm_template_value, is_dvm_template_item,
                 "Incorrect is DVM template value for {}".format(vm.name))
 
     def test_011_is_label_correct(self):
-        for row in range(self.dialog.table.rowCount()):
-            vm = self._get_table_item(row, "Name").vm
+        for row in range(self.dialog.table.model().rowCount()):
+            vm = self._get_table_vminfo(row)
 
             label_item = self._get_table_item(row, "Label")
 
             self.assertEqual(label_item.icon_path, vm.label.icon)
 
     def test_012_is_state_correct(self):
-        for row in range(self.dialog.table.rowCount()):
-            vm = self._get_table_item(row, "Name").vm
+        for row in range(self.dialog.table.model().rowCount()):
+            vm = self._get_table_vminfo(row)
 
             state_item = self._get_table_item(row, "State")
 
@@ -245,17 +245,16 @@ class QubeManagerTest(unittest.TestCase):
             self.assertEqual(mock_warning.call_count, 1)
 
     def test_100_sorting(self):
-
-        self.dialog.table.sortByColumn(self.dialog.columns_indices["Template"],
-                                       QtCore.Qt.AscendingOrder)
+        col = self.dialog.qubes_model.columns_indices.index("Template")
+        self.dialog.table.sortByColumn(col, QtCore.Qt.AscendingOrder)
         self.__check_sorting("Template")
 
-        self.dialog.table.sortByColumn(self.dialog.columns_indices["Name"],
-                                       QtCore.Qt.AscendingOrder)
+        col = self.dialog.qubes_model.columns_indices.index("Name")
+        self.dialog.table.sortByColumn(col, QtCore.Qt.AscendingOrder)
         self.__check_sorting("Name")
 
-    @unittest.mock.patch('qubesmanager.qube_manager.QtCore.QSettings.setValue')
-    @unittest.mock.patch('qubesmanager.qube_manager.QtCore.QSettings.sync')
+    @unittest.mock.patch('qubesmanager.qube_manager.QSettings.setValue')
+    @unittest.mock.patch('qubesmanager.qube_manager.QSettings.sync')
     def test_101_hide_column(self, mock_sync, mock_settings):
         self.dialog.action_is_dvm_template.trigger()
         mock_settings.assert_called_with('columns/Is DVM Template', False)
@@ -486,7 +485,7 @@ class QubeManagerTest(unittest.TestCase):
 
         with unittest.mock.patch('qubesmanager.common_threads.RemoveVMThread')\
                 as mock_thread:
-            mock_input.return_value = (selected_vm.name, False)
+            mock_input.return_value = (selected_vm, False)
             action.trigger()
             self.assertEqual(mock_thread.call_count, 0,
                              "VM removed despite user clicking 'cancel")
@@ -766,7 +765,7 @@ class QubeManagerTest(unittest.TestCase):
         self.assertEqual(len(self.dialog.threads_list), 3)
 
     def test_400_event_domain_added(self):
-        number_of_vms = self.dialog.table.rowCount()
+        number_of_vms = self.dialog.table.model().rowCount()
 
         self.addCleanup(subprocess.call, ["qvm-remove", "-f", "test-vm"])
 
@@ -774,7 +773,7 @@ class QubeManagerTest(unittest.TestCase):
             ["qvm-create", "--label", "red", "test-vm"])
 
         # a single row was added to the table
-        self.assertEqual(self.dialog.table.rowCount(), number_of_vms + 1)
+        self.assertEqual(self.dialog.table.model().rowCount(), number_of_vms+1)
 
         # table contains the correct vms
         vms_in_table = self._create_set_of_current_vms()
@@ -790,7 +789,7 @@ class QubeManagerTest(unittest.TestCase):
         self.__check_sorting("Name")
 
         # try opening settings for the added vm
-        for row in range(self.dialog.table.rowCount()):
+        for row in range(self.dialog.table.model().rowCount()):
             name = self._get_table_item(row, "Name")
             if name.text() == "test-vm":
                 self.dialog.table.setCurrentItem(name)
@@ -996,7 +995,7 @@ class QubeManagerTest(unittest.TestCase):
             ["qvm-prefs", target_vm_name, "include_in_backups", str(new_value)])
 
         self.assertEqual(
-            self._get_table_item(vm_row, "Internal").text(),
+            self._get_table_item(vm_row, "Internal"),
             "Yes" if new_value else "",
             "Incorrect value for include_in_backups")
 
@@ -1005,7 +1004,7 @@ class QubeManagerTest(unittest.TestCase):
         target_timestamp = "2015-01-01 17:00:00"
         vm_row = self._find_vm_row(target_vm_name)
 
-        old_value = self._get_table_item(vm_row, "Last backup").text()
+        old_value = self._get_table_item(vm_row, "Last backup")
         new_value = datetime.datetime.strptime(
             target_timestamp, "%Y-%m-%d %H:%M:%S")
 
@@ -1017,10 +1016,10 @@ class QubeManagerTest(unittest.TestCase):
              str(int(new_value.timestamp()))])
 
         self.assertNotEqual(old_value,
-                            self._get_table_item(vm_row, "Last backup").text(),
+                            self._get_table_item(vm_row, "Last backup"),
                             "Last backup date did not change")
         self.assertEqual(
-            self._get_table_item(vm_row, "Last backup").text(),
+            self._get_table_item(vm_row, "Last backup"),
             target_timestamp,
             "Incorrect Last backup date")
 
@@ -1029,7 +1028,7 @@ class QubeManagerTest(unittest.TestCase):
         vm_row = self._find_vm_row(target_vm_name)
 
         old_default_dispvm =\
-            self._get_table_item(vm_row, "Default DispVM").text()
+            self._get_table_item(vm_row, "Default DispVM")
         new_default_dispvm = None
         for vm in self.qapp.domains:
             if getattr(vm, "template_for_dispvms", False) and vm.name !=\
@@ -1045,11 +1044,11 @@ class QubeManagerTest(unittest.TestCase):
 
         self.assertNotEqual(
             old_default_dispvm,
-            self._get_table_item(vm_row, "Default DispVM").text(),
+            self._get_table_item(vm_row, "Default DispVM"),
             "Default DispVM did not change")
 
         self.assertEqual(
-            self._get_table_item(vm_row, "Default DispVM").text(),
+            self._get_table_item(vm_row, "Default DispVM"),
             self.qapp.domains[target_vm_name].default_dispvm.name,
             "Incorrect Default DispVM")
 
@@ -1064,7 +1063,7 @@ class QubeManagerTest(unittest.TestCase):
             ["qvm-prefs", target_vm_name, "template_for_dispvms", "True"])
 
         self.assertEqual(
-            self._get_table_item(vm_row, "Is DVM Template").text(),
+            self._get_table_item(vm_row, "Is DVM Template"),
             "Yes",
             "Incorrect value for DVM Template")
 
@@ -1072,7 +1071,7 @@ class QubeManagerTest(unittest.TestCase):
             ["qvm-prefs", "--default", target_vm_name, "template_for_dispvms"])
 
         self.assertEqual(
-            self._get_table_item(vm_row, "Is DVM Template").text(),
+            self._get_table_item(vm_row, "Is DVM Template"),
             "",
             "Incorrect value for not DVM Template")
 
@@ -1116,7 +1115,7 @@ class QubeManagerTest(unittest.TestCase):
             if target_vm_name:
                 break
 
-        for i in range(self.dialog.table.rowCount()):
+        for i in range(self.dialog.table.model().rowCount()):
             self._get_table_item(i, "State").update_vm_state =\
                 unittest.mock.Mock()
 
@@ -1126,12 +1125,12 @@ class QubeManagerTest(unittest.TestCase):
         self._run_command_and_process_events(
             ["qvm-start", target_vm_name], timeout=60)
 
-        for i in range(self.dialog.table.rowCount()):
+        for i in range(self.dialog.table.model().rowCount()):
             call_count = self._get_table_item(
                 i, "State").update_vm_state.call_count
-            if self._get_table_item(i, "Template").text() == target_vm_name:
+            if self._get_table_item(i, "Template") == target_vm_name:
                 self.assertGreater(call_count, 0)
-            elif self._get_table_item(i, "Name").text() == target_vm_name:
+            elif self._get_table_item(i, "Name") == target_vm_name:
                 self.assertGreater(call_count, 0)
             else:
                 self.assertEqual(call_count, 0)
@@ -1168,15 +1167,15 @@ class QubeManagerTest(unittest.TestCase):
                             "Same logs found for dom0 and non-adminVM")
 
     def _find_vm_row(self, vm_name):
-        for row in range(self.dialog.table.rowCount()):
+        for row in range(self.dialog.table.model().rowCount()):
             name = self._get_table_item(row, "Name")
-            if name.text() == vm_name:
+            if name == vm_name:
                 return row
         return None
 
     def _count_visible_table_rows(self):
         result = 0
-        for i in range(self.dialog.table.rowCount()):
+        for i in range(self.dialog.table.model().rowCount()):
             if not self.dialog.table.isRowHidden(i):
                 result += 1
         return result
@@ -1210,54 +1209,53 @@ class QubeManagerTest(unittest.TestCase):
 
     def _create_set_of_current_vms(self):
         result = set()
-        for i in range(self.dialog.table.rowCount()):
-            result.add(self._get_table_item(i, "Name").vm.name)
+        for i in range(self.dialog.table.model().rowCount()):
+            result.add(self._get_table_item(i, "Name"))
         return result
 
     def _select_admin_vm(self):
-        for row in range(self.dialog.table.rowCount()):
-            template = self.dialog.table.item(
-                row, self.dialog.columns_indices["Template"])
-            if template.text() == 'AdminVM':
-                self.dialog.table.setCurrentItem(template)
-                return template.vm
+        for row in range(self.dialog.table.model().rowCount()):
+            template = self._get_table_item(row, "Template")
+            if template == 'AdminVM':
+                index = self.dialog.table.model().index(row, 0)
+                index = self.dialog.table.model().mapToSource(index)
+                self.dialog.table.setCurrentIndex(index)
+                return template
         return None
 
     def _select_non_admin_vm(self, running=None):
-        for row in range(self.dialog.table.rowCount()):
-            template = self.dialog.table.item(
-                row, self.dialog.columns_indices["Template"])
-            status = self.dialog.table.item(
-                row, self.dialog.columns_indices["State"])
-            if template.text() != 'AdminVM' and \
+        for row in range(self.dialog.table.model().rowCount()):
+            template = self._get_table_item(row, "Template")
+            vm = self._get_table_vminfo(row)
+            if template != 'AdminVM' and \
                     (running is None
-                     or (running and status.on_icon.status == 3)
-                     or (not running and status.on_icon.status != 3)):
-                self.dialog.table.setCurrentItem(template)
-                return template.vm
+                     or (running and vm.is_running())
+                     or (not running and not vm.is_running())):
+                index = self.dialog.table.model().index(row, 0)
+                index = self.dialog.table.model().mapToSource(index)
+                self.dialog.table.setCurrentIndex(index)
+                return template
         return None
 
     def _select_templatevm(self, running=None):
-        for row in range(self.dialog.table.rowCount()):
-            template = self.dialog.table.item(
-                row, self.dialog.columns_indices["Template"])
-            status = self.dialog.table.item(
-                row, self.dialog.columns_indices["State"])
-            if template.text() == 'TemplateVM' and \
+        for row in range(self.dialog.table.model().rowCount()):
+            template = self._get_table_item(row, "Template")
+            vm = self._get_table_vminfo(row)
+            if template == 'TemplateVM' and \
                     (running is None
-                     or (running and status.on_icon.status == 3)
-                     or (not running and status.on_icon.status != 3)):
+                     or (running and vm.is_running())
+                     or (not running and not vm.is_running())):
                 self.dialog.table.setCurrentItem(template)
-                return template.vm
+                return template
         return None
 
     def __check_sorting(self, column_name):
         last_text = None
         last_vm = None
-        for row in range(self.dialog.table.rowCount()):
+        for row in range(self.dialog.table.model().rowCount()):
 
-            vm = self._get_table_item(row, "Name").vm.name
-            text = self._get_table_item(row, column_name).text().lower()
+            vm = self._get_table_item(row, "Name")
+            text = self._get_table_item(row, column_name).lower()
 
             if row == 0:
                 self.assertEqual(vm, "dom0", "dom0 is not sorted first")
@@ -1276,15 +1274,14 @@ class QubeManagerTest(unittest.TestCase):
                 last_text = text
                 last_vm = vm
 
+    def _get_table_vminfo(self, row):
+        model = self.dialog.table.model()
+        return model.data(model.index(row, 0), Qt.UserRole).vm
+
     def _get_table_item(self, row, column_name):
-        value = self.dialog.table.cellWidget(
-            row, self.dialog.columns_indices[column_name])
-        if not value:
-            value = self.dialog.table.item(
-                row, self.dialog.columns_indices[column_name])
-
-        return value
-
+        model = self.dialog.table.model()
+        column = self.dialog.qubes_model.columns_indices.index(column_name)
+        return model.data(model.index(row, column))
 
 class QubeManagerThreadTest(unittest.TestCase):
     def test_01_startvm_thread(self):
