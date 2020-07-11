@@ -250,7 +250,7 @@ class VmInfo():
                 # this is a feature, not a property; TODO: fix event handling
                 self.internal = self.vm.features.get('internal', False)
             if not event or event.endswith(':ip'):
-                self.ip = getattr(self.vm, 'ip', None)
+                self.ip = getattr(self.vm, 'ip', "n/a")
             if not event or event.endswith(':include_in_backups'):
                 self.inc_backup = getattr(self.vm, 'include_in_backups', None)
             if not event or event.endswith(':backup_timestamp'):
@@ -265,14 +265,15 @@ class VmInfo():
             if not event or event.endswith(':template_for_dispvms'):
                 self.dvm_template = getattr(self.vm, 'template_for_dispvms',
                                             None)
-            if update_size_on_disk:
+            if self.qid != 0 and update_size_on_disk:
                 self.disk_float = float(self.vm.get_disk_utilization())
-                self.disk = str(round(self.disk_float/(1024*1024), 2)) + "MiB"
+                self.disk = str(round(self.disk_float/(1024*1024), 2)) + " MiB"
 
             if self.qid != 0:
                 self.virt_mode = self.vm.virt_mode
             else:
                 self.virt_mode = None
+                self.disk = "n/a"
         except exc.QubesPropertyAccessError:
             pass
         except exc.QubesDaemonNoResponseError:
