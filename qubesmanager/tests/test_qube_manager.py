@@ -791,8 +791,10 @@ class QubeManagerTest(unittest.TestCase):
         # try opening settings for the added vm
         for row in range(self.dialog.table.model().rowCount()):
             name = self._get_table_item(row, "Name")
-            if name.text() == "test-vm":
-                self.dialog.table.setCurrentItem(name)
+            if name == "test-vm":
+                index = self.dialog.table.model().index(row, 0)
+                index = self.dialog.table.model().mapToSource(index)
+                self.dialog.table.setCurrentIndex(index)
                 break
         with unittest.mock.patch('qubesmanager.settings.VMSettingsWindow')\
                 as mock_settings:
@@ -1245,7 +1247,9 @@ class QubeManagerTest(unittest.TestCase):
                     (running is None
                      or (running and vm.is_running())
                      or (not running and not vm.is_running())):
-                self.dialog.table.setCurrentItem(template)
+                index = self.dialog.table.model().index(row, 0)
+                index = self.dialog.table.model().mapToSource(index)
+                self.dialog.table.setCurrentIndex(index)
                 return template
         return None
 
