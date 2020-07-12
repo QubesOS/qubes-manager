@@ -1232,7 +1232,7 @@ class QubeManagerTest(unittest.TestCase):
                 index = self.dialog.table.model().index(row, 0)
                 index = self.dialog.table.model().mapToSource(index)
                 self.dialog.table.setCurrentIndex(index)
-                return template
+                return vm
         return None
 
     def _select_templatevm(self, running=None):
@@ -1246,7 +1246,7 @@ class QubeManagerTest(unittest.TestCase):
                 index = self.dialog.table.model().index(row, 0)
                 index = self.dialog.table.model().mapToSource(index)
                 self.dialog.table.setCurrentIndex(index)
-                return template
+                return vm
         return None
 
     def __check_sorting(self, column_name):
