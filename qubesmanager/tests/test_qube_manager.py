@@ -61,7 +61,7 @@ class QubeManagerTest(unittest.TestCase):
         vms_in_table = []
 
         for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vminfo(row)
+            vm = self._get_table_vm(row)
             self.assertIsNotNone(vm)
             vms_in_table.append(vm.name)
 
@@ -79,7 +79,7 @@ class QubeManagerTest(unittest.TestCase):
 
     def test_002_correct_template_listed(self):
         for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vminfo(row)
+            vm = self._get_table_vm(row)
             # check that template is listed correctly
             template_item = self._get_table_item(row, "Template")
             if getattr(vm, "template", None):
@@ -92,7 +92,7 @@ class QubeManagerTest(unittest.TestCase):
 
     def test_003_correct_netvm_listed(self):
         for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vminfo(row)
+            vm = self._get_table_vm(row)
 
             # check that netvm is listed correctly
             netvm_item = self._get_table_item(row, "NetVM")
@@ -108,7 +108,7 @@ class QubeManagerTest(unittest.TestCase):
 
     def test_004_correct_disk_usage_listed(self):
         for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vminfo(row)
+            vm = self._get_table_vm(row)
 
             size_item = self._get_table_item(row, "Disk Usage")
             if vm.klass == 'AdminVM':
@@ -123,7 +123,7 @@ class QubeManagerTest(unittest.TestCase):
 
     def test_005_correct_internal_listed(self):
         for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vminfo(row)
+            vm = self._get_table_vm(row)
 
             internal_item = self._get_table_item(row, "Internal")
             internal_value = "Yes" if vm.features.get('internal', False) else ""
@@ -133,7 +133,7 @@ class QubeManagerTest(unittest.TestCase):
 
     def test_006_correct_ip_listed(self):
         for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vminfo(row)
+            vm = self._get_table_vm(row)
 
             ip_item = self._get_table_item(row, "IP")
             if hasattr(vm, 'ip'):
@@ -147,7 +147,7 @@ class QubeManagerTest(unittest.TestCase):
 
     def test_007_incl_in_backups_listed(self):
         for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vminfo(row)
+            vm = self._get_table_vm(row)
 
             incl_backups_item = self._get_table_item(row, "Include in backups")
             incl_backups_value = getattr(vm, 'include_in_backups', False)
@@ -159,7 +159,7 @@ class QubeManagerTest(unittest.TestCase):
 
     def test_008_last_backup_listed(self):
         for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vminfo(row)
+            vm = self._get_table_vm(row)
 
             last_backup_item = self._get_table_item(row, "Last backup")
             last_backup_value = getattr(vm, 'backup_timestamp', None)
@@ -174,7 +174,7 @@ class QubeManagerTest(unittest.TestCase):
 
     def test_009_def_dispvm_listed(self):
         for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vminfo(row)
+            vm = self._get_table_vm(row)
 
             def_dispvm_item = self._get_table_item(row, "Default DispVM")
             if vm.property_is_default("default_dispvm"):
@@ -189,7 +189,7 @@ class QubeManagerTest(unittest.TestCase):
 
     def test_010_is_dvm_template_listed(self):
         for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vminfo(row)
+            vm = self._get_table_vm(row)
 
             is_dvm_template_item = self._get_table_item(row, "Is DVM Template")
             is_dvm_template_value = "Yes" if \
@@ -201,7 +201,7 @@ class QubeManagerTest(unittest.TestCase):
 
     def test_011_is_label_correct(self):
         for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vminfo(row)
+            vm = self._get_table_vm(row)
 
             label_item = self._get_table_item(row, "Label")
 
@@ -209,7 +209,7 @@ class QubeManagerTest(unittest.TestCase):
 
     def test_012_is_state_correct(self):
         for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vminfo(row)
+            vm = self._get_table_vm(row)
 
             state_item = self._get_table_item(row, "State")
 
@@ -1226,7 +1226,7 @@ class QubeManagerTest(unittest.TestCase):
     def _select_non_admin_vm(self, running=None):
         for row in range(self.dialog.table.model().rowCount()):
             template = self._get_table_item(row, "Template")
-            vm = self._get_table_vminfo(row)
+            vm = self._get_table_vm(row)
             if template != 'AdminVM' and \
                     (running is None
                      or (running and vm.is_running())
@@ -1240,7 +1240,7 @@ class QubeManagerTest(unittest.TestCase):
     def _select_templatevm(self, running=None):
         for row in range(self.dialog.table.model().rowCount()):
             template = self._get_table_item(row, "Template")
-            vm = self._get_table_vminfo(row)
+            vm = self._get_table_vm(row)
             if template == 'TemplateVM' and \
                     (running is None
                      or (running and vm.is_running())
@@ -1274,7 +1274,7 @@ class QubeManagerTest(unittest.TestCase):
                 last_text = text
                 last_vm = vm
 
-    def _get_table_vminfo(self, row):
+    def _get_table_vm(self, row):
         model = self.dialog.table.model()
         return model.data(model.index(row, 0), Qt.UserRole).vm
 
