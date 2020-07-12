@@ -891,7 +891,7 @@ class QubeManagerTest(unittest.TestCase):
         target_vm_name = "work"
         vm_row = self._find_vm_row(target_vm_name)
 
-        old_template = self._get_table_item(vm_row, "Template").text()
+        old_template = self._get_table_item(vm_row, "Template")
         new_template = None
         for vm in self.qapp.domains:
             if vm.klass == 'TemplateVM' and vm.name != old_template:
@@ -905,10 +905,10 @@ class QubeManagerTest(unittest.TestCase):
             ["qvm-prefs", target_vm_name, "template", new_template])
 
         self.assertNotEqual(old_template,
-                            self._get_table_item(vm_row, "Template").text(),
+                            self._get_table_item(vm_row, "Template"),
                             "Template did not change")
         self.assertEqual(
-            self._get_table_item(vm_row, "Template").text(),
+            self._get_table_item(vm_row, "Template"),
             self.qapp.domains[target_vm_name].template.name,
             "Incorrect template")
 
@@ -916,7 +916,7 @@ class QubeManagerTest(unittest.TestCase):
         target_vm_name = "work"
         vm_row = self._find_vm_row(target_vm_name)
 
-        old_netvm = self._get_table_item(vm_row, "NetVM").text()
+        old_netvm = self._get_table_item(vm_row, "NetVM")
         new_netvm = None
         for vm in self.qapp.domains:
             if getattr(vm, "provides_network", False) and vm.name != old_netvm:
@@ -929,10 +929,10 @@ class QubeManagerTest(unittest.TestCase):
             ["qvm-prefs", target_vm_name, "netvm", new_netvm])
 
         self.assertNotEqual(old_netvm,
-                            self._get_table_item(vm_row, "NetVM").text(),
+                            self._get_table_item(vm_row, "NetVM"),
                             "NetVM did not change")
         self.assertEqual(
-            self._get_table_item(vm_row, "NetVM").text(),
+            self._get_table_item(vm_row, "NetVM"),
             self.qapp.domains[target_vm_name].netvm.name,
             "Incorrect NetVM")
 
@@ -947,7 +947,7 @@ class QubeManagerTest(unittest.TestCase):
             ["qvm-features", "work", "interal", "1"])
 
         self.assertEqual(
-            self._get_table_item(vm_row, "Internal").text(),
+            self._get_table_item(vm_row, "Internal"),
             "Yes",
             "Incorrect value for internal VM")
 
@@ -955,7 +955,7 @@ class QubeManagerTest(unittest.TestCase):
             ["qvm-features", "--unset", "work", "interal"])
 
         self.assertEqual(
-            self._get_table_item(vm_row, "Internal").text(),
+            self._get_table_item(vm_row, "Internal"),
             "",
             "Incorrect value for non-internal VM")
 
@@ -963,7 +963,7 @@ class QubeManagerTest(unittest.TestCase):
         target_vm_name = "work"
         vm_row = self._find_vm_row(target_vm_name)
 
-        old_ip = self._get_table_item(vm_row, "IP").text()
+        old_ip = self._get_table_item(vm_row, "IP")
         new_ip = old_ip.replace(".0.", ".5.")
 
         self.addCleanup(
@@ -972,10 +972,10 @@ class QubeManagerTest(unittest.TestCase):
             ["qvm-prefs", target_vm_name, "ip", new_ip])
 
         self.assertNotEqual(old_ip,
-                            self._get_table_item(vm_row, "IP").text(),
+                            self._get_table_item(vm_row, "IP"),
                             "IP did not change")
         self.assertEqual(
-            self._get_table_item(vm_row, "IP").text(),
+            self._get_table_item(vm_row, "IP"),
             self.qapp.domains[target_vm_name].ip,
             "Incorrect IP")
 
