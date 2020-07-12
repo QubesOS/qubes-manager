@@ -1085,19 +1085,17 @@ class QubeManagerTest(unittest.TestCase):
         self._run_command_and_process_events(
             ["qvm-start", target_vm_name], timeout=60)
 
-        status_item = self._get_table_item(vm_row, "State")
+        displayed_state = self._get_table_item(vm_row, "State")
 
-        displayed_power_state = status_item.on_icon.status
-
-        self.assertEqual(displayed_power_state, 3,
+        self.assertEqual(displayed_state['power'], 'Running',
                          "Power state failed to update on start")
 
         self._run_command_and_process_events(
             ["qvm-shutdown", "--wait", target_vm_name], timeout=30)
 
-        displayed_power_state = status_item.on_icon.status
+        displayed_state = self._get_table_item(vm_row, "State")
 
-        self.assertEqual(displayed_power_state, 0,
+        self.assertEqual(displayed_state['power'], 'Halted',
                          "Power state failed to update on shutdown")
 
     def test_415_template_vm_started(self):
