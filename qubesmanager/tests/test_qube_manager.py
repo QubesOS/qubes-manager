@@ -784,8 +784,6 @@ class QubeManagerTest(unittest.TestCase):
                                                       "correctly after add")
 
         # check if sorting works
-        self.dialog.table.sortItems(self.dialog.columns_indices["Name"],
-                                    QtCore.Qt.AscendingOrder)
         self.__check_sorting("Name")
 
         # try opening settings for the added vm
@@ -817,8 +815,6 @@ class QubeManagerTest(unittest.TestCase):
         self.assertEqual(initial_vms, current_vms)
 
         # check if sorting works
-        self.dialog.table.sortItems(self.dialog.columns_indices["Name"],
-                                    QtCore.Qt.AscendingOrder)
         self.__check_sorting("Name")
 
     def test_403_event_dispvm_added(self):
