@@ -404,7 +404,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             filter_function=(lambda vm: vm.provides_network),
             holder=self.vm,
             property_name='netvm',
-            allow_default=True)
+            allow_default=True,
+            allow_none=True)
 
         self.netVM.currentIndexChanged.connect(self.check_warn_dispvmnetvm)
 
@@ -934,12 +935,18 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         if old_mode:
             self.virt_mode.currentIndexChanged.disconnect()
 
+        # due to how virtualization mode has uniquely different displayed and
+        # actual name of the default value, I will add it manually
+        choices.insert(0, (
+            "default ({})".format(
+                self.vm.property_get_default('virt_mode').upper()),
+            qubesadmin.DEFAULT))
+
         utils.initialize_widget_for_property(
             widget=self.virt_mode,
             choices=choices,
             holder=self.vm,
-            property_name='virt_mode',
-            allow_default=True)
+            property_name='virt_mode')
 
         if old_mode is not None:
             self.virt_mode.setCurrentIndex(self.virt_mode.findData(old_mode))
