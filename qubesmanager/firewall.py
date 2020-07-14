@@ -30,54 +30,12 @@ from . import ui_newfwruledlg  # pylint: disable=no-name-in-module
 class FirewallModifiedOutsideError(ValueError):
     pass
 
-class QIPAddressValidator(QtGui.QValidator):
-    # pylint: disable=too-few-public-methods
-    def __init__(self, parent=None):
-        super(QIPAddressValidator, self).__init__(parent)
-
-    def validate(self, input_string, pos):
-        # pylint: disable=too-many-return-statements,no-self-use
-        hostname = str(input_string)
-
-        if len(hostname) > 255 or not hostname:
-            return (QtGui.QValidator.Intermediate, input_string, pos)
-
-        if hostname == "*":
-            return (QtGui.QValidator.Acceptable, input_string, pos)
-
-        unmask = hostname.split("/", 1)
-        if len(unmask) == 2:
-            hostname = unmask[0]
-            mask = unmask[1]
-            if mask.isdigit() or mask == "":
-                if re.match(r"^([0-9]{1,3}\.){3}[0-9]{1,3}$", hostname) is None:
-                    return (QtGui.QValidator.Invalid, input_string, pos)
-                if mask != "":
-                    mask = int(unmask[1])
-                    if mask < 0 or mask > 32:
-                        return (QtGui.QValidator.Invalid, input_string, pos)
-            else:
-                return (QtGui.QValidator.Invalid, input_string, pos)
-
-        if hostname[-1:] == ".":
-            hostname = hostname[:-1]
-
-        if hostname[-1:] == "-":
-            return (QtGui.QValidator.Intermediate, input_string, pos)
-
-        allowed = re.compile(r"(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
-        if all(allowed.match(x) for x in hostname.split(".")):
-            return (QtGui.QValidator.Acceptable, input_string, pos)
-
-        return (QtGui.QValidator.Invalid, input_string, pos)
-
 class NewFwRuleDlg(QtGui.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
     def __init__(self, parent=None):
         super(NewFwRuleDlg, self).__init__(parent)
         self.setupUi(self)
 
         self.set_ok_state(False)
-        self.addressComboBox.setValidator(QIPAddressValidator())
         self.addressComboBox.editTextChanged.connect(
             self.address_editing_finished)
         self.serviceComboBox.setValidator(QtGui.QRegExpValidator(
@@ -92,8 +50,8 @@ class NewFwRuleDlg(QtGui.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
 
     def try_to_create_rule(self):
         # return True if successful, False otherwise
-        address = str(self.addressComboBox.currentText())
-        service = str(self.serviceComboBox.currentText())
+        address = str(self.addressComboBox.currentText().strip())
+        service = str(self.serviceComboBox.currentText().strip())
 
         rule = qubesadmin.firewall.Rule(None, action='accept')
 
