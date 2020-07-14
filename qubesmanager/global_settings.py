@@ -269,8 +269,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.vm_min_mem_val = parse_size(self.vm_min_mem_val)
         self.dom0_mem_boost_val = parse_size(self.dom0_mem_boost_val)
 
-        self.min_vm_mem.setValue(self.vm_min_mem_val / 1024 / 1024)
-        self.dom0_mem_boost.setValue(self.dom0_mem_boost_val / 1024 / 1024)
+        self.min_vm_mem.setValue(int(self.vm_min_mem_val / 1024 / 1024))
+        self.dom0_mem_boost.setValue(int(self.dom0_mem_boost_val / 1024 / 1024))
 
     def __apply_mem_defaults__(self):
 
