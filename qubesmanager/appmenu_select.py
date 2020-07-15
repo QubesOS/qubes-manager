@@ -28,8 +28,12 @@ from PyQt5 import QtWidgets, QtCore  # pylint: disable=import-error
 class AppListWidgetItem(QtWidgets.QListWidgetItem):
     def __init__(self, name, ident, tooltip=None, parent=None):
         super(AppListWidgetItem, self).__init__(name, parent)
-        if tooltip:
-            self.setToolTip(tooltip)
+        additional_description = ".desktop filename: " + str(ident)
+        if not tooltip:
+            tooltip = additional_description
+        else:
+            tooltip += "\n" + additional_description
+        self.setToolTip(tooltip)
         self.ident = ident
 
     @classmethod
