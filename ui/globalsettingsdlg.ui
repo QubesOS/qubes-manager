@@ -225,7 +225,31 @@
       <string>Updates</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
-      <item row="1" column="0">
+      <item row="0" column="2">
+       <widget class="QCheckBox" name="updates_vm">
+        <property name="toolTip">
+         <string>Default value for new qubes; to change it for existing qubes, use buttons below.</string>
+        </property>
+        <property name="text">
+         <string>Check for qube updates by default</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QComboBox" name="itl_tmpl_updates_repo">
+        <item>
+         <property name="text">
+          <string>ITL template updates</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>ITL template updates (testing)</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="1" column="1">
        <widget class="QComboBox" name="dom0_updates_repo">
         <item>
          <property name="text">
@@ -249,55 +273,14 @@
         </item>
        </widget>
       </item>
-      <item row="1" column="1">
+      <item row="1" column="2">
        <widget class="QPushButton" name="disable_updates_all">
         <property name="text">
          <string>Disable checking for updates for all qubes</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="0">
-       <widget class="QCheckBox" name="updates_dom0">
-        <property name="text">
-         <string>Check for dom0 updates</string>
-        </property>
-        <property name="tristate">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QCheckBox" name="updates_vm">
-        <property name="toolTip">
-         <string>Default value for new qubes; to change it for existing qubes, use buttons below.</string>
-        </property>
-        <property name="text">
-         <string>Check for qube updates by default</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="QPushButton" name="enable_updates_all">
-        <property name="text">
-         <string>Enable checking for updates for all qubes</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QComboBox" name="itl_tmpl_updates_repo">
-        <item>
-         <property name="text">
-          <string>ITL template updates</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>ITL template updates (testing)</string>
-         </property>
-        </item>
-       </widget>
-      </item>
-      <item row="3" column="0">
+      <item row="3" column="1">
        <widget class="QComboBox" name="comm_tmpl_updates_repo">
         <item>
          <property name="text">
@@ -314,6 +297,68 @@
           <string>Community template updates (testing)</string>
          </property>
         </item>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="QPushButton" name="enable_updates_all">
+        <property name="text">
+         <string>Enable checking for updates for all qubes</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_10">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>dom0 updates:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_11">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Templates:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_12">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Additional templates:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0" colspan="2">
+       <widget class="QCheckBox" name="updates_dom0">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+          <horstretch>1</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Check for dom0 updates</string>
+        </property>
+        <property name="tristate">
+         <bool>false</bool>
+        </property>
        </widget>
       </item>
      </layout>
