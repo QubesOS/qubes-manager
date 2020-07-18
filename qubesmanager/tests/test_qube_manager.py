@@ -281,9 +281,9 @@ class QubeManagerTest(unittest.TestCase):
         self.assertFalse(self.dialog.action_settings.isEnabled(),
                          "Settings not disabled for admin VM")
         self.assertFalse(self.dialog.action_editfwrules.isEnabled(),
-                         "Settings not disabled for admin VM")
+                         "Editfw not disabled for admin VM")
         self.assertFalse(self.dialog.action_appmenus.isEnabled(),
-                         "Settings not disabled for admin VM")
+                         "Appmenus not disabled for admin VM")
 
     @unittest.mock.patch('qubesmanager.settings.VMSettingsWindow')
     def test_202_vm_open_firewall(self, mock_window):
@@ -1111,9 +1111,10 @@ class QubeManagerTest(unittest.TestCase):
             if target_vm_name:
                 break
 
-        for i in range(self.dialog.table.model().rowCount()):
-            self._get_table_item(i, "State").update_vm_state =\
-                unittest.mock.Mock()
+        # TODO does this still needed?
+        #for i in range(self.dialog.table.model().rowCount()):
+        #    self._get_table_item(i, "State").update_vm_state =\
+        #        unittest.mock.Mock()
 
         self.addCleanup(
             subprocess.call,
@@ -1214,7 +1215,6 @@ class QubeManagerTest(unittest.TestCase):
             template = self._get_table_item(row, "Template")
             if template == 'AdminVM':
                 index = self.dialog.table.model().index(row, 0)
-                index = self.dialog.table.model().mapToSource(index)
                 self.dialog.table.setCurrentIndex(index)
                 return template
         return None
@@ -1228,7 +1228,6 @@ class QubeManagerTest(unittest.TestCase):
                      or (running and vm.is_running())
                      or (not running and not vm.is_running())):
                 index = self.dialog.table.model().index(row, 0)
-                index = self.dialog.table.model().mapToSource(index)
                 self.dialog.table.setCurrentIndex(index)
                 return vm
         return None
