@@ -248,12 +248,12 @@ p, li { white-space: pre-wrap; }
     <name>CloneVMThread</name>
     <message>
         <location filename="../common_threads.py" line="65"/>
-        <source>Sucess</source>
+        <source>Success</source>
         <translation type="unfinished"/>
     </message>
     <message>
         <location filename="../common_threads.py" line="65"/>
-        <source>The qube was cloned sucessfully.</source>
+        <source>The qube was cloned successfully.</source>
         <translation type="unfinished"/>
     </message>
     <message>
