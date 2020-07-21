@@ -62,8 +62,8 @@ class CloneVMThread(QubesThread):
     def run(self):
         try:
             self.vm.app.clone_vm(self.vm, self.dst_name)
-            self.msg = (self.tr("Sucess"),
-                        self.tr("The qube was cloned sucessfully."))
+            self.msg = (self.tr("Success"),
+                        self.tr("The qube was cloned successfully."))
             self.msg_is_success = True
         except exc.QubesException as ex:
             self.msg = (self.tr("Error while cloning qube!"), str(ex))
