@@ -929,10 +929,12 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self.action_restartvm.setEnabled(False)
                 self.action_open_console.setEnabled(False)
             elif vm.state['power'] == 'Suspend':
+                self.action_set_keyboard_layout.setEnabled(False)
                 self.action_removevm.setEnabled(False)
                 self.action_pausevm.setEnabled(False)
                 self.action_open_console.setEnabled(False)
             elif vm.state['power'] == 'Halted':
+                self.action_set_keyboard_layout.setEnabled(False)
                 self.action_pausevm.setEnabled(False)
                 self.action_shutdownvm.setEnabled(False)
                 self.action_restartvm.setEnabled(False)
