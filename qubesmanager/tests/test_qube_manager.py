@@ -793,7 +793,6 @@ class QubeManagerTest(unittest.TestCase):
             name = self._get_table_item(row, "Name")
             if name == "test-vm":
                 index = self.dialog.table.model().index(row, 0)
-                index = self.dialog.table.model().mapToSource(index)
                 self.dialog.table.setCurrentIndex(index)
                 break
         with unittest.mock.patch('qubesmanager.settings.VMSettingsWindow')\
@@ -1243,7 +1242,6 @@ class QubeManagerTest(unittest.TestCase):
                      or (running and vm.is_running())
                      or (not running and not vm.is_running())):
                 index = self.dialog.table.model().index(row, 0)
-                index = self.dialog.table.model().mapToSource(index)
                 self.dialog.table.setCurrentIndex(index)
                 return vm
         return None
