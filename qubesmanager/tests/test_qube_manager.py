@@ -256,7 +256,9 @@ class QubeManagerTest(unittest.TestCase):
     @unittest.mock.patch('qubesmanager.qube_manager.QSettings.setValue')
     @unittest.mock.patch('qubesmanager.qube_manager.QSettings.sync')
     def test_101_hide_column(self, mock_sync, mock_settings):
-        self.dialog.action_is_dvm_template.trigger()
+        model = self.dialog.qubes_model
+        action_no = model.columns_indices.index('Is DVM Template')
+        self.dialog.menu_view.actions()[action_no].trigger()
         mock_settings.assert_called_with('columns/Is DVM Template', False)
         self.assertEqual(mock_sync.call_count, 1, "Hidden column not synced")
 
