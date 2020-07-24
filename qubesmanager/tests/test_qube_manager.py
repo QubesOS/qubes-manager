@@ -870,14 +870,10 @@ class QubeManagerTest(unittest.TestCase):
         target_vm_name = "work"
         vm_row = self._find_vm_row(target_vm_name)
 
-        # Cleanup workaround...
-        self._run_command_and_process_events(
-            ["qvm-prefs", target_vm_name, "label", "blue"])
-
         current_label_path = self._get_table_item(vm_row, "Label", Qt.DecorationRole)
 
-        #self.addCleanup(
-        #    subprocess.call, ["qvm-prefs", target_vm_name, "label", "blue"])
+        self.addCleanup(
+            subprocess.call, ["qvm-prefs", target_vm_name, "label", "blue"])
         self._run_command_and_process_events(
             ["qvm-prefs", target_vm_name, "label", "red"])
 
