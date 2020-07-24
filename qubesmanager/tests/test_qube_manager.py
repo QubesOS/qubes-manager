@@ -898,9 +898,9 @@ class QubeManagerTest(unittest.TestCase):
                 new_template = vm.name
                 break
 
-        #self.addCleanup(
-        #    subprocess.call,
-        #    ["qvm-prefs", target_vm_name, "template", old_template])
+        self.addCleanup(
+            subprocess.call,
+            ["qvm-prefs", target_vm_name, "template", old_template])
         self._run_command_and_process_events(
             ["qvm-prefs", target_vm_name, "template", new_template])
 
