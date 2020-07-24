@@ -870,22 +870,22 @@ class QubeManagerTest(unittest.TestCase):
         target_vm_name = "work"
         vm_row = self._find_vm_row(target_vm_name)
 
-        current_label_path = self._get_table_item(vm_row, "Label", Qt.DecorationRole)
+        current_label = self._get_table_item(vm_row, "Label", Qt.DecorationRole)
 
         self.addCleanup(
             subprocess.call, ["qvm-prefs", target_vm_name, "label", "blue"])
         self._run_command_and_process_events(
             ["qvm-prefs", target_vm_name, "label", "red"])
 
-        new_label_path = self._get_table_item(vm_row, "Label", Qt.DecorationRole)
+        new_label = self._get_table_item(vm_row, "Label", Qt.DecorationRole)
 
-        self.assertNotEqual(current_label_path.toImage(), new_label_path.toImage(),
+        self.assertNotEqual(current_label.toImage(), new_label.toImage(),
                             "Label icon did not change")
 
         icon = QIcon.fromTheme(self.qapp.domains[target_vm_name].label.icon)
         icon = icon.pixmap(icon_size)
 
-        self.assertEqual(new_label_path.toImage(), icon.toImage(), "Incorrect label")
+        self.assertEqual(new_label.toImage(), icon.toImage(), "Incorrect label")
 
     def test_406_prop_change_template(self):
         target_vm_name = "work"
