@@ -30,12 +30,15 @@ import datetime
 import time
 
 from PyQt5 import QtTest, QtCore, QtWidgets
-from PyQt5.QtCore import (Qt)
+from PyQt5.QtCore import (Qt, QSize)
+from PyQt5.QtGui import (QIcon)
 
 from qubesadmin import Qubes, events, exc
 import qubesmanager.qube_manager as qube_manager
 from qubesmanager.tests import init_qtapp
 
+
+icon_size = QSize(24, 24)
 
 class QubeManagerTest(unittest.TestCase):
     def setUp(self):
@@ -96,11 +99,14 @@ class QubeManagerTest(unittest.TestCase):
 
             # check that netvm is listed correctly
             netvm_item = self._get_table_item(row, "NetVM")
-            netvm_value = getattr(vm, "netvm", "n/a")
+            netvm_value = getattr(vm, "netvm", None)
 
-            #if netvm_value and hasattr(vm, "netvm") \
-            #        and vm.property_is_default("netvm"):
-            #    netvm_value = "default ({})".format(netvm_value)
+            if not netvm_value:
+                netvm_value = "n/a"
+
+            if netvm_value and hasattr(vm, "netvm") \
+                    and vm.property_is_default("netvm"):
+                netvm_value = "default ({})".format(netvm_value)
 
             self.assertEqual(netvm_value,
                              netvm_item,
@@ -202,27 +208,22 @@ class QubeManagerTest(unittest.TestCase):
     def test_011_is_label_correct(self):
         for row in range(self.dialog.table.model().rowCount()):
             vm = self._get_table_vm(row)
+            icon = QIcon.fromTheme(vm.label.icon)
+            icon = icon.pixmap(icon_size)
 
-            label_item = self._get_table_item(row, "Label")
 
-            self.assertEqual(label_item.icon_path, vm.label.icon)
+            label_pixmap = self._get_table_item(row, "Label", Qt.DecorationRole)
+
+            self.assertEqual(label_pixmap.toImage(), icon.toImage())
 
     def test_012_is_state_correct(self):
         for row in range(self.dialog.table.model().rowCount()):
             vm = self._get_table_vm(row)
 
-            state_item = self._get_table_item(row, "State")
-
-            # this should not be done like that in table_widgets
-            displayed_power_state = state_item.on_icon.status
-
-            if vm.is_running():
-                correct_power_state = 3
-            else:
-                correct_power_state = 0
+            displayed_power_state = self._get_table_item(row, "State")['power']
 
             self.assertEqual(
-                displayed_power_state, correct_power_state,
+                displayed_power_state, vm.get_power_state(),
                 "Wrong power state displayed for {}".format(vm.name))
 
     def test_013_incorrect_settings_file(self):
@@ -254,17 +255,14 @@ class QubeManagerTest(unittest.TestCase):
         self.__check_sorting("Name")
 
     @unittest.mock.patch('qubesmanager.qube_manager.QSettings.setValue')
-    @unittest.mock.patch('qubesmanager.qube_manager.QSettings.sync')
-    def test_101_hide_column(self, mock_sync, mock_settings):
+    def test_101_hide_column(self, mock_settings):
         model = self.dialog.qubes_model
         action_no = model.columns_indices.index('Is DVM Template')
         self.dialog.menu_view.actions()[action_no].trigger()
-        mock_settings.assert_called_with('columns/Is DVM Template', False)
-        self.assertEqual(mock_sync.call_count, 1, "Hidden column not synced")
-
-        self.dialog.action_is_dvm_template.trigger()
         mock_settings.assert_called_with('columns/Is DVM Template', True)
-        self.assertEqual(mock_sync.call_count, 2, "Hidden column not synced")
+
+        self.dialog.menu_view.actions()[action_no].trigger()
+        mock_settings.assert_called_with('columns/Is DVM Template', False)
 
     @unittest.mock.patch('qubesmanager.settings.VMSettingsWindow')
     def test_200_vm_open_settings(self, mock_window):
@@ -872,21 +870,26 @@ class QubeManagerTest(unittest.TestCase):
         target_vm_name = "work"
         vm_row = self._find_vm_row(target_vm_name)
 
-        current_label_path = self._get_table_item(vm_row, "Label").icon_path
+        # Cleanup workaround...
+        self._run_command_and_process_events(
+            ["qvm-prefs", target_vm_name, "label", "blue"])
 
-        self.addCleanup(
-            subprocess.call, ["qvm-prefs", target_vm_name, "label", "blue"])
+        current_label_path = self._get_table_item(vm_row, "Label", Qt.DecorationRole)
+
+        #self.addCleanup(
+        #    subprocess.call, ["qvm-prefs", target_vm_name, "label", "blue"])
         self._run_command_and_process_events(
             ["qvm-prefs", target_vm_name, "label", "red"])
 
-        new_label_path = self._get_table_item(vm_row, "Label").icon_path
+        new_label_path = self._get_table_item(vm_row, "Label", Qt.DecorationRole)
 
-        self.assertNotEqual(current_label_path, new_label_path,
-                            "Label path did not change")
-        self.assertEqual(
-            new_label_path,
-            self.qapp.domains[target_vm_name].label.icon,
-            "Incorrect label")
+        self.assertNotEqual(current_label_path.toImage(), new_label_path.toImage(),
+                            "Label icon did not change")
+
+        icon = QIcon.fromTheme(self.qapp.domains[target_vm_name].label.icon)
+        icon = icon.pixmap(icon_size)
+
+        self.assertEqual(new_label_path.toImage(), icon.toImage(), "Incorrect label")
 
     def test_406_prop_change_template(self):
         target_vm_name = "work"
@@ -899,9 +902,9 @@ class QubeManagerTest(unittest.TestCase):
                 new_template = vm.name
                 break
 
-        self.addCleanup(
-            subprocess.call,
-            ["qvm-prefs", target_vm_name, "template", old_template])
+        #self.addCleanup(
+        #    subprocess.call,
+        #    ["qvm-prefs", target_vm_name, "template", old_template])
         self._run_command_and_process_events(
             ["qvm-prefs", target_vm_name, "template", new_template])
 
@@ -1026,6 +1029,7 @@ class QubeManagerTest(unittest.TestCase):
         target_vm_name = "work"
         vm_row = self._find_vm_row(target_vm_name)
 
+
         old_default_dispvm =\
             self._get_table_item(vm_row, "Default DispVM")
         new_default_dispvm = None
@@ -1036,8 +1040,8 @@ class QubeManagerTest(unittest.TestCase):
                 break
 
         self.addCleanup(
-            subprocess.call,
-            ["qvm-prefs", target_vm_name, "default_dispvm", old_default_dispvm])
+           subprocess.call,
+           ["qvm-prefs", target_vm_name, "default_dispvm", old_default_dispvm])
         self._run_command_and_process_events(
             ["qvm-prefs", target_vm_name, "default_dispvm", new_default_dispvm])
 
@@ -1113,9 +1117,8 @@ class QubeManagerTest(unittest.TestCase):
                 break
 
         # TODO does this still needed?
-        #for i in range(self.dialog.table.model().rowCount()):
-        #    self._get_table_item(i, "State").update_vm_state =\
-        #        unittest.mock.Mock()
+        for i in range(self.dialog.table.model().rowCount()):
+            self._get_table_vminfo(i).update = unittest.mock.Mock()
 
         self.addCleanup(
             subprocess.call,
@@ -1124,8 +1127,8 @@ class QubeManagerTest(unittest.TestCase):
             ["qvm-start", target_vm_name], timeout=60)
 
         for i in range(self.dialog.table.model().rowCount()):
-            call_count = self._get_table_item(
-                i, "State").update_vm_state.call_count
+            call_count = self._get_table_vminfo(
+                i).update.call_count
             if self._get_table_item(i, "Template") == target_vm_name:
                 self.assertGreater(call_count, 0)
             elif self._get_table_item(i, "Name") == target_vm_name:
@@ -1217,7 +1220,7 @@ class QubeManagerTest(unittest.TestCase):
             if template == 'AdminVM':
                 index = self.dialog.table.model().index(row, 0)
                 self.dialog.table.setCurrentIndex(index)
-                return template
+                return index.data(Qt.UserRole).vm
         return None
 
     def _select_non_admin_vm(self, running=None):
@@ -1271,14 +1274,18 @@ class QubeManagerTest(unittest.TestCase):
                 last_text = text
                 last_vm = vm
 
+    def _get_table_vminfo(self, row):
+        model = self.dialog.table.model()
+        return model.data(model.index(row, 0), Qt.UserRole)
+
     def _get_table_vm(self, row):
         model = self.dialog.table.model()
         return model.data(model.index(row, 0), Qt.UserRole).vm
 
-    def _get_table_item(self, row, column_name):
+    def _get_table_item(self, row, column_name, role = Qt.DisplayRole):
         model = self.dialog.table.model()
         column = self.dialog.qubes_model.columns_indices.index(column_name)
-        return model.data(model.index(row, column))
+        return model.data(model.index(row, column), role)
 
 class QubeManagerThreadTest(unittest.TestCase):
     def test_01_startvm_thread(self):
