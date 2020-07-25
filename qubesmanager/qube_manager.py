@@ -423,19 +423,25 @@ class QubesTableModel(QAbstractTableModel):
             return vm
 
         # Used for sorting
+        ret = None
         if role == Qt.UserRole + 1:
             if vm.qid == 0:
                 return ""
-            if col_name == "Type":
-                return vm.klass
-            if col_name == "Label":
-                return vm.label.name
-            if col_name == "State":
-                return str(vm.state)
-            if col_name == "Disk Usage":
-                return vm.disk_float
-            return self.data(index, Qt.DisplayRole)
-        return None
+            elif col_name == "Type":
+                ret = vm.klass
+            elif col_name == "Label":
+                ret = vm.label.name
+            elif col_name == "State":
+                ret = str(vm.state)
+            elif col_name == "Disk Usage":
+                ret = vm.disk_float
+            else:
+                ret = self.data(index, Qt.DisplayRole)
+
+            if col_name != "Name":
+                ret = ret + vm.name
+
+        return ret
 
     # pylint: disable=invalid-name
     def headerData(self, col, orientation, role):
