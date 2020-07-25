@@ -1249,9 +1249,8 @@ class QubeManagerTest(unittest.TestCase):
         last_text = None
         last_vm = None
         for row in range(self.dialog.table.model().rowCount()):
-
             vm = self._get_table_item(row, "Name")
-            text = self._get_table_item(row, column_name).lower()
+            text = self._get_table_item(row, column_name)
 
             if row == 0:
                 self.assertEqual(vm, "dom0", "dom0 is not sorted first")
@@ -1261,11 +1260,11 @@ class QubeManagerTest(unittest.TestCase):
             else:
                 if last_text == text:
                     self.assertGreater(
-                        vm, last_vm,
+                        vm.lower(), last_vm.lower(),
                         "Incorrect sorting for {}".format(column_name))
                 else:
                     self.assertGreater(
-                        text, last_text,
+                        text.lower(), last_text.lower(),
                         "Incorrect sorting for {}".format(column_name))
                 last_text = text
                 last_vm = vm
