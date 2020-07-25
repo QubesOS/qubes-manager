@@ -1271,16 +1271,16 @@ class QubeManagerTest(unittest.TestCase):
 
     def _get_table_vminfo(self, row):
         model = self.dialog.table.model()
-        return model.data(model.index(row, 0), Qt.UserRole)
+        return model.index(row, 0).data(Qt.UserRole)
 
     def _get_table_vm(self, row):
         model = self.dialog.table.model()
-        return model.data(model.index(row, 0), Qt.UserRole).vm
+        return model.index(row, 0).data(Qt.UserRole).vm
 
     def _get_table_item(self, row, column_name, role = Qt.DisplayRole):
         model = self.dialog.table.model()
         column = self.dialog.qubes_model.columns_indices.index(column_name)
-        return model.data(model.index(row, column), role)
+        return model.index(row, column).data(role)
 
 class QubeManagerThreadTest(unittest.TestCase):
     def test_01_startvm_thread(self):
