@@ -426,7 +426,7 @@ class QubesTableModel(QAbstractTableModel):
         ret = None
         if role == Qt.UserRole + 1:
             if vm.qid == 0:
-                return ""
+                ret = ""
             elif col_name == "Type":
                 ret = vm.klass
             elif col_name == "Label":
