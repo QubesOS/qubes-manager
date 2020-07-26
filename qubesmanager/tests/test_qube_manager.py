@@ -1112,7 +1112,6 @@ class QubeManagerTest(unittest.TestCase):
             if target_vm_name:
                 break
 
-        # TODO does this still needed?
         for i in range(self.dialog.table.model().rowCount()):
             self._get_table_vminfo(i).update = unittest.mock.Mock()
 
