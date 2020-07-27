@@ -463,13 +463,14 @@ class QubeManagerTest(unittest.TestCase):
     @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox")
     @unittest.mock.patch('qubesadmin.utils.vm_dependencies')
     def test_218_remove_vm_dependencies(self, mock_dependencies, mock_msgbox):
-        action = self.dialog.action_removevm
-
         mock_vm = unittest.mock.Mock(spec=['name'],
                                      **{'name.return_value': 'test-vm'})
         mock_dependencies.return_value = [(mock_vm, "test_prop")]
 
+        action = self.dialog.action_removevm
+        self._select_non_admin_vm()
         action.trigger()
+
         mock_msgbox().show.assert_called_with()
 
     @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
