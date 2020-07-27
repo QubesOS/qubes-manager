@@ -261,7 +261,7 @@ class VmInfo():
             if not event or event.endswith(':default_dispvm'):
                 self.dvm = getattr(self.vm, 'default_dispvm', None)
                 if self.vm.property_is_default("default_dispvm"):
-                    self.dvm = "default (" + self.dvm.name + ")"
+                    self.dvm = "default (" + str(self.dvm) + ")"
                 elif self.dvm is not None:
                     self.dvm = self.dvm.name
             if not event or event.endswith(':template_for_dispvms'):
