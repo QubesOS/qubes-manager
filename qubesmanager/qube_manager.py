@@ -426,8 +426,8 @@ class QubesTableModel(QAbstractTableModel):
         ret = None
         if role == Qt.UserRole + 1:
             if vm.qid == 0:
-                ret = ""
-            elif col_name == "Type":
+                return ""
+            if col_name == "Type":
                 ret = vm.klass
             elif col_name == "Label":
                 ret = vm.label.name
@@ -439,7 +439,7 @@ class QubesTableModel(QAbstractTableModel):
                 ret = self.data(index, Qt.DisplayRole)
 
             if col_name != "Name":
-                ret = ret + vm.name
+                ret = str(ret) + vm.name
 
         return ret
 
