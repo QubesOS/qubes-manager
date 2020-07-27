@@ -460,7 +460,7 @@ class QubeManagerTest(unittest.TestCase):
 
         self.assertFalse(self.dialog.action_removevm.isEnabled())
 
-    @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox")
+    @unittest.mock.patch("qubesmanager.qube_manager.QMessageBox")
     @unittest.mock.patch('qubesadmin.utils.vm_dependencies')
     def test_218_remove_vm_dependencies(self, mock_dependencies, mock_msgbox):
         mock_vm = unittest.mock.Mock(spec=['name'],
