@@ -423,25 +423,19 @@ class QubesTableModel(QAbstractTableModel):
             return vm
 
         # Used for sorting
-        ret = None
         if role == Qt.UserRole + 1:
             if vm.qid == 0:
                 return ""
             if col_name == "Type":
-                ret = vm.klass
-            elif col_name == "Label":
-                ret = vm.label.name
-            elif col_name == "State":
-                ret = str(vm.state)
-            elif col_name == "Disk Usage":
-                ret = vm.disk_float
-            else:
-                ret = self.data(index, Qt.DisplayRole)
+                return vm.klass
+            if col_name == "Label":
+                return vm.label.name
+            if col_name == "State":
+                return str(vm.state)
+            if col_name == "Disk Usage":
+                return vm.disk_float
 
-            if col_name != "Name":
-                ret = str(ret) + vm.name
-
-        return ret
+            return self.data(index, Qt.DisplayRole)
 
     # pylint: disable=invalid-name
     def headerData(self, col, orientation, role):
@@ -592,6 +586,15 @@ class RunCommandThread(common_threads.QubesThread):
         except (ChildProcessError, exc.QubesException) as ex:
             self.msg = (self.tr("Error while running command!"), str(ex))
 
+class QubesProxyModel(QSortFilterProxyModel):
+    def lessThan(self, left, right):
+        if left.data(self.sortRole()) != right.data(self.sortRole()):
+            return super().lessThan(left, right)
+
+        left_vm = left.data(Qt.UserRole)
+        right_vm = right.data(Qt.UserRole)
+
+        return left_vm.name.lower() < right_vm.name.lower()
 
 class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     # suppress saving settings while initializing widgets
@@ -664,7 +667,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.fill_cache()
         self.qubes_model = QubesTableModel(self.qubes_cache)
 
-        self.proxy = QSortFilterProxyModel()
+        self.proxy = QubesProxyModel()
         self.proxy.setSourceModel(self.qubes_model)
         self.proxy.setSortRole(Qt.UserRole + 1)
         self.proxy.setSortCaseSensitivity(Qt.CaseInsensitive)
