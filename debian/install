@@ -7,6 +7,7 @@
 /usr/bin/qubes-qube-manager
 /usr/bin/qubes-log-viewer
 /usr/bin/qubes-template-manager
+/usr/bin/qubes-vm-clone
 /usr/libexec/qubes-manager/mount_for_backup.sh
 /usr/libexec/qubes-manager/qvm_about.sh
 /usr/libexec/qubes-manager/dsa-4371-update
@@ -33,6 +34,7 @@
 /usr/lib/*/dist-packages/qubesmanager/bootfromdevice.py
 /usr/lib/*/dist-packages/qubesmanager/device_list.py
 /usr/lib/*/dist-packages/qubesmanager/template_manager.py
+/usr/lib/*/dist-packages/qubesmanager/clone_vm.py
 
 /usr/lib/*/dist-packages/qubesmanager/resources_rc.py
 
@@ -51,6 +53,7 @@
 /usr/lib/*/dist-packages/qubesmanager/ui_qubemanager.py
 /usr/lib/*/dist-packages/qubesmanager/ui_devicelist.py
 /usr/lib/*/dist-packages/qubesmanager/ui_templatemanager.py
+/usr/lib/*/dist-packages/qubesmanager/ui_clonevmdlg.py
 /usr/lib/*/dist-packages/qubesmanager/i18n/qubesmanager_*.qm
 /usr/lib/*/dist-packages/qubesmanager/i18n/qubesmanager_*.ts
 

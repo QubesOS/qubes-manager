@@ -47,35 +47,25 @@ class CloneVMDlg(QtWidgets.QDialog, Ui_CloneVMDlg):
         self.thread = None
         self.progress = None
 
-        self.vm_list, self.vm_idx = utils.prepare_vm_choice(
-            self.src_vm,
-            self.app, None,
-            None,
-            (lambda vm: vm.klass != 'AdminVM'),
-            allow_internal=False
-        )
+        utils.initialize_widget_with_vms(
+            widget=self.src_vm,
+            qubes_app=self.app,
+            filter_function=(lambda vm: vm.klass != 'AdminVM'))
 
         if src_vm and self.src_vm.findText(src_vm.name) > -1:
             self.src_vm.setCurrentIndex(self.src_vm.findText(src_vm.name))
 
-        self.label_list, self.label_idx = utils.prepare_label_choice(
-                self.label,
-                self.app, None,
-                None,
-                allow_default=False
-        )
+        utils.initialize_widget_with_labels(widget=self.label,
+                                            qubes_app=self.app)
 
         self.update_label()
 
-        self.pool_list, self.pool_idx = utils.prepare_choice(
+        utils.initialize_widget_with_default(
             widget=self.storage_pool,
-            holder=None,
-            propname=None,
-            choice=self.app.pools.values(),
-            default=self.app.default_pool,
-            allow_default=True,
-            allow_none=False
-        )
+            choices=[(str(pool), pool) for pool in self.app.pools.values()],
+            add_qubes_default=True,
+            mark_existing_as_default=True,
+            default_value=self.app.default_pool)
 
         self.set_clone_name()
 
@@ -104,15 +94,13 @@ class CloneVMDlg(QtWidgets.QDialog, Ui_CloneVMDlg):
                         'system!').format(self.name.text()))
             return
 
-        label = self.label_list[self.label.currentIndex()]
+        label = self.label.currentData()
 
-        if self.pool_list[self.storage_pool.currentIndex()] is not \
-                qubesadmin.DEFAULT:
-            pool = self.pool_list[self.storage_pool.currentIndex()]
-        else:
+        pool = self.storage_pool.currentData()
+        if pool is qubesadmin.DEFAULT:
             pool = None
 
-        src_vm = self.vm_list[self.src_vm.currentIndex()]
+        src_vm = self.src_vm.currentData()
 
         self.thread = common_threads.CloneVMThread(
             src_vm, name, pool=pool, label=label)
@@ -134,13 +122,12 @@ class CloneVMDlg(QtWidgets.QDialog, Ui_CloneVMDlg):
         self.name.setText(name_format % name_number)
 
     def update_label(self):
-        vm_label = self.vm_list[self.src_vm.currentIndex()].label
+        vm_label = self.src_vm.currentData().label
 
         label_idx = self.label.findText(str(vm_label))
 
         if label_idx > -1:
             self.label.setCurrentIndex(label_idx)
-
 
     def clone_finished(self):
         self.progress.hide()
@@ -150,6 +137,10 @@ class CloneVMDlg(QtWidgets.QDialog, Ui_CloneVMDlg):
                 self,
                 self.tr("Error cloning the qube!"),
                 self.tr("ERROR: {0}").format(self.thread.msg))
+        else:
+            QtWidgets.QMessageBox.information(
+                self,
+                *self.thread.msg)
 
         self.done(0)
 
