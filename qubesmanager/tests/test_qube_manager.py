@@ -1396,7 +1396,7 @@ class QubeManagerThreadTest(unittest.TestCase):
 
 
 class VMShutdownMonitorTest(unittest.TestCase):
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox')
+    @unittest.mock.patch('qubesmanager.qube_manager.QMessageBox')
     @unittest.mock.patch('PyQt5.QtCore.QTimer')
     def test_01_vm_shutdown_correct(self, mock_timer, mock_question):
         mock_vm = unittest.mock.Mock()
@@ -1411,7 +1411,7 @@ class VMShutdownMonitorTest(unittest.TestCase):
         self.assertEqual(mock_timer.call_count, 0)
         monitor.restart_vm_if_needed.assert_called_once_with()
 
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox')
+    @unittest.mock.patch('qubesmanager.qube_manager.QMessageBox')
     @unittest.mock.patch('PyQt5.QtCore.QTimer.singleShot')
     def test_02_vm_not_shutdown_wait(self, mock_timer, mock_question):
         mock_question().clickedButton.return_value = 1
@@ -1428,7 +1428,7 @@ class VMShutdownMonitorTest(unittest.TestCase):
 
         self.assertEqual(mock_timer.call_count, 1)
 
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox')
+    @unittest.mock.patch('qubesmanager.qube_manager.QMessageBox')
     @unittest.mock.patch('PyQt5.QtCore.QTimer.singleShot')
     def test_03_vm_kill(self, mock_timer, mock_question):
         mock_question().clickedButton.return_value = 1
@@ -1448,7 +1448,7 @@ class VMShutdownMonitorTest(unittest.TestCase):
         mock_vm.kill.assert_called_once_with()
         monitor.restart_vm_if_needed.assert_called_once_with()
 
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox')
+    @unittest.mock.patch('qubesmanager.qube_manager.QMessageBox')
     @unittest.mock.patch('PyQt5.QtCore.QTimer.singleShot')
     def test_04_check_later(self, mock_timer, mock_question):
         mock_vm = unittest.mock.Mock()
