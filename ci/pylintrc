@@ -14,6 +14,7 @@ ignore=tests,
     ui_restoredlg.py,
     ui_settingsdlg.py,
     resources_rc.py
+extension-pkg-whitelist=PyQt5
 
 [MESSAGES CONTROL]
 # abstract-class-little-used: see http://www.logilab.org/ticket/111138

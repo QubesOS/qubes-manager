@@ -52,21 +52,6 @@
     <property name="sizeConstraint">
      <enum>QLayout::SetDefaultConstraint</enum>
     </property>
-    <property name="leftMargin">
-     <number>0</number>
-    </property>
-    <property name="topMargin">
-     <number>0</number>
-    </property>
-    <property name="rightMargin">
-     <number>0</number>
-    </property>
-    <property name="bottomMargin">
-     <number>0</number>
-    </property>
-    <property name="spacing">
-     <number>0</number>
-    </property>
     <item row="0" column="0">
      <layout class="QHBoxLayout" name="searchContainer">
       <property name="spacing">
@@ -85,7 +70,7 @@
      </layout>
     </item>
     <item row="1" column="0">
-     <widget class="QTableWidget" name="table">
+     <widget class="QTableView" name="table">
       <property name="minimumSize">
        <size>
         <width>0</width>
@@ -140,20 +125,8 @@
       <property name="cornerButtonEnabled">
        <bool>false</bool>
       </property>
-      <property name="rowCount">
-       <number>10</number>
-      </property>
-      <property name="columnCount">
-       <number>14</number>
-      </property>
       <attribute name="horizontalHeaderCascadingSectionResizes">
        <bool>false</bool>
-      </attribute>
-      <attribute name="horizontalHeaderMinimumSectionSize">
-       <number>150</number>
-      </attribute>
-      <attribute name="horizontalHeaderDefaultSectionSize">
-       <number>150</number>
       </attribute>
       <attribute name="verticalHeaderVisible">
        <bool>false</bool>
@@ -292,25 +265,6 @@ Template</string>
     <property name="title">
      <string>&amp;View</string>
     </property>
-    <addaction name="action_vm_type"/>
-    <addaction name="action_label"/>
-    <addaction name="action_state"/>
-    <addaction name="action_template"/>
-    <addaction name="action_netvm"/>
-    <addaction name="action_size_on_disk"/>
-    <addaction name="action_internal"/>
-    <addaction name="action_ip"/>
-    <addaction name="action_backups"/>
-    <addaction name="action_last_backup"/>
-    <addaction name="action_dispvm_template"/>
-    <addaction name="action_is_dvm_template"/>
-    <addaction name="action_virt_mode"/>
-    <addaction name="separator"/>
-    <addaction name="action_toolbar"/>
-    <addaction name="action_menubar"/>
-    <addaction name="separator"/>
-    <addaction name="separator"/>
-    <addaction name="action_search"/>
    </widget>
    <widget class="QMenu" name="menu_vm">
     <property name="title">

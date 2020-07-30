@@ -33,7 +33,6 @@ SOURCES = \
           qubesmanager/resources_rc.py \
           qubesmanager/restore.py \
           qubesmanager/settings.py \
-          qubesmanager/table_widgets.py \
           qubesmanager/template_manager.py \
           qubesmanager/ui_about.py \
           qubesmanager/ui_backupdlg.py \

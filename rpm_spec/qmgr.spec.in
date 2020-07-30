@@ -71,7 +71,6 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/__pycache__
 %{python3_sitelib}/qubesmanager/__init__.py
 %{python3_sitelib}/qubesmanager/clipboard.py
-%{python3_sitelib}/qubesmanager/table_widgets.py
 %{python3_sitelib}/qubesmanager/appmenu_select.py
 %{python3_sitelib}/qubesmanager/backup.py
 %{python3_sitelib}/qubesmanager/backup_utils.py
