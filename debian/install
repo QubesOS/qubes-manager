@@ -14,7 +14,6 @@
 /usr/lib/*/dist-packages/qubesmanager/__pycache__
 /usr/lib/*/dist-packages/qubesmanager/__init__.py
 /usr/lib/*/dist-packages/qubesmanager/clipboard.py
-/usr/lib/*/dist-packages/qubesmanager/table_widgets.py
 /usr/lib/*/dist-packages/qubesmanager/appmenu_select.py
 /usr/lib/*/dist-packages/qubesmanager/backup.py
 /usr/lib/*/dist-packages/qubesmanager/backup_utils.py
