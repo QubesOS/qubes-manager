@@ -273,7 +273,7 @@ class QubeManagerTest(unittest.TestCase):
         QtTest.QTest.mouseClick(widget,
                                 QtCore.Qt.LeftButton)
         mock_window.assert_called_once_with(
-            selected_vm, self.qtapp, "basic")
+            selected_vm, qapp=self.qtapp, init_page="basic", qubesapp=self.qapp)
 
     def test_201_vm_open_settings_admin(self):
         self._select_admin_vm()
@@ -294,7 +294,8 @@ class QubeManagerTest(unittest.TestCase):
         QtTest.QTest.mouseClick(widget,
                                 QtCore.Qt.LeftButton)
         mock_window.assert_called_once_with(
-            selected_vm, self.qtapp, "firewall")
+            selected_vm, qapp=self.qtapp, init_page="firewall",
+            qubesapp=self.qapp)
 
     @unittest.mock.patch('qubesmanager.settings.VMSettingsWindow')
     def test_203_vm_open_apps(self, mock_window):
@@ -305,7 +306,8 @@ class QubeManagerTest(unittest.TestCase):
         QtTest.QTest.mouseClick(widget,
                                 QtCore.Qt.LeftButton)
         mock_window.assert_called_once_with(
-            selected_vm, self.qtapp, "applications")
+            selected_vm, qapp=self.qtapp, init_page="applications",
+            qubesapp=self.qapp)
 
     def test_204_vm_keyboard(self):
         selected_vm = self._select_non_admin_vm(running=True)
@@ -798,7 +800,8 @@ class QubeManagerTest(unittest.TestCase):
                 as mock_settings:
             self.dialog.action_settings.trigger()
             mock_settings.assert_called_once_with(
-                self.qapp.domains["test-vm"], self.qtapp, "basic")
+                self.qapp.domains["test-vm"], qapp = self.qtapp,
+                init_page = "basic", qubesapp = self.qapp)
 
     def test_401_event_domain_removed(self):
         initial_vms = self._create_set_of_current_vms()
