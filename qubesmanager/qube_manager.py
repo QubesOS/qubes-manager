@@ -199,23 +199,21 @@ class VmInfo():
         self.vm = vm
         self.qid = vm.qid
         self.name = self.vm.name
-        self.label = self.vm.label
-        self.klass = self.vm.klass
+
+        self.label = getattr(self.vm, 'label', None)
+        self.klass = getattr(self.vm, 'klass', None)
         self.state = {'power': "", 'outdated': ""}
         self.updateable = getattr(vm, 'updateable', False)
         self.update(True)
 
-    def update(self, update_size_on_disk=False, event=None):
-        """
-        Update VmInfo
-        :param update_size_on_disk: should disk utilization be updated?
-        :param event: name of the event that caused the update, to avoid
-        updating unnecessary properties; if event is none, update everything
-        :return: None
-        """
+    def update_power_state(self):
         try:
             self.state['power'] = self.vm.get_power_state()
+        except exc.QubesPropertyAccessError:
+            self.state['power'] = ""
 
+        self.state['outdated'] = ""
+        try:
             if self.vm.is_running():
                 if hasattr(self.vm, 'template') and \
                         self.vm.template.is_running():
@@ -225,64 +223,89 @@ class VmInfo():
                         if vol.is_outdated():
                             self.state['outdated'] = "outdated"
                             break
-            else:
-                self.state['outdated'] = ""
 
             if self.vm.klass in {'TemplateVM', 'StandaloneVM'} and \
                     self.vm.features.get('updates-available', False):
                 self.state['outdated'] = 'update'
+        except exc.QubesPropertyAccessError:
+            pass
 
-            if not event or event.endswith(':label'):
-                self.label = self.vm.label
-            if not event or event.endswith(':template'):
-                try:
-                    self.template = self.vm.template.name
-                except AttributeError:
-                    self.template = None
-            if not event or event.endswith(':netvm'):
-                self.netvm = getattr(self.vm, 'netvm', None)
-                if self.netvm:
-                    self.netvm = self.netvm.name
-                else:
-                    self.netvm = "n/a"
-                if self.qid != 0 and self.vm.property_is_default("netvm"):
+    def update(self, update_size_on_disk=False, event=None):
+        """
+        Update VmInfo
+        :param update_size_on_disk: should disk utilization be updated?
+        :param event: name of the event that caused the update, to avoid
+        updating unnecessary properties; if event is none, update everything
+        :return: None
+        """
+        self.update_power_state()
+
+        if not event or event.endswith(':label'):
+            self.label = getattr(self.vm, 'label', None)
+
+        if not event or event.endswith(':template'):
+            try:
+                self.template = self.vm.template.name
+            except AttributeError:
+                self.template = None
+
+        if not event or event.endswith(':netvm'):
+            self.netvm = getattr(self.vm, 'netvm', None)
+            if self.netvm:
+                self.netvm = str(self.netvm)
+            else:
+                self.netvm = "n/a"
+            try:
+                if hasattr(self.vm, 'netvm') \
+                        and self.vm.property_is_default("netvm"):
                     self.netvm = "default (" + self.netvm + ")"
-            if not event or event.endswith(':internal'):
-                # this is a feature, not a property; TODO: fix event handling
+            except exc.QubesPropertyAccessError:
+                pass
+
+        if not event or event.endswith(':internal'):
+            try:
                 self.internal = self.vm.features.get('internal', False)
-            if not event or event.endswith(':ip'):
-                self.ip = getattr(self.vm, 'ip', "n/a")
-            if not event or event.endswith(':include_in_backups'):
-                self.inc_backup = getattr(self.vm, 'include_in_backups', None)
-            if not event or event.endswith(':backup_timestamp'):
-                self.last_backup = getattr(self.vm, 'backup_timestamp', None)
-                if self.last_backup:
-                    self.last_backup = str(datetime.fromtimestamp(
-                        self.last_backup))
-            if not event or event.endswith(':default_dispvm'):
-                self.dvm = getattr(self.vm, 'default_dispvm', None)
+            except exc.QubesPropertyAccessError:
+                self.internal = False
+
+        if not event or event.endswith(':ip'):
+            self.ip = getattr(self.vm, 'ip', "n/a")
+
+        if not event or event.endswith(':include_in_backups'):
+            self.inc_backup = getattr(self.vm, 'include_in_backups', None)
+
+        if not event or event.endswith(':backup_timestamp'):
+            self.last_backup = getattr(self.vm, 'backup_timestamp', None)
+            if self.last_backup:
+                self.last_backup = str(datetime.fromtimestamp(self.last_backup))
+
+        if not event or event.endswith(':default_dispvm'):
+            self.dvm = getattr(self.vm, 'default_dispvm', None)
+            try:
                 if self.vm.property_is_default("default_dispvm"):
                     self.dvm = "default (" + str(self.dvm) + ")"
                 elif self.dvm is not None:
-                    self.dvm = self.dvm.name
-            if not event or event.endswith(':template_for_dispvms'):
-                self.dvm_template = getattr(self.vm, 'template_for_dispvms',
-                                            None)
-            if self.qid != 0 and update_size_on_disk:
+                    self.dvm = str(self.dvm)
+            except exc.QubesPropertyAccessError:
+                self.dvm = None
+
+        if not event or event.endswith(':template_for_dispvms'):
+            self.dvm_template = getattr(self.vm, 'template_for_dispvms', None)
+
+        if self.vm.klass != 'AdminVM' and update_size_on_disk:
+            try:
                 self.disk_float = float(self.vm.get_disk_utilization())
                 self.disk = str(round(self.disk_float/(1024*1024), 2)) + " MiB"
+            except exc.QubesPropertyAccessError:
+                self.disk_float = None
+                self.disk = None
 
-            if self.qid != 0:
-                self.virt_mode = self.vm.virt_mode
-            else:
-                self.virt_mode = None
-                self.disk = "n/a"
-        except exc.QubesPropertyAccessError:
-            pass
-        except exc.QubesDaemonNoResponseError:
-            # TODO: this will be fixed by a rewrite moving the event system to
-            # AdminAPI
-            pass
+        if self.vm.klass != 'AdminVM':
+            self.virt_mode = getattr(self.vm, 'virt_mode', None)
+        else:
+            self.virt_mode = None
+            self.disk = "n/a"
+
 
 class QubesCache(QAbstractTableModel):
     def __init__(self, qubes_app):
@@ -313,6 +336,7 @@ class QubesCache(QAbstractTableModel):
 
     def __iter__(self):
         return iter(self._info_list)
+
 
 class QubesTableModel(QAbstractTableModel):
     def __init__(self, qubes_cache):
@@ -398,6 +422,8 @@ class QubesTableModel(QAbstractTableModel):
                     pixmap.load(icon_name)
                     self.klass_pixmap[vm.klass] = pixmap.scaled(icon_size)
                     return self.klass_pixmap[vm.klass]
+                except exc.QubesPropertyAccessError:
+                    return None
 
             if col_name == "Label":
                 try:
@@ -406,6 +432,8 @@ class QubesTableModel(QAbstractTableModel):
                     icon = QIcon.fromTheme(vm.label.icon)
                     self.label_pixmap[vm.label] = icon.pixmap(icon_size)
                     return self.label_pixmap[vm.label]
+                except exc.QubesPropertyAccessError:
+                    return None
 
         if role == Qt.FontRole:
             if col_name == "Template":
@@ -425,12 +453,12 @@ class QubesTableModel(QAbstractTableModel):
 
         # Used for sorting
         if role == Qt.UserRole + 1:
-            if vm.qid == 0:
+            if vm.klass != 'AdminVM':
                 return ""
             if col_name == "Type":
                 return vm.klass
             if col_name == "Label":
-                return vm.label.name
+                return str(vm.label)
             if col_name == "State":
                 return str(vm.state)
             if col_name == "Disk Usage":
@@ -445,7 +473,6 @@ class QubesTableModel(QAbstractTableModel):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return self.columns_indices[col]
         return None
-
 
 
 vm_shutdown_timeout = 20000  # in msec
@@ -545,7 +572,7 @@ class StartVMThread(common_threads.QubesThread):
 class UpdateVMThread(common_threads.QubesThread):
     def run(self):
         try:
-            if self.vm.qid == 0:
+            if self.vm.klass != 'AdminVM':
                 subprocess.check_call(
                     ["/usr/bin/qubes-dom0-update", "--clean", "--gui"])
             else:
@@ -587,6 +614,7 @@ class RunCommandThread(common_threads.QubesThread):
         except (ChildProcessError, exc.QubesException) as ex:
             self.msg = (self.tr("Error while running command!"), str(ex))
 
+
 class QubesProxyModel(QSortFilterProxyModel):
     def lessThan(self, left, right):
         if left.data(self.sortRole()) != right.data(self.sortRole()):
@@ -596,6 +624,7 @@ class QubesProxyModel(QSortFilterProxyModel):
         right_vm = right.data(Qt.UserRole)
 
         return left_vm.name.lower() < right_vm.name.lower()
+
 
 class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     # suppress saving settings while initializing widgets
@@ -733,6 +762,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                                self.on_domain_changed)
         dispatcher.add_handler('property-load',
                                self.on_domain_changed)
+        dispatcher.add_handler('domain-feature-set:internal',
+                               self.on_domain_changed)
+        dispatcher.add_handler('domain-feature-delete:internal',
+                               self.on_domain_changed)
 
         dispatcher.add_handler('domain-feature-set:updates-available',
                                self.on_domain_updates_available)
@@ -813,9 +846,12 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self.check_updates(info_iter)
             return
 
-        if info.vm.klass in {'TemplateVM', 'StandaloneVM'} and \
-                info.vm.features.get('updates-available', False):
-            info.state['outdated'] = 'update'
+        try:
+            if info.vm.klass in {'TemplateVM', 'StandaloneVM'} and \
+                    info.vm.features.get('updates-available', False):
+                info.state['outdated'] = 'update'
+        except exc.QubesPropertyAccessError:
+            return
 
     def on_domain_added(self, _submitter, _event, vm, **_kwargs):
         try:
@@ -974,7 +1010,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             if vm.vm.features.get('internal', False):
                 self.action_appmenus.setEnabled(False)
 
-            if not vm.updateable and vm.qid != 0:
+            if not vm.updateable and vm.klass != 'AdminVM':
                 self.action_updatevm.setEnabled(False)
 
         self.update_logs_menu()
@@ -1363,7 +1399,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             if len(vm_info) == 1:
                 vm = vm_info[0].vm
 
-                if vm.qid == 0:
+                if vm.klass == 'AdminVM':
                     logfiles = ["/var/log/xen/console/hypervisor.log"]
                 else:
                     logfiles = [
