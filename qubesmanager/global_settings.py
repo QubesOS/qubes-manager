@@ -25,6 +25,7 @@ import subprocess
 from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
 
 from qubesadmin.utils import parse_size
+from qubesadmin import exc
 
 from . import ui_globalsettingsdlg  # pylint: disable=no-name-in-module
 from . import utils
@@ -83,6 +84,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.__init_updates__()
         self.__init_gui_defaults()
 
+        self.errors = []
+
     def setup_application(self):
         self.app.setApplicationName(self.tr("Qubes Global Settings"))
         self.app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
@@ -112,7 +115,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         utils.initialize_widget_with_vms(
             widget=self.default_netvm_combo,
             qubes_app=self.qubes_app,
-            filter_function=(lambda vm: vm.provides_network),
+            filter_function=(lambda vm: getattr(vm, 'provides_network', False)),
             allow_none=True,
             holder=self.qubes_app,
             property_name="default_netvm"
@@ -142,39 +145,67 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
     def __apply_system_defaults__(self):
         # updatevm
         if utils.did_widget_selection_change(self.update_vm_combo):
-            self.qubes_app.updatevm = self.update_vm_combo.currentData()
+            try:
+                self.qubes_app.updatevm = self.update_vm_combo.currentData()
+            except exc.QubesException as ex:
+                self.errors.append(
+                    "Failed to set UpdateVM due to {}".format(str(ex)))
 
         # clockvm
         if utils.did_widget_selection_change(self.clock_vm_combo):
-            self.qubes_app.clockvm = self.clock_vm_combo.currentData()
+            try:
+                self.qubes_app.clockvm = self.clock_vm_combo.currentData()
+            except exc.QubesException as ex:
+                self.errors.append(
+                    "Failed to set ClockVM due to {}".format(str(ex)))
 
         # default netvm
         if utils.did_widget_selection_change(self.default_netvm_combo):
-            self.qubes_app.default_netvm = \
-                self.default_netvm_combo.currentData()
+            try:
+                self.qubes_app.default_netvm = \
+                    self.default_netvm_combo.currentData()
+            except exc.QubesException as ex:
+                self.errors.append(
+                    "Failed to set Default NetVM due to {}".format(str(ex)))
 
         # default template
         if utils.did_widget_selection_change(self.default_template_combo):
-            self.qubes_app.default_template = \
-                self.default_template_combo.currentData()
+            try:
+                self.qubes_app.default_template = \
+                    self.default_template_combo.currentData()
+            except exc.QubesException as ex:
+                self.errors.append(
+                    "Failed to set Default Template due to {}".format(str(ex)))
 
         # default_dispvm
         if utils.did_widget_selection_change(self.default_dispvm_combo):
-            self.qubes_app.default_dispvm = \
-                self.default_dispvm_combo.currentData()
+            try:
+                self.qubes_app.default_dispvm = \
+                    self.default_dispvm_combo.currentData()
+            except exc.QubesException as ex:
+                self.errors.append(
+                    "Failed to set Default DispVM due to {}".format(str(ex)))
 
     def __init_kernel_defaults__(self):
-        utils.initialize_widget_with_kernels(
-            widget=self.default_kernel_combo,
-            qubes_app=self.qubes_app,
-            allow_none=True,
-            holder=self.qubes_app,
-            property_name='default_kernel')
+        try:
+            utils.initialize_widget_with_kernels(
+                widget=self.default_kernel_combo,
+                qubes_app=self.qubes_app,
+                allow_none=True,
+                holder=self.qubes_app,
+                property_name='default_kernel')
+        except exc.QubesPropertyAccessError:
+            self.default_kernel_combo.clear()
+            self.default_kernel_combo.setEnabled(False)
 
     def __apply_kernel_defaults__(self):
         if utils.did_widget_selection_change(self.default_kernel_combo):
-            self.qubes_app.default_kernel = \
-                self.default_kernel_combo.currentData()
+            try:
+                self.qubes_app.default_kernel = \
+                    self.default_kernel_combo.currentData()
+            except exc.QubesException as ex:
+                self.errors.append(
+                    "Failed to set Default Kernel due to {}".format(str(ex)))
 
     def __init_gui_defaults(self):
         utils.initialize_widget(
@@ -210,8 +241,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 ('tinted icon with modified white', 'tint+whitehack'),
                 ('tinted icon with 50% saturation', 'tint+saturation50')
             ],
-            selected_value=self.vm.features.get('gui-default-trayicon-mode',
-                                                None))
+            selected_value=utils.get_feature(
+                self.vm, 'gui-default-trayicon-mode', None))
 
         utils.initialize_widget(
             widget=self.securecopy,
@@ -220,8 +251,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 ('Ctrl+Shift+C', 'Ctrl-Shift-c'),
                 ('Ctrl+Win+C', 'Ctrl-Mod4-c'),
             ],
-            selected_value=self.vm.features.get(
-                'gui-default-secure-copy-sequence', None))
+            selected_value=utils.get_feature(
+                self.vm, 'gui-default-secure-copy-sequence', None))
 
         utils.initialize_widget(
             widget=self.securepaste,
@@ -231,15 +262,25 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 ('Ctrl+Win+V', 'Ctrl-Mod4-v'),
                 ('Ctrl+Insert', 'Ctrl-Ins'),
             ],
-            selected_value=self.vm.features.get(
-                'gui-default-secure-paste-sequence', None))
+            selected_value=utils.get_feature(
+                self.vm, 'gui-default-secure-paste-sequence', None))
 
     def __apply_feature_change(self, widget, feature):
         if utils.did_widget_selection_change(widget):
             if widget.currentData() is None:
-                del self.vm.features[feature]
+                try:
+                    del self.vm.features[feature]
+                except exc.QubesDaemonCommunicationError:
+                    self.errors.append(
+                        "Failed to set {} due to insufficient "
+                        "permissions".format(feature))
             else:
-                self.vm.features[feature] = widget.currentData()
+                try:
+                    self.vm.features[feature] = widget.currentData()
+                except exc.QubesDaemonCommunicationError as ex:
+                    self.errors.append(
+                        "Failed to set {} due to insufficient "
+                        "permissions".format(feature))
 
     def __apply_gui_defaults(self):
         self.__apply_feature_change(widget=self.allow_fullscreen,
@@ -255,24 +296,34 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
 
     def __init_mem_defaults__(self):
         # qmemman settings
-        self.qmemman_config = ConfigParser()
-        self.vm_min_mem_val = '200MiB'  # str(qmemman_algo.MIN_PREFMEM)
-        self.dom0_mem_boost_val = '350MiB'  # str(qmemman_algo.DOM0_MEM_BOOST)
+        try:
+            self.qmemman_config = ConfigParser()
+            self.vm_min_mem_val = '200MiB'  # str(qmemman_algo.MIN_PREFMEM)
+            self.dom0_mem_boost_val = '350MiB'  # str(qmemman_algo.DOM0_MEM_BOOST)
 
-        self.qmemman_config.read(qmemman_config_path)
-        if self.qmemman_config.has_section('global'):
-            self.vm_min_mem_val = \
-                self.qmemman_config.get('global', 'vm-min-mem')
-            self.dom0_mem_boost_val = \
-                self.qmemman_config.get('global', 'dom0-mem-boost')
+            self.qmemman_config.read(qmemman_config_path)
+            if self.qmemman_config.has_section('global'):
+                self.vm_min_mem_val = \
+                    self.qmemman_config.get('global', 'vm-min-mem')
+                self.dom0_mem_boost_val = \
+                    self.qmemman_config.get('global', 'dom0-mem-boost')
 
-        self.vm_min_mem_val = parse_size(self.vm_min_mem_val)
-        self.dom0_mem_boost_val = parse_size(self.dom0_mem_boost_val)
+            self.vm_min_mem_val = parse_size(self.vm_min_mem_val)
+            self.dom0_mem_boost_val = parse_size(self.dom0_mem_boost_val)
 
-        self.min_vm_mem.setValue(int(self.vm_min_mem_val / 1024 / 1024))
-        self.dom0_mem_boost.setValue(int(self.dom0_mem_boost_val / 1024 / 1024))
+            self.min_vm_mem.setValue(
+                int(self.vm_min_mem_val / 1024 / 1024))
+            self.dom0_mem_boost.setValue(
+                int(self.dom0_mem_boost_val / 1024 / 1024))
+        except exc.QubesException:
+            self.min_vm_mem.setEnabled(False)
+            self.dom0_mem_boost.setEnabled(False)
 
     def __apply_mem_defaults__(self):
+
+        if not self.min_vm_mem.isEnabled() or \
+                not self.dom0_mem_boost.isEnabled():
+            return
 
         # qmemman settings
         current_min_vm_mem = self.min_vm_mem.value()
@@ -295,9 +346,14 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                     'global', 'cache-margin-factor', str(1.3))
                 # removed qmemman_algo.CACHE_FACTOR
 
-                qmemman_config_file = open(qmemman_config_path, 'a')
-                self.qmemman_config.write(qmemman_config_file)
-                qmemman_config_file.close()
+                try:
+                    qmemman_config_file = open(qmemman_config_path, 'a')
+                    self.qmemman_config.write(qmemman_config_file)
+                    qmemman_config_file.close()
+                except Exception as ex:
+                    self.errors.append(
+                        "Failed to set memory settings due to {}".format(
+                            str(ex)))
 
             else:
                 # If there already is a 'global' section, we don't use
@@ -312,7 +368,14 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
 
                 config_lines = []
 
-                qmemman_config_file = open(qmemman_config_path, 'r')
+                try:
+                    qmemman_config_file = open(qmemman_config_path, 'r')
+                except Exception as ex:
+                    self.errors.append(
+                        "Failed to set memory settings due to {}".format(
+                            str(ex)))
+                    return
+
                 for line in qmemman_config_file:
                     if line.strip().startswith('vm-min-mem'):
                         config_lines.append(lines_to_add['vm-min-mem'])
@@ -328,28 +391,44 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 for line in lines_to_add:
                     config_lines.append(line)
 
-                qmemman_config_file = open(qmemman_config_path, 'w')
-                qmemman_config_file.writelines(config_lines)
-                qmemman_config_file.close()
+                try:
+                    qmemman_config_file = open(qmemman_config_path, 'w')
+                    qmemman_config_file.writelines(config_lines)
+                    qmemman_config_file.close()
+                except Exception as ex:
+                    self.errors.append(
+                        "Failed to set memory settings due to {}".format(
+                            str(ex)))
+                    return
 
     def __init_updates__(self):
         self.updates_dom0_val = bool(
-            self.qubes_app.domains['dom0'].features.get(
-                'service.qubes-update-check', True))
+            utils.get_feature(self.qubes_app.domains['dom0'],
+                              'service.qubes-update-check',
+                              True))
 
         self.updates_dom0.setChecked(self.updates_dom0_val)
 
-        self.updates_vm.setChecked(self.qubes_app.check_updates_vm)
+        try:
+            self.updates_vm.setChecked(self.qubes_app.check_updates_vm)
+        except exc.QubesPropertyAccessError:
+            self.updates_vm.isEnabled(False)
+
         self.enable_updates_all.clicked.connect(self.__enable_updates_all)
         self.disable_updates_all.clicked.connect(self.__disable_updates_all)
 
         self.repos = repos = dict()
-        for i in _run_qrexec_repo('qubes.repos.List').split('\n'):
-            lst = i.split('\0')
-            # Keyed by repo name
-            dct = repos[lst[0]] = dict()
-            dct['prettyname'] = lst[1]
-            dct['enabled'] = lst[2] == 'enabled'
+        try:
+            for i in _run_qrexec_repo('qubes.repos.List').split('\n'):
+                lst = i.split('\0')
+                # Keyed by repo name
+                dct = repos[lst[0]] = dict()
+                dct['prettyname'] = lst[1]
+                dct['enabled'] = lst[2] == 'enabled'
+        except Exception as ex:
+            self.dom0_updates_repo.setEnabled(False)
+            self.itl_tmpl_updates_repo.setEnabled(False)
+            self.comm_tmpl_updates_repo.setEnabled(False)
 
         if repos['qubes-dom0-unstable']['enabled']:
             self.dom0_updates_repo.setCurrentIndex(3)
@@ -401,18 +480,38 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.__set_updates_all(False)
 
     def __set_updates_all(self, state):
+        errors = []
         for vm in self.qubes_app.domains:
             if vm.klass != "AdminVM":
-                vm.features['service.qubes-update-check'] = state
+                try:
+                    vm.features['service.qubes-update-check'] = state
+                except exc.QubesDaemonCommunicationError:
+                    errors.append(vm.name)
+
+        if errors:
+            QtWidgets.QMessageBox.warning(
+                self, "Error!",
+                "Failed to set state for some qubes: {}".format(
+                    ", ".join(errors)))
 
     def __apply_updates__(self):
-        if self.updates_dom0.isChecked() != self.updates_dom0_val:
-            self.qubes_app.domains['dom0'].features[
-                'service.qubes-update-check'] = \
-                self.updates_dom0.isChecked()
+        if self.updates_dom0.isEnabled() and \
+                self.updates_dom0.isChecked() != self.updates_dom0_val:
+            try:
+                self.qubes_app.domains['dom0'].features[
+                    'service.qubes-update-check'] = \
+                    self.updates_dom0.isChecked()
+            except exc.QubesDaemonCommunicationError:
+                self.errors.append("Failed to change dom0 update value due "
+                                   "to insufficient permissions.")
 
-        if self.qubes_app.check_updates_vm != self.updates_vm.isChecked():
-            self.qubes_app.check_updates_vm = self.updates_vm.isChecked()
+        if self.updates_vm.isEnabled() and \
+                self.qubes_app.check_updates_vm != self.updates_vm.isChecked():
+            try:
+                self.qubes_app.check_updates_vm = self.updates_vm.isChecked()
+            except exc.QubesPropertyAccessError:
+                self.errors.append("Failed to set qube update checking due "
+                                   "to insufficient permissions.")
 
     def _manage_repos(self, repolist, action):
         for name in repolist:
@@ -470,17 +569,21 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self._manage_repos(disable, 'Disable')
 
     def __apply_repos__(self):
-        self._handle_dom0_updates_combobox(
-            self.dom0_updates_repo.currentIndex())
-        self._handle_itl_tmpl_updates_combobox(
-            self.itl_tmpl_updates_repo.currentIndex())
-        self._handle_comm_tmpl_updates_combobox(
-            self.comm_tmpl_updates_repo.currentIndex())
+        if self.dom0_updates_repo.isEnabled():
+            self._handle_dom0_updates_combobox(
+                self.dom0_updates_repo.currentIndex())
+        if self.itl_tmpl_updates_repo.isEnabled():
+            self._handle_itl_tmpl_updates_combobox(
+                self.itl_tmpl_updates_repo.currentIndex())
+        if self.comm_tmpl_updates_repo.isEnabled():
+            self._handle_comm_tmpl_updates_combobox(
+                self.comm_tmpl_updates_repo.currentIndex())
 
     def reject(self):
         self.done(0)
 
     def save_and_apply(self):
+        self.errors = []
 
         self.__apply_system_defaults__()
         self.__apply_kernel_defaults__()
@@ -488,6 +591,11 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.__apply_updates__()
         self.__apply_repos__()
         self.__apply_gui_defaults()
+
+        if self.errors:
+            err_msg = "Failed to apply some settings:\n" + "\n".join(
+                self.errors)
+            QtWidgets.QMessageBox.warning(self, "Error", err_msg)
 
 
 def main():

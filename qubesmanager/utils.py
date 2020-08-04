@@ -31,6 +31,7 @@ from contextlib import suppress
 import sys
 import qasync
 from qubesadmin import events
+from qubesadmin import exc
 
 from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
 
@@ -91,11 +92,18 @@ class SizeSpinBox(QtWidgets.QSpinBox):
         return int(float(value) * multiplier)
 
 
+def get_feature(vm, feature_name, default_value):
+    try:
+        return vm.features.get(feature_name, default_value)
+    except exc.QubesDaemonCommunicationError:
+        return default_value
+
+
 def get_boolean_feature(vm, feature_name):
     """heper function to get a feature converted to a Bool if it does exist.
     Necessary because of the true/false in features being coded as 1/empty
     string."""
-    result = vm.features.get(feature_name, None)
+    result = get_feature(vm, feature_name, None)
     if result is not None:
         result = bool(result)
     return result

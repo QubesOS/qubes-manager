@@ -105,8 +105,11 @@ class GlobalSettingsTest(unittest.TestCase):
 
         # correct defaultDispVM
         selected_default_dispvm = self.dialog.default_dispvm_combo.currentText()
-        correct_default_dispvm = \
-            str(getattr(self.qapp, 'default_dispvm', "(none)"))
+        current_default_dispvm = getattr(self.qapp, 'default_dispvm', None)
+        if current_default_dispvm is None:
+            correct_default_dispvm = "(none)"
+        else:
+            correct_default_dispvm = str(current_default_dispvm)
         self.assertTrue(
             selected_default_dispvm.startswith(correct_default_dispvm),
             "Incorrect defaultDispVM loaded")
@@ -118,11 +121,8 @@ class GlobalSettingsTest(unittest.TestCase):
 
     def test_02_dom0_updates_load(self):
         # check dom0 updates
-        try:
-            dom0_updates = self.qapp.domains[
-                'dom0'].features['service.qubes-update-check']
-        except KeyError:
-            dom0_updates = True
+        dom0_updates = self.qapp.domains[
+            'dom0'].features.get('service.qubes-update-check', True)
 
         self.assertEqual(bool(dom0_updates),
                          self.dialog.updates_dom0.isChecked(),
