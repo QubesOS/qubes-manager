@@ -453,7 +453,7 @@ class QubesTableModel(QAbstractTableModel):
 
         # Used for sorting
         if role == Qt.UserRole + 1:
-            if vm.klass != 'AdminVM':
+            if vm.klass == 'AdminVM':
                 return ""
             if col_name == "Type":
                 return vm.klass
@@ -572,7 +572,7 @@ class StartVMThread(common_threads.QubesThread):
 class UpdateVMThread(common_threads.QubesThread):
     def run(self):
         try:
-            if self.vm.klass != 'AdminVM':
+            if self.vm.klass == 'AdminVM':
                 subprocess.check_call(
                     ["/usr/bin/qubes-dom0-update", "--clean", "--gui"])
             else:

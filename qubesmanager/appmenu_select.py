@@ -21,6 +21,7 @@
 
 import subprocess
 from PyQt5 import QtWidgets, QtCore  # pylint: disable=import-error
+from qubesadmin import exc
 
 # TODO description in tooltip
 # TODO icon
@@ -60,9 +61,12 @@ class AppmenuSelectManager:
         self.fill_apps_list(template=None)
 
     def fill_apps_list(self, template=None):
-        self.whitelisted = [line for line in subprocess.check_output(
-                ['qvm-appmenus', '--get-whitelist', self.vm.name]
-            ).decode().strip().split('\n') if line]
+        try:
+            self.whitelisted = [line for line in subprocess.check_output(
+                    ['qvm-appmenus', '--get-whitelist', self.vm.name]
+                ).decode().strip().split('\n') if line]
+        except exc.QubesException:
+            self.whitelisted = []
 
         currently_selected = [
             self.app_list.selected_list.item(i).ident
@@ -84,9 +88,13 @@ class AppmenuSelectManager:
             command.extend(['--template', template.name])
         command.append(self.vm.name)
 
-        available_appmenus = [
-            AppListWidgetItem.from_line(line)
-            for line in subprocess.check_output(command).decode().splitlines()]
+        try:
+            available_appmenus = [
+                AppListWidgetItem.from_line(line)
+                for line in subprocess.check_output(
+                    command).decode().splitlines()]
+        except exc.QubesException:
+            available_appmenus = []
 
         for app in available_appmenus:
             if app.ident in whitelist:

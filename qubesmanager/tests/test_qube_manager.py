@@ -1313,8 +1313,8 @@ class QubeManagerThreadTest(unittest.TestCase):
 
     @unittest.mock.patch('subprocess.check_call')
     def test_20_update_vm_thread_dom0(self, check_call):
-        vm = unittest.mock.Mock(spec=['qid'])
-        vm.qid = 0
+        vm = unittest.mock.Mock(spec=['klass'])
+        vm.klass = 'AdminVM'
         thread = qube_manager.UpdateVMThread(vm)
         thread.run()
 
@@ -1325,10 +1325,10 @@ class QubeManagerThreadTest(unittest.TestCase):
     @unittest.mock.patch('subprocess.call')
     def test_21_update_vm_thread_running(self, mock_call, mock_open):
         vm = unittest.mock.Mock(
-            spec=['qid', 'is_running', 'run_service_for_stdio', 'run_service'],
+            spec=['klass', 'is_running', 'run_service_for_stdio', 'run_service'],
             **{'is_running.return_value': True})
 
-        vm.qid = 1
+        vm.klass = 'AppVM'
         vm.run_service_for_stdio.return_value = (b'changed=no\n', None)
 
         thread = qube_manager.UpdateVMThread(vm)
@@ -1350,11 +1350,11 @@ class QubeManagerThreadTest(unittest.TestCase):
     @unittest.mock.patch('subprocess.call')
     def test_22_update_vm_thread_not_running(self, mock_call, mock_open):
         vm = unittest.mock.Mock(
-            spec=['qid', 'is_running', 'run_service_for_stdio',
+            spec=['klass', 'is_running', 'run_service_for_stdio',
                   'run_service', 'start', 'name'],
             **{'is_running.return_value': False})
 
-        vm.qid = 1
+        vm.klass = 'AppVM'
         vm.run_service_for_stdio.return_value = (b'changed=yes\n', None)
 
         thread = qube_manager.UpdateVMThread(vm)
@@ -1377,10 +1377,10 @@ class QubeManagerThreadTest(unittest.TestCase):
     @unittest.mock.patch('subprocess.check_call')
     def test_23_update_vm_thread_error(self, *_args):
         vm = unittest.mock.Mock(
-            spec=['qid', 'is_running'],
+            spec=['klass', 'is_running'],
             **{'is_running.side_effect': ChildProcessError})
 
-        vm.qid = 1
+        vm.klass = 'AppVM'
 
         thread = qube_manager.UpdateVMThread(vm)
         thread.run()

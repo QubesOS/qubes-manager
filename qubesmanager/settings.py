@@ -102,7 +102,7 @@ class RefreshAppsVMThread(common_threads.QubesThread):
                 self.tr('Refresh in progress (refreshing applications '
                         'from {})').format(vm.name))
             try:
-                if not vm.is_running():
+                if not utils.is_running(vm, True):
                     not_running = True
                     vm.start()
                 else:
@@ -137,10 +137,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.threads_list = []
         self.progress = None
         self.thread_closes = False
-        try:
-            self.source_vm = self.vm.template
-        except AttributeError:
-            self.source_vm = self.vm
 
         self.setupUi(self)
         self.setWindowTitle(self.tr("Settings: {vm}").format(vm=self.vm.name))
@@ -182,6 +178,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 self.firewall_modified_outside_label.setVisible(False)
             except firewall.FirewallModifiedOutsideError:
                 self.disable_all_fw_conf()
+            except qubesadmin.exc.QubesException:
+                self.tabWidget.setTabEnabled(
+                    self.tabs_indices['firewall'], False)
 
             self.new_rule_button.clicked.connect(self.new_rule_button_pressed)
             self.edit_rule_button.clicked.connect(self.edit_rule_button_pressed)
@@ -306,7 +305,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             ret.append(repr(ex))
 
         try:
-            if self.policy_allow_radio_button.isEnabled():
+            if self.tabWidget.isTabEnabled(self.tabs_indices['firewall']) and \
+                    self.policy_allow_radio_button.isEnabled():
                 self.fw_model.apply_rules(
                     self.policy_allow_radio_button.isChecked(),
                     self.temp_full_access.isChecked(),
@@ -328,15 +328,19 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         return ret
 
     def check_network_availability(self):
-        netvm = self.vm.netvm
-        try:
-            provides_network = self.vm.provides_network
-        except AttributeError:
-            provides_network = False
+        netvm = getattr(self.vm, 'netvm', None)
+        provides_network = getattr(self.vm, 'provides_network', False)
+
         self.no_netvm_label.setVisible(netvm is None and not provides_network)
-        self.netvm_no_firewall_label.setVisible(
-            netvm is not None and
-            not netvm.features.check_with_template('qubes-firewall', False))
+
+        try:
+            no_firewall_state = \
+                netvm is not None and \
+                not netvm.features.check_with_template('qubes-firewall', False)
+        except qubesadmin.exc.QubesDaemonCommunicationError:
+            no_firewall_state = False
+
+        self.netvm_no_firewall_label.setVisible(no_firewall_state)
         self.sysnet_warning_label.setVisible(netvm is None and provides_network)
 
     def current_tab_changed(self, idx):
@@ -364,57 +368,80 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.rename_vm_button.setEnabled(not self.vm.is_running())
         self.delete_vm_button.setEnabled(not self.vm.is_running())
 
-        if self.vm.is_running():
+        if utils.is_running(self.vm, False):
             self.delete_vm_button.setText(
                 self.tr('Delete qube (cannot delete a running qube)'))
 
         if self.vm.qid == 0:
             self.vmlabel.setVisible(False)
         else:
-            utils.initialize_widget_with_labels(
-                widget=self.vmlabel,
-                qubes_app=self.qubesapp,
-                holder=self.vm)
-            self.vmlabel.setVisible(True)
-            self.vmlabel.setEnabled(not self.vm.is_running())
+            try:
+                utils.initialize_widget_with_labels(
+                    widget=self.vmlabel,
+                    qubes_app=self.qubesapp,
+                    holder=self.vm)
+                self.vmlabel.setVisible(True)
+                self.vmlabel.setEnabled(not utils.is_running(self.vm, False))
+            except qubesadmin.exc.QubesPropertyAccessError:
+                self.vmlabel.setEnabled(False)
 
         if self.vm.klass == 'AppVM':
-            utils.initialize_widget_with_vms(
-                widget=self.template_name,
-                qubes_app=self.qubesapp,
-                filter_function=(lambda vm: vm.klass == 'TemplateVM'),
-                holder=self.vm,
-                property_name='template')
+            try:
+                utils.initialize_widget_with_vms(
+                    widget=self.template_name,
+                    qubes_app=self.qubesapp,
+                    filter_function=(lambda vm: vm.klass == 'TemplateVM'),
+                    holder=self.vm,
+                    property_name='template')
+            except qubesadmin.exc.QubesPropertyAccessError:
+                self.template_name.setCurrentIndex(-1)
+                self.template_name.setEnabled(False)
+
         elif self.vm.klass == 'DispVM':
-            utils.initialize_widget_with_vms(
-                widget=self.template_name,
-                qubes_app=self.qubesapp,
-                filter_function=(lambda vm:
-                                 getattr(vm, 'template_for_dispvms', False)),
-                holder=self.vm,
-                property_name='template')
+            try:
+                utils.initialize_widget_with_vms(
+                    widget=self.template_name,
+                    qubes_app=self.qubesapp,
+                    filter_function=(lambda vm:
+                                     getattr(vm, 'template_for_dispvms', False)),
+                    holder=self.vm,
+                    property_name='template')
+            except qubesadmin.exc.QubesPropertyAccessError:
+                self.template_name.setCurrentIndex(-1)
+                self.template_name.setEnabled(False)
+
         else:
             self.template_name.setEnabled(False)
 
-        if self.vm.is_running():
+        if utils.is_running(self.vm, False):
             self.template_name.setEnabled(False)
 
-        utils.initialize_widget_with_vms(
-            widget=self.netVM,
-            qubes_app=self.qubesapp,
-            filter_function=(lambda vm: vm.provides_network),
-            holder=self.vm,
-            property_name='netvm',
-            allow_default=True,
-            allow_none=True)
+        try:
+            utils.initialize_widget_with_vms(
+                widget=self.netVM,
+                qubes_app=self.qubesapp,
+                filter_function=(lambda vm:
+                                 getattr(vm, 'provides_network', False)),
+                holder=self.vm,
+                property_name='netvm',
+                allow_default=True,
+                allow_none=True)
+        except qubesadmin.exc.QubesPropertyAccessError:
+            self.netVM.setEnabled(False)
+            self.netVM.setCurrentIndex(-1)
 
         self.netVM.currentIndexChanged.connect(self.check_warn_dispvmnetvm)
 
-        self.include_in_backups.setChecked(self.vm.include_in_backups)
+        try:
+            self.include_in_backups.setChecked(self.vm.include_in_backups)
+        except qubesadmin.exc.QubesPropertyAccessError:
+            self.include_in_backups.setEnabled(False)
 
         try:
             self.autostart_vm.setChecked(self.vm.autostart)
             self.autostart_vm.setVisible(True)
+        except qubesadmin.exc.QubesPropertyAccessError:
+            self.autostart_vm.setEnabled(False)
         except AttributeError:
             self.autostart_vm.setVisible(False)
 
@@ -422,41 +449,50 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.type_label.setText(self.vm.klass)
 
         # installed by rpm
-        self.rpm_label.setText('Yes' if self.vm.installed_by_rpm else 'No')
+        self.rpm_label.setText(
+            'Yes' if getattr(self.vm, 'installed_by_rpm', False) else 'No')
 
         # networking info
-        if self.vm.netvm:
+        if getattr(self.vm, 'netvm', None):
             self.networking_groupbox.setEnabled(True)
-            self.ip_label.setText(self.vm.ip or "none")
-            self.netmask_label.setText(self.vm.visible_netmask or "none")
-            self.gateway_label.setText(self.vm.visible_gateway or "none")
+            self.ip_label.setText(getattr(self.vm, 'ip', None) or "none")
+            self.netmask_label.setText(
+                getattr(self.vm, 'visible_netmask', None) or "none")
+            self.gateway_label.setText(
+                getattr(self.vm, 'visible_gateway', None) or "none")
             dns_list = getattr(self.vm, 'dns', ['10.139.1.1', '10.139.1.2'])
             self.dns_label.setText(", ".join(dns_list))
         else:
             self.networking_groupbox.setEnabled(False)
 
         # max priv storage
-        self.priv_img_size = self.vm.volumes['private'].size // 1024**2
-        self.max_priv_storage.setMinimum(self.priv_img_size)
-        self.max_priv_storage.setValue(self.priv_img_size)
-        self.max_priv_storage.setMaximum(
-            max(self.priv_img_size,
-                self.qubesapp.pools[self.vm.volumes['private'].pool].size
-                // 1024**2))
+        try:
+            self.priv_img_size = self.vm.volumes['private'].size // 1024**2
+            self.max_priv_storage.setMinimum(self.priv_img_size)
+            self.max_priv_storage.setValue(self.priv_img_size)
+            self.max_priv_storage.setMaximum(
+                max(self.priv_img_size,
+                    self.qubesapp.pools[self.vm.volumes['private'].pool].size
+                    // 1024**2))
+        except qubesadmin.exc.QubesException:
+            self.max_priv_storage.setEnabled(False)
 
-        self.root_img_size = self.vm.volumes['root'].size // 1024**2
-        self.root_resize.setValue(self.root_img_size)
-        self.root_resize.setMinimum(self.root_img_size)
-        self.root_resize.setMaximum(
-            max(self.root_img_size,
-                self.qubesapp.pools[self.vm.volumes['root'].pool].size
-                // 1024**2))
-        self.root_resize.setEnabled(self.vm.volumes['root'].save_on_stop)
-        if not self.root_resize.isEnabled():
-            self.root_resize.setToolTip(
-                self.tr("To change system storage size, change properties "
-                        "of the underlying template."))
-        self.root_resize_label.setEnabled(self.root_resize.isEnabled())
+        try:
+            self.root_img_size = self.vm.volumes['root'].size // 1024**2
+            self.root_resize.setValue(self.root_img_size)
+            self.root_resize.setMinimum(self.root_img_size)
+            self.root_resize.setMaximum(
+                max(self.root_img_size,
+                    self.qubesapp.pools[self.vm.volumes['root'].pool].size
+                    // 1024**2))
+            self.root_resize.setEnabled(self.vm.volumes['root'].save_on_stop)
+            if not self.root_resize.isEnabled():
+                self.root_resize.setToolTip(
+                    self.tr("To change system storage size, change properties "
+                            "of the underlying template."))
+            self.root_resize_label.setEnabled(self.root_resize.isEnabled())
+        except qubesadmin.exc.QubesException:
+            self.root_resize.setEnabled(False)
 
         self.warn_template_missing_apps.setVisible(False)
 
@@ -487,7 +523,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         # include in backups
         try:
-            if self.vm.include_in_backups != \
+            if self.include_in_backups.isEnabled() and\
+                    self.vm.include_in_backups != \
                     self.include_in_backups.isChecked():
                 self.vm.include_in_backups = self.include_in_backups.isChecked()
         except qubesadmin.exc.QubesException as ex:
@@ -502,22 +539,24 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             msg.append(str(ex))
 
         # max priv storage
-        priv_size = self.max_priv_storage.value()
-        if self.priv_img_size != priv_size:
-            try:
-                self.vm.volumes['private'].resize(priv_size * 1024**2)
-                self.priv_img_size = priv_size
-            except qubesadmin.exc.QubesException as ex:
-                msg.append(str(ex))
+        if self.max_priv_storage.isEnabled():
+            priv_size = self.max_priv_storage.value()
+            if self.priv_img_size != priv_size:
+                try:
+                    self.vm.volumes['private'].resize(priv_size * 1024**2)
+                    self.priv_img_size = priv_size
+                except qubesadmin.exc.QubesException as ex:
+                    msg.append(str(ex))
 
         # max sys storage
-        sys_size = self.root_resize.value()
-        if self.root_img_size != sys_size:
-            try:
-                self.vm.volumes['root'].resize(sys_size * 1024**2)
-                self.root_img_size = sys_size
-            except qubesadmin.exc.QubesException as ex:
-                msg.append(str(ex))
+        if self.root_resize.isEnabled():
+            sys_size = self.root_resize.value()
+            if self.root_img_size != sys_size:
+                try:
+                    self.vm.volumes['root'].resize(sys_size * 1024**2)
+                    self.root_img_size = sys_size
+                except qubesadmin.exc.QubesException as ex:
+                    msg.append(str(ex))
 
         return msg
 
@@ -525,6 +564,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         if not self.include_in_balancing.isChecked():
             # do not interfere with settings if the VM is not included in memory
             # balancing
+            return
+        if not self.max_mem_size.isEnabled() or not self.init_mem.isEnabled():
+            # do not interfere with settings if they are unavailable
             return
         if self.max_mem_size.value() < self.init_mem.value():
             QtWidgets.QMessageBox.warning(
@@ -536,7 +578,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         # Linux specific limit: init memory must not be below
         # max_mem_size/10.79 in order to allow scaling up to
         # max_mem_size (or else "add_memory() failed: -17" problem)
-        if self.vm.features.check_with_template('os', None) == 'Linux' and \
+        try:
+            is_linux = self.vm.features.check_with_template('os', None) == \
+                       'Linux'
+        except qubesadmin.exc.QubesException:
+            is_linux = False
+
+        if is_linux and \
                 self.init_mem.value() * 10 < self.max_mem_size.value():
             self.init_mem.setValue((self.max_mem_size.value() + 9) // 10)
             QtWidgets.QMessageBox.warning(
@@ -563,7 +611,12 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         dispvm_netvm = getattr(dispvm, 'netvm', None)
 
         if own_netvm == qubesadmin.DEFAULT:
-            own_netvm = self.vm.property_get_default('netvm')
+            try:
+                own_netvm = self.vm.property_get_default('netvm')
+            except qubesadmin.exc.QubesPropertyAccessError:
+                # no point in warning if we don't know what we're warning about
+                self.warn_netvm_dispvm.setVisible(False)
+                return
 
         if dispvm_netvm and dispvm_netvm != own_netvm:
             self.warn_netvm_dispvm.setVisible(True)
@@ -576,7 +629,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         running_dependencies = [vm.name for (vm, prop) in dependencies
                                 if vm and prop == 'template'
-                                and vm.is_running()]
+                                and utils.is_running(vm, False)]
 
         if running_dependencies:
             QtWidgets.QMessageBox.warning(
@@ -663,64 +716,85 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
     def __init_advanced_tab__(self):
 
-        self.init_mem.setValue(int(self.vm.memory))
+        vm_memory = getattr(self.vm, 'memory', None)
+        vm_maxmem = getattr(self.vm, 'maxmem', None)
 
-        if self.vm.maxmem > 0:
-            self.max_mem_size.setValue(int(self.vm.maxmem))
+        if vm_memory is None:
+            self.init_mem.setEnabled(False)
         else:
-            maxmem = self.vm.property_get_default('maxmem')
+            self.init_mem.setValue(int(vm_memory))
+
+        if vm_maxmem is None:
+            self.max_mem_size.setEnabled(False)
+        elif vm_maxmem > 0:
+            self.max_mem_size.setValue(int(vm_maxmem))
+        else:
+            try:
+                maxmem = self.vm.property_get_default('maxmem')
+            except qubesadmin.exc.QubesPropertyAccessError:
+                maxmem = 0
             if maxmem == 0:
-                maxmem = self.vm.memory
-            self.max_mem_size.setValue(int(
-                self.vm.features.get('qubesmanager.maxmem_value', maxmem)))
+                maxmem = vm_memory
+            self.max_mem_size.setValue(
+                int(utils.get_feature(
+                    self.vm, 'qubesmanager.maxmem_value', maxmem)))
 
         self.vcpus.setMinimum(1)
-        self.vcpus.setValue(int(self.vm.vcpus))
+        self.vcpus.setValue(int(getattr(self.vm, 'vcpus', 1)))
 
         self.include_in_balancing.setEnabled(True)
-        self.include_in_balancing.setChecked(int(self.vm.maxmem) > 0)
+        self.include_in_balancing.setChecked(
+            int(getattr(self.vm, 'maxmem', 0)) > 0)
         self.max_mem_size.setEnabled(self.include_in_balancing.isChecked())
 
         # in case VM is HVM
         if hasattr(self.vm, "kernel"):
             self.kernel_groupbox.setVisible(True)
-            utils.initialize_widget_with_kernels(
-                widget=self.kernel,
-                qubes_app=self.qubesapp,
-                allow_none=True,
-                allow_default=True,
-                holder=self.vm,
-                property_name='kernel')
-            self.kernel.currentIndexChanged.connect(self.kernel_changed)
-            self.kernel_opts.setText(getattr(self.vm, 'kernelopts', '-'))
+            try:
+                utils.initialize_widget_with_kernels(
+                    widget=self.kernel,
+                    qubes_app=self.qubesapp,
+                    allow_none=True,
+                    allow_default=True,
+                    holder=self.vm,
+                    property_name='kernel')
+                self.kernel.currentIndexChanged.connect(self.kernel_changed)
+                self.kernel_opts.setText(getattr(self.vm, 'kernelopts', '-'))
+            except qubesadmin.exc.QubesPropertyAccessError:
+                self.kernel_groupbox.setVisible(False)
         else:
             self.kernel_groupbox.setVisible(False)
-
-        self.other_groupbox.setVisible(False)
 
         if not hasattr(self.vm, 'default_dispvm'):
             self.other_groupbox.setVisible(False)
         else:
-            self.other_groupbox.setVisible(True)
-            utils.initialize_widget_with_vms(
-                widget=self.default_dispvm,
-                qubes_app=self.qubesapp,
-                filter_function=(lambda vm:
-                                 getattr(vm, 'template_for_dispvms', False)),
-                allow_none=True,
-                allow_default=True,
-                holder=self.vm,
-                property_name='default_dispvm'
-            )
-            self.default_dispvm.currentIndexChanged.connect(
-                self.check_warn_dispvmnetvm)
+            try:
+                self.other_groupbox.setVisible(True)
+                utils.initialize_widget_with_vms(
+                    widget=self.default_dispvm,
+                    qubes_app=self.qubesapp,
+                    filter_function=(lambda vm:
+                                     getattr(
+                                         vm, 'template_for_dispvms', False)),
+                    allow_none=True,
+                    allow_default=True,
+                    holder=self.vm,
+                    property_name='default_dispvm'
+                )
+                self.default_dispvm.currentIndexChanged.connect(
+                    self.check_warn_dispvmnetvm)
+            except qubesadmin.exc.QubesPropertyAccessError:
+                self.other_groupbox.setVisible(False)
 
         self.check_warn_dispvmnetvm()
         self.update_virt_mode_list()
 
-        windows_running = \
-            self.vm.features.check_with_template('os', None) == 'Windows' \
-            and self.vm.is_running()
+        try:
+            windows_running = \
+                self.vm.features.check_with_template('os', None) == 'Windows' \
+                and self.vm.is_running()
+        except qubesadmin.exc.QubesException:
+            windows_running = False
 
         self.seamless_on_button.setEnabled(windows_running)
         self.seamless_off_button.setEnabled(windows_running)
@@ -728,15 +802,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.seamless_on_button.clicked.connect(self.enable_seamless)
         self.seamless_off_button.clicked.connect(self.disable_seamless)
 
-        if hasattr(self.vm, "template_for_dispvms"):
-            self.dvm_template_checkbox.setChecked(self.vm.template_for_dispvms)
-        else:
-            self.dvm_template_checkbox.setVisible(False)
+        self.dvm_template_checkbox.setChecked(
+            getattr(self.vm, 'template_for_dispvms', False))
 
         self.provides_network_checkbox.setChecked(
             getattr(self.vm, 'provides_network', False))
         if self.provides_network_checkbox.isChecked():
-            domains_using = [vm.name for vm in self.vm.connected_vms]
+            domains_using = [vm.name for vm
+                             in getattr(self.vm, 'connected_vms', [])]
             if domains_using:
                 self.provides_network_checkbox.setEnabled(False)
                 self.provides_network_checkbox.setToolTip(self.tr(
@@ -772,20 +845,34 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.allow_utf8_initial = self.allow_utf8.currentIndex()
 
     def enable_seamless(self):
-        self.vm.run_service_for_stdio("qubes.SetGuiMode", input=b'SEAMLESS')
+        try:
+            self.vm.run_service_for_stdio("qubes.SetGuiMode", input=b'SEAMLESS')
+        except qubesadmin.exc.QubesException as ex:
+            QtWidgets.QMessageBox.warning(
+                self,
+                self.tr("Failed to set seamless mode"),
+                self.tr("Error occured: {}".format(str(ex))))
 
     def disable_seamless(self):
-        self.vm.run_service_for_stdio("qubes.SetGuiMode", input=b'FULLSCREEN')
+        try:
+            self.vm.run_service_for_stdio("qubes.SetGuiMode",
+                                          input=b'FULLSCREEN')
+        except qubesadmin.exc.QubesException as ex:
+            QtWidgets.QMessageBox.warning(
+                self,
+                self.tr("Failed to set fullscreen mode"),
+                self.tr("Error occured: {}".format(str(ex))))
 
     def __apply_advanced_tab__(self):
         msg = []
 
         # mem/cpu
         try:
-            if self.init_mem.value() != int(self.vm.memory):
+            if self.init_mem.isEnabled() and \
+                    self.init_mem.value() != int(self.vm.memory):
                 self.vm.memory = self.init_mem.value()
 
-            curr_maxmem = int(self.vm.maxmem)
+            curr_maxmem = int(getattr(self.vm, 'maxmem', 0))
 
             if not self.include_in_balancing.isChecked():
                 maxmem = 0
@@ -795,9 +882,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             if maxmem != curr_maxmem:
                 if curr_maxmem > 0:
                     self.vm.features['qubesmanager.maxmem_value'] = curr_maxmem
-                self.vm.maxmem = maxmem
+                if maxmem == 0 or self.max_mem_size.isEnabled():
+                    self.vm.maxmem = maxmem
 
-            if self.vcpus.value() != int(self.vm.vcpus):
+            if self.vcpus.isEnabled() and \
+                    self.vcpus.value() != int(self.vm.vcpus):
                 self.vm.vcpus = self.vcpus.value()
 
         except qubesadmin.exc.QubesException as ex:
@@ -909,7 +998,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         if hasattr(self, "dev_list"):
             devs_attached = self.dev_list.selected_list.count() != 0
         else:
-            devs_attached = bool(list(self.vm.devices['pci'].persistent()))
+            try:
+                devs_attached = bool(list(self.vm.devices['pci'].persistent()))
+            except qubesadmin.exc.QubesException:
+                devs_attached = False
 
         if devs_attached:
             self.pvh_mode_hidden.show()
@@ -923,18 +1015,25 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         # due to how virtualization mode has uniquely different displayed and
         # actual name of the default value, I will add it manually
-        choices.insert(0, (
-            "default ({})".format(
-                self.vm.property_get_default('virt_mode').upper()),
-            qubesadmin.DEFAULT))
+        try:
+            choices.insert(0, (
+                "default ({})".format(
+                    self.vm.property_get_default('virt_mode').upper()),
+                qubesadmin.DEFAULT))
+        except qubesadmin.exc.QubesException:
+            choices.insert(0,
+                           ("default ({SYSTEM DEFAULT})", qubesadmin.DEFAULT))
 
-        utils.initialize_widget_for_property(
-            widget=self.virt_mode,
-            choices=choices,
-            holder=self.vm,
-            property_name='virt_mode')
+        try:
+            utils.initialize_widget_for_property(
+                widget=self.virt_mode,
+                choices=choices,
+                holder=self.vm,
+                property_name='virt_mode')
+        except qubesadmin.exc.QubesPropertyAccessError:
+            self.virt_mode.setEnabled(False)
 
-        if old_mode is not None:
+        if self.virt_mode.isEnabled() and old_mode is not None:
             self.virt_mode.setCurrentIndex(self.virt_mode.findData(old_mode))
 
         self.virt_mode.currentIndexChanged.connect(self.virt_mode_changed)
@@ -967,7 +1066,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             return False
 
         if name is qubesadmin.DEFAULT:
-            name = self.vm.app.default_kernel
+            name = getattr(self.vm.app, 'default_kernel', None)
 
         m = re.search(r'(\d+)\.(\d+)', name)
 
@@ -982,9 +1081,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.dev_list.add_all_button.setVisible(False)
         self.devices_layout.addWidget(self.dev_list)
 
-        dom0_devs = list(self.vm.app.domains['dom0'].devices['pci'].available())
-
-        attached_devs = list(self.vm.devices['pci'].persistent())
+        try:
+            dom0_devs = \
+                list(self.vm.app.domains['dom0'].devices['pci'].available())
+            attached_devs = list(self.vm.devices['pci'].persistent())
+        except qubesadmin.exc.QubesException:
+            # no permission to access devices
+            self.tabWidget.setTabEnabled(self.tabs_indices['devices'], False)
+            return
 
         # pylint: disable=too-few-public-methods
         class DevListWidgetItem(QtWidgets.QListWidgetItem):
@@ -1014,7 +1118,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.dmm_warning_adv.hide()
             self.dmm_warning_dev.hide()
 
-        if self.vm.is_running():
+        if utils.is_running(self.vm, False):
             self.dev_list.setEnabled(False)
             self.turn_off_vm_to_modify_devs.setVisible(True)
             self.no_strict_reset_button.setEnabled(False)
@@ -1024,10 +1128,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         self.update_pvh_dont_support_devs()
 
-        self.dev_list.setEnabled(not self.vm.is_running())
+        self.dev_list.setEnabled(not utils.is_running(self.vm, False))
 
     def __apply_devices_tab__(self):
         msg = []
+
+        if not self.tabWidget.isTabEnabled(self.tabs_indices['devices']):
+            return msg
 
         try:
             old_devs = list(self.vm.devices['pci'].persistent())
@@ -1137,16 +1244,20 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
     def __init_services_tab__(self):
         self.new_srv_dict = {}
-        for feature in self.vm.features:
-            if not feature.startswith('service.'):
-                continue
-            service = feature[len('service.'):]
-            item = QtWidgets.QListWidgetItem(service)
-            item.setCheckState(ui_settingsdlg.QtCore.Qt.Checked
-                               if self.vm.features[feature]
-                               else ui_settingsdlg.QtCore.Qt.Unchecked)
-            self.services_list.addItem(item)
-            self.new_srv_dict[service] = self.vm.features[feature]
+        try:
+            for feature in self.vm.features:
+                if not feature.startswith('service.'):
+                    continue
+                service = feature[len('service.'):]
+                item = QtWidgets.QListWidgetItem(service)
+                item.setCheckState(ui_settingsdlg.QtCore.Qt.Checked
+                                   if self.vm.features[feature]
+                                   else ui_settingsdlg.QtCore.Qt.Unchecked)
+                self.services_list.addItem(item)
+                self.new_srv_dict[service] = self.vm.features[feature]
+        except qubesadmin.exc.QubesDaemonCommunicationError:
+            self.tabWidget.setTabEnabled(self.tabs_indices["services"], False)
+            return
 
         self.service_line_edit.addItem("")
 
@@ -1157,9 +1268,12 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             if feature.startswith(service_prefix):
                 supported_services.add(feature[len(service_prefix):])
         if getattr(self.vm, "template", None):
-            for feature in self.vm.template.features:
-                if feature.startswith(service_prefix):
-                    supported_services.add(feature[len(service_prefix):])
+            try:
+                for feature in self.vm.template.features:
+                    if feature.startswith(service_prefix):
+                        supported_services.add(feature[len(service_prefix):])
+            except qubesadmin.exc.QubesDaemonCommunicationError:
+                pass
 
         for service in sorted(supported_services):
             self.service_line_edit.addItem(service)
@@ -1204,6 +1318,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
     def __apply_services_tab__(self):
         msg = []
+
+        if not self.tabWidget.isTabEnabled(self.tabs_indices['services']):
+            return msg
 
         try:
             for i in range(self.services_list.count()):

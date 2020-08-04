@@ -124,6 +124,8 @@ def get_boolean_feature(vm, feature_name):
 def did_widget_selection_change(widget):
     """a simple heuristic to check if the widget text contains appropriately
     translated 'current'"""
+    if not widget.isEnabled():
+        return False
     return not translate(" (current)") in widget.currentText()
 
 
