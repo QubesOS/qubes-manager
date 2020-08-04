@@ -138,9 +138,11 @@ class CloneVMDlg(QtWidgets.QDialog, Ui_CloneVMDlg):
                 self.tr("Error cloning the qube!"),
                 self.tr("ERROR: {0}").format(self.thread.msg))
         else:
-            QtWidgets.QMessageBox.information(
+            (title, msg) = self.thread.msg
+            QtWidgets.QMessageBox.warning(
                 self,
-                *self.thread.msg)
+                title,
+                msg)
 
         self.done(0)
 

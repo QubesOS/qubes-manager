@@ -122,6 +122,7 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/tests/test_qube_manager.py
 %{python3_sitelib}/qubesmanager/tests/test_create_new_vm.py
 %{python3_sitelib}/qubesmanager/tests/test_vm_settings.py
+%{python3_sitelib}/qubesmanager/tests/test_clone_vm.py
 
 %dir %{python3_sitelib}/qubesmanager-*.egg-info
 %{python3_sitelib}/qubesmanager-*.egg-info/*
