@@ -51,8 +51,20 @@ from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
 
 def is_internal(vm):
     """checks if the VM is either an AdminVM or has the 'internal' features"""
-    return (vm.klass == 'AdminVM'
-            or vm.features.get('internal', False))
+    try:
+        return (vm.klass == 'AdminVM'
+                or vm.features.get('internal', False))
+    except exc.QubesDaemonCommunicationError:
+        return False
+
+
+def is_running(vm, default_state):
+    """Checks if the VM is running, returns default_state if we have
+    insufficient permissions to deteremine that."""
+    try:
+        return vm.is_running()
+    except exc.QubesPropertyAccessError:
+        return default_state
 
 
 def translate(string):

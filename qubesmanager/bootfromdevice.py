@@ -24,6 +24,7 @@ from . import ui_bootfromdevice  # pylint: disable=no-name-in-module
 from PyQt5 import QtWidgets, QtGui  # pylint: disable=import-error
 from qubesadmin import tools
 from qubesadmin.tools import qvm_start
+from qubesadmin import exc
 
 
 class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
@@ -75,13 +76,20 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
         self.done(0)
 
     def __warn_if_running__(self):
-        if self.vm.is_running():
+        try:
+            if self.vm.is_running():
+                QtWidgets.QMessageBox.warning(
+                    self,
+                    self.tr("Warning!"),
+                    self.tr("Qube must be turned off before booting it from "
+                            "device. Please turn off the qube."))
+        except exc.QubesPropertyAccessError:
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Warning!"),
-                self.tr("Qube must be turned off before booting it from "
-                        "device. Please turn off the qube.")
-            )
+                self.tr("Insufficient permissions to determine if qube is "
+                        "running. It must be turned off before booting it from "
+                        "device."))
 
     def __init_buttons__(self):
         self.fileVM.setEnabled(False)
@@ -98,8 +106,14 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
             allow_internal=True
         )
 
-        device_choice = [(str(device), device) for domain in self.vm.app.domains
-             for device in domain.devices["block"]]
+        device_choice = []
+        for domain in self.vm.app.domains:
+            try:
+                for device in domain.devices["block"]:
+                    device_choice.append((str(device), device))
+            except exc.QubesException:
+                # insufficient permissions
+                pass
 
         utils.initialize_widget(
             widget=self.blockDeviceComboBox,

@@ -49,6 +49,11 @@ class BackupThread(QtCore.QThread):
         try:
             if not self.vm.is_running():
                 self.vm.start()
+        except exc.QubesException:
+            # we may have insufficient exceptions to ensure the qube is running
+            pass
+
+        try:
             self.vm.app.qubesd_call(
                 'dom0', 'admin.backup.Execute',
                 backup_utils.get_profile_name(True))
@@ -103,8 +108,8 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
             qubes_app=self.qubes_app,
             filter_function=(lambda vm:
                              vm.klass != 'TemplateVM'
-                             and vm.is_running()
-                             and not vm.features.get('internal', False)),
+                             and utils.is_running(vm, False)
+                             and not utils.get_feature(vm, 'internal', False)),
             allow_internal=True,
         )
         self.appvm_combobox.setCurrentIndex(
@@ -215,7 +220,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
 
     def __fill_vms_list__(self, selected=None):
         for vm in self.qubes_app.domains:
-            if vm.features.get('internal', False):
+            if utils.get_feature(vm, 'internal', False):
                 continue
 
             item = BackupVMsWindow.VmListItem(vm)
@@ -298,13 +303,17 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         if self.currentPage() is self.confirm_page:
 
             self.save_settings(use_temp=True)
-            backup_summary = self.qubes_app.qubesd_call(
-                'dom0', 'admin.backup.Info',
-                backup_utils.get_profile_name(True))
+            try:
+                backup_summary = self.qubes_app.qubesd_call(
+                    'dom0', 'admin.backup.Info',
+                    backup_utils.get_profile_name(True)).decode()
+            except exc.QubesDaemonCommunicationError:
+                backup_summary = "Failed to get backup summary: " \
+                                 "insufficient permissions"
 
             self.textEdit.setReadOnly(True)
             self.textEdit.setFontFamily("Monospace")
-            self.textEdit.setText(backup_summary.decode())
+            self.textEdit.setText(backup_summary)
 
         elif self.currentPage() is self.commit_page:
 

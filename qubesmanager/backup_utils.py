@@ -43,10 +43,10 @@ def fill_appvms_list(dialog):
     dialog.appvm_combobox.setCurrentIndex(0)  # current selected is null ""
 
     for vm in dialog.qubes_app.domains:
-        if vm.features.get('internal', False) or vm.klass == 'TemplateVM':
+        if utils.get_feature(vm, 'internal', False) or vm.klass == 'TemplateVM':
             continue
 
-        if vm.is_running() and vm.qid != 0:
+        if utils.is_running(vm, False) and vm.qid != 0:
             dialog.appvm_combobox.addItem(vm.name)
 
 
@@ -101,6 +101,11 @@ def select_path_button_clicked(dialog, select_file=False, read_only=False):
                     dialog.tr("Unexpected characters in path!"),
                     dialog.tr("Backup path can only contain the following "
                               "special characters: /:.,_+=() -"))
+            except Exception as ex:
+                QtWidgets.QMessageBox.warning(
+                    dialog,
+                    dialog.tr("Failed to select path!"),
+                    dialog.tr("Error {} occurred.".format(str(ex))))
 
     except subprocess.CalledProcessError:
         if not read_only:

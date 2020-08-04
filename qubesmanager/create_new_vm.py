@@ -105,22 +105,27 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
             choices=[(vm.name, vm) for vm in self.app.domains
                      if not utils.is_internal(vm) and vm.klass == 'TemplateVM'],
             mark_existing_as_default=True,
-            default_value=self.app.default_template)
+            default_value=getattr(self.app, 'default_template', None))
 
         utils.initialize_widget_with_default(
             widget=self.netvm,
             choices=[(vm.name, vm) for vm in self.app.domains
-                     if not utils.is_internal(vm) and vm.provides_network],
+                     if not utils.is_internal(vm) and
+                     getattr(vm, 'provides_network', False)],
             add_none=True,
             add_qubes_default=True,
-            default_value=self.app.default_netvm)
+            default_value=getattr(self.app, 'default_netvm', None))
 
-        utils.initialize_widget_with_default(
-            widget=self.storage_pool,
-            choices=[(str(pool), pool) for pool in self.app.pools.values()],
-            add_qubes_default=True,
-            mark_existing_as_default=True,
-            default_value=self.app.default_pool)
+        try:
+            utils.initialize_widget_with_default(
+                widget=self.storage_pool,
+                choices=[(str(pool), pool) for pool in self.app.pools.values()],
+                add_qubes_default=True,
+                mark_existing_as_default=True,
+                default_value=self.app.default_pool)
+        except qubesadmin.exc.QubesPropertyAccessError:
+            self.storage_pool.clear()
+            self.storage_pool.addItem("(default)", qubesadmin.DEFAULT)
 
         self.name.setValidator(QtGui.QRegExpValidator(
             QtCore.QRegExp("[a-zA-Z0-9_-]*", QtCore.Qt.CaseInsensitive), None))
@@ -133,8 +138,6 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
                 self.tr('No template available!'),
                 self.tr('Cannot create a qube when no template exists.'))
 
-        # Order of types is important and used elsewhere; if it's changed
-        # check for changes needed in self.type_change
         type_list = [
             (self.tr("Qube based on a template (AppVM)"), 'AppVM'),
             (self.tr("Standalone qube copied from a template"),
