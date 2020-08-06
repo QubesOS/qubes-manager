@@ -637,9 +637,8 @@ class QubeManagerTest(unittest.TestCase):
         self.dialog.action_manage_templates.trigger()
         mock_subprocess.assert_called_once_with('qubes-template-manager')
 
-    @unittest.mock.patch('qubesmanager.common_threads.CloneVMThread')
-    @unittest.mock.patch('PyQt5.QtWidgets.QInputDialog.getText')
-    def test_232_clonevm(self, mock_input, mock_thread):
+    @unittest.mock.patch('qubesmanager.clone_vm.CloneVMDlg')
+    def test_232_clonevm(self, mock_clone):
         action = self.dialog.action_clonevm
 
         self._select_admin_vm()
@@ -648,18 +647,9 @@ class QubeManagerTest(unittest.TestCase):
         selected_vm = self._select_non_admin_vm()
         self.assertTrue(action.isEnabled())
 
-        mock_input.return_value = (selected_vm.name + "clone1", False)
         action.trigger()
-        self.assertEqual(mock_thread.call_count, 0,
-                         "Ignores cancelling clone VM")
-
-        mock_input.return_value = (selected_vm.name + "clone1", True)
-        action.trigger()
-        mock_thread.assert_called_once_with(selected_vm,
-                                            selected_vm.name + "clone1")
-        mock_thread().finished.connect.assert_called_once_with(
-            self.dialog.clear_threads)
-        mock_thread().start.assert_called_once_with()
+        mock_clone.assert_called_once_with(self.qtapp, self.qapp,
+                                          src_vm=selected_vm)
 
     def test_233_search_action(self):
         self.qtapp.setActiveWindow(self.dialog.searchbox)

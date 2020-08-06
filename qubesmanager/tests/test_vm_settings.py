@@ -311,23 +311,19 @@ class VMSettingsTest(unittest.TestCase):
         mock_thread.assert_called_with(self.vm, "test-vm2", unittest.mock.ANY)
         mock_thread().start.assert_called_with()
 
-# TODO: thread tests for rename
-
-    @unittest.mock.patch('PyQt5.QtWidgets.QProgressDialog')
-    @unittest.mock.patch('PyQt5.QtWidgets.QInputDialog.getText')
-    @unittest.mock.patch('qubesmanager.common_threads.CloneVMThread')
-    def test_12_clone_vm(self, mock_thread, mock_input, _):
+    @unittest.mock.patch('qubesmanager.clone_vm.CloneVMDlg')
+    def test_12_clone_vm(self, mock_clone):
         self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
         self.dialog = vm_settings.VMSettingsWindow(
             self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
 
         self.assertTrue(self.dialog.clone_vm_button.isEnabled())
 
-        mock_input.return_value = ("test-vm2", True)
         self.dialog.clone_vm_button.click()
 
-        mock_thread.assert_called_with(self.vm, "test-vm2")
-        mock_thread().start.assert_called_with()
+        mock_clone.assert_called_once_with(self.qtapp, self.qapp,
+                                           src_vm=self.vm)
+
 
     @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
     @unittest.mock.patch('PyQt5.QtWidgets.QProgressDialog')

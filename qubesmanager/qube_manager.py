@@ -53,6 +53,7 @@ from . import create_new_vm
 from . import log_dialog
 from . import utils as manager_utils
 from . import common_threads
+from . import clone_vm
 
 
 class SearchBox(QLineEdit):
@@ -1045,39 +1046,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     def action_clonevm_triggered(self):
         for vm_info in self.get_selected_vms():
             vm = vm_info.vm
-            name_number = 1
-            name_format = vm.name + '-clone-%d'
-            while name_format % name_number in self.qubes_app.domains.keys():
-                name_number += 1
-
-            (clone_name, ok) = QInputDialog.getText(
-                self, self.tr('Qubes clone Qube'),
-                self.tr('Enter name for Qube <b>{}</b> clone:').format(vm.name),
-                text=(name_format % name_number))
-            if not ok or clone_name == "":
-                return
-
-            name_in_use = clone_name in self.qubes_app.domains
-
-            if name_in_use:
-                QMessageBox.warning(
-                    self, self.tr("Name already in use!"),
-                    self.tr("There already exists a qube called '{}'. "
-                            "Cloning aborted.").format(clone_name))
-                return
-
-            self.progress = QProgressDialog(
-                self.tr(
-                    "Cloning Qube..."), "", 0, 0)
-            self.progress.setCancelButton(None)
-            self.progress.setModal(True)
-            self.progress.setWindowTitle(self.tr("Cloning qube..."))
-            self.progress.show()
-
-            thread = common_threads.CloneVMThread(vm, clone_name)
-            thread.finished.connect(self.clear_threads)
-            self.threads_list.append(thread)
-            thread.start()
+            with common_threads.busy_cursor():
+                clone_window = clone_vm.CloneVMDlg(
+                    self.qt_app, self.qubes_app, src_vm=vm)
+            clone_window.exec_()
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_resumevm_triggered')

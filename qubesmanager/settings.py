@@ -36,6 +36,7 @@ from . import utils
 from . import multiselectwidget
 from . import common_threads
 from . import device_list
+from . import clone_vm
 
 from .appmenu_select import AppmenuSelectManager
 from . import firewall
@@ -653,25 +654,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 self.tr("The qube will not be removed."))
 
     def clone_vm(self):
-
-        cloned_vm_name, ok = QtWidgets.QInputDialog.getText(
-            self,
-            self.tr('Clone qube'),
-            self.tr('Name for the cloned qube:'))
-
-        if ok:
-            thread = common_threads.CloneVMThread(self.vm, cloned_vm_name)
-            thread.finished.connect(self.clear_threads)
-            self.threads_list.append(thread)
-
-            self.progress = QtWidgets.QProgressDialog(
-                self.tr("Cloning Qube..."), "", 0, 0)
-            self.progress.setCancelButton(None)
-            self.progress.setModal(True)
-            self.thread_closes = True
-            self.progress.show()
-# TODO: improvement: maybe this can be refactored into less repetition?
-            thread.start()
+        with common_threads.busy_cursor():
+            clone_window = clone_vm.CloneVMDlg(
+                self.qapp, self.qubesapp, src_vm=self.vm)
+        clone_window.exec_()
 
     ######### advanced tab
 

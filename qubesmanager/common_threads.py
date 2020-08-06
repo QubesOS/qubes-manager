@@ -55,13 +55,18 @@ class RemoveVMThread(QubesThread):
 
 # pylint: disable=too-few-public-methods
 class CloneVMThread(QubesThread):
-    def __init__(self, vm, dst_name):
+    def __init__(self, vm, dst_name, pool=None, label=None):
         super(CloneVMThread, self).__init__(vm)
         self.dst_name = dst_name
+        self.pool = pool
+        self.label = label
 
     def run(self):
         try:
-            self.vm.app.clone_vm(self.vm, self.dst_name)
+            self.vm.app.clone_vm(self.vm, self.dst_name, pool=self.pool)
+            if self.label:
+                result_vm = self.vm.app.domains[self.dst_name]
+                result_vm.label = self.label
             self.msg = (self.tr("Success"),
                         self.tr("The qube was cloned successfully."))
             self.msg_is_success = True

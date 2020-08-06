@@ -22,7 +22,6 @@
 import logging.handlers
 import unittest
 import unittest.mock
-import qubesadmin
 
 from PyQt5 import QtTest, QtCore
 from qubesadmin import Qubes

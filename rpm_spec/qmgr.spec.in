@@ -57,6 +57,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/bin/qubes-global-settings
 /usr/bin/qubes-vm-settings
 /usr/bin/qubes-vm-create
+/usr/bin/qubes-vm-clone
 /usr/bin/qubes-vm-boot-from-device
 /usr/bin/qubes-backup
 /usr/bin/qubes-backup-restore
@@ -84,6 +85,7 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/releasenotes.py
 %{python3_sitelib}/qubesmanager/informationnotes.py
 %{python3_sitelib}/qubesmanager/create_new_vm.py
+%{python3_sitelib}/qubesmanager/clone_vm.py
 %{python3_sitelib}/qubesmanager/common_threads.py
 %{python3_sitelib}/qubesmanager/qube_manager.py
 %{python3_sitelib}/qubesmanager/utils.py
@@ -108,6 +110,7 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/ui_qubemanager.py
 %{python3_sitelib}/qubesmanager/ui_devicelist.py
 %{python3_sitelib}/qubesmanager/ui_templatemanager.py
+%{python3_sitelib}/qubesmanager/ui_clonevmdlg.py
 %{python3_sitelib}/qubesmanager/i18n/qubesmanager_*.qm
 %{python3_sitelib}/qubesmanager/i18n/qubesmanager_*.ts
 
@@ -119,6 +122,7 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/tests/test_qube_manager.py
 %{python3_sitelib}/qubesmanager/tests/test_create_new_vm.py
 %{python3_sitelib}/qubesmanager/tests/test_vm_settings.py
+%{python3_sitelib}/qubesmanager/tests/test_clone_vm.py
 
 %dir %{python3_sitelib}/qubesmanager-*.egg-info
 %{python3_sitelib}/qubesmanager-*.egg-info/*

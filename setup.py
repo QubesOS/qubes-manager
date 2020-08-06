@@ -21,6 +21,7 @@ if __name__ == '__main__':
                 'qubes-global-settings = qubesmanager.global_settings:main',
                 'qubes-vm-settings = qubesmanager.settings:main',
                 'qubes-vm-create = qubesmanager.create_new_vm:main',
+                'qubes-vm-clone = qubesmanager.clone_vm:main',
                 'qubes-vm-boot-from-device = qubesmanager.bootfromdevice:main',
                 'qubes-backup = qubesmanager.backup:main',
                 'qubes-backup-restore = qubesmanager.restore:main',
