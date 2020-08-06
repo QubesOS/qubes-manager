@@ -202,6 +202,8 @@ class VmInfo():
 
         self.label = getattr(self.vm, 'label', None)
         self.klass = getattr(self.vm, 'klass', None)
+        self.icon = getattr(vm, 'icon', 'appvm-black')
+
         self.state = {'power': "", 'outdated': ""}
         self.updateable = getattr(vm, 'updateable', False)
         self.update(True)
@@ -430,13 +432,11 @@ class QubesTableModel(QAbstractTableModel):
 
             if col_name == "Label":
                 try:
-                    return self.label_pixmap[vm.label]
-                except KeyError:
-                    icon = QIcon.fromTheme(vm.label.icon)
-                    self.label_pixmap[vm.label] = icon.pixmap(icon_size)
-                    return self.label_pixmap[vm.label]
-                except exc.QubesDaemonAccessError:
-                    return None
+                    return self.label_pixmap[vm.icon]
+                except (KeyError, AttributeError):
+                    icon = QIcon.fromTheme(vm.icon)
+                    self.label_pixmap[vm.icon] = icon.pixmap(icon_size)
+                    return self.label_pixmap[vm.icon]
 
         if role == Qt.FontRole:
             if col_name == "Template":
