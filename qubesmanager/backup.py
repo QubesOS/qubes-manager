@@ -170,7 +170,10 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
             if dest_vm_idx > -1:
                 self.appvm_combobox.setCurrentIndex(dest_vm_idx)
             else:
-                self.unrecognized_config_label.setVisible(True)
+                self.warning_running_label.setText(
+                    "NOTE: Only running qubes are listed. The profile "
+                    "lists {} as the destination qube, but it is not "
+                    "currently running.".format(dest_vm_name))
 
         if 'destination_path' in profile_data:
             dest_path = profile_data['destination_path']

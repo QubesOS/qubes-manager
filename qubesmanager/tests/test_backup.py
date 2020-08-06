@@ -391,7 +391,7 @@ class BackupTest(unittest.TestCase):
         self.dialog.show()
 
         # check errors were detected
-        self.assertTrue(self.dialog.unrecognized_config_label.isVisible())
+        self.assertIn('incorrect_vm', self.dialog.warning_running_label.text())
 
     @unittest.mock.patch('qubesmanager.backup_utils.load_backup_profile')
     @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.information')
