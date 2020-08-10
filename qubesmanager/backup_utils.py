@@ -46,7 +46,7 @@ def fill_appvms_list(dialog):
         if utils.get_feature(vm, 'internal', False) or vm.klass == 'TemplateVM':
             continue
 
-        if utils.is_running(vm, False) and vm.qid != 0:
+        if utils.is_running(vm, False) and vm.klass != 'AdminVM':
             dialog.appvm_combobox.addItem(vm.name)
 
 

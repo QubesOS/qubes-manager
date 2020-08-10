@@ -54,7 +54,7 @@ def is_internal(vm):
     try:
         return (vm.klass == 'AdminVM'
                 or vm.features.get('internal', False))
-    except exc.QubesDaemonCommunicationError:
+    except exc.QubesDaemonAccessError:
         return False
 
 
@@ -63,7 +63,7 @@ def is_running(vm, default_state):
     insufficient permissions to deteremine that."""
     try:
         return vm.is_running()
-    except exc.QubesPropertyAccessError:
+    except exc.QubesDaemonAccessError:
         return default_state
 
 
@@ -107,7 +107,7 @@ class SizeSpinBox(QtWidgets.QSpinBox):
 def get_feature(vm, feature_name, default_value):
     try:
         return vm.features.get(feature_name, default_value)
-    except exc.QubesDaemonCommunicationError:
+    except exc.QubesDaemonAccessError:
         return default_value
 
 
@@ -186,7 +186,10 @@ def initialize_widget_for_property(
     :return:
     """
     if allow_default:
-        default_property = holder.property_get_default(property_name)
+        try:
+            default_property = holder.property_get_default(property_name)
+        except exc.QubesDaemonAccessError:
+            default_property = "ERROR: unavailable"
         if default_property is None:
             default_property = "none"
         choices.append(
@@ -194,7 +197,12 @@ def initialize_widget_for_property(
              qubesadmin.DEFAULT))
 
     # calculate current (can be default)
-    if holder.property_is_default(property_name):
+    try:
+        is_default = holder.property_is_default(property_name)
+    except exc.QubesDaemonAccessError:
+        is_default = False
+
+    if is_default:
         current_value = qubesadmin.DEFAULT
     else:
         current_value = getattr(holder, property_name)

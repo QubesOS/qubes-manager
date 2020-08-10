@@ -337,7 +337,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             no_firewall_state = \
                 netvm is not None and \
                 not netvm.features.check_with_template('qubes-firewall', False)
-        except qubesadmin.exc.QubesDaemonCommunicationError:
+        except qubesadmin.exc.QubesDaemonAccessError:
             no_firewall_state = False
 
         self.netvm_no_firewall_label.setVisible(no_firewall_state)
@@ -372,7 +372,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.delete_vm_button.setText(
                 self.tr('Delete qube (cannot delete a running qube)'))
 
-        if self.vm.qid == 0:
+        if self.vm.klass == 'AdminVM':
             self.vmlabel.setVisible(False)
         else:
             try:
@@ -382,7 +382,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     holder=self.vm)
                 self.vmlabel.setVisible(True)
                 self.vmlabel.setEnabled(not utils.is_running(self.vm, False))
-            except qubesadmin.exc.QubesPropertyAccessError:
+            except qubesadmin.exc.QubesDaemonAccessError:
                 self.vmlabel.setEnabled(False)
 
         if self.vm.klass == 'AppVM':
@@ -393,7 +393,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     filter_function=(lambda vm: vm.klass == 'TemplateVM'),
                     holder=self.vm,
                     property_name='template')
-            except qubesadmin.exc.QubesPropertyAccessError:
+            except qubesadmin.exc.QubesDaemonAccessError:
                 self.template_name.setCurrentIndex(-1)
                 self.template_name.setEnabled(False)
 
@@ -402,11 +402,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 utils.initialize_widget_with_vms(
                     widget=self.template_name,
                     qubes_app=self.qubesapp,
-                    filter_function=(lambda vm:
-                                     getattr(vm, 'template_for_dispvms', False)),
+                    filter_function=(
+                        lambda vm: getattr(vm, 'template_for_dispvms', False)),
                     holder=self.vm,
                     property_name='template')
-            except qubesadmin.exc.QubesPropertyAccessError:
+            except qubesadmin.exc.QubesDaemonAccessError:
                 self.template_name.setCurrentIndex(-1)
                 self.template_name.setEnabled(False)
 
@@ -426,7 +426,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 property_name='netvm',
                 allow_default=True,
                 allow_none=True)
-        except qubesadmin.exc.QubesPropertyAccessError:
+        except qubesadmin.exc.QubesDaemonAccessError:
             self.netVM.setEnabled(False)
             self.netVM.setCurrentIndex(-1)
 
@@ -434,13 +434,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         try:
             self.include_in_backups.setChecked(self.vm.include_in_backups)
-        except qubesadmin.exc.QubesPropertyAccessError:
+        except qubesadmin.exc.QubesDaemonAccessError:
             self.include_in_backups.setEnabled(False)
 
         try:
             self.autostart_vm.setChecked(self.vm.autostart)
             self.autostart_vm.setVisible(True)
-        except qubesadmin.exc.QubesPropertyAccessError:
+        except qubesadmin.exc.QubesDaemonAccessError:
             self.autostart_vm.setEnabled(False)
         except AttributeError:
             self.autostart_vm.setVisible(False)
@@ -602,7 +602,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         own_netvm = self.netVM.currentData()
 
         if dispvm == qubesadmin.DEFAULT:
-            dispvm = self.vm.property_get_default('default_dispvm')
+            try:
+                dispvm = self.vm.property_get_default('default_dispvm')
+            except qubesadmin.exc.QubesDaemonAccessError:
+                pass
 
         if dispvm == self.vm:
             self.warn_netvm_dispvm.setVisible(False)
@@ -613,7 +616,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         if own_netvm == qubesadmin.DEFAULT:
             try:
                 own_netvm = self.vm.property_get_default('netvm')
-            except qubesadmin.exc.QubesPropertyAccessError:
+            except qubesadmin.exc.QubesDaemonAccessError:
                 # no point in warning if we don't know what we're warning about
                 self.warn_netvm_dispvm.setVisible(False)
                 return
@@ -731,7 +734,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         else:
             try:
                 maxmem = self.vm.property_get_default('maxmem')
-            except qubesadmin.exc.QubesPropertyAccessError:
+            except qubesadmin.exc.QubesDaemonAccessError:
                 maxmem = 0
             if maxmem == 0:
                 maxmem = vm_memory
@@ -760,7 +763,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     property_name='kernel')
                 self.kernel.currentIndexChanged.connect(self.kernel_changed)
                 self.kernel_opts.setText(getattr(self.vm, 'kernelopts', '-'))
-            except qubesadmin.exc.QubesPropertyAccessError:
+            except qubesadmin.exc.QubesDaemonAccessError:
                 self.kernel_groupbox.setVisible(False)
         else:
             self.kernel_groupbox.setVisible(False)
@@ -783,7 +786,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 )
                 self.default_dispvm.currentIndexChanged.connect(
                     self.check_warn_dispvmnetvm)
-            except qubesadmin.exc.QubesPropertyAccessError:
+            except qubesadmin.exc.QubesDaemonAccessError:
                 self.other_groupbox.setVisible(False)
 
         self.check_warn_dispvmnetvm()
@@ -1030,7 +1033,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 choices=choices,
                 holder=self.vm,
                 property_name='virt_mode')
-        except qubesadmin.exc.QubesPropertyAccessError:
+        except qubesadmin.exc.QubesDaemonAccessError:
             self.virt_mode.setEnabled(False)
 
         if self.virt_mode.isEnabled() and old_mode is not None:
@@ -1255,7 +1258,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                                    else ui_settingsdlg.QtCore.Qt.Unchecked)
                 self.services_list.addItem(item)
                 self.new_srv_dict[service] = self.vm.features[feature]
-        except qubesadmin.exc.QubesDaemonCommunicationError:
+        except qubesadmin.exc.QubesDaemonAccessError:
             self.tabWidget.setTabEnabled(self.tabs_indices["services"], False)
             return
 
@@ -1272,7 +1275,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 for feature in self.vm.template.features:
                     if feature.startswith(service_prefix):
                         supported_services.add(feature[len(service_prefix):])
-            except qubesadmin.exc.QubesDaemonCommunicationError:
+            except qubesadmin.exc.QubesDaemonAccessError:
                 pass
 
         for service in sorted(supported_services):

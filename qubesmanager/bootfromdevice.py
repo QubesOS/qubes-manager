@@ -83,7 +83,7 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
                     self.tr("Warning!"),
                     self.tr("Qube must be turned off before booting it from "
                             "device. Please turn off the qube."))
-        except exc.QubesPropertyAccessError:
+        except exc.QubesDaemonAccessError:
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Warning!"),
@@ -111,7 +111,7 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
             try:
                 for device in domain.devices["block"]:
                     device_choice.append((str(device), device))
-            except exc.QubesException:
+            except exc.QubesDaemonAccessError:
                 # insufficient permissions
                 pass
 

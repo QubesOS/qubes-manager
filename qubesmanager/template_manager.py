@@ -345,7 +345,7 @@ class VMRow:
         table_widget.setItem(row_no, columns.index('New template'),
                              self.dummy_new_item)
 
-        self.vm_state_change(is_vm_running(self.vm), row_no)
+        self.vm_state_change(utils.is_running(self.vm, False), row_no)
 
     def vm_state_change(self, is_running, row=None):
         self.state_item.set_state(is_running)
@@ -383,13 +383,6 @@ class VMRow:
                 self.table_widget.removeCellWidget(
                     row, column_names.index('State'))
                 self.checkbox = None
-
-
-def is_vm_running(vm):
-    try:
-        return vm.is_running()
-    except exc.QubesPropertyAccessError:
-        return False
 
 
 def main():

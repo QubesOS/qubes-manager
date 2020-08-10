@@ -209,25 +209,29 @@ class VmInfo():
     def update_power_state(self):
         try:
             self.state['power'] = self.vm.get_power_state()
-        except exc.QubesPropertyAccessError:
+        except exc.QubesDaemonAccessError:
             self.state['power'] = ""
 
         self.state['outdated'] = ""
         try:
-            if self.vm.is_running():
+            if manager_utils.is_running(self.vm, False):
                 if hasattr(self.vm, 'template') and \
-                        self.vm.template.is_running():
+                        manager_utils.is_running(self.vm.template, False):
                     self.state['outdated'] = "to-be-outdated"
                 else:
-                    for vol in self.vm.volumes.values():
-                        if vol.is_outdated():
-                            self.state['outdated'] = "outdated"
-                            break
+                    try:
+                        for vol in self.vm.volumes.values():
+                            if vol.is_outdated():
+                                self.state['outdated'] = "outdated"
+                                break
+                    except exc.QubesDaemonAccessError:
+                        pass
 
             if self.vm.klass in {'TemplateVM', 'StandaloneVM'} and \
-                    self.vm.features.get('updates-available', False):
+                    manager_utils.get_feature(
+                        self.vm, 'updates-available', False):
                 self.state['outdated'] = 'update'
-        except exc.QubesPropertyAccessError:
+        except exc.QubesDaemonAccessError:
             pass
 
     def update(self, update_size_on_disk=False, event=None):
@@ -259,14 +263,12 @@ class VmInfo():
                 if hasattr(self.vm, 'netvm') \
                         and self.vm.property_is_default("netvm"):
                     self.netvm = "default (" + self.netvm + ")"
-            except exc.QubesPropertyAccessError:
+            except exc.QubesDaemonAccessError:
                 pass
 
         if not event or event.endswith(':internal'):
-            try:
-                self.internal = self.vm.features.get('internal', False)
-            except exc.QubesPropertyAccessError:
-                self.internal = False
+            self.internal = manager_utils.get_boolean_feature(
+                self.vm, 'internal')
 
         if not event or event.endswith(':ip'):
             self.ip = getattr(self.vm, 'ip', "n/a")
@@ -286,8 +288,9 @@ class VmInfo():
                     self.dvm = "default (" + str(self.dvm) + ")"
                 elif self.dvm is not None:
                     self.dvm = str(self.dvm)
-            except exc.QubesPropertyAccessError:
-                self.dvm = None
+            except exc.QubesDaemonAccessError:
+                if self.dvm is not None:
+                    self.dvm = str(self.dvm)
 
         if not event or event.endswith(':template_for_dispvms'):
             self.dvm_template = getattr(self.vm, 'template_for_dispvms', None)
@@ -296,7 +299,7 @@ class VmInfo():
             try:
                 self.disk_float = float(self.vm.get_disk_utilization())
                 self.disk = str(round(self.disk_float/(1024*1024), 2)) + " MiB"
-            except exc.QubesPropertyAccessError:
+            except exc.QubesDaemonAccessError:
                 self.disk_float = None
                 self.disk = None
 
@@ -422,7 +425,7 @@ class QubesTableModel(QAbstractTableModel):
                     pixmap.load(icon_name)
                     self.klass_pixmap[vm.klass] = pixmap.scaled(icon_size)
                     return self.klass_pixmap[vm.klass]
-                except exc.QubesPropertyAccessError:
+                except exc.QubesDaemonAccessError:
                     return None
 
             if col_name == "Label":
@@ -432,7 +435,7 @@ class QubesTableModel(QAbstractTableModel):
                     icon = QIcon.fromTheme(vm.label.icon)
                     self.label_pixmap[vm.label] = icon.pixmap(icon_size)
                     return self.label_pixmap[vm.label]
-                except exc.QubesPropertyAccessError:
+                except exc.QubesDaemonAccessError:
                     return None
 
         if role == Qt.FontRole:
@@ -507,7 +510,7 @@ class VmShutdownMonitor(QObject):
 
     def check_if_vm_has_shutdown(self):
         vm = self.vm
-        vm_is_running = vm.is_running()
+        vm_is_running = manager_utils.is_running(vm, False)
         try:
             vm_start_time = datetime.fromtimestamp(float(vm.start_time))
         except (AttributeError, TypeError, ValueError):
@@ -576,8 +579,12 @@ class UpdateVMThread(common_threads.QubesThread):
                 subprocess.check_call(
                     ["/usr/bin/qubes-dom0-update", "--clean", "--gui"])
             else:
-                if not self.vm.is_running():
-                    self.vm.start()
+                if not manager_utils.is_running(self.vm, False):
+                    try:
+                        self.vm.start()
+                    except exc.QubesDaemonAccessError:
+                        # permission denied, let us hope for the best
+                        pass
                 # apply DSA-4371
                 with open('/usr/libexec/qubes-manager/dsa-4371-update', 'rb') \
                         as dsa4371update:
@@ -848,9 +855,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         try:
             if info.vm.klass in {'TemplateVM', 'StandaloneVM'} and \
-                    info.vm.features.get('updates-available', False):
+                    manager_utils.get_feature(
+                        info.vm, 'updates-available', False):
                 info.state['outdated'] = 'update'
-        except exc.QubesPropertyAccessError:
+        except exc.QubesDaemonAccessError:
             return
 
     def on_domain_added(self, _submitter, _event, vm, **_kwargs):
@@ -874,7 +882,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                             update(event="outdated")
             self.proxy.invalidate()
             self.table_selection_changed()
-        except exc.QubesPropertyAccessError:
+        except exc.QubesDaemonAccessError:
             return  # the VM was deleted before its status could be updated
         except KeyError:  # adding the VM failed for some reason
             self.on_domain_added(None, None, vm)
@@ -895,7 +903,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         try:
             self.qubes_cache.get_vm(qid=vm.qid).update(event=event)
             self.proxy.invalidate()
-        except exc.QubesPropertyAccessError:
+        except exc.QubesDaemonAccessError:
             return  # the VM was deleted before its status could be updated
 
     def load_manager_settings(self):
@@ -1092,19 +1100,19 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     def action_resumevm_triggered(self):
         for vm_info in self.get_selected_vms():
             vm = vm_info.vm
-            if vm.get_power_state() in ["Paused", "Suspended"]:
-                try:
+            try:
+                if vm.get_power_state() in ["Paused", "Suspended"]:
                     vm.unpause()
-                except exc.QubesException as ex:
-                    QMessageBox.warning(
-                        self, self.tr("Error unpausing Qube!"),
-                        self.tr("ERROR: {0}").format(ex))
+            except exc.QubesException as ex:
+                QMessageBox.warning(
+                    self, self.tr("Error unpausing Qube!"),
+                    self.tr("ERROR: {0}").format(ex))
                 return
 
             self.start_vm(vm)
 
     def start_vm(self, vm):
-        if vm.is_running():
+        if manager_utils.is_running(vm, False):
             return
 
         thread = StartVMThread(vm)
@@ -1179,17 +1187,29 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
             if reply == QMessageBox.Yes:
                 # in case the user shut down the VM in the meantime
-                if vm.is_running():
-                    self.shutdown_vm(vm, and_restart=True)
-                else:
-                    self.start_vm(vm)
+                try:
+                    if manager_utils.is_running(vm, False):
+                        self.shutdown_vm(vm, and_restart=True)
+                    else:
+                        self.start_vm(vm)
+                except exc.QubesException as ex:
+                    QMessageBox.warning(
+                        self,
+                        self.tr("Error restarting Qube!"),
+                        self.tr("ERROR: {0}").format(ex))
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_killvm_triggered')
     def action_killvm_triggered(self):
         for vm_info in self.get_selected_vms():
             vm = vm_info.vm
-            if not (vm.is_running() or vm.is_paused()):
+
+            try:
+                vm_not_running = not (vm.is_running() or vm.is_paused())
+            except exc.QubesDaemonAccessError:
+                vm_not_running = False
+
+            if vm_not_running:
                 info = self.tr("Qube <b>'{0}'</b> is not running. Are you "
                                "absolutely sure you want to try to kill it?<br>"
                                "<small>This will end <b>(not shutdown!)</b> "
@@ -1213,8 +1233,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     QMessageBox.critical(
                         self, self.tr("Error while killing Qube!"),
                         self.tr(
-                            "<b>An exception ocurred while killing {0}.</b><br>"
-                            "ERROR: {1}").format(vm.name, ex))
+                            "<b>An exception occurred while killing {0}.</b>"
+                            "<br>ERROR: {1}").format(vm.name, ex))
                     return
 
     def open_settings(self, vm, tab='basic'):
@@ -1252,7 +1272,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     def action_updatevm_triggered(self):
         for vm_info in self.get_selected_vms():
             vm = vm_info.vm
-            if not vm.is_running():
+            if not manager_utils.is_running(vm, True):
                 reply = QMessageBox.question(
                     self, self.tr("Qube Update Confirmation"),
                     self.tr(
@@ -1417,7 +1437,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                         menu_empty = False
 
             self.logs_menu.setEnabled(not menu_empty)
-        except exc.QubesPropertyAccessError:
+        except exc.QubesDaemonAccessError:
             pass
 
     @pyqtSlot('const QPoint&')

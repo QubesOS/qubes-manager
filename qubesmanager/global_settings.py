@@ -90,41 +90,51 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.app.setApplicationName(self.tr("Qubes Global Settings"))
         self.app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
 
+    def setup_widget_with_vms(self, widget, filter_function,
+                              allow_none, holder, property_name):
+        try:
+            utils.initialize_widget_with_vms(
+                widget=widget,
+                qubes_app=self.qubes_app,
+                filter_function=filter_function,
+                allow_none=allow_none,
+                holder=holder,
+                property_name=property_name
+            )
+        except exc.QubesDaemonAccessError:
+            widget.clear()
+            widget.setCurrentText("unavailable")
+            widget.setEnabled(False)
+
     def __init_system_defaults__(self):
         # set up updatevm choice
-        utils.initialize_widget_with_vms(
+        self.setup_widget_with_vms(
             widget=self.update_vm_combo,
-            qubes_app=self.qubes_app,
             filter_function=(lambda vm: vm.klass != 'TemplateVM'),
             allow_none=True,
             holder=self.qubes_app,
-            property_name="updatevm"
-        )
+            property_name="updatevm")
 
         # set up clockvm choice
-        utils.initialize_widget_with_vms(
+        self.setup_widget_with_vms(
             widget=self.clock_vm_combo,
-            qubes_app=self.qubes_app,
             filter_function=(lambda vm: vm.klass != 'TemplateVM'),
             allow_none=True,
             holder=self.qubes_app,
-            property_name="clockvm"
-        )
+            property_name="clockvm")
 
         # set up default netvm
-        utils.initialize_widget_with_vms(
+        self.setup_widget_with_vms(
             widget=self.default_netvm_combo,
-            qubes_app=self.qubes_app,
-            filter_function=(lambda vm: getattr(vm, 'provides_network', False)),
+            filter_function=(lambda vm: getattr(
+                vm, 'provides_network', False)),
             allow_none=True,
             holder=self.qubes_app,
-            property_name="default_netvm"
-        )
+            property_name="default_netvm")
 
         # default template
-        utils.initialize_widget_with_vms(
+        self.setup_widget_with_vms(
             widget=self.default_template_combo,
-            qubes_app=self.qubes_app,
             filter_function=(lambda vm: vm.klass == 'TemplateVM'),
             allow_none=True,
             holder=self.qubes_app,
@@ -132,9 +142,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         )
 
         # default dispvm
-        utils.initialize_widget_with_vms(
+        self.setup_widget_with_vms(
             widget=self.default_dispvm_combo,
-            qubes_app=self.qubes_app,
             filter_function=(lambda vm: getattr(
                 vm, 'template_for_dispvms', False)),
             allow_none=True,
@@ -194,8 +203,9 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 allow_none=True,
                 holder=self.qubes_app,
                 property_name='default_kernel')
-        except exc.QubesPropertyAccessError:
+        except exc.QubesDaemonAccessError:
             self.default_kernel_combo.clear()
+            self.default_kernel_combo.setCurrentText("unavailable")
             self.default_kernel_combo.setEnabled(False)
 
     def __apply_kernel_defaults__(self):
@@ -270,14 +280,14 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             if widget.currentData() is None:
                 try:
                     del self.vm.features[feature]
-                except exc.QubesDaemonCommunicationError:
+                except exc.QubesDaemonAccessError:
                     self.errors.append(
                         "Failed to set {} due to insufficient "
                         "permissions".format(feature))
             else:
                 try:
                     self.vm.features[feature] = widget.currentData()
-                except exc.QubesDaemonCommunicationError as ex:
+                except exc.QubesDaemonAccessError as ex:
                     self.errors.append(
                         "Failed to set {} due to insufficient "
                         "permissions".format(feature))
@@ -411,7 +421,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
 
         try:
             self.updates_vm.setChecked(self.qubes_app.check_updates_vm)
-        except exc.QubesPropertyAccessError:
+        except exc.QubesDaemonAccessError:
             self.updates_vm.isEnabled(False)
 
         self.enable_updates_all.clicked.connect(self.__enable_updates_all)
@@ -485,7 +495,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             if vm.klass != "AdminVM":
                 try:
                     vm.features['service.qubes-update-check'] = state
-                except exc.QubesDaemonCommunicationError:
+                except exc.QubesDaemonAccessError:
                     errors.append(vm.name)
 
         if errors:
@@ -501,7 +511,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 self.qubes_app.domains['dom0'].features[
                     'service.qubes-update-check'] = \
                     self.updates_dom0.isChecked()
-            except exc.QubesDaemonCommunicationError:
+            except exc.QubesDaemonAccessError:
                 self.errors.append("Failed to change dom0 update value due "
                                    "to insufficient permissions.")
 
@@ -509,7 +519,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 self.qubes_app.check_updates_vm != self.updates_vm.isChecked():
             try:
                 self.qubes_app.check_updates_vm = self.updates_vm.isChecked()
-            except exc.QubesPropertyAccessError:
+            except exc.QubesDaemonAccessError:
                 self.errors.append("Failed to set qube update checking due "
                                    "to insufficient permissions.")
 

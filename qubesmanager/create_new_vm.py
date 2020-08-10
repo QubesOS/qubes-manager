@@ -123,7 +123,7 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
                 add_qubes_default=True,
                 mark_existing_as_default=True,
                 default_value=self.app.default_pool)
-        except qubesadmin.exc.QubesPropertyAccessError:
+        except qubesadmin.exc.QubesDaemonAccessError:
             self.storage_pool.clear()
             self.storage_pool.addItem("(default)", qubesadmin.DEFAULT)
 

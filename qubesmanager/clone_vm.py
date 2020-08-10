@@ -60,12 +60,16 @@ class CloneVMDlg(QtWidgets.QDialog, Ui_CloneVMDlg):
 
         self.update_label()
 
-        utils.initialize_widget_with_default(
-            widget=self.storage_pool,
-            choices=[(str(pool), pool) for pool in self.app.pools.values()],
-            add_qubes_default=True,
-            mark_existing_as_default=True,
-            default_value=self.app.default_pool)
+        try:
+            utils.initialize_widget_with_default(
+                widget=self.storage_pool,
+                choices=[(str(pool), pool) for pool in self.app.pools.values()],
+                add_qubes_default=True,
+                mark_existing_as_default=True,
+                default_value=self.app.default_pool)
+        except qubesadmin.exc.QubesDaemonAccessError:
+            self.storage_pool.clear()
+            self.storage_pool.addItem("(default)", qubesadmin.DEFAULT)
 
         self.set_clone_name()
 

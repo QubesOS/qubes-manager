@@ -36,7 +36,6 @@ import pwd
 import os
 import shutil
 
-
 # pylint: disable=too-few-public-methods
 class BackupThread(QtCore.QThread):
     def __init__(self, vm):
@@ -50,7 +49,9 @@ class BackupThread(QtCore.QThread):
             if not self.vm.is_running():
                 self.vm.start()
         except exc.QubesException:
-            # we may have insufficient exceptions to ensure the qube is running
+            # we may have insufficient permissions to ensure the qube is running
+            # let us hope for the best (worst case scenario, we will fail at the
+            # next step
             pass
 
         try:
@@ -94,6 +95,8 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         self.select_dir_page.isComplete = self.has_selected_dir_and_pass
         # FIXME
         # this causes to run isComplete() twice, I don't know why
+        # update 2020-08: selectedChanged is emitted once,
+        # but completeChanged twice. Somehow.
         self.select_vms_widget.selectedChanged.connect(
             self.select_vms_page.completeChanged.emit)
         self.passphrase_line_edit.textChanged.connect(
@@ -144,7 +147,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         result = []
 
         for domain in self.qubes_app.domains:
-            if getattr(domain, 'include_in_backups', None):
+            if getattr(domain, 'include_in_backups', False):
                 result.append(domain.name)
 
         return result
@@ -209,14 +212,23 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         # pylint: disable=too-few-public-methods
         def __init__(self, vm):
             self.vm = vm
-            if vm.qid == 0:
+            if vm.klass == 'AdminVM':
                 local_user = grp.getgrnam('qubes').gr_mem[0]
                 home_dir = pwd.getpwnam(local_user).pw_dir
                 self.size = shutil.disk_usage(home_dir)[1]
             else:
-                self.size = vm.get_disk_utilization()
-            super(BackupVMsWindow.VmListItem, self).__init__(
-                vm.name + " (" + admin_utils.size_to_human(self.size) + ")")
+                try:
+                    self.size = vm.get_disk_utilization()
+                except exc.QubesDaemonAccessError:
+                    self.size = None
+
+            if self.size is not None:
+                text = vm.name + " (" + admin_utils.size_to_human(
+                    self.size) + ")"
+            else:
+                text = vm.name + " (size unavailable)"
+                self.size = 0
+            super(BackupVMsWindow.VmListItem, self).__init__(text)
 
     def __fill_vms_list__(self, selected=None):
         for vm in self.qubes_app.domains:
@@ -307,7 +319,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
                 backup_summary = self.qubes_app.qubesd_call(
                     'dom0', 'admin.backup.Info',
                     backup_utils.get_profile_name(True)).decode()
-            except exc.QubesDaemonCommunicationError:
+            except exc.QubesDaemonAccessError:
                 backup_summary = "Failed to get backup summary: " \
                                  "insufficient permissions"
 
