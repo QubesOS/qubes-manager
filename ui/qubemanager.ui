@@ -326,6 +326,9 @@ Template</string>
    <property name="allowedAreas">
     <set>Qt::BottomToolBarArea|Qt::TopToolBarArea</set>
    </property>
+   <property name="toolButtonStyle">
+    <enum>Qt::ToolButtonTextUnderIcon</enum>
+   </property>
    <property name="floatable">
     <bool>false</bool>
    </property>
@@ -361,7 +364,7 @@ Template</string>
      <normaloff>:/createvm.png</normaloff>:/createvm.png</iconset>
    </property>
    <property name="text">
-    <string>Create &amp;new qube</string>
+    <string>&amp;New qube</string>
    </property>
    <property name="toolTip">
     <string>Create a new qube</string>
@@ -391,7 +394,7 @@ Template</string>
      <normaloff>:/resumevm.png</normaloff>:/resumevm.png</iconset>
    </property>
    <property name="text">
-    <string>Start/Resu&amp;me qube</string>
+    <string>Start/Resu&amp;me</string>
    </property>
    <property name="toolTip">
     <string>Start/Resume selected qube</string>
@@ -406,7 +409,7 @@ Template</string>
      <normaloff>:/pausevm.png</normaloff>:/pausevm.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Pause qube</string>
+    <string>Emergency &amp;pause</string>
    </property>
    <property name="toolTip">
     <string>&lt;p&gt;Pause selected qube&lt;/p&gt;&lt;p&gt;Stops all CPU activity in the selected VM until the VM is unpaused. This action does not change how much memory is allocated to the VM. (EXPERIMENTAL)&lt;/p&gt;</string>
@@ -421,7 +424,7 @@ Template</string>
      <normaloff>:/shutdownvm.png</normaloff>:/shutdownvm.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Shutdown qube</string>
+    <string>&amp;Shutdown</string>
    </property>
    <property name="toolTip">
     <string>Shutdown selected qube</string>
@@ -436,7 +439,7 @@ Template</string>
      <normaloff>:/restartvm.png</normaloff>:/restartvm.png</iconset>
    </property>
    <property name="text">
-    <string>Restar&amp;t qube</string>
+    <string>Restar&amp;t </string>
    </property>
    <property name="toolTip">
     <string>Restart selected qube</string>
@@ -451,7 +454,7 @@ Template</string>
      <normaloff>:/apps.png</normaloff>:/apps.png</iconset>
    </property>
    <property name="text">
-    <string>Add/remove app s&amp;hortcuts</string>
+    <string>App s&amp;hortcuts</string>
    </property>
    <property name="toolTip">
     <string>Add/remove app shortcuts for this qube</string>
@@ -466,7 +469,7 @@ Template</string>
      <normaloff>:/updateable.png</normaloff>:/updateable.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Update qube</string>
+    <string>&amp;Update</string>
    </property>
    <property name="toolTip">
     <string>Update qube system</string>
@@ -478,7 +481,7 @@ Template</string>
      <normaloff>:/firewall.png</normaloff>:/firewall.png</iconset>
    </property>
    <property name="text">
-    <string>Edit qube &amp;firewall rules</string>
+    <string>Edit &amp;firewall</string>
    </property>
    <property name="toolTip">
     <string>Edit qube firewall rules</string>
@@ -537,7 +540,7 @@ Template</string>
      <normaloff>:/settings.png</normaloff>:/settings.png</iconset>
    </property>
    <property name="text">
-    <string>Qube s&amp;ettings</string>
+    <string>S&amp;ettings</string>
    </property>
    <property name="toolTip">
     <string>Qube Settings</string>
@@ -549,7 +552,7 @@ Template</string>
      <normaloff>:/restore.png</normaloff>:/restore.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Restore qubes from backup</string>
+    <string>&amp;Restore</string>
    </property>
    <property name="toolTip">
     <string>Restore qubes from backup</string>
@@ -561,7 +564,7 @@ Template</string>
      <normaloff>:/backup.png</normaloff>:/backup.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Backup qubes</string>
+    <string>&amp;Backup</string>
    </property>
    <property name="toolTip">
     <string>Backup qubes</string>
@@ -605,7 +608,7 @@ Template</string>
      <normaloff>:/killvm.png</normaloff>:/killvm.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Kill qube</string>
+    <string>&amp;Kill</string>
    </property>
    <property name="toolTip">
     <string>Kill selected qube</string>
@@ -617,7 +620,7 @@ Template</string>
      <normaloff>:/kbd-layout.png</normaloff>:/kbd-layout.png</iconset>
    </property>
    <property name="text">
-    <string>Set keyboard la&amp;yout</string>
+    <string>Keyboard la&amp;yout</string>
    </property>
    <property name="toolTip">
     <string>Set keyboard layout per qube</string>
