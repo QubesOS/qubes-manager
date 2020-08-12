@@ -72,7 +72,7 @@ class SearchBox(QLineEdit):
             self.selectAll()
             self.focusing = False
 
-icon_size = QSize(24, 24)
+icon_size = QSize(22, 22)
 
 # pylint: disable=invalid-name
 class StateIconDelegate(QStyledItemDelegate):
