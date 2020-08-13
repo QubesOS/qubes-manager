@@ -1,3 +1,50 @@
+qubes-manager (4.1.11-1) wheezy; urgency=medium
+
+  [ donoban ]
+  * Migration to View/Model design (#195)
+
+  [ Marek Marczykowski-Górecki ]
+  * tests: Update QMessageBox mockup
+  * debian: drop removed table_widgets.py from the packaging
+  * Replace quamash with qasync
+  * travis: use included configs, drop R4.0 dom0 test
+
+  [ Marta Marczykowska-Górecka ]
+  * Fix incorrect Settings invocation in Qube Manager
+
+  [ William Dizon ]
+  * fixed misspelling in dialog box of success
+
+  [ Marta Marczykowska-Górecka ]
+  * Added more description to Global Settings update repo settings
+
+  [ Marek Marczykowski-Górecki ]
+  * travis: include Debian targets too
+
+  [ Marta Marczykowska-Górecka ]
+  * Added a Clone VM tool
+  * Changed Clone action in Qube Manager and VM settings to use the new
+    Clone Qube dialog
+  * Updated Clone VM tool to use new better helper functions
+  * Added and fixed tests for CloneVM tool
+  * Make Qube Manager resistant to missing permissions
+  * Global Settings now can function with partial permissions
+  * Misc qubesmanager tools modified to be more resilient to
+    insufficient permissions
+  * Fixed VM settings to be more tolerant of missing permissions
+  * Use the new QubesDaemonAccessError
+  * Modified warning shown when destination qube for backup is
+    unavailable
+
+  [ Marek Marczykowski-Górecki ]
+  * Bump required python3-qubesadmin version
+
+  [ Marta Marczykowska-Górecka ]
+  * Fixed lack of new vm.icon property handling in Qube Manager
+  * Adjusted icon size in Qube Manager for better aesthetics
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Thu, 13 Aug 2020 04:05:04 +0200
+
 qubes-manager (4.1.10-1) unstable; urgency=medium
 
   [ Frédéric Pierret (fepitre) ]
