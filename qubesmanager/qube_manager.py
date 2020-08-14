@@ -248,6 +248,7 @@ class VmInfo():
 
         if not event or event.endswith(':label'):
             self.label = getattr(self.vm, 'label', None)
+            self.icon = getattr(self.vm, 'icon', 'appvm-black')
 
         if not event or event.endswith(':template'):
             try:

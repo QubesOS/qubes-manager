@@ -38,7 +38,8 @@ import qubesmanager.qube_manager as qube_manager
 from qubesmanager.tests import init_qtapp
 
 
-icon_size = QSize(24, 24)
+icon_size = qube_manager.icon_size
+
 
 class QubeManagerTest(unittest.TestCase):
     def setUp(self):
@@ -208,9 +209,8 @@ class QubeManagerTest(unittest.TestCase):
     def test_011_is_label_correct(self):
         for row in range(self.dialog.table.model().rowCount()):
             vm = self._get_table_vm(row)
-            icon = QIcon.fromTheme(vm.label.icon)
+            icon = QIcon.fromTheme(getattr(vm, 'icon', 'appvm-black'))
             icon = icon.pixmap(icon_size)
-
 
             label_pixmap = self._get_table_item(row, "Label", Qt.DecorationRole)
 
@@ -825,7 +825,8 @@ class QubeManagerTest(unittest.TestCase):
         # this requires very long timeout, because it takes time for the
         # dispvm to vanish
         self._run_command_and_process_events(
-            ["qvm-run", "--dispvm", dispvm_template, "true"], timeout=60)
+            ["qvm-run", "--dispvm", dispvm_template, "true"], timeout=60,
+            additional_timeout=30)
 
         final_vms = self._create_set_of_current_vms()
 
@@ -853,7 +854,8 @@ class QubeManagerTest(unittest.TestCase):
             ["qvm-prefs", dispvm_template, "memory", "600000"])
 
         self._run_command_and_process_events(
-            ["qvm-run", "--dispvm", dispvm_template, "true"], timeout=30)
+            ["qvm-run", "--dispvm", dispvm_template, "true"], timeout=30,
+            additional_timeout=15)
 
         final_vms = self._create_set_of_current_vms()
 
@@ -1170,13 +1172,15 @@ class QubeManagerTest(unittest.TestCase):
                 result += 1
         return result
 
-    def _run_command_and_process_events(self, command, timeout=5):
+    def _run_command_and_process_events(self, command, timeout=5,
+                                        additional_timeout=None):
         """
         helper function to run a given command and process eventsDispatcher
         events
         :param command: list of strings, containing the command and all its
         parameters
         :param timeout: default 5 seconds
+        :param additional_timeout: default none
         :return:
         """
         asyncio.set_event_loop(self.loop)
@@ -1187,8 +1191,15 @@ class QubeManagerTest(unittest.TestCase):
                                                  stdout=subprocess.DEVNULL,
                                                  stderr=subprocess.DEVNULL)
 
-        (done, pending) = self.loop.run_until_complete(
-            asyncio.wait({future1, future2}, timeout=timeout))
+        if additional_timeout:
+            (done, pending) = self.loop.run_until_complete(
+                asyncio.wait({future1, future2}, timeout=timeout,
+                             return_when=asyncio.FIRST_COMPLETED))
+            (done, pending) = self.loop.run_until_complete(
+                asyncio.wait(pending, timeout=additional_timeout))
+        else:
+            (done, pending) = self.loop.run_until_complete(
+                asyncio.wait({future1, future2}, timeout=timeout))
 
         for task in pending:
             with contextlib.suppress(asyncio.CancelledError):
@@ -1274,6 +1285,7 @@ class QubeManagerTest(unittest.TestCase):
         model = self.dialog.table.model()
         column = self.dialog.qubes_model.columns_indices.index(column_name)
         return model.index(row, column).data(role)
+
 
 class QubeManagerThreadTest(unittest.TestCase):
     def test_01_startvm_thread(self):
