@@ -100,12 +100,18 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
             widget=self.label,
             qubes_app=self.app)
 
-        utils.initialize_widget_with_default(
+        utils.initialize_widget_with_vms(
             widget=self.template_vm,
-            choices=[(vm.name, vm) for vm in self.app.domains
-                     if not utils.is_internal(vm) and vm.klass == 'TemplateVM'],
-            mark_existing_as_default=True,
-            default_value=getattr(self.app, 'default_template', None))
+            qubes_app=self.app,
+            filter_function=(lambda vm: not utils.is_internal(vm) and
+                             vm.klass == 'TemplateVM'))
+
+        default_template = self.app.default_template
+        for i in range(self.template_vm.count()):
+            if self.template_vm.itemData(i) == default_template:
+                self.template_vm.setCurrentIndex(i)
+                self.template_vm.setItemText(
+                    i, str(default_template) + " (default)")
 
         utils.initialize_widget_with_default(
             widget=self.netvm,
