@@ -31,7 +31,7 @@ from . import ui_about  # pylint: disable=no-name-in-module
 # pylint: disable=too-few-public-methods
 class AboutDialog(ui_about.Ui_AboutDialog, QDialog):
     def __init__(self):
-        super(AboutDialog, self).__init__()
+        super().__init__()
 
         self.setupUi(self)
 

@@ -38,7 +38,7 @@ from .ui_clonevmdlg import Ui_CloneVMDlg  # pylint: disable=import-error
 
 class CloneVMDlg(QtWidgets.QDialog, Ui_CloneVMDlg):
     def __init__(self, qtapp, app, parent=None, src_vm=None):
-        super(CloneVMDlg, self).__init__(parent)
+        super().__init__(parent)
         self.setupUi(self)
 
         self.qtapp = qtapp

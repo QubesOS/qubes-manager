@@ -77,7 +77,7 @@ class SizeSpinBox(QtWidgets.QSpinBox):
     """A SpinBox subclass with extended handling for sizes in MB and GB"""
     # pylint: disable=invalid-name, no-self-use
     def __init__(self, *args, **kwargs):
-        super(SizeSpinBox, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.pattern = r'(\d+\.?\d?) ?(GB|MB)'
         self.regex = re.compile(self.pattern)

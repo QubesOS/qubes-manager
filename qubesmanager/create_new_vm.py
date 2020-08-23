@@ -87,7 +87,7 @@ class CreateVMThread(QtCore.QThread):
 
 class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
     def __init__(self, qtapp, app, parent=None):
-        super(NewVmDlg, self).__init__(parent)
+        super().__init__(parent)
         self.setupUi(self)
 
         self.qtapp = qtapp

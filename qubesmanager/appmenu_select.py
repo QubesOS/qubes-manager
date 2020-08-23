@@ -28,7 +28,7 @@ from qubesadmin import exc
 # pylint: disable=too-few-public-methods
 class AppListWidgetItem(QtWidgets.QListWidgetItem):
     def __init__(self, name, ident, tooltip=None, parent=None):
-        super(AppListWidgetItem, self).__init__(name, parent)
+        super().__init__(name, parent)
         additional_description = ".desktop filename: " + str(ident)
         if not tooltip:
             tooltip = additional_description

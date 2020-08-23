@@ -28,7 +28,7 @@ from . import ui_releasenotes  # pylint: disable=no-name-in-module
 class ReleaseNotesDialog(ui_releasenotes.Ui_ReleaseNotesDialog, QDialog):
     # pylint: disable=too-few-public-methods
     def __init__(self):
-        super(ReleaseNotesDialog, self).__init__()
+        super().__init__()
 
         self.setupUi(self)
 

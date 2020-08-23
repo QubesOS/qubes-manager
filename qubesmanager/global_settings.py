@@ -50,12 +50,12 @@ def _run_qrexec_repo(service, arg=''):
         env=env
     )
     if p.stderr:
-        raise RuntimeError(
+        raise exc.QubesException(
             QtCore.QCoreApplication.translate(
                 "GlobalSettings", 'qrexec call stderr was not empty'),
             {'stderr': p.stderr.decode('utf-8')})
     if p.returncode != 0:
-        raise RuntimeError(
+        raise exc.QubesException(
             QtCore.QCoreApplication.translate(
                 "GlobalSettings",
                 'qrexec call exited with non-zero return code'),
@@ -67,7 +67,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                            QtWidgets.QDialog):
 
     def __init__(self, app, qubes_app, parent=None):
-        super(GlobalSettingsWindow, self).__init__(parent)
+        super().__init__(parent)
 
         self.app = app
         self.qubes_app = qubes_app
@@ -287,7 +287,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             else:
                 try:
                     self.vm.features[feature] = widget.currentData()
-                except exc.QubesDaemonAccessError as ex:
+                except exc.QubesDaemonAccessError:
                     self.errors.append(
                         "Failed to set {} due to insufficient "
                         "permissions".format(feature))
@@ -309,7 +309,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         try:
             self.qmemman_config = ConfigParser()
             self.vm_min_mem_val = '200MiB'  # str(qmemman_algo.MIN_PREFMEM)
-            self.dom0_mem_boost_val = '350MiB'  # str(qmemman_algo.DOM0_MEM_BOOST)
+            # str(qmemman_algo.DOM0_MEM_BOOST)
+            self.dom0_mem_boost_val = '350MiB'
 
             self.qmemman_config.read(qmemman_config_path)
             if self.qmemman_config.has_section('global'):
@@ -360,7 +361,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                     qmemman_config_file = open(qmemman_config_path, 'a')
                     self.qmemman_config.write(qmemman_config_file)
                     qmemman_config_file.close()
-                except Exception as ex:
+                except Exception as ex:  # pylint: disable=broad-except
                     self.errors.append(
                         "Failed to set memory settings due to {}".format(
                             str(ex)))
@@ -380,7 +381,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
 
                 try:
                     qmemman_config_file = open(qmemman_config_path, 'r')
-                except Exception as ex:
+                except Exception as ex:  # pylint: disable=broad-except
                     self.errors.append(
                         "Failed to set memory settings due to {}".format(
                             str(ex)))
@@ -405,7 +406,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                     qmemman_config_file = open(qmemman_config_path, 'w')
                     qmemman_config_file.writelines(config_lines)
                     qmemman_config_file.close()
-                except Exception as ex:
+                except Exception as ex:  # pylint: disable=broad-except
                     self.errors.append(
                         "Failed to set memory settings due to {}".format(
                             str(ex)))
@@ -435,7 +436,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 dct = repos[lst[0]] = dict()
                 dct['prettyname'] = lst[1]
                 dct['enabled'] = lst[2] == 'enabled'
-        except Exception as ex:
+        except exc.QubesException:
             self.dom0_updates_repo.setEnabled(False)
             self.itl_tmpl_updates_repo.setEnabled(False)
             self.comm_tmpl_updates_repo.setEnabled(False)

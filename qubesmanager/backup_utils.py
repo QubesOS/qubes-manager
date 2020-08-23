@@ -101,7 +101,7 @@ def select_path_button_clicked(dialog, select_file=False, read_only=False):
                     dialog.tr("Unexpected characters in path!"),
                     dialog.tr("Backup path can only contain the following "
                               "special characters: /:.,_+=() -"))
-            except Exception as ex:
+            except Exception as ex:  # pylint: disable=broad-except
                 QtWidgets.QMessageBox.warning(
                     dialog,
                     dialog.tr("Failed to select path!"),

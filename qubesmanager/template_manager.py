@@ -35,7 +35,7 @@ class TemplateManagerWindow(
 
     def __init__(self, qt_app, qubes_app, dispatcher, parent=None):
         # pylint: disable=unused-argument
-        super(TemplateManagerWindow, self).__init__()
+        super().__init__()
         self.setupUi(self)
 
         self.qubes_app = qubes_app
@@ -244,7 +244,7 @@ class TemplateManagerWindow(
 class VMNameItem(QtWidgets.QTableWidgetItem):
     # pylint: disable=too-few-public-methods
     def __init__(self, vm):
-        super(VMNameItem, self).__init__()
+        super().__init__()
         self.vm = vm
 
         self.setText(self.vm.name)
@@ -253,7 +253,7 @@ class VMNameItem(QtWidgets.QTableWidgetItem):
 
 class StatusItem(QtWidgets.QTableWidgetItem):
     def __init__(self, vm):
-        super(StatusItem, self).__init__()
+        super().__init__()
         self.vm = vm
 
         self.state = None
@@ -278,7 +278,7 @@ class StatusItem(QtWidgets.QTableWidgetItem):
 class CurrentTemplateItem(QtWidgets.QTableWidgetItem):
     # pylint: disable=too-few-public-methods
     def __init__(self, vm):
-        super(CurrentTemplateItem, self).__init__()
+        super().__init__()
         self.vm = vm
 
         self.setText(self.vm.template.name)
@@ -291,7 +291,7 @@ class CurrentTemplateItem(QtWidgets.QTableWidgetItem):
 
 class NewTemplateItem(QtWidgets.QComboBox):
     def __init__(self, vm, templates, table_widget):
-        super(NewTemplateItem, self).__init__()
+        super().__init__()
         self.vm = vm
         self.table_widget = table_widget
         self.changed = False

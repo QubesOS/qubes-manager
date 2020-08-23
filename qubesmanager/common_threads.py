@@ -56,7 +56,7 @@ class RemoveVMThread(QubesThread):
 # pylint: disable=too-few-public-methods
 class CloneVMThread(QubesThread):
     def __init__(self, vm, dst_name, pool=None, label=None):
-        super(CloneVMThread, self).__init__(vm)
+        super().__init__(vm)
         self.dst_name = dst_name
         self.pool = pool
         self.label = label

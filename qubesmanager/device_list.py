@@ -23,7 +23,7 @@ from PyQt5 import QtWidgets  # pylint: disable=import-error
 
 class PCIDeviceListWindow(ui_devicelist.Ui_Dialog, QtWidgets.QDialog):
     def __init__(self, vm, qapp, dev_list, no_strict_reset_list, parent=None):
-        super(PCIDeviceListWindow, self).__init__(parent)
+        super().__init__(parent)
 
         self.vm = vm
         self.qapp = qapp

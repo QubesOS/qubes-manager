@@ -58,16 +58,16 @@ from . import clone_vm
 
 class SearchBox(QLineEdit):
     def __init__(self, parent=None):
-        super(SearchBox, self).__init__(parent)
+        super().__init__(parent)
         self.focusing = False
 
     def focusInEvent(self, e):  # pylint: disable=invalid-name
-        super(SearchBox, self).focusInEvent(e)
+        super().focusInEvent(e)
         self.selectAll()
         self.focusing = True
 
     def mousePressEvent(self, e):  # pylint: disable=invalid-name
-        super(SearchBox, self).mousePressEvent(e)
+        super().mousePressEvent(e)
         if self.focusing:
             self.selectAll()
             self.focusing = False
@@ -78,7 +78,7 @@ icon_size = QSize(22, 22)
 class StateIconDelegate(QStyledItemDelegate):
     lastIndex = None
     def __init__(self):
-        super(StateIconDelegate, self).__init__()
+        super().__init__()
         self.stateIcons = {
                 "Running" : QIcon(":/on.png"),
                 "Paused" : QIcon(":/paused.png"),
@@ -104,7 +104,7 @@ class StateIconDelegate(QStyledItemDelegate):
                 }
 
     def sizeHint(self, option, index):
-        hint = super(StateIconDelegate, self).sizeHint(option, index)
+        hint = super().sizeHint(option, index)
         option = QStyleOptionViewItem(option)
         option.features |= option.HasDecoration
         widget = option.widget
@@ -153,7 +153,7 @@ class StateIconDelegate(QStyledItemDelegate):
 
     def helpEvent(self, event, view, option, index):
         if event.type() != QEvent.ToolTip:
-            return super(StateIconDelegate, self).helpEvent(event, view,
+            return super().helpEvent(event, view,
                     option, index)
         option = QStyleOptionViewItem(option)
         widget = option.widget
@@ -222,10 +222,9 @@ class VmInfo():
                     self.state['outdated'] = "to-be-outdated"
                 else:
                     try:
-                        for vol in self.vm.volumes.values():
-                            if vol.is_outdated():
-                                self.state['outdated'] = "outdated"
-                                break
+                        if any(vol.is_outdated()
+                               for vol in self.vm.volumes.values()):
+                            self.state['outdated'] = "outdated"
                     except exc.QubesDaemonAccessError:
                         pass
 
@@ -612,7 +611,7 @@ class UpdateVMThread(common_threads.QubesThread):
 # pylint: disable=too-few-public-methods
 class RunCommandThread(common_threads.QubesThread):
     def __init__(self, vm, command_to_run):
-        super(RunCommandThread, self).__init__(vm)
+        super().__init__(vm)
         self.command_to_run = command_to_run
 
     def run(self):
@@ -638,7 +637,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     settings_loaded = False
 
     def __init__(self, qt_app, qubes_app, dispatcher, _parent=None):
-        super(VmManagerWindow, self).__init__()
+        super().__init__()
         self.setupUi(self)
 
         self.manager_settings = QSettings(self)
@@ -816,7 +815,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     def keyPressEvent(self, event):  # pylint: disable=invalid-name
         if event.key() == Qt.Key_Escape:
             self.searchbox.clear()
-        super(VmManagerWindow, self).keyPressEvent(event)
+        super().keyPressEvent(event)
 
     def clear_threads(self):
         for thread in self.threads_list:

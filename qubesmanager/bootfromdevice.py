@@ -30,7 +30,7 @@ from qubesadmin import exc
 class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
                              QtWidgets.QDialog):
     def __init__(self, vm, qapp, qubesapp=None, parent=None):
-        super(VMBootFromDeviceWindow, self).__init__(parent)
+        super().__init__(parent)
 
         self.vm = vm
         self.qapp = qapp
