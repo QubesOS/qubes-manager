@@ -75,7 +75,7 @@ class BackupThread(QtCore.QThread):
 
 class BackupVMsWindow(ui_backupdlg.Ui_Backup, multiselectwidget.QtGui.QWizard):
     def __init__(self, qt_app, qubes_app, dispatcher, parent=None):
-        super(BackupVMsWindow, self).__init__(parent)
+        super().__init__(parent)
 
         self.qt_app = qt_app
         self.qubes_app = qubes_app

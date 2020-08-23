@@ -49,7 +49,7 @@ from . import ui_settingsdlg  # pylint: disable=no-name-in-module
 # pylint: disable=too-few-public-methods
 class RenameVMThread(common_threads.QubesThread):
     def __init__(self, vm, new_vm_name, dependencies):
-        super(RenameVMThread, self).__init__(vm)
+        super().__init__(vm)
         self.new_vm_name = new_vm_name
         self.dependencies = dependencies
 
@@ -89,7 +89,7 @@ class RenameVMThread(common_threads.QubesThread):
 # pylint: disable=too-few-public-methods
 class RefreshAppsVMThread(common_threads.QubesThread):
     def __init__(self, vm, button):
-        super(RefreshAppsVMThread, self).__init__(vm)
+        super().__init__(vm)
         self.button = button
 
     def run(self):
@@ -129,7 +129,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         ))
 
     def __init__(self, vm, qapp, init_page="basic", parent=None):
-        super(VMSettingsWindow, self).__init__(parent)
+        super().__init__(parent)
 
         self.vm = vm
         self.qapp = qapp
@@ -255,7 +255,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         if event.key() == QtCore.Qt.Key_Enter \
                 or event.key() == QtCore.Qt.Key_Return:
             return
-        super(VMSettingsWindow, self).keyPressEvent(event)
+        super().keyPressEvent(event)
 
     def accept(self):
         self.save_and_apply()
@@ -980,7 +980,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
         # pylint: disable=too-few-public-methods
         class DevListWidgetItem(QtGui.QListWidgetItem):
             def __init__(self, dev, unknown=False, parent=None):
-                super(DevListWidgetItem, self).__init__(parent)
+                super().__init__(parent)
                 name = dev.ident.replace('_', ":") + ' ' + dev.description
                 if unknown:
                     name += ' (unknown)'

@@ -41,7 +41,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                            QtGui.QDialog):
 
     def __init__(self, app, qvm_collection, parent=None):
-        super(GlobalSettingsWindow, self).__init__(parent)
+        super().__init__(parent)
 
         self.app = app
         self.qvm_collection = qvm_collection

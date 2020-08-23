@@ -37,7 +37,7 @@ class LogDialog(ui_logdlg.Ui_LogDialog, QtGui.QDialog):
     # pylint: disable=too-few-public-methods
 
     def __init__(self, app, log_path, parent=None):
-        super(LogDialog, self).__init__(parent)
+        super().__init__(parent)
 
         self.app = app
         self.log_path = log_path

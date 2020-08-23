@@ -30,7 +30,7 @@ class InformationNotesDialog(ui_informationnotes.Ui_InformationNotesDialog,
                              QDialog):
     # pylint: disable=too-few-public-methods
     def __init__(self):
-        super(InformationNotesDialog, self).__init__()
+        super().__init__()
 
         self.setupUi(self)
         details = subprocess.check_output(

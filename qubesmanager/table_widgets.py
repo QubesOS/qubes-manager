@@ -35,7 +35,7 @@ class VmIconWidget(QtGui.QWidget):
     def __init__(self, icon_path, enabled=True, size_multiplier=0.7,
                  tooltip=None, parent=None,
                  icon_sz=(32, 32)):   # pylint: disable=unused-argument
-        super(VmIconWidget, self).__init__(parent)
+        super().__init__(parent)
 
         self.enabled = enabled
         self.size_multiplier = size_multiplier
@@ -94,7 +94,7 @@ class VmTypeWidget(VmIconWidget):
 
     def __init__(self, vm, parent=None):
         (icon_path, tooltip) = self.get_vm_icon(vm)
-        super(VmTypeWidget, self).__init__(
+        super().__init__(
             icon_path, True, 0.8, tooltip, parent)
         self.vm = vm
         self.table_item = self.VmTypeItem(self.value, vm)
@@ -142,7 +142,7 @@ class VmLabelWidget(VmIconWidget):
 
     def __init__(self, vm, parent=None):
         self.icon_path = self.get_vm_icon_path(vm)
-        super(VmLabelWidget, self).__init__(self.icon_path,
+        super().__init__(self.icon_path,
                                             True, 0.8, None, parent)
         self.vm = vm
         self.table_item = self.VmLabelItem(self.value, vm)
@@ -161,7 +161,7 @@ class VmLabelWidget(VmIconWidget):
 
 class VmStatusIcon(QtGui.QLabel):
     def __init__(self, vm, parent=None):
-        super(VmStatusIcon, self).__init__(parent)
+        super().__init__(parent)
         self.vm = vm
         self.set_on_icon()
         self.previous_power_state = self.vm.get_power_state()
@@ -230,7 +230,7 @@ class VmInfoWidget(QtGui.QWidget):
             return
 
     def __init__(self, vm, parent=None):
-        super(VmInfoWidget, self).__init__(parent)
+        super().__init__(parent)
         self.vm = vm
         layout = QtGui.QHBoxLayout()
 
@@ -279,7 +279,7 @@ class VMPropertyItem(QtGui.QTableWidgetItem):
         :param check_default: if True, the widget will prepend its text with
         "default" if the if the property is set to DEFAULT
         """
-        super(VMPropertyItem, self).__init__()
+        super().__init__()
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
         self.setTextAlignment(QtCore.Qt.AlignVCenter)
         self.vm = vm
@@ -313,12 +313,12 @@ class VMPropertyItem(QtGui.QTableWidgetItem):
             return False
         if self.text() == other.text():
             return self.name < other.name
-        return super(VMPropertyItem, self).__lt__(other)
+        return super().__lt__(other)
 
 
 class VmTemplateItem(VMPropertyItem):
     def __init__(self, vm):
-        super(VmTemplateItem, self).__init__(vm, "template")
+        super().__init__(vm, "template")
 
     def update(self):
         if getattr(self.vm, 'template', None) is not None:
@@ -334,7 +334,7 @@ class VmTemplateItem(VMPropertyItem):
 
 class VmInternalItem(VMPropertyItem):
     def __init__(self, vm):
-        super(VmInternalItem, self).__init__(vm, None)
+        super().__init__(vm, None)
 
     def update(self):
         internal = self.vm.features.get('internal', False)
@@ -370,7 +370,7 @@ class VmUpdateInfoWidget(QtGui.QWidget):
             return self.value < other.value
 
     def __init__(self, vm, show_text=True, parent=None):
-        super(VmUpdateInfoWidget, self).__init__(parent)
+        super().__init__(parent)
         layout = QtGui.QHBoxLayout()
         self.show_text = show_text
         if self.show_text:
@@ -454,7 +454,7 @@ class VmUpdateInfoWidget(QtGui.QWidget):
 
 class VmSizeOnDiskItem(QtGui.QTableWidgetItem):
     def __init__(self, vm):
-        super(VmSizeOnDiskItem, self).__init__()
+        super().__init__()
         self.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
         self.vm = vm
@@ -484,7 +484,7 @@ class VmSizeOnDiskItem(QtGui.QTableWidgetItem):
 
 class VmLastBackupItem(VMPropertyItem):
     def __init__(self, vm, property_name):
-        super(VmLastBackupItem, self).__init__(vm, property_name)
+        super().__init__(vm, property_name)
 
     def update(self):
         backup_timestamp = getattr(self.vm, 'backup_timestamp', None)

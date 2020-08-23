@@ -28,7 +28,7 @@ from qubesadmin.tools import qvm_start
 
 class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtGui.QDialog):
     def __init__(self, vm, qapp, parent=None):
-        super(VMBootFromDeviceWindow, self).__init__(parent)
+        super().__init__(parent)
 
         self.vm = vm
         self.qapp = qapp

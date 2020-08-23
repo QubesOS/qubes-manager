@@ -28,7 +28,7 @@ import PyQt4.QtGui  # pylint: disable=import-error
 # pylint: disable=too-few-public-methods
 class AppListWidgetItem(PyQt4.QtGui.QListWidgetItem):
     def __init__(self, name, ident, parent=None):
-        super(AppListWidgetItem, self).__init__(name, parent)
+        super().__init__(name, parent)
 #       self.setToolTip(command)
         self.ident = ident
 

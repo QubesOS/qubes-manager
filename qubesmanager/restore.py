@@ -72,7 +72,7 @@ class RestoreThread(QtCore.QThread):
 
 class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
     def __init__(self, qt_app, qubes_app, parent=None):
-        super(RestoreVMsWindow, self).__init__(parent)
+        super().__init__(parent)
 
         self.qt_app = qt_app
         self.qubes_app = qubes_app
@@ -126,7 +126,7 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtGui.QWizard):
         if self.page(p_int) is self.select_vms_page:
             self.vms_to_restore = None
         else:
-            super(RestoreVMsWindow, self).cleanupPage(p_int)
+            super().cleanupPage(p_int)
 
     def __fill_vms_list__(self):
         if self.vms_to_restore is not None:

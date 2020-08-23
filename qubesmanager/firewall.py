@@ -32,7 +32,7 @@ class FirewallModifiedOutsideError(ValueError):
 
 class NewFwRuleDlg(QtGui.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
     def __init__(self, parent=None):
-        super(NewFwRuleDlg, self).__init__(parent)
+        super().__init__(parent)
         self.setupUi(self)
 
         self.set_ok_state(False)
