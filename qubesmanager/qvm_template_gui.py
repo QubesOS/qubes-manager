@@ -1,19 +1,19 @@
+import asyncio
 import collections
-import concurrent
-import concurrent.futures
 import itertools
 import json
 import os
-import subprocess
 import typing
 
-import gi
-gi.require_version('Gtk', '3.0')
+import PyQt5
+import PyQt5.QtWidgets
 
-#pylint: disable=wrong-import-position
-from gi.repository import GLib
-from gi.repository import Gtk
-from gi.repository import Pango
+from . import ui_qvmtemplate
+from . import ui_templateinstallconfirmdlg
+from . import ui_templateinstallprogressdlg
+from . import utils
+
+#pylint: disable=invalid-name
 
 BASE_CMD = ['qvm-template', '--enablerepo=*', '--yes', '--quiet']
 
@@ -28,16 +28,10 @@ class Template(typing.NamedTuple):
     licence: str
     url: str
     summary: str
-    # --- internal ---
+    # ---- internal ----
     description: str
     default_status: str
-    weight: int
-    model: Gtk.TreeModel
-    # ----------------
-
-    # XXX: Is there a better way of doing this?
-    TYPES = [str, str, str, str, int, str, str, str,
-        str, str, str, str, int, Gtk.TreeModel]
+    # ------------------
 
     COL_NAMES = [
         'Status',
@@ -49,27 +43,24 @@ class Template(typing.NamedTuple):
         'Install Time',
         'License',
         'URL',
-        'Summary']
+        'Summary'
+    ]
 
     @staticmethod
-    def build(status, entry, model):
+    def build(status, entry):
         return Template(
             status,
             entry['name'],
             '%s:%s-%s' % (entry['epoch'], entry['version'], entry['release']),
             entry['reponame'],
-            # XXX: This may overflow glib ints, though pretty unlikely in the
-            #       foreseeable future
-            int(entry['size']) / 1000,
+            int(entry['size']) // 1000,
             entry['buildtime'],
             entry['installtime'],
             entry['license'],
             entry['url'],
             entry['summary'],
             entry['description'],
-            status,
-            Pango.Weight.BOOK,
-            model
+            status
         )
 
 class Action(typing.NamedTuple):
@@ -80,253 +71,230 @@ class Action(typing.NamedTuple):
     TYPES = [str, str, str]
     COL_NAMES = ['Operation', 'Name', 'Version']
 
-# TODO: Set default window sizes
+class TemplateStatusDelegate(PyQt5.QtWidgets.QStyledItemDelegate):
+    OPS = [
+        ['Installed', 'Reinstall', 'Remove'],
+        ['Extra', 'Remove'],
+        ['Upgradable', 'Upgrade', 'Remove'],
+        ['Downgradable', 'Downgrade', 'Remove'],
+        ['Available', 'Install']
+    ]
 
-class ConfirmDialog(Gtk.Dialog):
-    def __init__(self, parent, actions):
-        super(ConfirmDialog, self).__init__(
-            title='Confirmation', transient_for=parent, modal=True)
-        self.add_buttons(
-            Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-            Gtk.STOCK_OK, Gtk.ResponseType.OK)
+    def createEditor(self, parent, option, index):
+        _ = option # unused
+        editor = PyQt5.QtWidgets.QComboBox(parent)
+        # Otherwise the internalPointer can be overwritten with a QComboBox
+        index = index.model().index(index.row(), index.column())
+        kind = index.internalPointer().default_status
+        for op_list in TemplateStatusDelegate.OPS:
+            if op_list[0] == kind:
+                for op in op_list:
+                    editor.addItem(op)
+                editor.currentIndexChanged.connect(self.currentIndexChanged)
+                editor.showPopup()
+                return editor
+        return None
 
-        box = self.get_content_area()
-        self.msg = Gtk.Label()
-        self.msg.set_markup((
-            '<b>WARNING: Local changes made to the following'
-            ' templates will be overwritten! Continue?</b>'))
-        box.add(self.msg)
+    def setEditorData(self, editor, index):
+        #pylint: disable=no-self-use
+        cur = index.data()
+        idx = editor.findText(cur)
+        if idx >= 0:
+            editor.setCurrentIndex(idx)
 
-        self.store = Gtk.ListStore(*Action.TYPES)
-        self.listing = Gtk.TreeView(model=self.store)
-        for idx, colname in enumerate(Action.COL_NAMES):
-            renderer = Gtk.CellRendererText()
-            col = Gtk.TreeViewColumn(colname, renderer, text=idx)
-            self.listing.append_column(col)
-            col.set_sort_column_id(idx)
+    def setModelData(self, editor, model, index):
+        #pylint: disable=no-self-use
+        model.setData(index, editor.currentText())
 
-        for row in actions:
-            self.store.append(row)
+    def updateEditorGeometry(self, editor, option, index):
+        #pylint: disable=no-self-use
+        _ = index # unused
+        editor.setGeometry(option.rect)
 
-        self.scrollable_listing = Gtk.ScrolledWindow()
-        self.scrollable_listing.add(self.listing)
-        box.pack_start(self.scrollable_listing, True, True, 16)
+    @PyQt5.QtCore.pyqtSlot()
+    def currentIndexChanged(self):
+        self.commitData.emit(self.sender())
 
-        self.show_all()
-
-class ProgressDialog(Gtk.Dialog):
-    def __init__(self, parent):
-        super(ProgressDialog, self).__init__(
-            title='Processing...', transient_for=parent, modal=True)
-        box = self.get_content_area()
-
-        self.spinner = Gtk.Spinner()
-        self.spinner.start()
-        box.add(self.spinner)
-
-        self.msg = Gtk.Label()
-        self.msg.set_text('Processing...')
-        box.add(self.msg)
-
-        self.infobox = Gtk.TextView()
-        self.scrollable = Gtk.ScrolledWindow()
-        self.scrollable.add(self.infobox)
-
-        box.pack_start(self.scrollable, True, True, 16)
-
-        self.show_all()
-
-    def finish(self, success):
-        self.spinner.stop()
-        if success:
-            self.msg.set_text('Operations succeeded.')
-        else:
-            self.msg.set_markup('<b>Error:</b>')
-        self.add_button(Gtk.STOCK_OK, Gtk.ResponseType.OK)
-        self.run()
-
-class QubesTemplateApp(Gtk.Window):
+class TemplateModel(PyQt5.QtCore.QAbstractItemModel):
     def __init__(self):
-        super(QubesTemplateApp, self).__init__(title='Qubes Template Manager')
+        super().__init__()
 
-        self.iconsize = Gtk.IconSize.SMALL_TOOLBAR
+        self.children = []
 
-        self.executor = concurrent.futures.ThreadPoolExecutor()
-        self.outerbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.__build_action_models()
-        self.__build_toolbar()
-        self.__build_listing()
-        self.__build_infobox()
+    def flags(self, index):
+        if index.isValid() and index.column() == 0:
+            return super().flags(index) | PyQt5.QtCore.Qt.ItemIsEditable
+        return super().flags(index)
 
-        self.add(self.outerbox)
+    def sort(self, idx, order):
+        rev = (order == PyQt5.QtCore.Qt.AscendingOrder)
+        self.children.sort(key=lambda x: x[idx], reverse=rev)
 
-    def __build_action_models(self):
-        #pylint: disable=invalid-name
-        OPS = [
-            ['Installed', 'Reinstall', 'Remove'],
-            ['Extra', 'Remove'],
-            ['Upgradable', 'Upgrade', 'Remove'],
-            ['Downgradable', 'Downgrade', 'Remove'],
-            ['Available', 'Install']
-        ]
-        self.action_models = {}
-        for ops in OPS:
-            # First element is the default status for the certain class of
-            # templates
-            self.action_models[ops[0]] = Gtk.ListStore(str)
-            for oper in ops:
-                self.action_models[ops[0]].append([oper])
+        self.dataChanged.emit(*self.row_index(0, self.rowCount() - 1))
 
-    def __build_toolbar(self):
-        self.toolbar = Gtk.Toolbar()
-        self.btn_refresh = Gtk.ToolButton(
-            icon_widget=Gtk.Image.new_from_icon_name(
-                'view-refresh', self.iconsize),
-            label='Refresh')
-        self.btn_refresh.connect('clicked', self.refresh)
-        self.toolbar.insert(self.btn_refresh, 0)
+    def index(self, row, column, parent=PyQt5.QtCore.QModelIndex()):
+        if not self.hasIndex(row, column, parent):
+            return PyQt5.QtCore.QModelIndex()
 
-        self.btn_install = Gtk.ToolButton(
-            icon_widget=Gtk.Image.new_from_icon_name('go-down', self.iconsize),
-            label='Apply')
-        self.btn_install.connect('clicked', self.show_confirm)
-        self.toolbar.insert(self.btn_install, 1)
+        return self.createIndex(row, column, self.children[row])
 
-        self.outerbox.pack_start(self.toolbar, False, True, 0)
+    def parent(self, child):
+        #pylint: disable=no-self-use
+        _ = child # unused
+        return PyQt5.QtCore.QModelIndex()
 
-    def __build_listing(self):
-        self.store = Gtk.ListStore(*Template.TYPES)
+    def rowCount(self, parent=PyQt5.QtCore.QModelIndex()):
+        #pylint: disable=no-self-use
+        _ = parent # unused
+        return len(self.children)
 
-        self.listing = Gtk.TreeView(model=self.store)
-        self.cols = []
-        for idx, colname in enumerate(Template.COL_NAMES):
-            if colname == 'Status':
-                renderer = Gtk.CellRendererCombo()
-                renderer.set_property('editable', True)
-                renderer.set_property('has-entry', False)
-                renderer.set_property('text-column', 0)
-                renderer.connect('edited', self.entry_edit)
-                col = Gtk.TreeViewColumn(
-                    colname,
-                    renderer,
-                    text=idx,
-                    weight=len(Template.TYPES) - 2,
-                    model=len(Template.TYPES) - 1)
-            else:
-                renderer = Gtk.CellRendererText()
-                col = Gtk.TreeViewColumn(
-                    colname,
-                    renderer,
-                    text=idx,
-                    weight=len(Template.TYPES) - 2)
-            # Right-align for integers
-            if Template.TYPES[idx] is int:
-                renderer.set_property('xalign', 1.0)
-            self.cols.append(col)
-            self.listing.append_column(col)
-            col.set_sort_column_id(idx)
-        sel = self.listing.get_selection()
-        sel.set_mode(Gtk.SelectionMode.MULTIPLE)
-        sel.connect('changed', self.update_info)
+    def columnCount(self, parent=PyQt5.QtCore.QModelIndex()):
+        #pylint: disable=no-self-use
+        _ = parent # unused
+        return len(Template.COL_NAMES)
 
-        self.scrollable_listing = Gtk.ScrolledWindow()
-        self.scrollable_listing.add(self.listing)
-        self.scrollable_listing.set_visible(False)
+    def hasChildren(self, index=PyQt5.QtCore.QModelIndex()):
+        #pylint: disable=no-self-use
+        return index == PyQt5.QtCore.QModelIndex()
 
-        self.spinner = Gtk.Spinner()
+    def data(self, index, role=PyQt5.QtCore.Qt.DisplayRole):
+        if index.isValid():
+            if role == PyQt5.QtCore.Qt.DisplayRole:
+                return self.children[index.row()][index.column()]
+            if role == PyQt5.QtCore.Qt.FontRole:
+                font = PyQt5.QtGui.QFont()
+                tpl = self.children[index.row()]
+                font.setBold(tpl.status != tpl.default_status)
+                return font
+            if role == PyQt5.QtCore.Qt.TextAlignmentRole:
+                if isinstance(self.children[index.row()][index.column()], int):
+                    return PyQt5.QtCore.Qt.AlignRight
+                return PyQt5.QtCore.Qt.AlignLeft
+        return None
 
-        self.outerbox.pack_start(self.scrollable_listing, True, True, 0)
-        self.outerbox.pack_start(self.spinner, True, True, 0)
+    def setData(self, index, value, role=PyQt5.QtCore.Qt.EditRole):
+        if index.isValid() and role == PyQt5.QtCore.Qt.EditRole:
+            old_list = list(self.children[index.row()])
+            old_list[index.column()] = value
+            new_tpl = Template(*old_list)
+            self.children[index.row()] = new_tpl
+            self.dataChanged.emit(index, index)
+            return True
+        return False
 
-    def __build_infobox(self):
-        self.infobox = Gtk.TextView()
-        self.outerbox.pack_start(self.infobox, True, True, 16)
+    def headerData(self, section, orientation,
+            role=PyQt5.QtCore.Qt.DisplayRole):
+        #pylint: disable=no-self-use
+        if section < len(Template.COL_NAMES) \
+                and orientation == PyQt5.QtCore.Qt.Horizontal \
+                and role == PyQt5.QtCore.Qt.DisplayRole:
+            return Template.COL_NAMES[section]
+        return None
 
-    def refresh(self, button=None):
-        # Ignore if we're already doing a refresh
-        #pylint: disable=no-member
-        if self.spinner.props.active:
-            return
-        self.scrollable_listing.set_visible(False)
-        self.spinner.start()
-        self.spinner.set_visible(True)
-        self.store.clear()
-        def worker():
-            cmd = BASE_CMD[:]
-            if button is not None:
-                # Force refresh if triggered by button press
-                cmd.append('--refresh')
-            cmd.extend(['info', '--machine-readable-json', '--installed',
-                '--available', '--upgrades', '--extras'])
-            output = subprocess.check_output(cmd)
-            # Default type is dict as we're going to replace the lists with
-            # dicts shortly after
-            tpls = collections.defaultdict(dict, json.loads(output))
-            # Remove duplicates
-            # Should this be done in qvm-template?
-            # TODO: Merge templates with same name?
-            #       If so, we may need to have a separate UI to force versions.
-            local_names = set(x['name'] for x in tpls['installed'])
-            # Convert to dict for easier subtraction
-            for key in tpls:
-                tpls[key] = {
-                    (x['name'], x['epoch'], x['version'], x['release']): x
-                    for x in tpls[key]}
-            tpls['installed'] = {
-                k: v for k, v in tpls['installed'].items()
-                    if k not in tpls['extra'] and k not in tpls['upgradable']}
-            tpls['available'] = {
-                k: v for k, v in tpls['available'].items()
-                    if k not in tpls['installed']
-                        and k not in tpls['upgradable']}
-            # If the package name is installed but the specific version is
-            # neither installed or an upgrade, then it must be a downgrade
-            tpls['downgradable'] = {
-                k: v for k, v in tpls['available'].items()
-                    if k[0] in local_names}
-            tpls['available'] = {
-                k: v for k, v in tpls['available'].items()
-                    if k not in tpls['downgradable']}
-            # Convert back to list
-            for key in tpls:
-                tpls[key] = list(tpls[key].values())
-            for status, seq in tpls.items():
-                status_str = status.title()
-                for entry in seq:
-                    self.store.append(Template.build(
-                        status_str, entry, self.action_models[status_str]))
+    def removeRows(self, row, count, parent=PyQt5.QtCore.QModelIndex()):
+        _ = parent # unused
+        self.beginRemoveRows(PyQt5.QtCore.QModelIndex(), row, row + count)
+        del self.children[row:row+count]
+        self.endRemoveRows()
+        self.dataChanged.emit(*self.row_index(row, row + count))
 
-        def finish_cb(future):
-            def callback():
-                if future.exception() is not None:
-                    buf = self.infobox.get_buffer()
-                    buf.set_text('Error:\n' + str(future.exception()))
-                self.spinner.set_visible(False)
-                self.spinner.stop()
-                self.scrollable_listing.set_visible(True)
-            GLib.idle_add(callback)
+    def row_index(self, low, high):
+        return self.createIndex(low, 0), \
+            self.createIndex(high, self.columnCount())
 
-        future = self.executor.submit(worker)
-        future.add_done_callback(finish_cb)
+    def set_templates(self, templates):
+        self.removeRows(0, self.rowCount())
+        cnt = sum(len(g) for _, g in templates.items())
+        self.beginInsertRows(PyQt5.QtCore.QModelIndex(), 0, cnt - 1)
+        for status, grp in templates.items():
+            for tpl in grp:
+                self.children.append(Template.build(status, tpl))
+        self.endInsertRows()
+        self.dataChanged.emit(*self.row_index(0, self.rowCount() - 1))
 
-    def show_confirm(self, button=None):
-        _ = button # unused
+    def get_actions(self):
         actions = []
-        for row in self.store:
-            tpl = Template(*row)
+        for tpl in self.children:
             if tpl.status != tpl.default_status:
                 actions.append(Action(tpl.status, tpl.name, tpl.evr))
-        dialog = ConfirmDialog(self, actions)
-        resp = dialog.run()
-        dialog.destroy()
-        if resp == Gtk.ResponseType.OK:
-            self.do_install(actions)
+        return actions
 
-    def do_install(self, actions):
-        dialog = ProgressDialog(self)
-        def worker():
-            actions.sort()
-            for oper, grp in itertools.groupby(actions, lambda x: x[0]):
+    async def refresh(self, refresh=True):
+        cmd = BASE_CMD[:]
+        if refresh:
+            # Force refresh if triggered by button press
+            cmd.append('--refresh')
+        cmd.extend(['info', '--machine-readable-json', '--installed',
+            '--available', '--upgrades', '--extras'])
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE)
+        output, stderr = await proc.communicate()
+        output = output.decode('ASCII')
+        if proc.returncode != 0:
+            stderr = stderr.decode('ASCII')
+            return False, stderr
+        # Default type is dict as we're going to replace the lists with
+        # dicts shortly after
+        tpls = collections.defaultdict(dict, json.loads(output))
+        # Remove duplicates
+        # Should this be done in qvm-template?
+        # TODO: Merge templates with same name?
+        #       If so, we may need to have a separate UI to force versions.
+        local_names = set(x['name'] for x in tpls['installed'])
+        # Convert to dict for easier subtraction
+        for key in tpls:
+            tpls[key] = {
+                (x['name'], x['epoch'], x['version'], x['release']): x
+                for x in tpls[key]}
+        tpls['installed'] = {
+            k: v for k, v in tpls['installed'].items()
+                if k not in tpls['extra'] and k not in tpls['upgradable']}
+        tpls['available'] = {
+            k: v for k, v in tpls['available'].items()
+                if k not in tpls['installed']
+                    and k not in tpls['upgradable']}
+        # If the package name is installed but the specific version is
+        # neither installed or an upgrade, then it must be a downgrade
+        tpls['downgradable'] = {
+            k: v for k, v in tpls['available'].items()
+                if k[0] in local_names}
+        tpls['available'] = {
+            k: v for k, v in tpls['available'].items()
+                if k not in tpls['downgradable']}
+        # Convert back to list
+        tpls = {k.title(): list(v.values()) for k, v in tpls.items()}
+        self.set_templates(tpls)
+        return True, None
+
+class TemplateInstallConfirmDialog(
+        ui_templateinstallconfirmdlg.Ui_TemplateInstallConfirmDlg,
+        PyQt5.QtWidgets.QDialog):
+    def __init__(self, actions):
+        super().__init__()
+        self.setupUi(self)
+
+        model = PyQt5.QtGui.QStandardItemModel()
+        model.setHorizontalHeaderLabels(Action.COL_NAMES)
+        self.treeView.setModel(model)
+
+        for act in actions:
+            model.appendRow([PyQt5.QtGui.QStandardItem(x) for x in act])
+
+class TemplateInstallProgressDialog(
+        ui_templateinstallprogressdlg.Ui_TemplateInstallProgressDlg,
+        PyQt5.QtWidgets.QDialog):
+    def __init__(self, actions):
+        super().__init__()
+        self.setupUi(self)
+        self.actions = actions
+        self.buttonBox.hide()
+
+    def install(self):
+        async def coro():
+            self.actions.sort()
+            for oper, grp in itertools.groupby(self.actions, lambda x: x[0]):
                 oper = oper.lower()
                 # No need to specify versions for local operations
                 if oper in ('remove', 'purge'):
@@ -339,67 +307,108 @@ class QubesTemplateApp(Gtk.Window):
                 #        the messages can be displayed in time.
                 envs = os.environ.copy()
                 envs['PYTHONUNBUFFERED'] = '1'
-                proc = subprocess.Popen(
-                    BASE_CMD + [oper, '--'] + specs,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    text=True,
-                    bufsize=1,
+                proc = await asyncio.create_subprocess_exec(
+                    *(BASE_CMD + [oper, '--'] + specs),
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.STDOUT,
                     env=envs)
                 #pylint: disable=cell-var-from-loop
-                for line in iter(proc.stdout.readline, ''):
-                    # Need to modify the buffers in the main thread
-                    def callback():
-                        buf = dialog.infobox.get_buffer()
-                        end_iter = buf.get_end_iter()
-                        buf.insert(end_iter, line)
-                    GLib.idle_add(callback)
-                if proc.wait() != 0:
+                while True:
+                    line = await proc.stdout.readline()
+                    if line == b'':
+                        break
+                    line = line.decode('ASCII')
+                    self.textEdit.append(line.rstrip())
+                if await proc.wait() != 0:
+                    self.buttonBox.show()
+                    self.progressBar.setMaximum(100)
+                    self.progressBar.setValue(0)
                     return False
+            self.progressBar.setMaximum(100)
+            self.progressBar.setValue(100)
+            self.buttonBox.show()
             return True
+        asyncio.create_task(coro())
 
-        def finish_cb(future):
-            def callback():
-                dialog.finish(future.result())
-                dialog.destroy()
-                self.refresh()
-            GLib.idle_add(callback)
+class QvmTemplateWindow(
+        ui_qvmtemplate.Ui_QubesTemplateManager,
+        PyQt5.QtWidgets.QMainWindow):
+    def __init__(self, qt_app, qubes_app, dispatcher, parent=None):
+        _ = parent # unused
 
-        future = self.executor.submit(worker)
-        future.add_done_callback(finish_cb)
+        super().__init__()
+        self.setupUi(self)
 
-    def update_info(self, sel):
-        model, treeiters = sel.get_selected_rows()
-        if not treeiters:
+        self.qubes_app = qubes_app
+        self.qt_app = qt_app
+        self.dispatcher = dispatcher
+
+        self.listing_model = TemplateModel()
+        self.listing_delegate = TemplateStatusDelegate(self.listing)
+
+        self.listing.setModel(self.listing_model)
+        self.listing.setItemDelegateForColumn(0, self.listing_delegate)
+
+        self.refresh(False)
+        self.listing.setItemDelegateForColumn(0, self.listing_delegate)
+        self.listing.selectionModel() \
+            .selectionChanged.connect(self.update_info)
+
+        self.actionRefresh.triggered.connect(lambda: self.refresh(True))
+        self.actionInstall.triggered.connect(self.do_install)
+
+    def update_info(self, selected):
+        _ = selected # unused
+        indices = [
+            x
+            for x in self.listing.selectionModel().selectedIndexes()
+            if x.column() == 0]
+        if len(indices) == 0:
             return
-        buf = self.infobox.get_buffer()
-        if len(treeiters) > 1:
-            def row_to_spec(row):
-                tpl = Template(*row)
-                return tpl.name + '-' + tpl.evr
-            text = '\n'.join(row_to_spec(model[it]) for it in treeiters)
-            buf.set_text('Selected templates:\n' + text)
+        self.infobox.clear()
+        cursor = PyQt5.QtGui.QTextCursor(self.infobox.document())
+        bold_fmt = PyQt5.QtGui.QTextCharFormat()
+        bold_fmt.setFontWeight(PyQt5.QtGui.QFont.Bold)
+        norm_fmt = PyQt5.QtGui.QTextCharFormat()
+        if len(indices) > 1:
+            cursor.insertText('Selected templates:\n', bold_fmt)
+            for idx in indices:
+                tpl = self.listing_model.children[idx.row()]
+                cursor.insertText(tpl.name + '-' + tpl.evr + '\n', norm_fmt)
         else:
-            itr = treeiters[0]
-            tpl = Template(*model[itr])
-            text = 'Name: %s\n\nDescription:\n%s' % (tpl.name, tpl.description)
-            buf.set_text(text)
+            idx = indices[0]
+            tpl = self.listing_model.children[idx.row()]
+            cursor.insertText('Name: ', bold_fmt)
+            cursor.insertText(tpl.name + '\n', norm_fmt)
+            cursor.insertText('Description:\n', bold_fmt)
+            cursor.insertText(tpl.description + '\n', norm_fmt)
 
-    def entry_edit(self, widget, path, text):
-        _ = widget # unused
-        #pylint: disable=unsubscriptable-object
-        tpl = Template(*self.store[path])
-        tpl = tpl._replace(status=text)
-        if text == tpl.default_status:
-            tpl = tpl._replace(weight=Pango.Weight.BOOK)
-        else:
-            tpl = tpl._replace(weight=Pango.Weight.BOLD)
-        #pylint: disable=unsupported-assignment-operation
-        self.store[path] = tpl
+    def refresh(self, refresh=True):
+        self.progressBar.show()
+        async def coro():
+            ok, stderr = await self.listing_model.refresh(refresh)
+            self.infobox.clear()
+            if not ok:
+                cursor = PyQt5.QtGui.QTextCursor(self.infobox.document())
+                fmt = PyQt5.QtGui.QTextCharFormat()
+                fmt.setFontWeight(PyQt5.QtGui.QFont.Bold)
+                cursor.insertText('Failed to fetch template list:\n', fmt)
+                fmt.setFontWeight(PyQt5.QtGui.QFont.Normal)
+                cursor.insertText(stderr, fmt)
+            self.progressBar.hide()
+        asyncio.create_task(coro())
+
+    def do_install(self):
+        actions = self.listing_model.get_actions()
+        confirm = TemplateInstallConfirmDialog(actions)
+        if confirm.exec_():
+            progress = TemplateInstallProgressDialog(actions)
+            progress.install()
+            progress.exec_()
+        self.refresh()
+
+def main():
+    utils.run_asynchronous(QvmTemplateWindow)
 
 if __name__ == '__main__':
-    main = QubesTemplateApp()
-    main.connect('destroy', Gtk.main_quit)
-    main.show_all()
-    main.refresh()
-    Gtk.main()
+    main()
