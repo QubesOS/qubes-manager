@@ -19,10 +19,10 @@ Requires:	cryptsetup
 Requires:	wmctrl
 BuildRequires:	python%{python3_pkgversion}-PyQt5-devel
 BuildRequires:	python%{python3_pkgversion}-devel
-%if 0%{?rhel} == 7
+%if 0%{?fedora} >= 33 || 0%{?rhel} >= 7
 BuildRequires:  qt5-qtbase-devel
 %else
-BuildRequires:	qt5-devel
+BuildRequires:  qt5-devel
 %endif
 BuildRequires:  qt5-linguist
 AutoReq:	0
