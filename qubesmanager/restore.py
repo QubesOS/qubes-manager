@@ -62,9 +62,9 @@ class RestoreThread(QtCore.QThread):
                 self.tr("Partially restored files left in /var/tmp/restore_*, "
                         "investigate them and/or clean them up"))
         if err_msg:
-            self.msg = '\n'.join(err_msg)
-            self.msg = '<b><font color="red">{0}</font></b>'.format(
-                self.tr("Finished with errors!"))
+            self.msg = '<br />'.join(err_msg)
+            self.msg = '<b><font color="red">{0}</font></b><br />'.format(
+                self.tr("Finished with errors!")) + self.msg
         else:
             self.msg = '<font color="green">{0}</font>'.format(
                 self.tr("Finished successfully!"))
