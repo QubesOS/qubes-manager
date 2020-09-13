@@ -115,12 +115,18 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
                 # insufficient permissions
                 pass
 
-        utils.initialize_widget(
-            widget=self.blockDeviceComboBox,
-            choices=device_choice,
-            selected_value=device_choice[0][1],
-            add_current_label=False
-        )
+        if device_choice:
+            utils.initialize_widget(
+                widget=self.blockDeviceComboBox,
+                choices=device_choice,
+                selected_value=device_choice[0][1],
+                add_current_label=False
+            )
+        else:
+            self.blockDeviceRadioButton.setEnabled(False)
+            self.blockDeviceComboBox.setEnabled(False)
+            self.blockDeviceComboBox.addItem("no block devices found!")
+            self.blockDeviceComboBox.setCurrentIndex(0)
 
     def radio_button_clicked(self):
         self.blockDeviceComboBox.setEnabled(
