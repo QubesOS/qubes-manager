@@ -1,3 +1,27 @@
+qubes-manager (4.1.12-1) wheezy; urgency=medium
+
+  [ Marek Marczykowski-Górecki ]
+  * travis: restore pylint
+  * Make pylint happy
+
+  [ Marta Marczykowska-Górecka ]
+  * Fix for icon size for Qube Manager tests
+  * Fixed display of default template in Create New VM
+
+  [ Frédéric Pierret (fepitre) ]
+  * spec: fix qt5 dependency for Fedora 33
+
+  [ Marta Marczykowska-Górecka ]
+  * Fix Boot from Device error when no block devices were found
+
+  [ AJ Jordan ]
+  * Fix capitalization in restore dialog
+
+  [ Marta Marczykowska-Górecka ]
+  * Fixed missing verbose error logging in Restore Backup
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 14 Sep 2020 10:21:13 +0200
+
 qubes-manager (4.1.11-1) wheezy; urgency=medium
 
   [ donoban ]
