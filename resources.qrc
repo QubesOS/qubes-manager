@@ -1,5 +1,7 @@
 <RCC>
   <qresource>
+    <file alias='eye.svg'>icons/eye.svg</file>
+    <file alias='eye-off.svg'>icons/eye-off.svg</file>
     <file alias="apps.png">icons/apps.png</file>
     <file alias="settings.png">icons/settings.png</file>
     <file alias="firewall.png">icons/wall.png</file>
