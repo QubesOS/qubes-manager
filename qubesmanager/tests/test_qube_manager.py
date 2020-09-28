@@ -826,7 +826,7 @@ class QubeManagerTest(unittest.TestCase):
         # dispvm to vanish
         self._run_command_and_process_events(
             ["qvm-run", "--dispvm", dispvm_template, "true"], timeout=60,
-            additional_timeout=30)
+            additional_timeout=60)
 
         final_vms = self._create_set_of_current_vms()
 
@@ -871,7 +871,7 @@ class QubeManagerTest(unittest.TestCase):
         self.addCleanup(
             subprocess.call, ["qvm-prefs", target_vm_name, "label", "blue"])
         self._run_command_and_process_events(
-            ["qvm-prefs", target_vm_name, "label", "red"])
+            ["qvm-prefs", target_vm_name, "label", "red"], timeout=20)
 
         new_label = self._get_table_item(vm_row, "Label", Qt.DecorationRole)
 
@@ -1281,7 +1281,7 @@ class QubeManagerTest(unittest.TestCase):
         model = self.dialog.table.model()
         return model.index(row, 0).data(Qt.UserRole).vm
 
-    def _get_table_item(self, row, column_name, role = Qt.DisplayRole):
+    def _get_table_item(self, row, column_name, role=Qt.DisplayRole):
         model = self.dialog.table.model()
         column = self.dialog.qubes_model.columns_indices.index(column_name)
         return model.index(row, column).data(role)
