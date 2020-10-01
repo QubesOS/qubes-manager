@@ -142,6 +142,13 @@
        <string>Security options</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_4">
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_4">
+         <property name="text">
+          <string>Encrypted backup:</string>
+         </property>
+        </widget>
+       </item>
        <item row="0" column="1">
         <widget class="QCheckBox" name="encryption_checkbox">
          <property name="text">
@@ -152,10 +159,10 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="label_4">
-         <property name="text">
-          <string>Encrypted backup:</string>
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="passphrase_line_edit">
+         <property name="echoMode">
+          <enum>QLineEdit::Password</enum>
          </property>
         </widget>
        </item>
@@ -166,10 +173,14 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
-        <widget class="QLineEdit" name="passphrase_line_edit">
-         <property name="echoMode">
-          <enum>QLineEdit::Password</enum>
+       <item row="1" column="2">
+        <widget class="QPushButton" name="passwd_show_button">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="../resources.qrc">
+           <normaloff>:/eye-off</normaloff>:/eye-off</iconset>
          </property>
         </widget>
        </item>
@@ -288,6 +299,8 @@ p, li { white-space: pre-wrap; }
   <tabstop>commit_text_edit</tabstop>
   <tabstop>showFileDialog</tabstop>
  </tabstops>
- <resources/>
+ <resources>
+  <include location="../resources.qrc"/>
+ </resources>
  <connections/>
 </ui>

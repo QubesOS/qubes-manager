@@ -110,6 +110,17 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
 
         backup_utils.fill_appvms_list(self)
 
+        self.passwd_show_button.pressed.connect(self.show_password)
+        self.passwd_show_button.released.connect(self.hide_password)
+
+    def show_password(self):
+        self.passphrase_line_edit.setEchoMode(QtWidgets.QLineEdit.Normal)
+        self.passwd_show_button.setIcon(QtGui.QIcon(':/eye.svg'))
+
+    def hide_password(self):
+        self.passphrase_line_edit.setEchoMode(QtWidgets.QLineEdit.Password)
+        self.passwd_show_button.setIcon(QtGui.QIcon(':/eye-off.svg'))
+
     def setup_application(self):
         self.qt_app.setApplicationName(self.tr("Qubes Restore VMs"))
         self.qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
