@@ -166,6 +166,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.include_in_balancing_changed)
         self.init_mem.editingFinished.connect(self.check_mem_changes)
         self.max_mem_size.editingFinished.connect(self.check_mem_changes)
+        self.check_mem_changes()
         self.boot_from_device_button.clicked.connect(
             self.boot_from_cdrom_button_pressed)
 
@@ -596,6 +597,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         return msg
 
     def check_mem_changes(self):
+        self.warn_too_much_mem_label.setVisible(False)
         if not self.include_in_balancing.isChecked():
             # do not interfere with settings if the VM is not included in memory
             # balancing
@@ -621,13 +623,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         if is_linux and \
                 self.init_mem.value() * 10 < self.max_mem_size.value():
-            self.init_mem.setValue((self.max_mem_size.value() + 9) // 10)
-            QtWidgets.QMessageBox.warning(
-                self,
-                self.tr("Warning!"),
-                self.tr("For Linux qubes, Initial memory can not be less than "
-                        "one tenth Max memory.<br>Setting initial memory "
-                        "to the minimum allowed value."))
+            self.warn_too_much_mem_label.setVisible(True)
 
     def check_warn_dispvmnetvm(self):
         if not hasattr(self.vm, 'default_dispvm'):
