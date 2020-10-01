@@ -29,7 +29,7 @@
         <locale language="English" country="UnitedStates"/>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="basic_tab">
         <property name="locale">
@@ -128,6 +128,16 @@
               </property>
              </widget>
             </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="root_resize_label">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="text">
+               <string>System storage max. size:</string>
+              </property>
+             </widget>
+            </item>
             <item row="0" column="1">
              <widget class="SizeSpinBox" name="max_priv_storage">
               <property name="enabled">
@@ -160,16 +170,6 @@
               </property>
               <property name="buddy">
                <cstring>max_priv_storage</cstring>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="root_resize_label">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="text">
-               <string>System storage max. size:</string>
               </property>
              </widget>
             </item>
@@ -285,6 +285,26 @@
            </property>
           </widget>
          </item>
+         <item row="4" column="1">
+          <widget class="QPushButton" name="delete_vm_button">
+           <property name="styleSheet">
+            <string notr="true">background-color: qlineargradient(spread:pad, x1:1, y1:1, x2:1, y2:0, stop:0 rgba(255, 179, 179, 255), stop:1 rgba(255, 108, 108, 255));
+border-color: rgb(170, 0, 0);
+border-style: solid;
+border-width: 1px;</string>
+           </property>
+           <property name="text">
+            <string>Delete qube</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="1">
+          <widget class="QPushButton" name="clone_vm_button">
+           <property name="text">
+            <string>Clone qube</string>
+           </property>
+          </widget>
+         </item>
          <item row="0" column="0" colspan="2">
           <widget class="QGroupBox" name="groupBox_3">
            <property name="title">
@@ -294,15 +314,26 @@
             <property name="topMargin">
              <number>15</number>
             </property>
-            <item row="0" column="0">
-             <widget class="QLabel" name="label">
-              <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Name &amp;amp;&amp;amp; label&lt;span style=&quot; color:#ff0000;&quot;&gt;*&lt;/span&gt;:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="buddy">
-               <cstring>vmname</cstring>
+            <item row="0" column="3">
+             <widget class="QComboBox" name="vmlabel">
+              <property name="frame">
+               <bool>true</bool>
               </property>
              </widget>
+            </item>
+            <item row="1" column="1" colspan="2">
+             <widget class="QComboBox" name="template_name"/>
+            </item>
+            <item row="5" column="0" colspan="3">
+             <layout class="QHBoxLayout" name="horizontalLayout_3">
+              <item>
+               <widget class="QCheckBox" name="autostart_vm">
+                <property name="text">
+                 <string>Start qube automatically on boot</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
             <item row="1" column="0">
              <widget class="QLabel" name="label_2">
@@ -314,20 +345,39 @@
               </property>
              </widget>
             </item>
-            <item row="2" column="0">
-             <widget class="QLabel" name="label_18">
-              <property name="text">
-               <string>Networking:</string>
+            <item row="1" column="3">
+             <widget class="QLabel" name="warn_template_missing_apps">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some applications enabled in the Applications tab cannot be found in the current template. The most likely cause is a template change - to restore them, install them in the template.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
-              <property name="buddy">
-               <cstring>netVM</cstring>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="pixmap">
+               <pixmap resource="../resources.qrc">:/warning.png</pixmap>
               </property>
              </widget>
             </item>
-            <item row="0" column="3">
-             <widget class="QComboBox" name="vmlabel">
-              <property name="frame">
-               <bool>true</bool>
+            <item row="0" column="0">
+             <widget class="QLabel" name="label">
+              <property name="text">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Name &amp;amp;&amp;amp; label&lt;span style=&quot; color:#ff0000;&quot;&gt;*&lt;/span&gt;:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="buddy">
+               <cstring>vmname</cstring>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="3">
+             <widget class="QLabel" name="warn_netvm_dispvm">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Caution:&lt;/span&gt; The Default DisposableVM Template (see the Advanced tab) has a different Networking setting than this qube. This configuration may result in unexpected network access. For example, you may have set this qube's Networking to &amp;quot;none&amp;quot; in order to prevent any data from being transmitted out. However, if the Default DisposableVM Template's Networking is set to &amp;quot;sys-firewall,&amp;quot; then a DisposableVM started from this qube may be able to transmit data out, contrary to your intention. You may wish to set the Default DisposableVM Template for this qube to one with equally restrictive Networking settings.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="pixmap">
+               <pixmap resource="../resources.qrc">:/warning.png</pixmap>
               </property>
              </widget>
             </item>
@@ -348,9 +398,6 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="1" colspan="2">
-             <widget class="QComboBox" name="template_name"/>
-            </item>
             <item row="2" column="1" colspan="2">
              <widget class="QComboBox" name="netVM">
               <property name="toolTip">
@@ -358,7 +405,7 @@
               </property>
              </widget>
             </item>
-            <item row="3" column="0" colspan="3">
+            <item row="4" column="0" colspan="3">
              <layout class="QHBoxLayout" name="horizontalLayout">
               <item>
                <widget class="QCheckBox" name="include_in_backups">
@@ -375,64 +422,24 @@
               </item>
              </layout>
             </item>
-            <item row="4" column="0" colspan="3">
-             <layout class="QHBoxLayout" name="horizontalLayout_3">
-              <item>
-               <widget class="QCheckBox" name="autostart_vm">
-                <property name="text">
-                 <string>Start qube automatically on boot</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </item>
-            <item row="2" column="3">
-             <widget class="QLabel" name="warn_netvm_dispvm">
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Caution:&lt;/span&gt; The Default DisposableVM Template (see the Advanced tab) has a different Networking setting than this qube. This configuration may result in unexpected network access. For example, you may have set this qube's Networking to &amp;quot;none&amp;quot; in order to prevent any data from being transmitted out. However, if the Default DisposableVM Template's Networking is set to &amp;quot;sys-firewall,&amp;quot; then a DisposableVM started from this qube may be able to transmit data out, contrary to your intention. You may wish to set the Default DisposableVM Template for this qube to one with equally restrictive Networking settings.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
+            <item row="2" column="0">
+             <widget class="QLabel" name="label_18">
               <property name="text">
-               <string/>
+               <string>Networking:</string>
               </property>
-              <property name="pixmap">
-               <pixmap resource="../resources.qrc">:/warning.png</pixmap>
+              <property name="buddy">
+               <cstring>netVM</cstring>
               </property>
              </widget>
             </item>
-            <item row="1" column="3">
-             <widget class="QLabel" name="warn_template_missing_apps">
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Some applications enabled in the Applications tab cannot be found in the current template. The most likely cause is a template change - to restore them, install them in the template.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
+            <item row="3" column="0" colspan="3">
+             <widget class="QCheckBox" name="idle_shutdown_checkbox">
               <property name="text">
-               <string/>
-              </property>
-              <property name="pixmap">
-               <pixmap resource="../resources.qrc">:/warning.png</pixmap>
+               <string>Shut down when idle for more than 15 minutes</string>
               </property>
              </widget>
             </item>
            </layout>
-          </widget>
-         </item>
-         <item row="4" column="1">
-          <widget class="QPushButton" name="delete_vm_button">
-           <property name="styleSheet">
-            <string notr="true">background-color: qlineargradient(spread:pad, x1:1, y1:1, x2:1, y2:0, stop:0 rgba(255, 179, 179, 255), stop:1 rgba(255, 108, 108, 255));
-border-color: rgb(170, 0, 0);
-border-style: solid;
-border-width: 1px;</string>
-           </property>
-           <property name="text">
-            <string>Delete qube</string>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="1">
-          <widget class="QPushButton" name="clone_vm_button">
-           <property name="text">
-            <string>Clone qube</string>
-           </property>
           </widget>
          </item>
         </layout>

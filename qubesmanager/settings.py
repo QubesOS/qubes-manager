@@ -438,6 +438,31 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.include_in_backups.setEnabled(False)
 
         try:
+            has_shutdown_idle = self.vm.features.get(
+                "supported-service.shutdown-idle", False)
+            if has_shutdown_idle:
+                self.idle_shutdown_checkbox.setChecked(self.vm.features.get(
+                    "shutdown-idle", False))
+            else:
+                text = "Shut down when idle "
+                if getattr(self.vm, 'template', None):
+                    additional_text = "(unavailable: package " \
+                                      "qubes-app-shutdown-idle missing " \
+                                      "in the template)"
+                else:
+                    additional_text = "(unavailable: package " \
+                                      "qubes-app-shutdown-idle missing " \
+                                      "in the qube)"
+                self.idle_shutdown_checkbox.setText(
+                    text + additional_text)
+            self.idle_shutdown_checkbox.setEnabled(False)
+        except qubesadmin.exc.QubesDaemonCommunicationError:
+            self.idle_shutdown_checkbox.setText(
+                self.idle_shutdown_checkbox.text() +
+                " (unavailable: permission denied)")
+            self.idle_shutdown_checkbox.setEnabled(False)
+
+        try:
             self.autostart_vm.setChecked(self.vm.autostart)
             self.autostart_vm.setVisible(True)
         except qubesadmin.exc.QubesDaemonAccessError:
@@ -535,6 +560,16 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             if self.autostart_vm.isVisible():
                 if self.vm.autostart != self.autostart_vm.isChecked():
                     self.vm.autostart = self.autostart_vm.isChecked()
+        except qubesadmin.exc.QubesException as ex:
+            msg.append(str(ex))
+
+        # shutdown-idle
+        try:
+            current_idle = self.vm.features.get("shutdown-idle", False)
+            if self.idle_shutdown_checkbox.isEnabled() and \
+                    self.idle_shutdown_checkbox.isChecked() != current_idle:
+                self.vm.features["shutdown-idle"] = \
+                    self.idle_shutdown_checkbox.isChecked()
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
