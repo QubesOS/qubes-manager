@@ -1318,7 +1318,17 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     def action_set_keyboard_layout_triggered(self):
         # pylint: disable=invalid-name
         for vm_info in self.get_selected_vms():
-            vm_info.vm.run('qubes-change-keyboard-layout')
+            if vm_info.vm.features.check_with_template(
+                    "supported-feature.keyboard-layout", False):
+                vm_info.vm.run('qubes-change-keyboard-layout')
+            else:
+                QMessageBox.warning(
+                    self,
+                    self.tr("Keyboard layout change unsupported"),
+                    self.tr(
+                        "Please update the qube {} or its template to the "
+                        "newest version of Qubes tools.").format(
+                        str(vm_info.vm)))
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_editfwrules_triggered')
