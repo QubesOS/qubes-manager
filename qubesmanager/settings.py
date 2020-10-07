@@ -1229,7 +1229,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.update_virt_mode_list()
 
     def update_pvh_dont_support_devs(self):
-        if self.virt_mode.currentData() == 'pvh':
+        # this is the easiest way to check for both normal 'PVH' and
+        # default (PVH) options
+        if 'PVH' in self.virt_mode.currentText().upper():
             self.dev_list.setEnabled(False)
             self.pvh_dont_support_devs.setVisible(True)
         else:
