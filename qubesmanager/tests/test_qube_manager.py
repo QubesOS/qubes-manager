@@ -1187,9 +1187,12 @@ class QubeManagerTest(unittest.TestCase):
 
         future1 = asyncio.ensure_future(self.dispatcher.listen_for_events())
         self.loop.run_until_complete(asyncio.sleep(0))
+
         future2 = asyncio.create_subprocess_exec(*command,
                                                  stdout=subprocess.DEVNULL,
                                                  stderr=subprocess.DEVNULL)
+
+        future2 = self.loop.run_until_complete(future2).wait()
 
         if additional_timeout:
             (done, pending) = self.loop.run_until_complete(
