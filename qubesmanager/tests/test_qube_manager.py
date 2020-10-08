@@ -309,7 +309,8 @@ class QubeManagerTest(unittest.TestCase):
             selected_vm, qapp=self.qtapp, init_page="applications",
             qubesapp=self.qapp)
 
-    def test_204_vm_keyboard(self):
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
+    def test_204_vm_keyboard(self, mock_message):
         selected_vm = self._select_non_admin_vm(running=True)
         self.assertIsNotNone(selected_vm, "No valid non-admin VM found")
         widget = self.dialog.toolbar.widgetForAction(
@@ -318,8 +319,11 @@ class QubeManagerTest(unittest.TestCase):
             QtTest.QTest.mouseClick(widget,
                                     QtCore.Qt.LeftButton)
             mock_run.assert_called_once_with("qubes-change-keyboard-layout")
+        self.assertEqual(mock_message.call_count, 0,
+                         "VM does not support new layout change")
 
-    def test_205_vm_keyboard_not_running(self):
+    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
+    def test_205_vm_keyboard_not_running(self, mock_message):
         selected_vm = self._select_non_admin_vm(running=False)
         self.assertIsNotNone(selected_vm, "No valid non-admin VM found")
         widget = self.dialog.toolbar.widgetForAction(
@@ -329,10 +333,12 @@ class QubeManagerTest(unittest.TestCase):
                                     QtCore.Qt.LeftButton)
             self.assertEqual(mock_run.call_count, 0,
                              "Keyboard change called on a halted VM")
+        self.assertEqual(mock_message.call_count, 0,
+                         "Keyboard change called on a halted VM with"
+                         " obsolete keyboard-layout handling")
 
     def test_206_dom0_keyboard(self):
         self._select_admin_vm()
-
         self.assertFalse(self.dialog.action_set_keyboard_layout.isEnabled())
 
     @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox.question",
