@@ -1,3 +1,20 @@
+qubes-manager (4.1.13-1) unstable; urgency=medium
+
+  [ Marta Marczykowska-Górecka ]
+  * Modified Qube Manager toolbar to be more readable and added
+    Emergency Pause
+  * shutdown-when-idle gets its own checkbox in VM settings
+  * Less intrusive max mem / init mem warning  in VM Setting
+  * Warn if trying to change layout on unsupported vms in Qube Manager
+  * Added show password button to Backup/Restore
+  * Extend testing timeout
+  * Modified test to be less prone to timeouts
+  * Fixed tests for keyboard layout
+  * Fixes strict reset list bug in VM Device Settings
+  * Fixed incorrect virtmode check (ignored PVH when it was the default)
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sat, 10 Oct 2020 03:34:05 +0200
+
 qubes-manager (4.1.12-1) wheezy; urgency=medium
 
   [ Marek Marczykowski-Górecki ]
