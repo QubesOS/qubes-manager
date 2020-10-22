@@ -715,7 +715,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.table.setModel(self.proxy)
         self.table.setItemDelegateForColumn(3, StateIconDelegate())
         self.table.resizeColumnsToContents()
-        self.table.setSelectionMode(QAbstractItemView.ExtendedSelection)
         selection_model = self.table.selectionModel()
         selection_model.selectionChanged.connect(self.table_selection_changed)
 
