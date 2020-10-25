@@ -705,7 +705,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtGui.QDialog):
                     "Cloning Qube..."), "", 0, 0)
             self.progress.setCancelButton(None)
             self.progress.setModal(True)
-            self.thread_closes = True
             self.progress.show()
 
             thread.start()
