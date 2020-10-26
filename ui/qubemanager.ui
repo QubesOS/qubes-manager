@@ -52,23 +52,6 @@
     <property name="sizeConstraint">
      <enum>QLayout::SetDefaultConstraint</enum>
     </property>
-    <item row="0" column="0">
-     <layout class="QHBoxLayout" name="searchContainer">
-      <property name="spacing">
-       <number>6</number>
-      </property>
-      <property name="leftMargin">
-       <number>6</number>
-      </property>
-      <item>
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>Search:</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
     <item row="1" column="0">
      <widget class="QTableView" name="table">
       <property name="minimumSize">
@@ -134,107 +117,86 @@
       <attribute name="verticalHeaderCascadingSectionResizes">
        <bool>false</bool>
       </attribute>
-      <row>
-       <property name="text">
-        <string>Nowy wiersz</string>
-       </property>
-      </row>
-      <row/>
-      <row/>
-      <row/>
-      <row/>
-      <row/>
-      <row/>
-      <row/>
-      <row/>
-      <row/>
-      <column>
-       <property name="text">
-        <string/>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string/>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Name</string>
-       </property>
-       <property name="toolTip">
-        <string>Qube name</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>State</string>
-       </property>
-       <property name="toolTip">
-        <string>Update info</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Template</string>
-       </property>
-       <property name="toolTip">
-        <string>Qube template</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>NetVM</string>
-       </property>
-       <property name="toolTip">
-        <string>Qube netVM</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Disk
-usage</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Internal</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>IP</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Include
-in backups</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Last backup</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Default DisposableVM
-Template</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>DisposableVM
-Template</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Virtualization Mode</string>
-       </property>
-      </column>
      </widget>
+    </item>
+    <item row="0" column="0">
+     <layout class="QHBoxLayout" name="searchContainer">
+      <property name="spacing">
+       <number>6</number>
+      </property>
+      <property name="leftMargin">
+       <number>6</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Search:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="show_label">
+        <property name="text">
+         <string>Show:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="show_running">
+        <property name="text">
+         <string>Running</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="show_halted">
+        <property name="text">
+         <string>Halted</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="show_network">
+        <property name="text">
+         <string>Network</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="show_templates">
+        <property name="text">
+         <string>Templates</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="show_standalone">
+        <property name="text">
+         <string>Standalone</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="show_all">
+        <property name="text">
+         <string>All</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>
