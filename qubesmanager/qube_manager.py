@@ -621,8 +621,11 @@ class RunCommandThread(common_threads.QubesThread):
         except (ChildProcessError, exc.QubesException) as ex:
             self.msg = (self.tr("Error while running command!"), str(ex))
 
-
 class QubesProxyModel(QSortFilterProxyModel):
+    def __init__(self, window):
+        super().__init__()
+        self.window = window
+
     def lessThan(self, left, right):
         if left.data(self.sortRole()) != right.data(self.sortRole()):
             return super().lessThan(left, right)
@@ -631,6 +634,31 @@ class QubesProxyModel(QSortFilterProxyModel):
         right_vm = right.data(Qt.UserRole)
 
         return left_vm.name.lower() < right_vm.name.lower()
+
+    # pylint: disable=too-many-return-statements
+    def filterAcceptsRow(self, sourceRow, sourceParent):
+        if self.window.show_all.isChecked():
+            return super().filterAcceptsRow(sourceRow, sourceParent)
+
+        index = self.sourceModel().index(sourceRow, 0, sourceParent)
+        vm = self.sourceModel().data(index, Qt.UserRole)
+
+        if self.window.show_running.isChecked() and \
+                vm.state['power'] == 'Running':
+            return super().filterAcceptsRow(sourceRow, sourceParent)
+        if self.window.show_halted.isChecked() and \
+                vm.state['power'] == 'Halted':
+            return super().filterAcceptsRow(sourceRow, sourceParent)
+        if self.window.show_network.isChecked() and \
+                getattr(vm.vm, 'provides_network', False):
+            return super().filterAcceptsRow(sourceRow, sourceParent)
+        if self.window.show_templates.isChecked() and vm.klass == 'TemplateVM':
+            return super().filterAcceptsRow(sourceRow, sourceParent)
+        if self.window.show_standalone.isChecked() \
+                and vm.klass == 'StandaloneVM':
+            return super().filterAcceptsRow(sourceRow, sourceParent)
+
+        return False
 
 
 class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
@@ -650,38 +678,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.searchbox.setValidator(QRegExpValidator(
             QRegExp("[a-zA-Z0-9_-]*", Qt.CaseInsensitive), None))
         self.searchbox.textChanged.connect(self.do_search)
-        self.searchContainer.addWidget(self.searchbox)
+        self.searchContainer.insertWidget(1, self.searchbox)
 
         self.settings_windows = {}
 
         self.frame_width = 0
         self.frame_height = 0
 
-        self.context_menu = QMenu(self)
-
-        self.context_menu.addAction(self.action_settings)
-        self.context_menu.addAction(self.action_editfwrules)
-        self.context_menu.addAction(self.action_appmenus)
-        self.context_menu.addAction(self.action_set_keyboard_layout)
-        self.context_menu.addSeparator()
-
-        self.context_menu.addAction(self.action_updatevm)
-        self.context_menu.addAction(self.action_run_command_in_vm)
-        self.context_menu.addAction(self.action_open_console)
-        self.context_menu.addAction(self.action_resumevm)
-        self.context_menu.addAction(self.action_startvm_tools_install)
-        self.context_menu.addAction(self.action_pausevm)
-        self.context_menu.addAction(self.action_shutdownvm)
-        self.context_menu.addAction(self.action_restartvm)
-        self.context_menu.addAction(self.action_killvm)
-        self.context_menu.addSeparator()
-
-        self.context_menu.addAction(self.action_clonevm)
-        self.context_menu.addAction(self.action_removevm)
-        self.context_menu.addSeparator()
-
-        self.context_menu.addMenu(self.logs_menu)
-        self.context_menu.addSeparator()
+        self.__init_context_menu()
 
         self.tools_context_menu = QMenu(self)
         self.tools_context_menu.addAction(self.action_toolbar)
@@ -704,13 +708,20 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.fill_cache()
         self.qubes_model = QubesTableModel(self.qubes_cache)
 
-        self.proxy = QubesProxyModel()
+        self.proxy = QubesProxyModel(self)
         self.proxy.setSourceModel(self.qubes_model)
         self.proxy.setSortRole(Qt.UserRole + 1)
         self.proxy.setSortCaseSensitivity(Qt.CaseInsensitive)
         self.proxy.setFilterKeyColumn(2)
         self.proxy.setFilterCaseSensitivity(Qt.CaseInsensitive)
         self.proxy.layoutChanged.connect(self.save_sorting)
+
+        self.show_running.stateChanged.connect(self.invalidate)
+        self.show_halted.stateChanged.connect(self.invalidate)
+        self.show_network.stateChanged.connect(self.invalidate)
+        self.show_templates.stateChanged.connect(self.invalidate)
+        self.show_standalone.stateChanged.connect(self.invalidate)
+        self.show_all.stateChanged.connect(self.invalidate)
 
         self.table.setModel(self.proxy)
         self.table.setItemDelegateForColumn(3, StateIconDelegate())
@@ -784,11 +795,38 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         self.check_updates()
 
+    def __init_context_menu(self):
+        self.context_menu = QMenu(self)
+        self.context_menu.addAction(self.action_settings)
+        self.context_menu.addAction(self.action_editfwrules)
+        self.context_menu.addAction(self.action_appmenus)
+        self.context_menu.addAction(self.action_set_keyboard_layout)
+        self.context_menu.addSeparator()
+        self.context_menu.addAction(self.action_updatevm)
+        self.context_menu.addAction(self.action_run_command_in_vm)
+        self.context_menu.addAction(self.action_open_console)
+        self.context_menu.addAction(self.action_resumevm)
+        self.context_menu.addAction(self.action_startvm_tools_install)
+        self.context_menu.addAction(self.action_pausevm)
+        self.context_menu.addAction(self.action_shutdownvm)
+        self.context_menu.addAction(self.action_restartvm)
+        self.context_menu.addAction(self.action_killvm)
+        self.context_menu.addSeparator()
+        self.context_menu.addAction(self.action_clonevm)
+        self.context_menu.addAction(self.action_removevm)
+        self.context_menu.addSeparator()
+        self.context_menu.addMenu(self.logs_menu)
+        self.context_menu.addSeparator()
+
     def save_sorting(self):
         self.manager_settings.setValue('view/sort_column',
                 self.proxy.sortColumn())
         self.manager_settings.setValue('view/sort_order',
                 self.proxy.sortOrder())
+
+    def invalidate(self):
+        self.proxy.invalidate()
+        self.table.resizeColumnsToContents()
 
     def fill_cache(self):
         progress = QProgressDialog(
