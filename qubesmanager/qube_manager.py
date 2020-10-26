@@ -533,7 +533,14 @@ class VmShutdownMonitor(QObject):
                     self.tr("Wait another {0} seconds...").format(
                         self.shutdown_time / 1000),
                     QMessageBox.NoRole)
+                ignore_button = msgbox.addButton(self.tr("Don't ask again"),
+                                                 QMessageBox.RejectRole)
                 msgbox.setDefaultButton(wait_button)
+                msgbox.setEscapeButton(ignore_button)
+                msgbox.setWindowFlags(
+                    msgbox.windowFlags() | Qt.CustomizeWindowHint)
+                msgbox.setWindowFlags(
+                    msgbox.windowFlags() & ~Qt.WindowCloseButtonHint)
                 msgbox.exec_()
                 msgbox.deleteLater()
 
@@ -545,6 +552,8 @@ class VmShutdownMonitor(QObject):
                         # shutting it down
                         pass
                     self.restart_vm_if_needed()
+                elif msgbox.clickedButton() is ignore_button:
+                    return
                 else:
                     self.shutdown_started = datetime.now()
                     self.check_again_later()
