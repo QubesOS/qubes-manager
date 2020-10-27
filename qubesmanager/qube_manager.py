@@ -37,7 +37,7 @@ from PyQt5.QtCore import (Qt, QAbstractTableModel, QObject, pyqtSlot, QEvent,
 # pylint: disable=import-error
 from PyQt5.QtWidgets import (QLineEdit, QStyledItemDelegate, QToolTip,
     QMenu, QInputDialog, QMainWindow, QProgressDialog, QStyleOptionViewItem,
-    QAbstractItemView, QMessageBox)
+    QMessageBox)
 
 # pylint: disable=import-error
 from PyQt5.QtGui import (QIcon, QPixmap, QRegExpValidator, QFont, QColor)
