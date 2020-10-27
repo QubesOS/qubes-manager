@@ -1146,6 +1146,7 @@ class QubeManagerTest(unittest.TestCase):
             if target_vm_name:
                 break
 
+        self.dialog.timer.stop()
         for i in range(self.dialog.table.rowCount()):
             self._get_table_item(i, "State").update_vm_state =\
                 unittest.mock.Mock()

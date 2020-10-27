@@ -516,9 +516,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.progress = None
 
         # Check Updates Timer
-        timer = QtCore.QTimer(self)
-        timer.timeout.connect(self.check_updates)
-        timer.start(1000 * 30)  # 30s
+        self.timer = QtCore.QTimer(self)
+        self.timer.timeout.connect(self.check_updates)
+        self.timer.start(1000 * 30)  # 30s
         self.check_updates()
 
     def keyPressEvent(self, event):  # pylint: disable=invalid-name
