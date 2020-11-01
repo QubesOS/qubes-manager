@@ -117,6 +117,106 @@
       <attribute name="verticalHeaderCascadingSectionResizes">
        <bool>false</bool>
       </attribute>
+      <row>
+       <property name="text">
+        <string>Nowy wiersz</string>
+       </property>
+      </row>
+      <row/>
+      <row/>
+      <row/>
+      <row/>
+      <row/>
+      <row/>
+      <row/>
+      <row/>
+      <row/>
+      <column>
+       <property name="text">
+        <string/>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string/>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Name</string>
+       </property>
+       <property name="toolTip">
+        <string>Qube name</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>State</string>
+       </property>
+       <property name="toolTip">
+        <string>Update info</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Template</string>
+       </property>
+       <property name="toolTip">
+        <string>Qube template</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>NetVM</string>
+       </property>
+       <property name="toolTip">
+        <string>Qube netVM</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Disk
+usage</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Internal</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>IP</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Include
+in backups</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Last backup</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Default DisposableVM
+Template</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>DisposableVM
+Template</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Virtualization Mode</string>
+       </property>
+      </column>
      </widget>
     </item>
     <item row="0" column="0">
