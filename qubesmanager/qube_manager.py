@@ -819,11 +819,16 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.context_menu.addSeparator()
 
     def save_showing(self):
-        self.manager_settings.setValue('show/running', self.show_running.isChecked())
-        self.manager_settings.setValue('show/halted', self.show_halted.isChecked())
-        self.manager_settings.setValue('show/network', self.show_network.isChecked())
-        self.manager_settings.setValue('show/templates', self.show_templates.isChecked())
-        self.manager_settings.setValue('show/standalone', self.show_standalone.isChecked())
+        self.manager_settings.setValue('show/running',
+                self.show_running.isChecked())
+        self.manager_settings.setValue('show/halted',
+                self.show_halted.isChecked())
+        self.manager_settings.setValue('show/network',
+                self.show_network.isChecked())
+        self.manager_settings.setValue('show/templates',
+                self.show_templates.isChecked())
+        self.manager_settings.setValue('show/standalone',
+                self.show_standalone.isChecked())
         self.manager_settings.setValue('show/all', self.show_all.isChecked())
 
     def save_sorting(self):
@@ -992,7 +997,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.show_network.setChecked(self.manager_settings.value(
             'show/network', "true") == "true")
         self.show_templates.setChecked(self.manager_settings.value(
-            'show/templates', "true")  == "true")
+            'show/templates', "true") == "true")
         self.show_standalone.setChecked(self.manager_settings.value(
             'show/standalone', "true") == "true")
         self.show_all.setChecked(self.manager_settings.value(
@@ -1314,7 +1319,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     "\nError: {}".format(str(ex))))
             return
 
-    def closeEvent(self, event):
+    def closeEvent(self, _):
         self.save_showing()
 
     # noinspection PyArgumentList
