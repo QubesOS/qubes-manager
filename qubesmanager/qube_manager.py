@@ -818,6 +818,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.context_menu.addMenu(self.logs_menu)
         self.context_menu.addSeparator()
 
+    def save_showing(self):
+        self.manager_settings.setValue('show/running', self.show_running.isChecked())
+        self.manager_settings.setValue('show/halted', self.show_halted.isChecked())
+        self.manager_settings.setValue('show/network', self.show_network.isChecked())
+        self.manager_settings.setValue('show/templates', self.show_templates.isChecked())
+        self.manager_settings.setValue('show/standalone', self.show_standalone.isChecked())
+        self.manager_settings.setValue('show/all', self.show_all.isChecked())
+
     def save_sorting(self):
         self.manager_settings.setValue('view/sort_column',
                 self.proxy.sortColumn())
@@ -975,6 +983,20 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         if not self.manager_settings.value("view/toolbar_visible",
                                            defaultValue=True):
             self.action_toolbar.setChecked(False)
+
+        # Restore show checkboxes
+        self.show_running.setChecked(self.manager_settings.value(
+            'show/running', "true") == "true")
+        self.show_halted.setChecked(self.manager_settings.value(
+            'show/halted', "true") == "true")
+        self.show_network.setChecked(self.manager_settings.value(
+            'show/network', "true") == "true")
+        self.show_templates.setChecked(self.manager_settings.value(
+            'show/templates', "true")  == "true")
+        self.show_standalone.setChecked(self.manager_settings.value(
+            'show/standalone', "true") == "true")
+        self.show_all.setChecked(self.manager_settings.value(
+            'show/all', "true") == "true")
 
         # load last window size
         self.resize(self.manager_settings.value("window_size",
@@ -1291,6 +1313,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     "been removed or unavailable due to policy settings."
                     "\nError: {}".format(str(ex))))
             return
+
+    def closeEvent(self, event):
+        self.save_showing()
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_settings_triggered')
