@@ -950,6 +950,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         if not self.manager_settings.value("view/toolbar_visible",
                                            defaultValue=True):
             self.action_toolbar.setChecked(False)
+        if self.manager_settings.value("view/compactview",
+                                           defaultValue="false") != "false":
+            self.action_compact_view.setChecked(True)
 
         # load last window size
         self.resize(self.manager_settings.value("window_size",
@@ -1398,6 +1401,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             self.toolbar.setToolButtonStyle(Qt.ToolButtonIconOnly)
         else:
             self.toolbar.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        if self.settings_loaded:
+            self.manager_settings.setValue('view/compactview', checked)
 
     def showhide_menubar(self, checked):
         self.menubar.setVisible(checked)
