@@ -695,6 +695,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QtGui.QMainWindow):
         self.vms_list = vms_list
         self.vms_in_table = vms_in_table
         self.table.setSortingEnabled(True)
+        self.table.resizeColumnsToContents()
 
     def showhide_vms(self):
         if not self.search:
