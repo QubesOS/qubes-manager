@@ -37,7 +37,7 @@ from PyQt5.QtCore import (Qt, QAbstractTableModel, QObject, pyqtSlot, QEvent,
 # pylint: disable=import-error
 from PyQt5.QtWidgets import (QLineEdit, QStyledItemDelegate, QToolTip,
     QMenu, QInputDialog, QMainWindow, QProgressDialog, QStyleOptionViewItem,
-    QAbstractItemView, QMessageBox)
+    QAbstractItemView, QMessageBox, QAction)
 
 # pylint: disable=import-error
 from PyQt5.QtGui import (QIcon, QPixmap, QRegExpValidator, QFont, QColor)
@@ -646,6 +646,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     # suppress saving settings while initializing widgets
     settings_loaded = False
 
+    def change_template(self, template):
+        for info in self.get_selected_vms():
+            info.vm.template = template
+
     def __init__(self, qt_app, qubes_app, dispatcher, _parent=None):
         super().__init__()
         self.setupUi(self)
@@ -668,7 +672,15 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         self.context_menu = QMenu(self)
 
+        for vm in self.qubes_app.domains:
+            if vm.klass == 'TemplateVM':
+                action = self.template_menu.addAction(vm.name)
+                action.setData(vm.name)
+                action.setCheckable(True)
+                action.triggered.connect(partial(self.change_template, vm.name))
+
         self.context_menu.addAction(self.action_settings)
+        self.context_menu.addMenu(self.template_menu)
         self.context_menu.addAction(self.action_editfwrules)
         self.context_menu.addAction(self.action_appmenus)
         self.context_menu.addAction(self.action_set_keyboard_layout)
@@ -720,6 +732,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.proxy.setFilterKeyColumn(2)
         self.proxy.setFilterCaseSensitivity(Qt.CaseInsensitive)
         self.proxy.layoutChanged.connect(self.save_sorting)
+        self.proxy.layoutChanged.connect(self.update_template_menu)
 
         self.table.setModel(self.proxy)
         self.table.setItemDelegateForColumn(3, StateIconDelegate())
@@ -977,6 +990,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     def table_selection_changed(self):
         # Since selection could have multiple domains
         # enable all first and then filter them
+        self.template_menu.setEnabled(True)
         for action in self.toolbar.actions() + self.context_menu.actions():
             action.setEnabled(True)
 
@@ -987,17 +1001,20 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     ['Running', 'Transient', 'Halting', 'Dying']:
                 self.action_resumevm.setEnabled(False)
                 self.action_removevm.setEnabled(False)
+                self.template_menu.setEnabled(False)
             elif vm.state['power'] == 'Paused':
                 self.action_removevm.setEnabled(False)
                 self.action_pausevm.setEnabled(False)
                 self.action_set_keyboard_layout.setEnabled(False)
                 self.action_restartvm.setEnabled(False)
                 self.action_open_console.setEnabled(False)
+                self.template_menu.setEnabled(False)
             elif vm.state['power'] == 'Suspend':
                 self.action_set_keyboard_layout.setEnabled(False)
                 self.action_removevm.setEnabled(False)
                 self.action_pausevm.setEnabled(False)
                 self.action_open_console.setEnabled(False)
+                self.template_menu.setEnabled(False)
             elif vm.state['power'] == 'Halted':
                 self.action_set_keyboard_layout.setEnabled(False)
                 self.action_pausevm.setEnabled(False)
@@ -1020,9 +1037,13 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self.action_editfwrules.setEnabled(False)
                 self.action_set_keyboard_layout.setEnabled(False)
                 self.action_run_command_in_vm.setEnabled(False)
+                self.template_menu.setEnabled(False)
             elif vm.klass == 'DispVM':
                 self.action_appmenus.setEnabled(False)
                 self.action_restartvm.setEnabled(False)
+                self.template_menu.setEnabled(False)
+            elif vm.klass == 'TemplateVM':
+                self.template_menu.setEnabled(False)
 
             if vm.vm.features.get('internal', False):
                 self.action_appmenus.setEnabled(False)
@@ -1031,6 +1052,19 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self.action_updatevm.setEnabled(False)
 
         self.update_logs_menu()
+        self.update_template_menu()
+
+    def update_template_menu(self):
+        if not self.template_menu.isEnabled():
+            return
+
+        for entry in self.template_menu.actions():
+            entry.setChecked(False)
+
+        for vm in self.get_selected_vms():
+            for entry in self.template_menu.actions():
+                if entry.data() == vm.template:
+                    entry.setChecked(True)
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_createvm_triggered')
