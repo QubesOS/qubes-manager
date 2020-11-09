@@ -650,6 +650,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         for info in self.get_selected_vms():
             info.vm.template = template
 
+    def change_network(self, netvm):
+        for info in self.get_selected_vms():
+            info.vm.netvm = netvm
+
     def __init__(self, qt_app, qubes_app, dispatcher, _parent=None):
         super().__init__()
         self.setupUi(self)
@@ -671,10 +675,12 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.frame_height = 0
 
         self.init_template_menu()
+        self.init_network_menu()
         self.context_menu = QMenu(self)
 
         self.context_menu.addAction(self.action_settings)
         self.context_menu.addMenu(self.template_menu)
+        self.context_menu.addMenu(self.network_menu)
         self.context_menu.addAction(self.action_editfwrules)
         self.context_menu.addAction(self.action_appmenus)
         self.context_menu.addAction(self.action_set_keyboard_layout)
@@ -833,6 +839,15 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 action.setData(vm.name)
                 action.setCheckable(True)
                 action.triggered.connect(partial(self.change_template, vm.name))
+
+    def init_network_menu(self):
+        self.network_menu.clear()
+        for vm in self.qubes_app.domains:
+            if vm.qid != 0 and vm.provides_network:
+                action = self.network_menu.addAction(vm.name)
+                action.setData(vm.name)
+                action.setCheckable(True)
+                action.triggered.connect(partial(self.change_network, vm.name))
 
     def setup_application(self):
         self.qt_app.setApplicationName(self.tr("Qube Manager"))

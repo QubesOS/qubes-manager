@@ -288,6 +288,15 @@ Template</string>
        <normaloff>:/templatevm.png</normaloff>:/templatevm.png</iconset>
      </property>
     </widget>
+    <widget class="QMenu" name="network_menu">
+     <property name="title">
+      <string>Network</string>
+     </property>
+     <property name="icon">
+      <iconset>
+       <normaloff>:/netvm.png</normaloff>:/netvm.png</iconset>
+     </property>
+    </widget>
     <addaction name="action_createvm"/>
     <addaction name="action_removevm"/>
     <addaction name="action_clonevm"/>
@@ -300,6 +309,7 @@ Template</string>
     <addaction name="separator"/>
     <addaction name="action_settings"/>
     <addaction name="template_menu"/>
+    <addaction name="network_menu"/>
     <addaction name="action_editfwrules"/>
     <addaction name="action_appmenus"/>
     <addaction name="action_updatevm"/>
