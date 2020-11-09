@@ -670,14 +670,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.frame_width = 0
         self.frame_height = 0
 
+        self.init_template_menu()
         self.context_menu = QMenu(self)
-
-        for vm in self.qubes_app.domains:
-            if vm.klass == 'TemplateVM':
-                action = self.template_menu.addAction(vm.name)
-                action.setData(vm.name)
-                action.setCheckable(True)
-                action.triggered.connect(partial(self.change_template, vm.name))
 
         self.context_menu.addAction(self.action_settings)
         self.context_menu.addMenu(self.template_menu)
@@ -831,6 +825,15 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         progress.setValue(row_no)
 
+    def init_template_menu(self):
+        self.template_menu.clear()
+        for vm in self.qubes_app.domains:
+            if vm.klass == 'TemplateVM':
+                action = self.template_menu.addAction(vm.name)
+                action.setData(vm.name)
+                action.setCheckable(True)
+                action.triggered.connect(partial(self.change_template, vm.name))
+
     def setup_application(self):
         self.qt_app.setApplicationName(self.tr("Qube Manager"))
         self.qt_app.setWindowIcon(QIcon.fromTheme("qubes-manager"))
@@ -888,12 +891,15 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             domain = self.qubes_app.domains[vm]
             self.qubes_cache.add_vm(domain)
             self.proxy.invalidate()
+            if domain.klass == 'TemplateVM':
+                self.init_template_menu()
         except (exc.QubesException, KeyError):
             pass
 
     def on_domain_removed(self, _submitter, _event, **kwargs):
         self.qubes_cache.remove_vm(name=kwargs['vm'])
         self.proxy.invalidate()
+        self.init_template_menu()
 
     def on_domain_status_changed(self, vm, event, **_kwargs):
         try:
