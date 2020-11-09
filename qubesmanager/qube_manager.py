@@ -842,6 +842,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
     def init_network_menu(self):
         self.network_menu.clear()
+        action = self.network_menu.addAction("None")
+        action.setCheckable(True)
+        action.triggered.connect(partial(self.change_network, None))
         for vm in self.qubes_app.domains:
             if vm.qid != 0 and vm.provides_network:
                 action = self.network_menu.addAction(vm.name)
