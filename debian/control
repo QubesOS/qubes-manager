@@ -7,7 +7,7 @@ Build-Depends:
   dh-python,
   python3-all,
   python3-setuptools,
-  qt5-default,
+  qtbase5-dev,
   qttools5-dev-tools,
   pyqt5-dev-tools
 Standards-Version: 4.3.0
