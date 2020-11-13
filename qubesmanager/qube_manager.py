@@ -739,6 +739,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.proxy.setFilterCaseSensitivity(Qt.CaseInsensitive)
         self.proxy.layoutChanged.connect(self.save_sorting)
         self.proxy.layoutChanged.connect(self.update_template_menu)
+        self.proxy.layoutChanged.connect(self.update_network_menu)
 
         self.table.setModel(self.proxy)
         self.table.setItemDelegateForColumn(3, StateIconDelegate())
@@ -1021,6 +1022,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         # Since selection could have multiple domains
         # enable all first and then filter them
         self.template_menu.setEnabled(True)
+        self.network_menu.setEnabled(True)
         for action in self.toolbar.actions() + self.context_menu.actions():
             action.setEnabled(True)
 
@@ -1068,6 +1070,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self.action_set_keyboard_layout.setEnabled(False)
                 self.action_run_command_in_vm.setEnabled(False)
                 self.template_menu.setEnabled(False)
+                self.network_menu.setEnabled(False)
             elif vm.klass == 'DispVM':
                 self.action_appmenus.setEnabled(False)
                 self.action_restartvm.setEnabled(False)
@@ -1083,6 +1086,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         self.update_logs_menu()
         self.update_template_menu()
+        self.update_network_menu()
 
     def update_template_menu(self):
         if not self.template_menu.isEnabled():
@@ -1095,6 +1099,21 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             for entry in self.template_menu.actions():
                 if entry.data() == vm.template:
                     entry.setChecked(True)
+
+    def update_network_menu(self):
+        if not self.network_menu.isEnabled():
+            return
+
+        for entry in self.network_menu.actions():
+            entry.setChecked(False)
+
+        for vm in self.get_selected_vms():
+            if vm.netvm == "n/a":
+                self.network_menu.actions()[0].setChecked(True)
+            else:
+                for entry in self.network_menu.actions():
+                    if entry.data() == vm.netvm:
+                        entry.setChecked(True)
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_createvm_triggered')
