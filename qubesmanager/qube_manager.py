@@ -651,8 +651,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             info.vm.template = template
 
     def change_network(self, netvm):
-        for info in self.get_selected_vms():
-            info.vm.netvm = netvm
+        try:
+            for info in self.get_selected_vms():
+                info.vm.netvm = netvm
+        except exc.QubesValueError as ex:
+            QMessageBox.warning(
+                self,
+                self.tr("Change Network Error"),
+                self.tr((str(ex))))
 
     def __init__(self, qt_app, qubes_app, dispatcher, _parent=None):
         super().__init__()
