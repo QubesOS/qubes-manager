@@ -405,8 +405,6 @@ class QubesTableModel(QAbstractTableModel):
                 return "Yes" if vm.internal else ""
             if col_name == "IP":
                 return vm.ip
-            if col_name == "Include in backups":
-                return "Yes" if vm.inc_backup else ""
             if col_name == "Last backup":
                 return vm.last_backup
             if col_name == "Default DispVM":
@@ -429,7 +427,6 @@ class QubesTableModel(QAbstractTableModel):
                     return self.klass_pixmap[vm.klass]
                 except exc.QubesDaemonAccessError:
                     return None
-
             if col_name == "Label":
                 try:
                     return self.label_pixmap[vm.icon]
@@ -437,23 +434,22 @@ class QubesTableModel(QAbstractTableModel):
                     icon = QIcon.fromTheme(vm.icon)
                     self.label_pixmap[vm.icon] = icon.pixmap(icon_size)
                     return self.label_pixmap[vm.icon]
-
+        if role == Qt.CheckStateRole:
+            if col_name == "Include in backups":
+                return Qt.Checked if vm.inc_backup else Qt.Unchecked
         if role == Qt.FontRole:
             if col_name == "Template":
                 if vm.template is None:
                     font = QFont()
                     font.setItalic(True)
                     return font
-
         if role == Qt.ForegroundRole:
             if col_name == "Template":
                 if vm.template is None:
                     return QColor("gray")
-
         # Used for get VM Object
         if role == Qt.UserRole:
             return vm
-
         # Used for sorting
         if role == Qt.UserRole + 1:
             if vm.klass == 'AdminVM':
@@ -466,7 +462,6 @@ class QubesTableModel(QAbstractTableModel):
                 return str(vm.state)
             if col_name == "Disk Usage":
                 return vm.disk_float
-
             return self.data(index, Qt.DisplayRole)
 
     # pylint: disable=invalid-name
@@ -477,6 +472,27 @@ class QubesTableModel(QAbstractTableModel):
             return self.columns_indices[col]
         return None
 
+    def setData(self, index, value, role=Qt.EditRole):
+        if not index.isValid():
+            return False
+        if role == Qt.CheckStateRole:
+            col_name = self.columns_indices[index.column()]
+            if col_name == "Include in backups":
+                vm = self.qubes_cache.get_vm(index.row())
+                vm.vm.include_in_backups = (value == 2)
+                vm.inc_backup = (value == 2)
+                return True
+        return False
+
+    def flags(self, index):
+        if not index.isValid():
+            return False
+
+        col_name = self.columns_indices[index.column()]
+        if col_name == "Include in backups":
+            return  Qt.ItemIsEnabled | Qt.ItemIsUserCheckable
+
+        return QAbstractTableModel.flags(self, index)
 
 vm_shutdown_timeout = 20000  # in msec
 vm_restart_check_timeout = 1000  # in msec
