@@ -650,10 +650,27 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         for info in self.get_selected_vms():
             info.vm.template = template
 
-    def change_network(self, netvm):
+    def change_network(self, netvm_name):
         try:
+            check_power = any(info.state['power'] == 'Running' for info
+                    in self.get_selected_vms())
+            netvm = self.qubes_cache.get_vm(name=netvm_name)
+            if check_power and netvm.state['power'] != 'Running':
+                reply = QMessageBox.question(
+                    self, self.tr("Qube Start Confirmation"),
+                    self.tr("<br>Can not change netvm to a halted Qube.<br>"
+                        "Do you want to start the Qube <b>'{0}'</b>?").format(
+                        netvm_name),
+                    QMessageBox.Yes | QMessageBox.Cancel)
+
+                if reply == QMessageBox.Yes:
+                    with common_threads.busy_cursor():
+                        netvm.vm.start()
+                else:
+                    return
+
             for info in self.get_selected_vms():
-                info.vm.netvm = netvm
+                info.vm.netvm = netvm_name
         except exc.QubesValueError as ex:
             QMessageBox.warning(
                 self,
