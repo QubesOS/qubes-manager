@@ -475,6 +475,7 @@ class QubesTableModel(QAbstractTableModel):
     def setData(self, index, value, role=Qt.EditRole):
         if not index.isValid():
             return False
+
         if role == Qt.CheckStateRole:
             col_name = self.columns_indices[index.column()]
             if col_name == "Include in backups":
@@ -491,7 +492,6 @@ class QubesTableModel(QAbstractTableModel):
         col_name = self.columns_indices[index.column()]
         if col_name == "Include in backups":
             return  Qt.ItemIsEnabled | Qt.ItemIsUserCheckable
-
         return QAbstractTableModel.flags(self, index)
 
 vm_shutdown_timeout = 20000  # in msec
