@@ -646,37 +646,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     # suppress saving settings while initializing widgets
     settings_loaded = False
 
-    def change_template(self, template):
-        for info in self.get_selected_vms():
-            info.vm.template = template
-
-    def change_network(self, netvm_name):
-        try:
-            check_power = any(info.state['power'] == 'Running' for info
-                    in self.get_selected_vms())
-            netvm = self.qubes_cache.get_vm(name=netvm_name)
-            if check_power and netvm.state['power'] != 'Running':
-                reply = QMessageBox.question(
-                    self, self.tr("Qube Start Confirmation"),
-                    self.tr("<br>Can not change netvm to a halted Qube.<br>"
-                        "Do you want to start the Qube <b>'{0}'</b>?").format(
-                        netvm_name),
-                    QMessageBox.Yes | QMessageBox.Cancel)
-
-                if reply == QMessageBox.Yes:
-                    with common_threads.busy_cursor():
-                        netvm.vm.start()
-                else:
-                    return
-
-            for info in self.get_selected_vms():
-                info.vm.netvm = netvm_name
-        except exc.QubesValueError as ex:
-            QMessageBox.warning(
-                self,
-                self.tr("Change Network Error"),
-                self.tr((str(ex))))
-
     def __init__(self, qt_app, qubes_app, dispatcher, _parent=None):
         super().__init__()
         self.setupUi(self)
@@ -830,6 +799,37 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.progress = None
 
         self.check_updates()
+
+    def change_template(self, template):
+        for info in self.get_selected_vms():
+            info.vm.template = template
+
+    def change_network(self, netvm_name):
+        try:
+            check_power = any(info.state['power'] == 'Running' for info
+                    in self.get_selected_vms())
+            netvm = self.qubes_cache.get_vm(name=netvm_name)
+            if check_power and netvm.state['power'] != 'Running':
+                reply = QMessageBox.question(
+                    self, self.tr("Qube Start Confirmation"),
+                    self.tr("<br>Can not change netvm to a halted Qube.<br>"
+                        "Do you want to start the Qube <b>'{0}'</b>?").format(
+                        netvm_name),
+                    QMessageBox.Yes | QMessageBox.Cancel)
+
+                if reply == QMessageBox.Yes:
+                    with common_threads.busy_cursor():
+                        netvm.vm.start()
+                else:
+                    return
+
+            for info in self.get_selected_vms():
+                info.vm.netvm = netvm_name
+        except exc.QubesValueError as ex:
+            QMessageBox.warning(
+                self,
+                self.tr("Change Network Error"),
+                self.tr((str(ex))))
 
     def save_sorting(self):
         self.manager_settings.setValue('view/sort_column',
