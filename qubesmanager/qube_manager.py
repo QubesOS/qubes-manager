@@ -489,10 +489,10 @@ class QubesTableModel(QAbstractTableModel):
         if not index.isValid():
             return False
 
-        col_name = self.columns_indices[index.column()]
-        if col_name == "Include in backups":
-            return  Qt.ItemIsEnabled | Qt.ItemIsUserCheckable
-        return QAbstractTableModel.flags(self, index)
+        def_flags = QAbstractTableModel.flags(self, index)
+        if self.columns_indices[index.column()] == "Include in backups":
+            return  def_flags | Qt.ItemIsUserCheckable
+        return def_flags
 
 vm_shutdown_timeout = 20000  # in msec
 vm_restart_check_timeout = 1000  # in msec
