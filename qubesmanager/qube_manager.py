@@ -814,6 +814,17 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 info.vm.template = template
 
     def change_network(self, netvm_name):
+        selected_vms = self.get_selected_vms()
+        reply = QMessageBox.question(
+            self, self.tr("Network Change Confirmation"),
+            self.tr("Do you want to change '{0}'<br>"
+                "to Network <b>'{1}'</b>?").format(
+                ', '.join(vm.name for vm in selected_vms), netvm_name),
+            QMessageBox.Yes | QMessageBox.Cancel)
+
+        if reply != QMessageBox.Yes:
+            return
+
         try:
             check_power = any(info.state['power'] == 'Running' for info
                     in self.get_selected_vms())
