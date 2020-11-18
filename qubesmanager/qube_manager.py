@@ -801,8 +801,17 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.check_updates()
 
     def change_template(self, template):
-        for info in self.get_selected_vms():
-            info.vm.template = template
+        selected_vms = self.get_selected_vms()
+        reply = QMessageBox.question(
+            self, self.tr("Template Change Confirmation"),
+            self.tr("Do you want to change '{0}'<br>"
+                "to Template <b>'{1}'</b>?").format(
+                ', '.join(vm.name for vm in selected_vms), template),
+            QMessageBox.Yes | QMessageBox.Cancel)
+
+        if reply == QMessageBox.Yes:
+            for info in selected_vms:
+                info.vm.template = template
 
     def change_network(self, netvm_name):
         try:
