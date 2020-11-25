@@ -742,7 +742,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             column = self.qubes_model.columns_indices[col_no]
             action = self.menu_view.addAction(column)
             action.setData(column)
-            action.setCheckable(True)
             action.toggled.connect(partial(self.showhide_column, col_no))
 
         self.menu_view.addSeparator()
@@ -881,19 +880,16 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             if vm.klass == 'TemplateVM':
                 action = self.template_menu.addAction(vm.name)
                 action.setData(vm.name)
-                action.setCheckable(True)
                 action.triggered.connect(partial(self.change_template, vm.name))
 
     def init_network_menu(self):
         self.network_menu.clear()
         action = self.network_menu.addAction("None")
-        action.setCheckable(True)
         action.triggered.connect(partial(self.change_network, None))
         for vm in self.qubes_app.domains:
             if vm.qid != 0 and vm.provides_network:
                 action = self.network_menu.addAction(vm.name)
                 action.setData(vm.name)
-                action.setCheckable(True)
                 action.triggered.connect(partial(self.change_network, vm.name))
 
     def setup_application(self):
@@ -1130,27 +1126,36 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             return
 
         for entry in self.template_menu.actions():
-            entry.setChecked(False)
+            entry.setIcon(QIcon())
 
-        for vm in self.get_selected_vms():
+        vms = self.get_selected_vms()
+        for vm in vms:
             for entry in self.template_menu.actions():
                 if entry.data() == vm.template:
-                    entry.setChecked(True)
+                    if len(vms) == 1:
+                        entry.setIcon(QIcon(":/on.png"))
+                    else:
+                        entry.setIcon(QIcon(":/transient.png"))
 
     def update_network_menu(self):
         if not self.network_menu.isEnabled():
             return
 
         for entry in self.network_menu.actions():
-            entry.setChecked(False)
+            entry.setIcon(QIcon())
+
+        if len(self.get_selected_vms()) == 1:
+            icon = QIcon(":/on.png")
+        else:
+            icon = QIcon(":/transient.png")
 
         for vm in self.get_selected_vms():
             if vm.netvm == "n/a":
-                self.network_menu.actions()[0].setChecked(True)
+                self.network_menu.actions()[0].setIcon(QIcon(icon))
             else:
                 for entry in self.network_menu.actions():
                     if entry.data() == vm.netvm:
-                        entry.setChecked(True)
+                        entry.setIcon(icon)
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_createvm_triggered')
