@@ -459,7 +459,7 @@ def format_dependencies_list(dependencies):
 
 
 def loop_shutdown():
-    pending = asyncio.Task.all_tasks()
+    pending = asyncio.all_tasks()
     for task in pending:
         with suppress(asyncio.CancelledError):
             task.cancel()
