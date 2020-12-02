@@ -5,3 +5,10 @@ include:
     file: '/r4.1/gitlab-dom0.yml'
   - project: 'QubesOS/qubes-continuous-integration'
     file: '/r4.1/gitlab-vm.yml'
+
+checks:pylint:
+  stage: checks
+  before_script:
+    - pip3 install --quiet -r ci/requirements.txt
+  script:
+    - PYTHONPATH="test-packages:$PYTHONPATH" python3 -m pylint qubesmanager
