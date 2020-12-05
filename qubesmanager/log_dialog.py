@@ -34,11 +34,12 @@ LOG_DISPLAY_SIZE = 1024*1024
 class LogDialog(ui_logdlg.Ui_LogDialog, QtWidgets.QDialog):
     # pylint: disable=too-few-public-methods
 
-    def __init__(self, app, log_path, parent=None):
+    def __init__(self, app, logfiles, parent=None):
         super().__init__(parent)
 
         self.app = app
-        self.logfiles = log_path
+        self.logfiles = logfiles
+        self.displayed_text = ""
 
         self.setupUi(self)
 
@@ -56,7 +57,8 @@ class LogDialog(ui_logdlg.Ui_LogDialog, QtWidgets.QDialog):
             if os.path.exists(log_path):
                 button = QtWidgets.QPushButton(log_path)
                 button.clicked.connect(partial(self.set_current_log, log_path))
-                self.buttonsLayout.addWidget(button, count / butts_in_row, count % butts_in_row)
+                self.buttonsLayout.addWidget(button,
+                        count / butts_in_row, count % butts_in_row)
                 count += 1
 
         if count == 0:
@@ -72,8 +74,8 @@ class LogDialog(ui_logdlg.Ui_LogDialog, QtWidgets.QDialog):
         clipboard.copy_text_to_qubes_clipboard(self.displayed_text)
 
     def set_current_log(self, log_path):
-        self.setWindowTitle(log_path)
         self.displayed_text = ""
+        self.setWindowTitle(log_path)
         log = open(log_path)
         log.seek(0, os.SEEK_END)
         if log.tell() > LOG_DISPLAY_SIZE:

@@ -21,8 +21,6 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #
-import os
-import os.path
 import subprocess
 from datetime import datetime, timedelta
 from functools import partial
