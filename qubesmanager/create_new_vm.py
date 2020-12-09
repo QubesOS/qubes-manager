@@ -52,7 +52,16 @@ class CreateVMThread(QtCore.QThread):
 
     def run(self):
         try:
-            if self.vmclass == 'StandaloneVM' and self.template is not None:
+            if self.vmclass == 'TemplateVM' and self.template is not None:
+                args = {}
+                if self.pool:
+                    args['pool'] = self.pool
+
+                vm = self.app.clone_vm(self.template, self.name,
+                                       self.vmclass, **args)
+                
+                vm.label = self.label
+            elif self.vmclass == 'StandaloneVM' and self.template is not None:
                 args = {
                     'ignore_volumes': ['private']
                 }
@@ -63,8 +72,6 @@ class CreateVMThread(QtCore.QThread):
                                        self.vmclass, **args)
 
                 vm.label = self.label
-                for k, v in self.properties.items():
-                    setattr(vm, k, v)
             else:
                 args = {
                     "name": self.name,
@@ -76,8 +83,8 @@ class CreateVMThread(QtCore.QThread):
 
                 vm = self.app.add_new_vm(self.vmclass, **args)
 
-                for k, v in self.properties.items():
-                    setattr(vm, k, v)
+            for k, v in self.properties.items():
+                setattr(vm, k, v)
 
         except qubesadmin.exc.QubesException as qex:
             self.msg = str(qex)
@@ -104,7 +111,8 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
             widget=self.template_vm,
             qubes_app=self.app,
             filter_function=(lambda vm: not utils.is_internal(vm) and
-                             vm.klass == 'TemplateVM'))
+                             vm.klass == 'TemplateVM'),
+                             allow_none=True)
 
         default_template = self.app.default_template
         for i in range(self.template_vm.count()):
@@ -112,6 +120,8 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
                 self.template_vm.setCurrentIndex(i)
                 self.template_vm.setItemText(
                     i, str(default_template) + " (default)")
+
+        self.template_type="template"
 
         utils.initialize_widget_with_default(
             widget=self.netvm,
@@ -145,11 +155,12 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
                 self.tr('Cannot create a qube when no template exists.'))
 
         type_list = [
-            (self.tr("Qube based on a template (AppVM)"), 'AppVM'),
-            (self.tr("Standalone qube copied from a template"),
-             'StandaloneVM-copy'),
-            (self.tr("Empty standalone qube (install your own OS)"),
-             'StandaloneVM-empty')]
+            (self.tr("AppVM (persistent home, volatile root)"), 'AppVM'),
+            (self.tr("TemplateVM (template home, persistent root)"), 
+                'TemplateVM'),
+            (self.tr("StandaloneVM (fully persistent)"), 'StandaloneVM'),
+            (self.tr("DisposableVM (fully volatile)"), 'DispVM')]
+
         utils.initialize_widget(widget=self.vm_type,
                                 choices=type_list,
                                 selected_value='AppVM',
@@ -164,8 +175,7 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
         self.done(0)
 
     def accept(self):
-        selected_type = self.vm_type.currentData()
-        vmclass = selected_type.split('-')[0]
+        vmclass = self.vm_type.currentData()
 
         name = str(self.name.text())
 
@@ -181,12 +191,19 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
 
         template = self.template_vm.currentData()
 
+        if vmclass in ['AppVM', 'DispVM'] and template is None:
+            QtWidgets.QMessageBox.warning(
+                self,
+                self.tr('Unspecified template'),
+                self.tr('{}s must be based on a template!'.format(vmclass)))
+            return
+
         properties = {'provides_network': self.provides_network.isChecked()}
         if self.netvm.currentIndex() != 0:
             properties['netvm'] = self.netvm.currentData()
 
         # Standalone - not based on a template
-        if selected_type == 'StandaloneVM-empty':
+        if vmclass == 'StandaloneVM' and template is None:
             properties['virt_mode'] = 'hvm'
             properties['kernel'] = None
 
@@ -229,25 +246,46 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
                     ['qubes-vm-boot-from-device', str(self.name.text())])
 
     def type_change(self):
-        if self.vm_type.currentData() == 'AppVM':
-            self.template_vm.setEnabled(True)
-            if self.template_vm.currentIndex() == -1:
-                self.template_vm.setCurrentIndex(0)
-            self.install_system.setEnabled(False)
-            self.install_system.setChecked(False)
+        template = self.template_vm.currentData()
+        klass = self.vm_type.currentData()
 
-        if self.vm_type.currentData() == 'StandaloneVM-copy':
-            self.template_vm.setEnabled(True)
-            if self.template_vm.currentIndex() == -1:
-                self.template_vm.setCurrentIndex(0)
-            self.install_system.setEnabled(False)
-            self.install_system.setChecked(False)
-
-        if self.vm_type.currentData() == 'StandaloneVM-empty':
-            self.template_vm.setEnabled(False)
-            self.template_vm.setCurrentIndex(-1)
+        if klass in ['TemplateVM', 'StandaloneVM'] and template is None:
             self.install_system.setEnabled(True)
             self.install_system.setChecked(True)
+        else:
+            self.install_system.setEnabled(False)
+            self.install_system.setChecked(False)
+
+        if klass == 'DispVM':
+            self.template_vm.clear()
+
+            for vm in self.app.domains:
+                if utils.is_internal(vm):
+                    continue
+                if vm.klass != 'AppVM':
+                    continue
+                if getattr(vm, 'template_for_dispvms', True):
+                    self.template_vm.addItem(vm.name, userData=vm)
+
+            self.template_vm.insertItem(self.template_vm.count(),
+                                        utils.translate("(none)"), None)
+
+            self.template_vm.setCurrentIndex(0)
+            self.template_type="dispvm"
+        elif self.template_type=="dispvm":
+            self.template_vm.clear()
+            
+            for vm in self.app.domains:
+                if utils.is_internal(vm):
+                    continue
+                if vm.klass == 'TemplateVM':
+                    self.template_vm.addItem(vm.name, userData=vm)
+
+            self.template_vm.insertItem(self.template_vm.count(),
+                                        utils.translate("(none)"), None)
+
+            self.template_vm.setCurrentIndex(0)
+            self.template_type="template"
 
     def install_change(self):
         if self.install_system.isChecked():
