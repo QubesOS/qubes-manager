@@ -949,6 +949,14 @@ Template</string>
     <string>Open a secure Xen console in the qube. Useful chiefly for debugging purposes: for normal operation, use &quot;Run Terminal&quot; from the Domains widget. </string>
    </property>
   </action>
+  <action name="action_compact_view">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Compact View</string>
+   </property>
+  </action>
  </widget>
  <resources>
   <include location="../resources.qrc"/>

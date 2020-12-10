@@ -706,6 +706,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 lambda pos: self.open_tools_context_menu(self.toolbar, pos))
         self.action_menubar.toggled.connect(self.showhide_menubar)
         self.action_toolbar.toggled.connect(self.showhide_toolbar)
+        self.action_compact_view.toggled.connect(self.set_compactview)
         self.logs_menu.triggered.connect(self.show_log)
 
         self.table.resizeColumnsToContents()
@@ -752,6 +753,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.menu_view.addSeparator()
         self.menu_view.addAction(self.action_toolbar)
         self.menu_view.addAction(self.action_menubar)
+        self.menu_view.addSeparator()
+        self.menu_view.addAction(self.action_compact_view)
 
         try:
             self.load_manager_settings()
@@ -997,6 +1000,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         if not self.manager_settings.value("view/toolbar_visible",
                                            defaultValue=True):
             self.action_toolbar.setChecked(False)
+        if self.manager_settings.value("view/compactview",
+                                           defaultValue="false") != "false":
+            self.action_compact_view.setChecked(True)
 
         # Restore show checkboxes
         self.show_running.setChecked(self.manager_settings.value(
@@ -1456,6 +1462,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot(name='on_action_exit_triggered')
     def action_exit_triggered(self):
         self.close()
+
+    def set_compactview(self, checked):
+        if checked:
+            self.toolbar.setToolButtonStyle(Qt.ToolButtonIconOnly)
+        else:
+            self.toolbar.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        if self.settings_loaded:
+            self.manager_settings.setValue('view/compactview', checked)
 
     def showhide_menubar(self, checked):
         self.menubar.setVisible(checked)
