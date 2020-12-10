@@ -51,7 +51,7 @@ class LogDialog(ui_logdlg.Ui_LogDialog, QtWidgets.QDialog):
         self.__init_log_text__()
 
     def __init_log_text__(self):
-        butts_in_row = 3
+        btns_in_row = 3
         count = 0
         for log_path in self.logfiles:
             if os.path.exists(log_path):
