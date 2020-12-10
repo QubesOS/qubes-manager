@@ -24,6 +24,7 @@
 import subprocess
 from datetime import datetime, timedelta
 from functools import partial
+from os import path
 
 from qubesadmin import exc
 from qubesadmin import utils
@@ -1526,8 +1527,18 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                         "/var/log/qubes/qrexec." + vm.name + ".log",
                     ])
 
-            log_dlg = log_dialog.LogDialog(self.qt_app, logfiles)
-            log_dlg.exec_()
+            logfiles = list(filter(lambda x: path.exists(x), logfiles))
+
+            if len(logfiles) > 0:
+                log_dlg = log_dialog.LogDialog(self.qt_app, logfiles)
+                log_dlg.exec_()
+            else:
+                QMessageBox.warning(
+                    self,
+                    self.tr("Error"),
+                    self.tr(
+                        "No log files where found for the current selection."))
+
         except exc.QubesDaemonAccessError:
             pass
 

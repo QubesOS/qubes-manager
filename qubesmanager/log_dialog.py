@@ -54,21 +54,13 @@ class LogDialog(ui_logdlg.Ui_LogDialog, QtWidgets.QDialog):
         btns_in_row = 3
         count = 0
         for log_path in self.logfiles:
-            if os.path.exists(log_path):
-                button = QtWidgets.QPushButton(log_path)
-                button.clicked.connect(partial(self.set_current_log, log_path))
-                self.buttonsLayout.addWidget(button,
-                        count / btns_in_row, count % btns_in_row)
-                count += 1
+            button = QtWidgets.QPushButton(log_path)
+            button.clicked.connect(partial(self.set_current_log, log_path))
+            self.buttonsLayout.addWidget(button,
+                    count / btns_in_row, count % btns_in_row)
+            count += 1
 
-        if count == 0:
-            QtWidgets.QMessageBox.warning(
-                self,
-                self.tr("Error"),
-                self.tr(
-                    "No log files where found for current selection"))
-        else:
-            self.buttonsLayout.itemAt(0).widget().click()
+        self.buttonsLayout.itemAt(0).widget().click()
 
     def copy_to_clipboard_triggered(self):
         clipboard.copy_text_to_qubes_clipboard(self.displayed_text)
