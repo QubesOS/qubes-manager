@@ -58,7 +58,7 @@ class LogDialog(ui_logdlg.Ui_LogDialog, QtWidgets.QDialog):
                 button = QtWidgets.QPushButton(log_path)
                 button.clicked.connect(partial(self.set_current_log, log_path))
                 self.buttonsLayout.addWidget(button,
-                        count / butts_in_row, count % butts_in_row)
+                        count / btns_in_row, count % btns_in_row)
                 count += 1
 
         if count == 0:
