@@ -350,15 +350,6 @@ Template</string>
     <property name="title">
      <string>&amp;Qube</string>
     </property>
-    <widget class="QMenu" name="logs_menu">
-     <property name="title">
-      <string>&amp;Logs</string>
-     </property>
-     <property name="icon">
-      <iconset resource="../resources.qrc">
-       <normaloff>:/log.png</normaloff>:/log.png</iconset>
-     </property>
-    </widget>
     <addaction name="action_createvm"/>
     <addaction name="action_removevm"/>
     <addaction name="action_clonevm"/>
