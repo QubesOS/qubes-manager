@@ -857,12 +857,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     QMessageBox.Yes | QMessageBox.Cancel)
 
                 if reply == QMessageBox.Yes:
-                    with common_threads.busy_cursor():
-                        try:
-                            netvm.vm.start()
-                        except exc.QubesException as ex:
-                            QMessageBox.warning(self, "Error starting Qube!", str(ex))
-                            return
+                    self.start_vm(netvm.vm, True)
                 else:
                     return
 
@@ -1332,7 +1327,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
             self.start_vm(vm)
 
-    def start_vm(self, vm):
+    def start_vm(self, vm, wait=False):
         if manager_utils.is_running(vm, False):
             return
 
@@ -1340,6 +1335,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.threads_list.append(thread)
         thread.finished.connect(self.clear_threads)
         thread.start()
+
+        if wait:
+            with common_threads.busy_cursor():
+                thread.wait()
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_startvm_tools_install_triggered')
