@@ -825,15 +825,12 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 try:
                     info.vm.template = template
                 except exc.QubesValueError as ex:
-                    errors.append((info.name, ex))
+                    errors.append((info.name, str(ex)))
 
             for error in errors:
-                info_dialog = QMessageBox(self)
-                info_dialog.setWindowTitle(self.tr("Error!"))
-                info_dialog.setText(
-                        self.tr("Template change failed for '{0}':<br>{1}"
-                            ).format(error[0], error[1]))
-                info_dialog.show()
+                QMessageBox.warning(self, "{0} template change failed!"
+                        .format(error[0]), error[1])
+
 
     def change_network(self, netvm_name):
         selected_vms = self.get_selected_vms()
@@ -874,15 +871,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             try:
                 info.vm.netvm = netvm_name
             except exc.QubesValueError as ex:
-                errors.append((info.name, ex))
+                errors.append((info.name, str(ex)))
 
         for error in errors:
-            info_dialog = QMessageBox(self)
-            info_dialog.setWindowTitle(self.tr("Error!"))
-            info_dialog.setText(
-                    self.tr("Network change failed for '{0'}:<br>{1]"
-                            ).format(error[0], error[1]))
-            info_dialog.show()
+            QMessageBox.warning(self, "{0} network change failed!"
+                    .format(error[0]), error[1])
 
 
     def __init_context_menu(self):
