@@ -820,19 +820,19 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             QMessageBox.Yes | QMessageBox.Cancel)
 
         if reply == QMessageBox.Yes:
-            failed = []
+            errors = []
             for info in selected_vms:
                 try:
                     info.vm.template = template
-                except:
-                    failed.append(info.name)
+                except exc.QubesValueError as ex:
+                    errors.append((info.name, ex))
 
-            if failed:
+            for error in errors:
                 info_dialog = QMessageBox(self)
-                info_dialog.setWindowTitle(self.tr("Warning!"))
+                info_dialog.setWindowTitle(self.tr("Error!"))
                 info_dialog.setText(
-                        self.tr("Some template change failed: {0} "
-                            ).format(", ".join(failed)))
+                        self.tr("Template change failed for '{0}':<br>{1}"
+                            ).format(error[0], error[1]))
                 info_dialog.show()
 
     def change_network(self, netvm_name):
@@ -847,45 +847,39 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         if reply != QMessageBox.Yes:
             return
 
-        try:
-            if netvm_name is not None:
-                check_power = any(info.state['power'] == 'Running' for info
-                        in self.get_selected_vms())
-                netvm = self.qubes_cache.get_vm(name=netvm_name)
-                if check_power and netvm.state['power'] != 'Running':
-                    reply = QMessageBox.question(
-                        self, self.tr("Qube Start Confirmation"),
-                        self.tr("<br>Can not change netvm to a halted Qube.<br>"
-                            "Do you want to start the Qube <b>'{0}'</b>?").format(
-                            netvm_name),
-                        QMessageBox.Yes | QMessageBox.Cancel)
+        if netvm_name is not None:
+            check_power = any(info.state['power'] == 'Running' for info
+                    in self.get_selected_vms())
+            netvm = self.qubes_cache.get_vm(name=netvm_name)
+            if check_power and netvm.state['power'] != 'Running':
+                reply = QMessageBox.question(
+                    self, self.tr("Qube Start Confirmation"),
+                    self.tr("<br>Can not change netvm to a halted Qube.<br>"
+                        "Do you want to start the Qube <b>'{0}'</b>?").format(
+                        netvm_name),
+                    QMessageBox.Yes | QMessageBox.Cancel)
 
-                    if reply == QMessageBox.Yes:
-                        with common_threads.busy_cursor():
-                            netvm.vm.start()
-                    else:
-                        return
+                if reply == QMessageBox.Yes:
+                    with common_threads.busy_cursor():
+                        netvm.vm.start()
+                else:
+                    return
 
-            failed = []
-            for info in self.get_selected_vms():
-                try:
-                    info.vm.netvm = netvm_name
-                except:
-                    failed.append(info.name)
+        errors = []
+        for info in self.get_selected_vms():
+            try:
+                info.vm.netvm = netvm_name
+            except exc.QubesValueError as ex:
+                errors.append((info.name, ex))
 
-            if failed:
-                info_dialog = QMessageBox(self)
-                info_dialog.setWindowTitle(self.tr("Warning!"))
-                info_dialog.setText(
-                        self.tr("Some network change failed: {0} "
-                            ).format(", ".join(failed)))
-                info_dialog.show()
+        for error in errors:
+            info_dialog = QMessageBox(self)
+            info_dialog.setWindowTitle(self.tr("Error!"))
+            info_dialog.setText(
+                    self.tr("Network change failed for '{0'}:<br>{1]"
+                            ).format(error[0], error[1]))
+            info_dialog.show()
 
-        except exc.QubesValueError as ex:
-            QMessageBox.warning(
-                self,
-                self.tr("Change Network Error"),
-                self.tr((str(ex))))
 
     def __init_context_menu(self):
         self.context_menu = QMenu(self)
