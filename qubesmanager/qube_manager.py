@@ -1527,7 +1527,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                         "/var/log/qubes/qrexec." + vm.name + ".log",
                     ])
 
-            logfiles = list(filter(lambda x: path.exists(x), logfiles))
+            logfiles = [x for x in logfiles if path.exists(x)]
 
             if len(logfiles) > 0:
                 log_dlg = log_dialog.LogDialog(self.qt_app, logfiles)
