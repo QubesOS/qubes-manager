@@ -861,7 +861,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
                 if reply == QMessageBox.Yes:
                     with common_threads.busy_cursor():
-                        netvm.vm.start()
+                        try:
+                            netvm.vm.start()
+                        except exc.QubesException as ex:
+                            QMessageBox.warning(self, "Error starting Qube!", str(ex))
+                            return
                 else:
                     return
 
