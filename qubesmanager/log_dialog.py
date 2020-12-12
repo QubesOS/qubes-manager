@@ -20,13 +20,12 @@
 #
 #
 import sys
+import os
+from functools import partial
 from PyQt5 import QtWidgets  # pylint: disable=import-error
-
+from qubesadmin import Qubes
 from . import ui_logdlg   # pylint: disable=no-name-in-module
 from . import clipboard
-import os
-
-from qubesadmin import Qubes
 
 # Display only this size of log
 LOG_DISPLAY_SIZE = 1024*1024
@@ -35,14 +34,14 @@ LOG_DISPLAY_SIZE = 1024*1024
 class LogDialog(ui_logdlg.Ui_LogDialog, QtWidgets.QDialog):
     # pylint: disable=too-few-public-methods
 
-    def __init__(self, app, log_path, parent=None):
+    def __init__(self, app, logfiles, parent=None):
         super().__init__(parent)
 
         self.app = app
-        self.log_path = log_path
+        self.logfiles = logfiles
+        self.displayed_text = ""
 
         self.setupUi(self)
-        self.setWindowTitle(log_path)
 
         self.copy_to_qubes_clipboard.clicked.connect(
             self.copy_to_clipboard_triggered)
@@ -52,8 +51,24 @@ class LogDialog(ui_logdlg.Ui_LogDialog, QtWidgets.QDialog):
         self.__init_log_text__()
 
     def __init_log_text__(self):
+        btns_in_row = 3
+        count = 0
+        for log_path in self.logfiles:
+            button = QtWidgets.QPushButton(log_path)
+            button.clicked.connect(partial(self.set_current_log, log_path))
+            self.buttonsLayout.addWidget(button,
+                    count / btns_in_row, count % btns_in_row)
+            count += 1
+
+        self.buttonsLayout.itemAt(0).widget().click()
+
+    def copy_to_clipboard_triggered(self):
+        clipboard.copy_text_to_qubes_clipboard(self.displayed_text)
+
+    def set_current_log(self, log_path):
         self.displayed_text = ""
-        log = open(self.log_path)
+        self.setWindowTitle(log_path)
+        log = open(log_path)
         log.seek(0, os.SEEK_END)
         if log.tell() > LOG_DISPLAY_SIZE:
             self.displayed_text = self.tr(
@@ -64,11 +79,6 @@ class LogDialog(ui_logdlg.Ui_LogDialog, QtWidgets.QDialog):
         self.displayed_text += log.read()
         log.close()
         self.log_text.setPlainText(self.displayed_text)
-        self.log_text.show()
-
-    def copy_to_clipboard_triggered(self):
-        clipboard.copy_text_to_qubes_clipboard(self.displayed_text)
-
 
 def main():
     qubes_app = Qubes()

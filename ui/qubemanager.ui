@@ -350,15 +350,6 @@ Template</string>
     <property name="title">
      <string>&amp;Qube</string>
     </property>
-    <widget class="QMenu" name="logs_menu">
-     <property name="title">
-      <string>&amp;Logs</string>
-     </property>
-     <property name="icon">
-      <iconset resource="../resources.qrc">
-       <normaloff>:/log.png</normaloff>:/log.png</iconset>
-     </property>
-    </widget>
     <widget class="QMenu" name="template_menu">
      <property name="title">
       <string>Template</string>
@@ -397,7 +388,7 @@ Template</string>
     <addaction name="action_open_console"/>
     <addaction name="action_set_keyboard_layout"/>
     <addaction name="separator"/>
-    <addaction name="logs_menu"/>
+    <addaction name="action_show_logs"/>
    </widget>
    <widget class="QMenu" name="menu_about">
     <property name="title">
@@ -967,6 +958,15 @@ Template</string>
    </property>
    <property name="toolTip">
     <string>Open a secure Xen console in the qube. Useful chiefly for debugging purposes: for normal operation, use &quot;Run Terminal&quot; from the Domains widget. </string>
+   </property>
+  </action>
+  <action name="action_show_logs">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/log.png</normaloff>:/log.png</iconset>
+   </property>
+   <property name="text">
+    <string>Logs</string>
    </property>
   </action>
   <action name="action_compact_view">

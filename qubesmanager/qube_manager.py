@@ -21,11 +21,10 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #
-import os
-import os.path
 import subprocess
 from datetime import datetime, timedelta
 from functools import partial
+from os import path
 
 from qubesadmin import exc
 from qubesadmin import utils
@@ -708,8 +707,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 lambda pos: self.open_tools_context_menu(self.toolbar, pos))
         self.action_menubar.toggled.connect(self.showhide_menubar)
         self.action_toolbar.toggled.connect(self.showhide_toolbar)
+        self.action_show_logs.triggered.connect(self.show_log)
         self.action_compact_view.toggled.connect(self.set_compactview)
-        self.logs_menu.triggered.connect(self.show_log)
 
         self.table.resizeColumnsToContents()
 
@@ -895,8 +894,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.context_menu.addAction(self.action_clonevm)
         self.context_menu.addAction(self.action_removevm)
         self.context_menu.addSeparator()
-        self.context_menu.addMenu(self.logs_menu)
-        self.context_menu.addSeparator()
+        self.context_menu.addAction(self.action_show_logs)
 
     def save_showing(self):
         self.manager_settings.setValue('show/running',
@@ -1199,7 +1197,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             if not vm.updateable and vm.klass != 'AdminVM':
                 self.action_updatevm.setEnabled(False)
 
-        self.update_logs_menu()
         self.update_template_menu()
         self.update_network_menu()
 
@@ -1650,48 +1647,42 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     def open_tools_context_menu(self, widget, point):
         self.tools_context_menu.exec_(widget.mapToGlobal(point))
 
-    def update_logs_menu(self):
-        self.logs_menu.clear()
-        menu_empty = True
-
-        try:
-            vm_info = self.get_selected_vms()
-
-            if len(vm_info) == 1:
-                vm = vm_info[0].vm
-
-                if vm.klass == 'AdminVM':
-                    logfiles = ["/var/log/xen/console/hypervisor.log"]
-                else:
-                    logfiles = [
-                        "/var/log/xen/console/guest-" + vm.name + ".log",
-                        "/var/log/xen/console/guest-" + vm.name + "-dm.log",
-                        "/var/log/qubes/guid." + vm.name + ".log",
-                        "/var/log/qubes/qrexec." + vm.name + ".log",
-                    ]
-
-                for logfile in logfiles:
-                    if os.path.exists(logfile):
-                        action = self.logs_menu.addAction(QIcon(":/log.png"),
-                                                          logfile)
-                        action.setData(logfile)
-                        menu_empty = False
-
-            self.logs_menu.setEnabled(not menu_empty)
-        except exc.QubesDaemonAccessError:
-            pass
-
     @pyqtSlot('const QPoint&')
     def open_context_menu(self, point):
         self.context_menu.exec_(self.table.mapToGlobal(
             point + QPoint(10, 0)))
 
-    @pyqtSlot('QAction *')
-    def show_log(self, action):
-        log = str(action.data())
-        log_dlg = log_dialog.LogDialog(self.qt_app, log)
-        log_dlg.exec_()
+    def show_log(self):
+        logfiles = []
 
+        try:
+            for vm_info in self.get_selected_vms():
+                vm = vm_info.vm
+
+                if vm.klass == 'AdminVM':
+                    logfiles.append("/var/log/xen/console/hypervisor.log")
+                else:
+                    logfiles.extend([
+                        "/var/log/xen/console/guest-" + vm.name + ".log",
+                        "/var/log/xen/console/guest-" + vm.name + "-dm.log",
+                        "/var/log/qubes/guid." + vm.name + ".log",
+                        "/var/log/qubes/qrexec." + vm.name + ".log",
+                    ])
+
+            logfiles = [x for x in logfiles if path.exists(x)]
+
+            if len(logfiles) > 0:
+                log_dlg = log_dialog.LogDialog(self.qt_app, logfiles)
+                log_dlg.exec_()
+            else:
+                QMessageBox.warning(
+                    self,
+                    self.tr("Error"),
+                    self.tr(
+                        "No log files where found for the current selection."))
+
+        except exc.QubesDaemonAccessError:
+            pass
 
 def main():
     manager_utils.run_asynchronous(VmManagerWindow)
