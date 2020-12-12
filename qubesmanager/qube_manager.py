@@ -360,7 +360,7 @@ class QubesTableModel(QAbstractTableModel):
                 "Disk Usage",
                 "Internal",
                 "IP",
-                "Include in backups",
+                "Backup",
                 "Last backup",
                 "Default DispVM",
                 "Is DVM Template",
@@ -435,7 +435,7 @@ class QubesTableModel(QAbstractTableModel):
                     self.label_pixmap[vm.icon] = icon.pixmap(icon_size)
                     return self.label_pixmap[vm.icon]
         if role == Qt.CheckStateRole:
-            if col_name == "Include in backups":
+            if col_name == "Backup":
                 return Qt.Checked if vm.inc_backup else Qt.Unchecked
         if role == Qt.FontRole:
             if col_name == "Template":
@@ -478,7 +478,7 @@ class QubesTableModel(QAbstractTableModel):
 
         if role == Qt.CheckStateRole:
             col_name = self.columns_indices[index.column()]
-            if col_name == "Include in backups":
+            if col_name == "Backup":
                 vm = self.qubes_cache.get_vm(index.row())
                 vm.vm.include_in_backups = (value == 2)
                 vm.inc_backup = (value == 2)
@@ -490,7 +490,7 @@ class QubesTableModel(QAbstractTableModel):
             return False
 
         def_flags = QAbstractTableModel.flags(self, index)
-        if self.columns_indices[index.column()] == "Include in backups":
+        if self.columns_indices[index.column()] == "Backup":
             return  def_flags | Qt.ItemIsUserCheckable
         return def_flags
 
