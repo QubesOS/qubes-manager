@@ -59,7 +59,7 @@ class CreateVMThread(QtCore.QThread):
 
                 vm = self.app.clone_vm(self.template, self.name,
                                        self.vmclass, **args)
-                
+
                 vm.label = self.label
             elif self.vmclass == 'StandaloneVM' and self.template is not None:
                 args = {
@@ -121,7 +121,7 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
                 self.template_vm.setItemText(
                     i, str(default_template) + " (default)")
 
-        self.template_type="template"
+        self.template_type = "template"
 
         utils.initialize_widget_with_default(
             widget=self.netvm,
@@ -156,7 +156,7 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
 
         type_list = [
             (self.tr("AppVM (persistent home, volatile root)"), 'AppVM'),
-            (self.tr("TemplateVM (template home, persistent root)"), 
+            (self.tr("TemplateVM (template home, persistent root)"),
                 'TemplateVM'),
             (self.tr("StandaloneVM (fully persistent)"), 'StandaloneVM'),
             (self.tr("DisposableVM (fully volatile)"), 'DispVM')]
@@ -271,10 +271,10 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
                                         utils.translate("(none)"), None)
 
             self.template_vm.setCurrentIndex(0)
-            self.template_type="dispvm"
-        elif self.template_type=="dispvm":
+            self.template_type = "dispvm"
+        elif self.template_type == "dispvm":
             self.template_vm.clear()
-            
+
             for vm in self.app.domains:
                 if utils.is_internal(vm):
                     continue
@@ -285,7 +285,7 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
                                         utils.translate("(none)"), None)
 
             self.template_vm.setCurrentIndex(0)
-            self.template_type="template"
+            self.template_type = "template"
 
     def install_change(self):
         if self.install_system.isChecked():
