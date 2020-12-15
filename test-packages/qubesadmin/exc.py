@@ -36,3 +36,6 @@ class BackupAlreadyRunningError(BaseException):
 
 class QubesDaemonCommunicationError(BaseException):
     pass
+
+class QubesValueError(BaseException):
+    pass
