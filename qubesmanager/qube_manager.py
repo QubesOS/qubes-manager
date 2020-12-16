@@ -827,7 +827,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     errors.append((info.name, str(ex)))
 
             for error in errors:
-                QMessageBox.warning(self, "{0} template change failed!"
+                QMessageBox.warning(self, self.tr("{0} template change failed!")
                         .format(error[0]), error[1])
 
 
@@ -868,7 +868,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 errors.append((info.name, str(ex)))
 
         for error in errors:
-            QMessageBox.warning(self, "{0} network change failed!"
+            QMessageBox.warning(self, self.tr("{0} network change failed!")
                     .format(error[0]), error[1])
 
 
