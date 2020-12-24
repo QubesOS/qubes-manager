@@ -36,12 +36,12 @@ The Graphical Qubes VM Manager.
 %setup -q
 
 %build
-make ui res translations
-make python
+make ui res translations PYTHON=%{__python3}
+make python PYTHON=%{__python3}
 
 %install
-make python_install DESTDIR=$RPM_BUILD_ROOT
-make install DESTDIR=$RPM_BUILD_ROOT
+make python_install DESTDIR=$RPM_BUILD_ROOT PYTHON=%{__python3}
+make install DESTDIR=$RPM_BUILD_ROOT PYTHON=%{__python3}
 
 %post
 update-desktop-database &> /dev/null || :
