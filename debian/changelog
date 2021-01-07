@@ -1,3 +1,69 @@
+qubes-manager (4.1.14-1) unstable; urgency=medium
+
+  [ Frédéric Pierret (fepitre) ]
+  * debian: make the build reproducible
+
+  [ Marta Marczykowska-Górecka ]
+  * Added more reasonable behavior to "should I force shutdown or wait"
+    message
+
+  [ Frédéric Pierret (fepitre) ]
+  * debian: use recommended build qt5 dependency pkg
+
+  [ Marek Marczykowski-Górecki ]
+  * debian: make sure qt5 build tools are used
+
+  [ Frédéric Pierret (fepitre) ]
+  * Add .gitlab-ci.yml
+
+  [ Marek Marczykowski-Górecki ]
+  * Move pylintrc to the top directory
+  * gitlab-ci: add pylint job
+  * Fix asyncio.all_tasks() call
+
+  [ donoban ]
+  * Multiple file log dialog
+  * Pylint fixes
+  * Fix SelectionMode on ui file
+  * Added 'Show' Checkboxes to .ui
+  * Added filterAcceptsRow() to QubesProxyModel
+  * Enable 'Show' checkboxes by default
+  * Removed unused import
+  * Added saving and restore settings for showing checkboxes
+  * Fix pylint warnings
+  * Restored removed lines by accident (although I think that are
+    useless at this moment)
+  * Added 'Compact View' Action
+  * Save 'compactview' state
+  * Removed unused logs_menu
+
+  [ donob4n ]
+  * Update qubesmanager/log_dialog.py
+
+  [ donoban ]
+  * Fix Spanglish accident
+  * File checking and error dialog moved to qube_manager
+  * Changed filter to list comprehension (avoids pylint warning)
+
+  [ Marek Marczykowski-Górecki ]
+  * Add QubesValueError to mock qubesadmin.exc
+
+  [ donoban ]
+  * Include in backups changed to 'CheckStateRole'
+  * Fix empty lines
+  * flags() rewrite
+  * Rename 'Include in backups' to 'Backup'
+  * Replace '2' with Qt.Checked
+
+  [ ctrlaltf24 ]
+  * Added TemplateVM and disposableVM to Create New Qube
+  * fixed trailing spaces
+
+  [ Frédéric Pierret (fepitre) ]
+  * Fix build with python3 for CentOS
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Thu, 07 Jan 2021 15:11:00 +0100
+
 qubes-manager (4.1.13-1) unstable; urgency=medium
 
   [ Marta Marczykowska-Górecka ]
