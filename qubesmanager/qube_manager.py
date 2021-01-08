@@ -843,7 +843,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         if reply != QMessageBox.Yes:
             return
 
-        if netvm_name is not None:
+        if netvm_name not in [None, 'default']:
             check_power = any(info.state['power'] == 'Running' for info
                     in self.get_selected_vms())
             netvm = self.qubes_cache.get_vm(name=netvm_name)
@@ -863,7 +863,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         errors = []
         for info in self.get_selected_vms():
             try:
-                info.vm.netvm = netvm_name
+                if netvm_name == 'default':
+                    delattr(info.vm, 'netvm')
+                else:
+                    info.vm.netvm = netvm_name
             except exc.QubesValueError as ex:
                 errors.append((info.name, str(ex)))
 
@@ -945,10 +948,19 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 action.setData(vm.name)
                 action.triggered.connect(partial(self.change_template, vm.name))
 
+    def _get_default_netvm(self):
+        for vm in self.qubes_app.domains:
+            if vm.klass == 'AppVM':
+                return vm.property_get_default('netvm')
+
     def init_network_menu(self):
+        default = self._get_default_netvm().name
         self.network_menu.clear()
         action = self.network_menu.addAction("None")
         action.triggered.connect(partial(self.change_network, None))
+        action = self.network_menu.addAction("default ({0})".format(default))
+        action.triggered.connect(partial(self.change_network, 'default'))
+
         for vm in self.qubes_app.domains:
             if vm.qid != 0 and vm.provides_network:
                 action = self.network_menu.addAction(vm.name)
