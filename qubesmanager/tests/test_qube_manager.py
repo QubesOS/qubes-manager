@@ -156,9 +156,8 @@ class QubeManagerTest(unittest.TestCase):
         for row in range(self.dialog.table.model().rowCount()):
             vm = self._get_table_vm(row)
 
-            incl_backups_item = self._get_table_item(row, "Include in backups")
+            incl_backups_item = self._get_table_item(row, "Backup", Qt.CheckStateRole) == Qt.Checked
             incl_backups_value = getattr(vm, 'include_in_backups', False)
-            incl_backups_value = "Yes" if incl_backups_value else ""
 
             self.assertEqual(
                 incl_backups_value, incl_backups_item,
@@ -186,7 +185,7 @@ class QubeManagerTest(unittest.TestCase):
             def_dispvm_item = self._get_table_item(row, "Default DispVM")
             if vm.property_is_default("default_dispvm"):
                 def_dispvm_value = "default ({})".format(
-                    self.qapp.default_dispvm)
+                    vm.property_get_default("default_dispvm"))
             else:
                 def_dispvm_value = getattr(vm, "default_dispvm", None)
 
@@ -313,6 +312,8 @@ class QubeManagerTest(unittest.TestCase):
     def test_204_vm_keyboard(self, mock_message):
         selected_vm = self._select_non_admin_vm(running=True)
         self.assertIsNotNone(selected_vm, "No valid non-admin VM found")
+        if 'supported-feature.keyboard-layout' not in selected_vm.features:
+            self.skipTest("VM {!s} does not support new layout change".format(selected_vm))
         widget = self.dialog.toolbar.widgetForAction(
             self.dialog.action_set_keyboard_layout)
         with unittest.mock.patch.object(selected_vm, 'run') as mock_run:
@@ -333,9 +334,6 @@ class QubeManagerTest(unittest.TestCase):
                                     QtCore.Qt.LeftButton)
             self.assertEqual(mock_run.call_count, 0,
                              "Keyboard change called on a halted VM")
-        self.assertEqual(mock_message.call_count, 0,
-                         "Keyboard change called on a halted VM with"
-                         " obsolete keyboard-layout handling")
 
     def test_206_dom0_keyboard(self):
         self._select_admin_vm()
@@ -1133,32 +1131,28 @@ class QubeManagerTest(unittest.TestCase):
             else:
                 self.assertEqual(call_count, 0)
 
-    def test_500_logs(self):
+    @unittest.mock.patch('qubesmanager.log_dialog.LogDialog')
+    def test_500_logs(self, mock_log_dialog):
         self._select_admin_vm()
 
-        self.assertTrue(self.dialog.logs_menu.isEnabled())
-
-        dom0_logs = set()
-        for c in self.dialog.logs_menu.actions():
-            dom0_logs.add(c.text())
-            self.assertIsNotNone(
-                c.data(), "Empty log file found: {}".format(c.text()))
-            self.assertIn("hypervisor", c.text(),
+        self.dialog.action_show_logs.trigger()
+        mock_log_dialog.assert_called_once()
+        dom0_logs = mock_log_dialog.mock_calls[0][1][1]
+        for c in dom0_logs:
+            self.assertIn("hypervisor", c,
                           "Log for dom0 does not contain 'hypervisor'")
+
+        mock_log_dialog.reset_mock()
 
         selected_vm = self._select_non_admin_vm(running=True).name
 
-        self.assertTrue(self.dialog.logs_menu.isEnabled())
-
-        vm_logs = set()
-        for c in self.dialog.logs_menu.actions():
-            vm_logs.add(c.text())
-            self.assertIsNotNone(
-                c.data(),
-                "Empty log file found: {}".format(c.text()))
+        self.dialog.action_show_logs.trigger()
+        mock_log_dialog.assert_called_once()
+        vm_logs = mock_log_dialog.mock_calls[0][1][1]
+        for c in vm_logs:
             self.assertIn(
                 selected_vm,
-                c.text(),
+                c,
                 "Log for {} does not contain its name".format(selected_vm))
 
         self.assertNotEqual(dom0_logs, vm_logs,
