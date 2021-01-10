@@ -1261,13 +1261,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     QMessageBox.Yes | QMessageBox.Cancel)
 
                 if reply == QMessageBox.Yes:
+                    for connected_vm in connected_vms:
+                        if not self.shutdown_vm(connected_vm):
+                            return False
                     with common_threads.busy_cursor():
-                        for connected_vm in connected_vms:
-                            self.shutdown_vm(connected_vm)
-                            while connected_vm.is_running():
-                                time.sleep(0.5)
+                        while connected_vm.is_running():
+                            time.sleep(0.5)
                 else:
-                    return
+                    return False
 
             vm.shutdown()
         except exc.QubesException as ex:
@@ -1275,7 +1276,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self,
                 self.tr("Error shutting down Qube!"),
                 self.tr("ERROR: {0}").format(ex))
-            return
+            return False
 
         self.shutdown_monitor[vm.qid] = VmShutdownMonitor(vm, shutdown_time,
                                                           check_time,
@@ -1283,6 +1284,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         # noinspection PyCallByClass,PyTypeChecker
         QTimer.singleShot(check_time, self.shutdown_monitor[
             vm.qid].check_if_vm_has_shutdown)
+
+        return True
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_restartvm_triggered')
