@@ -954,7 +954,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 return vm.property_get_default('netvm')
 
     def init_network_menu(self):
-        default = self._get_default_netvm().name
+        default = self._get_default_netvm()
         self.network_menu.clear()
         action = self.network_menu.addAction("None")
         action.triggered.connect(partial(self.change_network, None))
