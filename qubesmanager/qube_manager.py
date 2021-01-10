@@ -1256,8 +1256,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     self, self.tr("Qube Shutdown Confirmation"),
                     self.tr("There are some qubes connected to <b>'{0}'</b>!"
                         "<br><small>Do you want to shutdown: </small>"
-                        "<b>'{1}'</b>?").format(
-                            vm.name ,", ".join([x.name for x in connected_vms])),
+                        "<b>'{1}'</b>?").format(vm.name,
+                            ", ".join([x.name for x in connected_vms])),
                     QMessageBox.Yes | QMessageBox.Cancel)
 
                 if reply == QMessageBox.Yes:
