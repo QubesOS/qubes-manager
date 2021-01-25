@@ -1264,7 +1264,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     for connected_vm in connected_vms:
                         if not self.shutdown_vm(connected_vm):
                             return False
-                        with common_threads.busy_cursor():
+
+                    with common_threads.busy_cursor():
+                        for connected_vm in connected_vms:
                             while connected_vm.is_running():
                                 time.sleep(0.5)
                 else:
