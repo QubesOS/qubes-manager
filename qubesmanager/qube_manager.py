@@ -1243,6 +1243,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         for vm in self.get_selected_vms():
             if vm.netvm == "n/a":
                 self.network_menu.actions()[0].setIcon(QIcon(icon))
+            elif vm.vm.property_is_default("netvm"):
+                self.network_menu.actions()[1].setIcon(QIcon(icon))
             else:
                 for entry in self.network_menu.actions():
                     if entry.data() == vm.netvm:
