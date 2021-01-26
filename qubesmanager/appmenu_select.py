@@ -18,10 +18,11 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #
-
+# pylint: disable=import-error
 import subprocess
-from PyQt5.QtCore import (Qt, QAbstractTableModel,
-                          QCoreApplication)  # pylint: disable=import-error
+from PyQt5.QtCore import (Qt, QAbstractTableModel, QCoreApplication,
+                          QSortFilterProxyModel)
+from PyQt5.QtWidgets import QTableView
 from qubesadmin import exc
 
 SHOW_HEADER = "Show \nin Menu"
@@ -124,7 +125,7 @@ class ApplicationsTableModel(QAbstractTableModel):
         if role == Qt.ToolTipRole:
             return application.tooltip
         # Used for sorting
-        if role == Qt.UserRole + 1:
+        if role == Qt.UserRole:
             if col_name == SHOW_HEADER:
                 return application.enabled
             if col_name == DISPVM_HEADER:
@@ -174,15 +175,23 @@ class AppmenuSelectManager:
         self.fill_apps_list(template=None)
         self.table_model = ApplicationsTableModel(self.app_list)
 
+        self.proxy_model = QSortFilterProxyModel()
+        self.proxy_model.setSourceModel(self.table_model)
+        self.proxy_model.setSortRole(Qt.UserRole)
+        self.proxy_model.setDynamicSortFilter(True)
+
         # needed to avoid problems with alignment
         self.table_widget.setModel(None)
 
-        self.table_widget.setModel(self.table_model)
+        self.table_widget.setModel(self.proxy_model)
+        self.table_widget.sortByColumn(1, Qt.AscendingOrder)
+        self.table_widget.sortByColumn(0, Qt.DescendingOrder)
+        self.table_widget.setSortingEnabled(True)
+        self.table_widget.setSelectionBehavior(QTableView.SelectRows)
 
         self.fix_formatting()
 
     def fix_formatting(self):
-        # TODO: fix sorting
         self.table_widget.horizontalHeader().setStretchLastSection(True)
         self.table_widget.resizeColumnsToContents()
 
