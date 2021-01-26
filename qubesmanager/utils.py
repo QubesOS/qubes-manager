@@ -465,6 +465,18 @@ def loop_shutdown():
             task.cancel()
 
 
+class CheckBoxStyle(QtWidgets.QProxyStyle):
+    """
+    Style proxy to center checkboxes in TableViews
+    """
+    # pylint: disable=invalid-name, too-few-public-methods
+    def subElementRect(self, element, option, widget=None):
+        r = super().subElementRect(element, option, widget)
+        if element == QtWidgets.QStyle.SE_ItemViewItemCheckIndicator:
+            r.moveCenter(option.rect.center())
+        return r
+
+
 # Bases on the original code by:
 # Copyright (c) 2002-2007 Pascal Varet <p.varet@gmail.com>
 def handle_exception(exc_type, exc_value, exc_traceback):

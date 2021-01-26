@@ -20,45 +20,171 @@
 #
 
 import subprocess
-from PyQt5 import QtWidgets, QtCore  # pylint: disable=import-error
+from PyQt5.QtCore import (Qt, QAbstractTableModel,
+                          QCoreApplication)  # pylint: disable=import-error
 from qubesadmin import exc
 
-# TODO description in tooltip
-# TODO icon
-# pylint: disable=too-few-public-methods
-class AppListWidgetItem(QtWidgets.QListWidgetItem):
-    def __init__(self, name, ident, tooltip=None, parent=None):
-        super().__init__(name, parent)
-        additional_description = ".desktop filename: " + str(ident)
-        if not tooltip:
-            tooltip = additional_description
-        else:
-            tooltip += "\n" + additional_description
-        self.setToolTip(tooltip)
-        self.ident = ident
+SHOW_HEADER = "Show \nin Menu"
+APP_HEADER = "Application"
+DISPVM_HEADER = "Open Files in \nDisposable VM"
+DESCR_HEADER = "Description"
+
+
+# TODO Add icon
+class ApplicationData:
+    def __init__(self, name, identifier,
+                 description=None, dispvm=False, enabled=False):
+        self.name = name
+        self.identifier = identifier
+        self.description = description
+        self.tooltip = ".desktop filename: " + str(identifier)
+        if description:
+            self.tooltip = description + "\n" + self.tooltip
+        self.dispvm = dispvm
+        self.enabled = enabled
 
     @classmethod
     def from_line(cls, line):
-        ident, name, comment = line.split('|', maxsplit=3)
-        return cls(name=name, ident=ident, tooltip=comment)
+        identifier, name, comment = line.split('|', maxsplit=3)
+        return cls(name=name, identifier=identifier, description=comment)
 
     @classmethod
-    def from_ident(cls, ident):
-        name = 'Application missing in template! ({})'.format(ident)
+    def from_identifier(cls, identifier):
+        name = 'Application missing in template! ({})'.format(identifier)
         comment = 'The listed application was available at some point to ' \
                   'this qube, but not any more. The most likely cause is ' \
                   'template change. Install the application in the template ' \
                   'if you want to restore it.'
-        return cls(name=name, ident=ident, tooltip=comment)
+        return cls(name=name, identifier=identifier, description=comment,
+                   enabled=True)
+
+
+class ApplicationModel(QAbstractTableModel):
+    def __init__(self):
+        QAbstractTableModel.__init__(self)
+        self.app_list = []
+        self.apps_by_identifier = {}
+
+    def get_application(self, row=None, identifier=None):
+        if row is not None:
+            return self.app_list[row]
+        return self.apps_by_identifier[identifier]
+
+    def add_application(self, application_data):
+        self.app_list.append(application_data)
+        self.apps_by_identifier[application_data.identifier] = application_data
+
+    def clear(self):
+        self.app_list.clear()
+        self.apps_by_identifier.clear()
+
+    def __len__(self):
+        return len(self.app_list)
+
+    def __iter__(self):
+        return iter(self.app_list)
+
+
+class ApplicationsTableModel(QAbstractTableModel):
+    def __init__(self, app_data):
+        QAbstractTableModel.__init__(self)
+        self.app_data = app_data
+        self.columns_indices = \
+            [SHOW_HEADER, APP_HEADER, DISPVM_HEADER, DESCR_HEADER]
+
+    # pylint: disable=invalid-name
+    def rowCount(self, _):
+        return len(self.app_data)
+
+    # pylint: disable=invalid-name
+    def columnCount(self, _):
+        return len(self.columns_indices)
+
+    # pylint: disable=too-many-return-statements
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+
+        col = index.column()
+        row = index.row()
+
+        col_name = self.columns_indices[col]
+        application = self.app_data.get_application(row=row)
+
+        if role == Qt.DisplayRole:
+            if col_name == APP_HEADER:
+                return application.name
+            if col_name == DESCR_HEADER:
+                return application.description
+        if role == Qt.CheckStateRole:
+            if col_name == SHOW_HEADER:
+                return Qt.Checked if application.enabled else Qt.Unchecked
+            if col_name == DISPVM_HEADER:
+                return Qt.Checked if application.dispvm else Qt.Unchecked
+        if role == Qt.ToolTipRole:
+            return application.tooltip
+        # Used for sorting
+        if role == Qt.UserRole + 1:
+            if col_name == SHOW_HEADER:
+                return application.enabled
+            if col_name == DISPVM_HEADER:
+                return application.dispvm
+            return self.data(index, Qt.DisplayRole)
+
+    # pylint: disable=invalid-name
+    def headerData(self, col, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return self.columns_indices[col]
+        return None
+
+    def setData(self, index, value, role=Qt.EditRole):
+        if not index.isValid():
+            return False
+
+        if role == Qt.CheckStateRole:
+            col_name = self.columns_indices[index.column()]
+            if col_name == SHOW_HEADER:
+                self.app_data.get_application(index.row()).enabled = \
+                    (value == Qt.Checked)
+                return True
+            if col_name == DISPVM_HEADER:
+                self.app_data.get_application(index.row()).dispvm = \
+                    (value == Qt.Checked)
+                return True
+        return False
+
+    def flags(self, index):
+        if not index.isValid():
+            return False
+
+        def_flags = QAbstractTableModel.flags(self, index)
+        if self.columns_indices[index.column()] in [SHOW_HEADER, DISPVM_HEADER]:
+            return def_flags | Qt.ItemIsUserCheckable
+        return def_flags
 
 
 class AppmenuSelectManager:
-    def __init__(self, vm, apps_multiselect):
+    def __init__(self, vm, table_widget):
         self.vm = vm
-        self.app_list = apps_multiselect # this is a multiselect wiget
+        self.table_widget = table_widget
+        self.app_list = ApplicationModel()
         self.whitelisted = None
         self.has_missing = False
+
         self.fill_apps_list(template=None)
+        self.table_model = ApplicationsTableModel(self.app_list)
+
+        # needed to avoid problems with alignment
+        self.table_widget.setModel(None)
+
+        self.table_widget.setModel(self.table_model)
+
+        self.fix_formatting()
+
+    def fix_formatting(self):
+        # TODO: fix sorting
+        self.table_widget.horizontalHeader().setStretchLastSection(True)
+        self.table_widget.resizeColumnsToContents()
 
     def fill_apps_list(self, template=None):
         try:
@@ -68,9 +194,8 @@ class AppmenuSelectManager:
         except exc.QubesException:
             self.whitelisted = []
 
-        currently_selected = [
-            self.app_list.selected_list.item(i).ident
-            for i in range(self.app_list.selected_list.count())]
+        currently_selected =\
+            [app.identifier for app in self.app_list.app_list if app.enabled]
 
         whitelist = set(self.whitelisted + currently_selected)
 
@@ -89,32 +214,26 @@ class AppmenuSelectManager:
         command.append(self.vm.name)
 
         try:
-            available_appmenus = [
-                AppListWidgetItem.from_line(line)
-                for line in subprocess.check_output(
-                    command).decode().splitlines()]
+            for line in subprocess.check_output(command).decode().splitlines():
+                application = ApplicationData.from_line(line)
+                application.enabled = (application.identifier in whitelist)
+                if application.identifier in whitelist:
+                    whitelist.remove(application.identifier)
+                # TODO: add the dispvm part
+                self.app_list.add_application(application)
         except exc.QubesException:
-            available_appmenus = []
-
-        for app in available_appmenus:
-            if app.ident in whitelist:
-                self.app_list.selected_list.addItem(app)
-                whitelist.remove(app.ident)
-            else:
-                self.app_list.available_list.addItem(app)
+            self.app_list.clear() # TODO: make this more resilient
 
         self.has_missing = bool(whitelist)
 
-        for app in whitelist:
-            item = AppListWidgetItem.from_ident(app)
-            self.app_list.selected_list.addItem(item)
-
-        self.app_list.available_list.sortItems()
-        self.app_list.selected_list.sortItems()
+        for app_ident in whitelist:
+            application = ApplicationData.from_identifier(app_ident)
+            self.app_list.add_application(application)
 
     def save_appmenu_select_changes(self):
-        new_whitelisted = [self.app_list.selected_list.item(i).ident
-                           for i in range(self.app_list.selected_list.count())]
+        # TODO: add using DispVM settings
+        new_whitelisted =\
+            [app.identifier for app in self.app_list.app_list if app.enabled]
 
         if set(new_whitelisted) == set(self.whitelisted):
             return False
@@ -124,7 +243,7 @@ class AppmenuSelectManager:
             stdin=subprocess.PIPE)
         p.communicate('\n'.join(new_whitelisted).encode())
         if p.returncode != 0:
-            exception_text = QtCore.QCoreApplication.translate(
+            exception_text = QCoreApplication.translate(
                 "Command {command} failed", "exception").format(
                 command='qvm-appmenus --set-whitelist')
             raise RuntimeError(exception_text)

@@ -208,9 +208,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         ####### apps tab
         if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
-            self.app_list = multiselectwidget.MultiSelectWidget(self)
-            self.apps_layout.addWidget(self.app_list)
-            self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
+            self.app_list_manager = AppmenuSelectManager(self.vm,
+                                                         self.apps_table)
             self.refresh_apps_button.clicked.connect(
                 self.refresh_apps_button_pressed)
 
@@ -224,6 +223,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
     def setup_application(self):
         self.qapp.setApplicationName(self.tr("Qube Settings"))
         self.qapp.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
+        checkbox_style = utils.CheckBoxStyle(self.qapp.style())
+        self.qapp.setStyle(checkbox_style)
 
     def clear_threads(self):
         for thread in self.threads_list:
@@ -1256,6 +1257,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         self.refresh_apps_button.setEnabled(False)
         self.refresh_apps_button.setText(self.tr('Refresh in progress...'))
+        self.apps_table.setEnabled(False)
 
         thread = RefreshAppsVMThread(self.vm, self.refresh_apps_button)
         thread.finished.connect(self.clear_threads)
@@ -1264,7 +1266,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         thread.start()
 
     def refresh_finished(self):
-        self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
+        self.apps_table.setEnabled(True)
+        self.app_list_manager = AppmenuSelectManager(self.vm, self.apps_table)
         self.refresh_apps_button.setEnabled(True)
         self.refresh_apps_button.setText(self.tr('Refresh Applications'))
 
