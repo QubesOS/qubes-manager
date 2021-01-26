@@ -22,7 +22,6 @@
 #
 #
 import subprocess
-import time
 from datetime import datetime, timedelta
 from functools import partial
 from os import path
@@ -1250,7 +1249,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     def shutdown_vm(self, vm, shutdown_time=vm_shutdown_timeout,
                     check_time=vm_restart_check_timeout, and_restart=False):
         try:
+            cascade = False
             connected_vms = [x for x in vm.connected_vms if x.is_running()]
+
             if len(connected_vms) > 0:
                 reply = QMessageBox.question(
                     self, self.tr("Qube Shutdown Confirmation"),
@@ -1260,19 +1261,15 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                             ", ".join([x.name for x in connected_vms])),
                     QMessageBox.Yes | QMessageBox.Cancel)
 
-                if reply == QMessageBox.Yes:
-                    for connected_vm in connected_vms:
-                        if not self.shutdown_vm(connected_vm):
-                            return False
-
-                    with common_threads.busy_cursor():
-                        for connected_vm in connected_vms:
-                            while connected_vm.is_running():
-                                time.sleep(0.5)
-                else:
+                if reply != QMessageBox.Yes:
                     return False
 
-            vm.shutdown()
+                cascade = True
+                for connected_vm in connected_vms:
+                    if not self.shutdown_vm(connected_vm):
+                        return False
+
+            vm.shutdown(force=cascade)
         except exc.QubesException as ex:
             QMessageBox.warning(
                 self,
