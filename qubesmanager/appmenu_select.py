@@ -20,12 +20,18 @@
 #
 # pylint: disable=import-error
 import subprocess
+import os
+import xdg.BaseDirectory
+
 from PyQt5.QtCore import (Qt, QAbstractTableModel, QCoreApplication,
                           QSortFilterProxyModel)
-from PyQt5.QtWidgets import QTableView
+from PyQt5.QtWidgets import QTableView, QStyledItemDelegate
+from PyQt5.QtGui import QPixmap, QIcon
+
 from qubesadmin import exc
 
 SHOW_HEADER = "Show \nin Menu"
+ICON_HEADER = "Icon"
 APP_HEADER = "Application"
 DISPVM_HEADER = "Open Files in \nDisposable VM"
 DESCR_HEADER = "Description"
@@ -33,10 +39,9 @@ DESCR_HEADER = "Description"
 DISPVM_SERVICE_PREFIX = 'app-dispvm.'
 
 
-# TODO Add icon
 class ApplicationData:
     def __init__(self, name, identifier,
-                 description=None, dispvm=False, enabled=False):
+                 description=None, dispvm=False, enabled=False, icon=None):
         self.name = name
         self.identifier = identifier
         self.description = description
@@ -45,11 +50,13 @@ class ApplicationData:
             self.tooltip = description + "\n" + self.tooltip
         self.dispvm = dispvm
         self.enabled = enabled
+        self.icon = icon  # path to icon file
 
     @classmethod
     def from_line(cls, line):
-        identifier, name, comment = line.split('|', maxsplit=3)
-        return cls(name=name, identifier=identifier, description=comment)
+        identifier, name, comment, icon = line.split('|', maxsplit=4)
+        return cls(name=name, identifier=identifier, description=comment,
+                   icon=icon)
 
     @classmethod
     def from_identifier(cls, identifier):
@@ -89,11 +96,12 @@ class ApplicationModel(QAbstractTableModel):
 
 
 class ApplicationsTableModel(QAbstractTableModel):
-    def __init__(self, app_data):
+    def __init__(self, app_data, vm_dir):
         QAbstractTableModel.__init__(self)
         self.app_data = app_data
+        self.vm_dir = vm_dir
         self.columns_indices = \
-            [SHOW_HEADER, APP_HEADER, DISPVM_HEADER, DESCR_HEADER]
+            [ICON_HEADER, SHOW_HEADER, APP_HEADER, DISPVM_HEADER, DESCR_HEADER]
 
     # pylint: disable=invalid-name
     def rowCount(self, _):
@@ -119,6 +127,15 @@ class ApplicationsTableModel(QAbstractTableModel):
                 return application.name
             if col_name == DESCR_HEADER:
                 return application.description
+        if role == Qt.DecorationRole:
+            if col_name == ICON_HEADER:
+                # TODO: at the moment this only shows icons for selected apps
+                if application.icon:
+                    icon_path = application.icon.replace("%VMDIR%", self.vm_dir)
+                    if os.path.exists(icon_path):
+                        pixmap = QPixmap()
+                        pixmap.load(icon_path)
+                        return pixmap.scaledToHeight(24)
         if role == Qt.CheckStateRole:
             if col_name == SHOW_HEADER:
                 return Qt.Checked if application.enabled else Qt.Unchecked
@@ -166,16 +183,27 @@ class ApplicationsTableModel(QAbstractTableModel):
         return def_flags
 
 
+class CenterDelegate(QStyledItemDelegate):
+    def paint(self, painter, option, index):
+        if index.data(Qt.DecorationRole):
+            icon = QIcon(index.data(Qt.DecorationRole))
+            icon.paint(painter, option.rect, Qt.AlignCenter)
+
+
 class AppmenuSelectManager:
     def __init__(self, vm, table_widget):
         self.vm = vm
+        self.vm_dir = os.path.join(
+            os.path.join(xdg.BaseDirectory.xdg_data_home, 'qubes-appmenus'),
+            self.vm.name)
+
         self.table_widget = table_widget
         self.app_list = ApplicationModel()
         self.whitelisted = None
         self.has_missing = False
 
         self.fill_apps_list(template=None)
-        self.table_model = ApplicationsTableModel(self.app_list)
+        self.table_model = ApplicationsTableModel(self.app_list, self.vm_dir)
 
         self.proxy_model = QSortFilterProxyModel()
         self.proxy_model.setSourceModel(self.table_model)
@@ -186,10 +214,11 @@ class AppmenuSelectManager:
         self.table_widget.setModel(None)
 
         self.table_widget.setModel(self.proxy_model)
-        self.table_widget.sortByColumn(1, Qt.AscendingOrder)
-        self.table_widget.sortByColumn(0, Qt.DescendingOrder)
+        self.table_widget.sortByColumn(2, Qt.AscendingOrder)
+        self.table_widget.sortByColumn(1, Qt.DescendingOrder)
         self.table_widget.setSortingEnabled(True)
         self.table_widget.setSelectionBehavior(QTableView.SelectRows)
+        self.table_widget.setItemDelegateForColumn(0, CenterDelegate())
 
         self.fix_formatting()
 
@@ -219,7 +248,7 @@ class AppmenuSelectManager:
 
         command = ['qvm-appmenus', '--get-available',
                    '--i-understand-format-is-unstable', '--file-field',
-                   'Comment']
+                   'Comment', '--file-field', 'Icon']
         if template:
             command.extend(['--template', template.name])
         command.append(self.vm.name)
