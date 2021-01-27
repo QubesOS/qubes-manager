@@ -1249,7 +1249,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     def shutdown_vm(self, vm, shutdown_time=vm_shutdown_timeout,
                     check_time=vm_restart_check_timeout, and_restart=False):
         try:
-            cascade = False
             connected_vms = [x for x in vm.connected_vms if x.is_running()]
 
             if len(connected_vms) > 0:
@@ -1264,12 +1263,13 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 if reply != QMessageBox.Yes:
                     return False
 
-                cascade = True
                 for connected_vm in connected_vms:
                     if not self.shutdown_vm(connected_vm):
                         return False
 
-            vm.shutdown(force=cascade)
+                vm.shutdown(force=True)
+            else:
+                vm.shutdown()
         except exc.QubesException as ex:
             QMessageBox.warning(
                 self,
