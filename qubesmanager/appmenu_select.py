@@ -30,6 +30,8 @@ APP_HEADER = "Application"
 DISPVM_HEADER = "Open Files in \nDisposable VM"
 DESCR_HEADER = "Description"
 
+DISPVM_SERVICE_PREFIX = 'app-dispvm.'
+
 
 # TODO Add icon
 class ApplicationData:
@@ -222,16 +224,21 @@ class AppmenuSelectManager:
             command.extend(['--template', template.name])
         command.append(self.vm.name)
 
+        apps = []
         try:
             for line in subprocess.check_output(command).decode().splitlines():
                 application = ApplicationData.from_line(line)
                 application.enabled = (application.identifier in whitelist)
-                if application.identifier in whitelist:
-                    whitelist.remove(application.identifier)
-                # TODO: add the dispvm part
-                self.app_list.add_application(application)
+                application.dispvm = self.vm.features.get(
+                    DISPVM_SERVICE_PREFIX + application.identifier, False)
+                apps.append(application)
         except exc.QubesException:
-            self.app_list.clear() # TODO: make this more resilient
+            apps.clear()
+
+        for application in apps:
+            if application.identifier in whitelist:
+                whitelist.remove(application.identifier)
+            self.app_list.add_application(application)
 
         self.has_missing = bool(whitelist)
 
@@ -240,7 +247,15 @@ class AppmenuSelectManager:
             self.app_list.add_application(application)
 
     def save_appmenu_select_changes(self):
-        # TODO: add using DispVM settings
+        for app in self.app_list.app_list:
+            if not app.dispvm:
+                try:
+                    del self.vm.features[DISPVM_SERVICE_PREFIX + app.identifier]
+                except KeyError:
+                    pass
+            else:
+                self.vm.features[DISPVM_SERVICE_PREFIX + app.identifier] = 1
+
         new_whitelisted =\
             [app.identifier for app in self.app_list.app_list if app.enabled]
 
