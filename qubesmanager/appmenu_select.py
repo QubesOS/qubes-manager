@@ -31,7 +31,7 @@ from PyQt5.QtGui import QPixmap, QIcon
 from qubesadmin import exc
 
 SHOW_HEADER = "Show \nin Menu"
-ICON_HEADER = "Icon"
+ICON_HEADER = ""
 APP_HEADER = "Application"
 DISPVM_HEADER = "Open Files in \nDisposable VM"
 DESCR_HEADER = "Description"
@@ -184,6 +184,7 @@ class ApplicationsTableModel(QAbstractTableModel):
 
 
 class CenterDelegate(QStyledItemDelegate):
+    # pylint: disable=no-self-use, too-few-public-methods
     def paint(self, painter, option, index):
         if index.data(Qt.DecorationRole):
             icon = QIcon(index.data(Qt.DecorationRole))
