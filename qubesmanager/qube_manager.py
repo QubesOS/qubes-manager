@@ -1202,6 +1202,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self.template_menu.setEnabled(False)
             elif vm.klass == 'TemplateVM':
                 self.template_menu.setEnabled(False)
+                self.network_menu.setEnabled(False)
 
             if vm.vm.features.get('internal', False):
                 self.action_appmenus.setEnabled(False)
