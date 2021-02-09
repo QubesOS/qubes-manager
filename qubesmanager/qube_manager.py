@@ -1033,6 +1033,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.qubes_cache.remove_vm(name=kwargs['vm'])
         self.proxy.invalidate()
         self.init_template_menu()
+        self.init_network_menu()
 
     def on_domain_status_changed(self, vm, event, **_kwargs):
         try:
@@ -1062,6 +1063,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             return
 
         try:
+            if event.endswith(':provides_network'):
+                self.init_network_menu()
             self.qubes_cache.get_vm(qid=vm.qid).update(event=event)
             self.proxy.invalidate()
         except exc.QubesDaemonAccessError:
