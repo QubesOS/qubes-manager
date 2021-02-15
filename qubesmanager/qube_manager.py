@@ -1553,7 +1553,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     self,
                     self.tr("Error"),
                     self.tr(
-                        "No log files where found for the current selection."))
+                        "No log files were found for the selected qubes."))
 
         except exc.QubesDaemonAccessError:
             pass
