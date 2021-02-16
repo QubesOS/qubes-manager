@@ -1252,11 +1252,13 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 connected_vms.append(connected_vm)
                 self.get_connected_vms(connected_vm, connected_vms)
 
-    def shutdown_vm(self, vm, shutdown_time=vm_shutdown_timeout,
+    def shutdown_vm(self, vm, shutdown_time=vm_shutdown_timeout, force=False,
                     check_time=vm_restart_check_timeout, and_restart=False):
         try:
             connected_vms = []
-            self.get_connected_vms(vm, connected_vms)
+
+            if not and_restart:
+                self.get_connected_vms(vm, connected_vms)
 
             if len(connected_vms) > 0:
                 reply = QMessageBox.question(
@@ -1270,12 +1272,12 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 if reply != QMessageBox.Yes:
                     return False
 
+                force=True
+                shutdown_time = shutdown_time * len(connected_vms)
                 for connected_vm in connected_vms:
-                    connected_vm.shutdown(force=True)
+                    connected_vm.shutdown(force=force)
 
-                vm.shutdown(force=True)
-            else:
-                vm.shutdown()
+            vm.shutdown(force=force)
         except exc.QubesException as ex:
             QMessageBox.warning(
                 self,
@@ -1308,7 +1310,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 # in case the user shut down the VM in the meantime
                 try:
                     if manager_utils.is_running(vm, False):
-                        self.shutdown_vm(vm, and_restart=True)
+                        self.shutdown_vm(vm, force=True, and_restart=True)
                     else:
                         self.start_vm(vm)
                 except exc.QubesException as ex:
