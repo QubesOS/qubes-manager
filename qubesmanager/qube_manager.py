@@ -1246,10 +1246,17 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             if reply == QMessageBox.Yes:
                 self.shutdown_vm(vm)
 
+    def get_connected_vms(self, vm, connected_vms):
+        for connected_vm in vm.connected_vms:
+            if connected_vm.is_running():
+                connected_vms.append(connected_vm)
+                self.get_connected_vms(connected_vm, connected_vms)
+
     def shutdown_vm(self, vm, shutdown_time=vm_shutdown_timeout,
                     check_time=vm_restart_check_timeout, and_restart=False):
         try:
-            connected_vms = [x for x in vm.connected_vms if x.is_running()]
+            connected_vms = []
+            self.get_connected_vms(vm, connected_vms)
 
             if len(connected_vms) > 0:
                 reply = QMessageBox.question(
@@ -1264,8 +1271,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     return False
 
                 for connected_vm in connected_vms:
-                    if not self.shutdown_vm(connected_vm):
-                        return False
+                    connected_vm.shutdown(force=True)
 
                 vm.shutdown(force=True)
             else:
