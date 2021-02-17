@@ -668,7 +668,7 @@ class QubesProxyModel(QSortFilterProxyModel):
         vm = self.sourceModel().data(index, Qt.UserRole)
 
         if self.window.show_running.isChecked() and \
-                vm.state['power'] == 'Running':
+                vm.state['power'] != 'Halted':
             return super().filterAcceptsRow(sourceRow, sourceParent)
         if self.window.show_halted.isChecked() and \
                 vm.state['power'] == 'Halted':
