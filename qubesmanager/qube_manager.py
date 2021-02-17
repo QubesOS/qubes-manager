@@ -1272,7 +1272,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 if reply != QMessageBox.Yes:
                     return False
 
-                force=True
+                force = True
                 shutdown_time = shutdown_time * len(connected_vms)
                 for connected_vm in connected_vms:
                     connected_vm.shutdown(force=force)
