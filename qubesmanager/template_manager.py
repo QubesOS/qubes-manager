@@ -22,7 +22,7 @@
 # pylint: disable=wrong-import-position
 import os
 import os.path
-os.environ['QUQMASH_QTIMPL'] = 'PyQt4'
+os.environ['QUAMASH_QTIMPL'] = 'PyQt4'
 
 import sys
 import traceback
