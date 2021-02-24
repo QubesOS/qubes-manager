@@ -493,17 +493,15 @@ class QubesTableModel(QAbstractTableModel):
             return  def_flags | Qt.ItemIsUserCheckable
         return def_flags
 
-vm_shutdown_timeout = 20000  # in msec
 vm_restart_check_timeout = 1000  # in msec
 
 
 class VmShutdownMonitor(QObject):
-    def __init__(self, vm, shutdown_time=vm_shutdown_timeout,
-                 check_time=vm_restart_check_timeout,
+    def __init__(self, vm, check_time=vm_restart_check_timeout,
                  and_restart=False, caller=None):
         QObject.__init__(self)
         self.vm = vm
-        self.shutdown_time = shutdown_time
+        self.shutdown_timeout = vm.shutdown_timeout
         self.check_time = check_time
         self.and_restart = and_restart
         self.shutdown_started = datetime.now()
@@ -519,7 +517,7 @@ class VmShutdownMonitor(QObject):
 
     def timeout_reached(self):
         actual = datetime.now() - self.shutdown_started
-        allowed = timedelta(milliseconds=self.shutdown_time)
+        allowed = timedelta(milliseconds=self.shutdown_timeout * 1000)
 
         return actual > allowed
 
@@ -541,12 +539,12 @@ class VmShutdownMonitor(QObject):
                 msgbox.setText(self.tr(
                         "The Qube <b>'{0}'</b> hasn't shutdown within the last "
                         "{1} seconds, do you want to kill it?<br>").format(
-                            vm.name, self.shutdown_time / 1000))
+                            vm.name, self.shutdown_timeout))
                 kill_button = msgbox.addButton(
                     self.tr("Kill it!"), QMessageBox.YesRole)
                 wait_button = msgbox.addButton(
                     self.tr("Wait another {0} seconds...").format(
-                        self.shutdown_time / 1000),
+                        self.shutdown_timeout),
                     QMessageBox.NoRole)
                 ignore_button = msgbox.addButton(self.tr("Don't ask again"),
                                                  QMessageBox.RejectRole)
@@ -1252,8 +1250,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 connected_vms.append(connected_vm)
                 self.get_connected_vms(connected_vm, connected_vms)
 
-    def shutdown_vm(self, vm, shutdown_time=vm_shutdown_timeout, force=False,
-                    check_time=vm_restart_check_timeout, and_restart=False):
+    def shutdown_vm(self, vm, force=False, check_time=vm_restart_check_timeout,
+                    and_restart=False):
         try:
             connected_vms = []
 
@@ -1273,7 +1271,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     return False
 
                 force = True
-                shutdown_time = shutdown_time * len(connected_vms)
                 for connected_vm in connected_vms:
                     connected_vm.shutdown(force=force)
 
@@ -1285,8 +1282,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self.tr("ERROR: {0}").format(ex))
             return False
 
-        self.shutdown_monitor[vm.qid] = VmShutdownMonitor(vm, shutdown_time,
-                                                          check_time,
+        self.shutdown_monitor[vm.qid] = VmShutdownMonitor(vm, check_time,
                                                           and_restart, self)
         # noinspection PyCallByClass,PyTypeChecker
         QTimer.singleShot(check_time, self.shutdown_monitor[
