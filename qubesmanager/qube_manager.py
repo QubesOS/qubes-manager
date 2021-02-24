@@ -766,6 +766,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             column = self.qubes_model.columns_indices[col_no]
             action = self.menu_view.addAction(column)
             action.setData(column)
+            action.setCheckable(True)
             action.toggled.connect(partial(self.showhide_column, col_no))
 
         self.menu_view.addSeparator()
