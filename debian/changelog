@@ -1,3 +1,47 @@
+qubes-manager (4.1.15-1) unstable; urgency=medium
+
+  [ Marek Marczykowski-Górecki ]
+  * create_new_vm: enable/disable "install system" option on template
+    change
+  * tests: update for recent changes
+
+  [ Marta Marczykowska-Górecka ]
+  * Enable word wrap for kernel opts in VM settings
+
+  [ donoban ]
+  * Just warning message improve
+  * Added template_menu
+  * Added properly handling when templates are added and removed
+  * added network_menu
+  * Added 'None' netvm option
+  * Added try/except for change_network
+  * Added network_menu updates
+  * Added QMessageBox if netvm is halted and user wants to start it
+  * Moved change_* funcs after __init__()
+  * Added Template Change Confirmation
+  * Added change network confirmation
+  * Changed checkboxes to icons
+  * Added proper error handling and Check netvm_name is not None
+  * Added error message to dialogs
+  * Added try/except for starting netvm
+  * Better dialog creation
+  * Added wait argument to start_vm
+  * Wrap warnings message in self.tr()
+  * Added default option for network change
+  * Fix possible 'None' default error
+  * Display default netvm
+  * Disable network menu for templates
+  * Add warning if trying to change template VM
+  * Fix too long line
+  * Fix coherence in network menu when adding/removing domains
+
+  [ Marek Marczykowski-Górecki ]
+  * Restore checkboxes to show/hide columns
+  * tests: add a decorator for keeping event listener alive
+  * tests: changing netvm and template via right click
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Thu, 25 Feb 2021 17:47:25 +0100
+
 qubes-manager (4.1.14-1) unstable; urgency=medium
 
   [ Frédéric Pierret (fepitre) ]
