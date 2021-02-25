@@ -21,6 +21,7 @@
 #
 import asyncio
 import contextlib
+import functools
 import logging.handlers
 import unittest
 import unittest.mock
@@ -40,6 +41,24 @@ from qubesmanager.tests import init_qtapp
 
 icon_size = qube_manager.icon_size
 
+
+def listen_for_events(func):
+    """Wrapper for a test that needs events listener to be registered all the time.
+    Note the test still needs to yield to the event loop to actually handle events.
+    """
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        events_listener = \
+            asyncio.ensure_future(self.dispatcher.listen_for_events())
+        # let it connect (run until first yield/await)
+        self.loop.run_until_complete(asyncio.sleep(0))
+        try:
+            return func(self, *args, **kwargs)
+        finally:
+            events_listener.cancel()
+            self.loop.call_soon(self.loop.stop)
+            self.loop.run_forever()
+    return wrapper
 
 class QubeManagerTest(unittest.TestCase):
     def setUp(self):
