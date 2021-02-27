@@ -8,14 +8,17 @@ SETUPTOOLS_OPTS =
 SETUPTOOLS_OPTS += $(if $(wildcard /etc/debian_version),--install-layout=deb,)
 
 export QT_HASH_SEED=0
+export PYTHONHASHSEED=0
 
 qubesmanager/ui_%.py: ui/%.ui
 	pyuic5 --from-imports -o $@ $<
+	touch --reference=$< $@
 
 ui: $(patsubst ui/%.ui,qubesmanager/ui_%.py,$(wildcard ui/*.ui))
 
 res:
 	pyrcc5 -o qubesmanager/resources_rc.py resources.qrc
+	touch --reference=resources.qrc qubesmanager/resources_rc.py
 
 translations:
 	$(LRELEASE_QT5) qubesmanager.pro
