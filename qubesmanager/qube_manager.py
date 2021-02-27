@@ -517,7 +517,7 @@ class VmShutdownMonitor(QObject):
 
     def timeout_reached(self):
         actual = datetime.now() - self.shutdown_started
-        allowed = timedelta(milliseconds=self.shutdown_timeout * 1000)
+        allowed = timedelta(seconds=self.shutdown_timeout)
 
         return actual > allowed
 

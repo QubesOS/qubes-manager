@@ -156,9 +156,10 @@ class QubeManagerTest(unittest.TestCase):
         for row in range(self.dialog.table.model().rowCount()):
             vm = self._get_table_vm(row)
 
-            incl_backups_item = self._get_table_item(row, "Include in backups")
+            incl_backups_item = self._get_table_item(row, "Backup",
+                    Qt.CheckStateRole)
             incl_backups_value = getattr(vm, 'include_in_backups', False)
-            incl_backups_value = "Yes" if incl_backups_value else ""
+            incl_backups_value = Qt.Checked if incl_backups_value else Qt.Unchecked
 
             self.assertEqual(
                 incl_backups_value, incl_backups_item,
@@ -440,11 +441,10 @@ class QubeManagerTest(unittest.TestCase):
         with unittest.mock.patch.object(selected_vm, 'shutdown')\
                 as mock_shutdown:
             self.dialog.action_shutdownvm.trigger()
-            mock_shutdown.assert_called_once_with()
+            mock_shutdown.assert_called_once_with(force=False)
             mock_monitor.assert_called_once_with(
-                selected_vm,
-                unittest.mock.ANY, unittest.mock.ANY,
-                unittest.mock.ANY, unittest.mock.ANY)
+                selected_vm, unittest.mock.ANY, unittest.mock.ANY,
+                unittest.mock.ANY)
             mock_timer.assert_called_once_with(unittest.mock.ANY,
                                                unittest.mock.ANY)
 
@@ -529,10 +529,9 @@ class QubeManagerTest(unittest.TestCase):
         with unittest.mock.patch.object(selected_vm, 'shutdown')\
                 as mock_shutdown:
             action.trigger()
-            mock_shutdown.assert_called_once_with()
+            mock_shutdown.assert_called_once_with(force=True)
             mock_monitor.assert_called_once_with(
-                selected_vm, unittest.mock.ANY,
-                unittest.mock.ANY, True, unittest.mock.ANY)
+                 selected_vm, 1000, True, unittest.mock.ANY)
 
     @unittest.mock.patch('qubesmanager.qube_manager.StartVMThread')
     @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox.question",
@@ -1133,36 +1132,28 @@ class QubeManagerTest(unittest.TestCase):
             else:
                 self.assertEqual(call_count, 0)
 
-    def test_500_logs(self):
+    @unittest.mock.patch('qubesmanager.log_dialog.LogDialog')
+    def test_500_logs(self, mock_logDialog):
         self._select_admin_vm()
 
-        self.assertTrue(self.dialog.logs_menu.isEnabled())
-
-        dom0_logs = set()
-        for c in self.dialog.logs_menu.actions():
-            dom0_logs.add(c.text())
-            self.assertIsNotNone(
-                c.data(), "Empty log file found: {}".format(c.text()))
-            self.assertIn("hypervisor", c.text(),
-                          "Log for dom0 does not contain 'hypervisor'")
+        self.assertTrue(self.dialog.action_show_logs.isEnabled())
+        self.dialog.action_show_logs.trigger()
+        dom0_logs = mock_logDialog.call_args.args[1]
+        self.assertIn('/var/log/xen/console/hypervisor.log', dom0_logs,
+                "Log for dom0 does not contain 'hypervisor'")
 
         selected_vm = self._select_non_admin_vm(running=True).name
 
-        self.assertTrue(self.dialog.logs_menu.isEnabled())
-
-        vm_logs = set()
-        for c in self.dialog.logs_menu.actions():
-            vm_logs.add(c.text())
-            self.assertIsNotNone(
-                c.data(),
-                "Empty log file found: {}".format(c.text()))
-            self.assertIn(
-                selected_vm,
-                c.text(),
-                "Log for {} does not contain its name".format(selected_vm))
+        self.assertTrue(self.dialog.action_show_logs.isEnabled())
+        self.dialog.action_show_logs.trigger()
+        vm_logs = mock_logDialog.call_args.args[1]
+        self.assertIn(
+              selected_vm,
+              ",".join(vm_logs),
+               "Log for {} does not contain its name".format(selected_vm))
 
         self.assertNotEqual(dom0_logs, vm_logs,
-                            "Same logs found for dom0 and non-adminVM")
+                             "Same logs found for dom0 and non-adminVM")
 
     def _find_vm_row(self, vm_name):
         for row in range(self.dialog.table.model().rowCount()):
@@ -1434,8 +1425,9 @@ class VMShutdownMonitorTest(unittest.TestCase):
         mock_vm = unittest.mock.Mock()
         mock_vm.is_running.return_value = True
         mock_vm.start_time = datetime.datetime.now().timestamp() - 3000
+        mock_vm.shutdown_timeout = 60
 
-        monitor = qube_manager.VmShutdownMonitor(mock_vm, shutdown_time=1)
+        monitor = qube_manager.VmShutdownMonitor(mock_vm)
         time.sleep(3)
 
         monitor.check_if_vm_has_shutdown()
@@ -1451,8 +1443,9 @@ class VMShutdownMonitorTest(unittest.TestCase):
         mock_vm = unittest.mock.Mock()
         mock_vm.is_running.return_value = True
         mock_vm.start_time = datetime.datetime.now().timestamp() - 3000
+        mock_vm.shutdown_timeout = 1
 
-        monitor = qube_manager.VmShutdownMonitor(mock_vm, shutdown_time=1)
+        monitor = qube_manager.VmShutdownMonitor(mock_vm)
         time.sleep(3)
         monitor.restart_vm_if_needed = unittest.mock.Mock()
 
@@ -1468,8 +1461,9 @@ class VMShutdownMonitorTest(unittest.TestCase):
         mock_vm = unittest.mock.Mock()
         mock_vm.is_running.return_value = True
         mock_vm.start_time = datetime.datetime.now().timestamp() - 3000
+        mock_vm.shutdown_timeout = 30
 
-        monitor = qube_manager.VmShutdownMonitor(mock_vm, shutdown_time=3000)
+        monitor = qube_manager.VmShutdownMonitor(mock_vm)
         time.sleep(1)
 
         monitor.check_if_vm_has_shutdown()
