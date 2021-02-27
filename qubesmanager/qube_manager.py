@@ -707,6 +707,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.frame_width = 0
         self.frame_height = 0
 
+        self.init_template_menu()
+        self.init_network_menu()
         self.__init_context_menu()
 
         self.tools_context_menu = QMenu(self)
@@ -738,6 +740,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.proxy.setFilterKeyColumn(2)
         self.proxy.setFilterCaseSensitivity(Qt.CaseInsensitive)
         self.proxy.layoutChanged.connect(self.save_sorting)
+        self.proxy.layoutChanged.connect(self.update_template_menu)
+        self.proxy.layoutChanged.connect(self.update_network_menu)
 
         self.show_running.stateChanged.connect(self.invalidate)
         self.show_halted.stateChanged.connect(self.invalidate)
@@ -820,9 +824,77 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         self.check_updates()
 
+    def change_template(self, template):
+        selected_vms = self.get_selected_vms()
+        reply = QMessageBox.question(
+            self, self.tr("Template Change Confirmation"),
+            self.tr("Do you want to change '{0}'<br>"
+                "to Template <b>'{1}'</b>?").format(
+                ', '.join(vm.name for vm in selected_vms), template),
+            QMessageBox.Yes | QMessageBox.Cancel)
+
+        if reply == QMessageBox.Yes:
+            errors = []
+            for info in selected_vms:
+                try:
+                    info.vm.template = template
+                except exc.QubesValueError as ex:
+                    errors.append((info.name, str(ex)))
+
+            for error in errors:
+                QMessageBox.warning(self, self.tr("{0} template change failed!")
+                        .format(error[0]), error[1])
+
+
+    def change_network(self, netvm_name):
+        selected_vms = self.get_selected_vms()
+        reply = QMessageBox.question(
+            self, self.tr("Network Change Confirmation"),
+            self.tr("Do you want to change '{0}'<br>"
+                "to Network <b>'{1}'</b>?").format(
+                ', '.join(vm.name for vm in selected_vms), netvm_name),
+            QMessageBox.Yes | QMessageBox.Cancel)
+
+        if reply != QMessageBox.Yes:
+            return
+
+        if netvm_name not in [None, 'default']:
+            check_power = any(info.state['power'] == 'Running' for info
+                    in self.get_selected_vms())
+            netvm = self.qubes_cache.get_vm(name=netvm_name)
+            if check_power and netvm.state['power'] != 'Running':
+                reply = QMessageBox.question(
+                    self, self.tr("Qube Start Confirmation"),
+                    self.tr("<br>Can not change netvm to a halted Qube.<br>"
+                        "Do you want to start the Qube <b>'{0}'</b>?").format(
+                        netvm_name),
+                    QMessageBox.Yes | QMessageBox.Cancel)
+
+                if reply == QMessageBox.Yes:
+                    self.start_vm(netvm.vm, True)
+                else:
+                    return
+
+        errors = []
+        for info in self.get_selected_vms():
+            try:
+                if netvm_name == 'default':
+                    delattr(info.vm, 'netvm')
+                else:
+                    info.vm.netvm = netvm_name
+            except exc.QubesValueError as ex:
+                errors.append((info.name, str(ex)))
+
+        for error in errors:
+            QMessageBox.warning(self, self.tr("{0} network change failed!")
+                    .format(error[0]), error[1])
+
+
     def __init_context_menu(self):
         self.context_menu = QMenu(self)
         self.context_menu.addAction(self.action_settings)
+        self.context_menu.addAction(self.template_menu.menuAction())
+        self.context_menu.addAction(self.network_menu.menuAction())
         self.context_menu.addAction(self.action_editfwrules)
         self.context_menu.addAction(self.action_appmenus)
         self.context_menu.addAction(self.action_set_keyboard_layout)
@@ -883,6 +955,33 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         progress.setValue(row_no)
 
+    def init_template_menu(self):
+        self.template_menu.clear()
+        for vm in self.qubes_app.domains:
+            if vm.klass == 'TemplateVM':
+                action = self.template_menu.addAction(vm.name)
+                action.setData(vm.name)
+                action.triggered.connect(partial(self.change_template, vm.name))
+
+    def _get_default_netvm(self):
+        for vm in self.qubes_app.domains:
+            if vm.klass == 'AppVM':
+                return vm.property_get_default('netvm')
+
+    def init_network_menu(self):
+        default = self._get_default_netvm()
+        self.network_menu.clear()
+        action = self.network_menu.addAction("None")
+        action.triggered.connect(partial(self.change_network, None))
+        action = self.network_menu.addAction("default ({0})".format(default))
+        action.triggered.connect(partial(self.change_network, 'default'))
+
+        for vm in self.qubes_app.domains:
+            if vm.qid != 0 and vm.provides_network:
+                action = self.network_menu.addAction(vm.name)
+                action.setData(vm.name)
+                action.triggered.connect(partial(self.change_network, vm.name))
+
     def setup_application(self):
         self.qt_app.setApplicationName(self.tr("Qube Manager"))
         self.qt_app.setWindowIcon(QIcon.fromTheme("qubes-manager"))
@@ -940,12 +1039,16 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             domain = self.qubes_app.domains[vm]
             self.qubes_cache.add_vm(domain)
             self.proxy.invalidate()
+            if domain.klass == 'TemplateVM':
+                self.init_template_menu()
         except (exc.QubesException, KeyError):
             pass
 
     def on_domain_removed(self, _submitter, _event, **kwargs):
         self.qubes_cache.remove_vm(name=kwargs['vm'])
         self.proxy.invalidate()
+        self.init_template_menu()
+        self.init_network_menu()
 
     def on_domain_status_changed(self, vm, event, **_kwargs):
         try:
@@ -975,6 +1078,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             return
 
         try:
+            if event.endswith(':provides_network'):
+                self.init_network_menu()
             self.qubes_cache.get_vm(qid=vm.qid).update(event=event)
             self.proxy.invalidate()
         except exc.QubesDaemonAccessError:
@@ -1059,6 +1164,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     def table_selection_changed(self):
         # Since selection could have multiple domains
         # enable all first and then filter them
+        self.template_menu.setEnabled(True)
+        self.network_menu.setEnabled(True)
         for action in self.toolbar.actions() + self.context_menu.actions():
             action.setEnabled(True)
 
@@ -1069,17 +1176,20 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     ['Running', 'Transient', 'Halting', 'Dying']:
                 self.action_resumevm.setEnabled(False)
                 self.action_removevm.setEnabled(False)
+                self.template_menu.setEnabled(False)
             elif vm.state['power'] == 'Paused':
                 self.action_removevm.setEnabled(False)
                 self.action_pausevm.setEnabled(False)
                 self.action_set_keyboard_layout.setEnabled(False)
                 self.action_restartvm.setEnabled(False)
                 self.action_open_console.setEnabled(False)
+                self.template_menu.setEnabled(False)
             elif vm.state['power'] == 'Suspend':
                 self.action_set_keyboard_layout.setEnabled(False)
                 self.action_removevm.setEnabled(False)
                 self.action_pausevm.setEnabled(False)
                 self.action_open_console.setEnabled(False)
+                self.template_menu.setEnabled(False)
             elif vm.state['power'] == 'Halted':
                 self.action_set_keyboard_layout.setEnabled(False)
                 self.action_pausevm.setEnabled(False)
@@ -1102,15 +1212,62 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self.action_editfwrules.setEnabled(False)
                 self.action_set_keyboard_layout.setEnabled(False)
                 self.action_run_command_in_vm.setEnabled(False)
+                self.template_menu.setEnabled(False)
+                self.network_menu.setEnabled(False)
             elif vm.klass == 'DispVM':
                 self.action_appmenus.setEnabled(False)
                 self.action_restartvm.setEnabled(False)
+                self.template_menu.setEnabled(False)
+            elif vm.klass == 'TemplateVM':
+                self.template_menu.setEnabled(False)
+                self.network_menu.setEnabled(False)
 
             if vm.vm.features.get('internal', False):
                 self.action_appmenus.setEnabled(False)
 
             if not vm.updateable and vm.klass != 'AdminVM':
                 self.action_updatevm.setEnabled(False)
+
+        self.update_template_menu()
+        self.update_network_menu()
+
+    def update_template_menu(self):
+        if not self.template_menu.isEnabled():
+            return
+
+        for entry in self.template_menu.actions():
+            entry.setIcon(QIcon())
+
+        vms = self.get_selected_vms()
+        for vm in vms:
+            for entry in self.template_menu.actions():
+                if entry.data() == vm.template:
+                    if len(vms) == 1:
+                        entry.setIcon(QIcon(":/on.png"))
+                    else:
+                        entry.setIcon(QIcon(":/transient.png"))
+
+    def update_network_menu(self):
+        if not self.network_menu.isEnabled():
+            return
+
+        for entry in self.network_menu.actions():
+            entry.setIcon(QIcon())
+
+        if len(self.get_selected_vms()) == 1:
+            icon = QIcon(":/on.png")
+        else:
+            icon = QIcon(":/transient.png")
+
+        for vm in self.get_selected_vms():
+            if vm.netvm == "n/a":
+                self.network_menu.actions()[0].setIcon(QIcon(icon))
+            elif vm.vm.property_is_default("netvm"):
+                self.network_menu.actions()[1].setIcon(QIcon(icon))
+            else:
+                for entry in self.network_menu.actions():
+                    if entry.data() == vm.netvm:
+                        entry.setIcon(icon)
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_createvm_triggered')
@@ -1200,7 +1357,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
             self.start_vm(vm)
 
-    def start_vm(self, vm):
+    def start_vm(self, vm, wait=False):
         if manager_utils.is_running(vm, False):
             return
 
@@ -1208,6 +1365,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.threads_list.append(thread)
         thread.finished.connect(self.clear_threads)
         thread.start()
+
+        if wait:
+            with common_threads.busy_cursor():
+                thread.wait()
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_startvm_tools_install_triggered')
@@ -1579,7 +1740,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     self,
                     self.tr("Error"),
                     self.tr(
-                        "No log files where found for the current selection."))
+                        "No log files were found for the selected qubes."))
 
         except exc.QubesDaemonAccessError:
             pass

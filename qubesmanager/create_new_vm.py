@@ -168,6 +168,8 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
 
         self.vm_type.currentIndexChanged.connect(self.type_change)
 
+        self.template_vm.currentIndexChanged.connect(self.template_change)
+
         self.launch_settings.stateChanged.connect(self.settings_change)
         self.install_system.stateChanged.connect(self.install_change)
 
@@ -286,6 +288,17 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
 
             self.template_vm.setCurrentIndex(0)
             self.template_type = "template"
+
+    def template_change(self):
+        template = self.template_vm.currentData()
+        klass = self.vm_type.currentData()
+
+        if klass in ['TemplateVM', 'StandaloneVM'] and template is None:
+            self.install_system.setEnabled(True)
+            self.install_system.setChecked(True)
+        else:
+            self.install_system.setEnabled(False)
+            self.install_system.setChecked(False)
 
     def install_change(self):
         if self.install_system.isChecked():

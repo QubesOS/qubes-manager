@@ -171,8 +171,7 @@ class NewVmTest(unittest.TestCase):
         self.dialog.name.setText("test-vm")
         for i in range(self.dialog.vm_type.count()):
             opt_text = self.dialog.vm_type.itemText(i).lower()
-            if "standalone" in opt_text and "template" in opt_text and\
-                    "not based" not in opt_text and "empty" not in opt_text:
+            if "standalone" in opt_text:
                 self.dialog.vm_type.setCurrentIndex(i)
                 break
 
@@ -187,10 +186,11 @@ class NewVmTest(unittest.TestCase):
         self.dialog.name.setText("test-vm")
         for i in range(self.dialog.vm_type.count()):
             opt_text = self.dialog.vm_type.itemText(i).lower()
-            if "standalone" in opt_text and\
-                    ("not based" in opt_text or "empty" in opt_text):
+            if "standalone" in opt_text:
                 self.dialog.vm_type.setCurrentIndex(i)
                 break
+        # select "(none)" template
+        self.dialog.template_vm.setCurrentIndex(self.dialog.template_vm.count()-1)
 
         self.__click_ok()
         self.mock_thread.assert_called_once_with(
@@ -210,10 +210,11 @@ class NewVmTest(unittest.TestCase):
 
         for i in range(self.dialog.vm_type.count()):
             opt_text = self.dialog.vm_type.itemText(i).lower()
-            if "standalone" in opt_text and\
-                    ("not based" in opt_text or "empty" in opt_text):
+            if "standalone" in opt_text:
                 self.dialog.vm_type.setCurrentIndex(i)
                 break
+        # select "(none)" template
+        self.dialog.template_vm.setCurrentIndex(self.dialog.template_vm.count()-1)
 
         self.dialog.install_system.setChecked(False)
 
@@ -232,7 +233,7 @@ class NewVmTest(unittest.TestCase):
         # cannot install system on a template-based appvm
         for i in range(self.dialog.vm_type.count()):
             opt_text = self.dialog.vm_type.itemText(i).lower()
-            if "appvm" in opt_text and "standalone" not in opt_text:
+            if "appvm" in opt_text:
                 self.dialog.vm_type.setCurrentIndex(i)
                 break
         self.assertFalse(self.dialog.install_system.isEnabled())
@@ -242,24 +243,26 @@ class NewVmTest(unittest.TestCase):
         # or on a standalone vm cloned from a template
         for i in range(self.dialog.vm_type.count()):
             opt_text = self.dialog.vm_type.itemText(i).lower()
-            if "standalone" in opt_text and "template" in opt_text and\
-                    "not based" not in opt_text and "empty" not in opt_text:
+            if "standalone" in opt_text:
                 self.dialog.vm_type.setCurrentIndex(i)
                 break
+        # select default template
+        self.dialog.template_vm.setCurrentIndex(0)
         self.assertFalse(self.dialog.install_system.isEnabled())
         self.assertTrue(self.dialog.launch_settings.isEnabled())
         self.assertTrue(self.dialog.template_vm.isEnabled())
 
-        # cannot set a template but can install system on a truly empty AppVM
+        # can install system on a truly empty AppVM
         for i in range(self.dialog.vm_type.count()):
             opt_text = self.dialog.vm_type.itemText(i).lower()
-            if "standalone" in opt_text and\
-                    ("not based" in opt_text or "empty" in opt_text):
+            if "standalone" in opt_text:
                 self.dialog.vm_type.setCurrentIndex(i)
                 break
+        self.assertTrue(self.dialog.template_vm.isEnabled())
+        # select "(none)" template
+        self.dialog.template_vm.setCurrentIndex(self.dialog.template_vm.count()-1)
         self.assertTrue(self.dialog.install_system.isEnabled())
         self.assertTrue(self.dialog.launch_settings.isEnabled())
-        self.assertFalse(self.dialog.template_vm.isEnabled())
 
     def __click_ok(self):
         okwidget = self.dialog.buttonBox.button(
