@@ -7,6 +7,8 @@ LRELEASE_QT5 ?= $(if $(wildcard /etc/debian_version),lrelease,lrelease-qt5)
 SETUPTOOLS_OPTS =
 SETUPTOOLS_OPTS += $(if $(wildcard /etc/debian_version),--install-layout=deb,)
 
+export QT_HASH_SEED=0
+
 qubesmanager/ui_%.py: ui/%.ui
 	pyuic5 --from-imports -o $@ $<
 
