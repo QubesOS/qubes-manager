@@ -173,9 +173,6 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
         self.launch_settings.stateChanged.connect(self.settings_change)
         self.install_system.stateChanged.connect(self.install_change)
 
-    def reject(self):
-        self.done(0)
-
     def accept(self):
         vmclass = self.vm_type.currentData()
 
