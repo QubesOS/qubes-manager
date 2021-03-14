@@ -38,7 +38,7 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
 
         self.setupUi(self)
         self.setWindowTitle(
-            self.tr("Boot {vm} from device").format(vm=self.vm.name))
+            self.tr("Boot {vm} from device").format(vm=self.vm))
 
         self.buttonBox.accepted.connect(self.save_and_apply)
         self.buttonBox.rejected.connect(self.reject)
@@ -74,7 +74,7 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
 
     def __warn_if_running__(self):
         try:
-            if self.vm.is_running():
+            if self.qubesapp.domains[self.vm].is_running():
                 QtWidgets.QMessageBox.warning(
                     self,
                     self.tr("Warning!"),
@@ -104,7 +104,8 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
         )
 
         device_choice = []
-        for domain in self.vm.app.domains:
+
+        for domain in self.qubesapp.domains:
             try:
                 for device in domain.devices["block"]:
                     device_choice.append((str(device), device))
