@@ -233,9 +233,6 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
         self.progress.show()
 
     def create_finished(self):
-        self.progress.hide()
-        self.done(0)
-
         if self.thread.msg:
             QtWidgets.QMessageBox.warning(
                 self,
@@ -251,6 +248,8 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
                         ['--cdrom', self.boot_dialog.cdrom_location,
                             self.name.text()])
 
+        self.progress.hide()
+        self.done(0)
 
     def type_change(self):
         template = self.template_vm.currentData()
