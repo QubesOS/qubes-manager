@@ -41,7 +41,6 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
             self.tr("Boot {vm} from device").format(vm=self.vm))
 
         self.buttonBox.accepted.connect(self.save_and_apply)
-        self.buttonBox.rejected.connect(self.reject)
 
         # populate buttons and such
         self.__init_buttons__()
@@ -51,9 +50,6 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
     def setup_application(self):
         self.qapp.setApplicationName(self.tr("Boot Qube From Device"))
         self.qapp.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
-
-    def reject(self):
-        self.done(0)
 
     def save_and_apply(self):
         if self.blockDeviceRadioButton.isChecked():
