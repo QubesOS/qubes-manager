@@ -42,6 +42,7 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
             self.tr("Boot {vm} from device").format(vm=self.vm))
 
         self.buttonBox.accepted.connect(self.save_and_apply)
+        self.buttonBox.rejected.connect(self.reject)
 
         # populate buttons and such
         self.__init_buttons__()
