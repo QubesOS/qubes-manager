@@ -1028,7 +1028,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 self.vm.name, self.qapp, self.qubesapp, self)
         if boot_dialog.exec_():
             self.save_and_apply()
-            qvm_start.main(['--cdrom', boot_dialog.cdrom_location, self.vm.name])
+            qvm_start.main(
+                    ['--cdrom', boot_dialog.cdrom_location, self.vm.name])
 
     def virt_mode_changed(self, new_idx):  # pylint: disable=unused-argument
         self.update_pv_warning()
