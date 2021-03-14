@@ -32,6 +32,7 @@ import qubesadmin.tools
 import qubesadmin.exc
 
 from . import utils
+from . import bootfromdevice
 
 from .ui_newappvmdlg import Ui_NewVMDlg  # pylint: disable=import-error
 
@@ -102,6 +103,7 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
 
         self.thread = None
         self.progress = None
+        self.boot_dialog = None
 
         utils.initialize_widget_with_labels(
             widget=self.label,
@@ -175,8 +177,13 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
 
     def accept(self):
         vmclass = self.vm_type.currentData()
-
         name = str(self.name.text())
+
+        if self.install_system.isChecked():
+            self.boot_dialog = bootfromdevice.VMBootFromDeviceWindow(
+                name, self.qtapp, self.app, self, True)
+            if not self.boot_dialog.exec_():
+                return
 
         if name in self.app.domains:
             QtWidgets.QMessageBox.warning(
@@ -227,6 +234,7 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
 
     def create_finished(self):
         self.progress.hide()
+        self.done(0)
 
         if self.thread.msg:
             QtWidgets.QMessageBox.warning(
@@ -234,15 +242,15 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
                 self.tr("Error creating the qube!"),
                 self.tr("ERROR: {0}").format(self.thread.msg))
 
-        self.done(0)
-
-        if not self.thread.msg:
+        else:
             if self.launch_settings.isChecked():
                 subprocess.check_call(['qubes-vm-settings',
                                        str(self.name.text())])
             if self.install_system.isChecked():
-                subprocess.check_call(
-                    ['qubes-vm-boot-from-device', str(self.name.text())])
+                qubesadmin.tools.qvm_start.main(
+                        ['--cdrom', self.boot_dialog.cdrom_location,
+                            self.name.text()])
+
 
     def type_change(self):
         template = self.template_vm.currentData()

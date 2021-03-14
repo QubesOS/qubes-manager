@@ -28,13 +28,14 @@ from qubesadmin import exc
 
 class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
                              QtWidgets.QDialog):
-    def __init__(self, vm, qapp, qubesapp=None, parent=None):
+    def __init__(self, vm, qapp, qubesapp=None, parent=None, new_vm = False):
         super().__init__(parent)
 
         self.vm = vm
         self.qapp = qapp
         self.qubesapp = qubesapp
         self.cdrom_location = None
+        self.new_vm = new_vm
 
         self.setupUi(self)
         self.setWindowTitle(
@@ -69,6 +70,9 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
         self.accept()
 
     def __warn_if_running__(self):
+        if self.new_vm:
+            return
+
         try:
             if self.qubesapp.domains[self.vm].is_running():
                 QtWidgets.QMessageBox.warning(
