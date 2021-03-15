@@ -1275,7 +1275,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot(name='on_action_createvm_triggered')
     def action_createvm_triggered(self):
         with common_threads.busy_cursor():
-            create_window = create_new_vm.NewVmDlg(self.qt_app, self.qubes_app, self)
+            create_window = create_new_vm.NewVmDlg(
+                    self.qt_app, self.qubes_app, self)
         create_window.exec_()
 
     # noinspection PyArgumentList
