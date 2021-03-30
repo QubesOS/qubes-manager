@@ -631,7 +631,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Warning!"),
-                self.tr("Connecting a TemplateVM directly to a network is higly"
+                self.tr("Connecting a TemplateVM directly to a network is highly"
                         " discouraged! <br> <small>You are breaking a basic par"
                         "t of Qubes security and there is probably no real need"
                         " to do so. Continue at your own risk.</small>"))
