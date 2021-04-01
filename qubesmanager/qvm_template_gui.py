@@ -38,7 +38,7 @@ class Template(typing.NamedTuple):
         'Name',
         'Version',
         'Reponame',
-        'Size (MB)',
+        'Download Size (MB)',
         'Build Time',
         'Install Time',
         'License',

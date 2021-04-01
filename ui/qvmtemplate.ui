@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>465</width>
+    <width>930</width>
     <height>478</height>
    </rect>
   </property>
@@ -22,6 +22,13 @@
       </property>
       <property name="value">
        <number>-1</number>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>Select actions to perform in &quot;Status&quot; column:</string>
       </property>
      </widget>
     </item>
@@ -50,7 +57,7 @@
        <bool>true</bool>
       </property>
       <property name="placeholderText">
-       <string>Click the 'Status' column to change the status of templates.</string>
+       <string>Use &quot;Status&quot; column to select actions to execute on a given template; when desired actions are selected, use &quot;Apply&quot; to perform them.</string>
       </property>
      </widget>
     </item>
@@ -61,7 +68,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>465</width>
+     <width>930</width>
      <height>24</height>
     </rect>
    </property>
@@ -70,6 +77,9 @@
   <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
     <string>toolBar</string>
+   </property>
+   <property name="toolButtonStyle">
+    <enum>Qt::ToolButtonTextUnderIcon</enum>
    </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
@@ -95,7 +105,7 @@
      <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
-    <string>Install</string>
+    <string>Apply</string>
    </property>
   </action>
  </widget>
