@@ -15,7 +15,7 @@ from . import utils
 
 #pylint: disable=invalid-name
 
-BASE_CMD = ['qvm-template', '--enablerepo=*', '--yes', '--quiet']
+BASE_CMD = ['qvm-template', '--enablerepo=*', '--yes']
 
 class Template(typing.NamedTuple):
     status: str
@@ -291,6 +291,19 @@ class TemplateInstallProgressDialog(
         self.actions = actions
         self.buttonBox.hide()
 
+    @staticmethod
+    def _process_cr(text):
+        """Reduce lines replaced using CR character (\r)"""
+        while '\r' in text:
+            prefix, suffix = text.rsplit('\r', 1)
+            if '\n' in prefix:
+                prefix = prefix.rsplit('\n', 1)[0]
+                prefix += '\n'
+            else:
+                prefix = ''
+            text = prefix + suffix
+        return text
+
     def install(self):
         async def coro():
             self.actions.sort()
@@ -313,12 +326,14 @@ class TemplateInstallProgressDialog(
                     stderr=asyncio.subprocess.STDOUT,
                     env=envs)
                 #pylint: disable=cell-var-from-loop
+                status_text = ''
                 while True:
-                    line = await proc.stdout.readline()
+                    line = await proc.stdout.read(100)
                     if line == b'':
                         break
-                    line = line.decode('ASCII')
-                    self.textEdit.append(line.rstrip())
+                    line = line.decode('UTF-8')
+                    status_text = self._process_cr(status_text + line)
+                    self.textEdit.setPlainText(status_text)
                 if await proc.wait() != 0:
                     self.buttonBox.show()
                     self.progressBar.setMaximum(100)
