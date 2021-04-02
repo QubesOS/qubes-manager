@@ -5,18 +5,19 @@ import json
 import os
 import typing
 
-import PyQt5
-import PyQt5.QtWidgets
+import PyQt5  # pylint: disable=import-error
+import PyQt5.QtWidgets  # pylint: disable=import-error
 
-from . import ui_qvmtemplate
-from . import ui_templateinstallconfirmdlg
-from . import ui_templateinstallprogressdlg
+from . import ui_qvmtemplate  # pylint: disable=no-name-in-module
+from . import ui_templateinstallconfirmdlg  # pylint: disable=no-name-in-module
+from . import ui_templateinstallprogressdlg  # pylint: disable=no-name-in-module
 from . import utils
 
 #pylint: disable=invalid-name
 
 BASE_CMD = ['qvm-template', '--enablerepo=*', '--yes']
 
+# pylint: disable=too-few-public-methods,inherit-non-class
 class Template(typing.NamedTuple):
     status: str
     name: str
