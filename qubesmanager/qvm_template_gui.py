@@ -368,6 +368,8 @@ class QvmTemplateWindow(
 
         super().__init__()
         self.setupUi(self)
+        self.listing.header().setSectionResizeMode(
+            PyQt5.QtWidgets.QHeaderView.ResizeToContents)
 
         self.qubes_app = qubes_app
         self.qt_app = qt_app
