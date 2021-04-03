@@ -26,9 +26,9 @@ class Template(typing.NamedTuple):
     size: int
     buildtime: str
     installtime: str
-    licence: str
-    url: str
-    summary: str
+    #licence: str
+    #url: str
+    #summary: str
     # ---- internal ----
     description: str
     default_status: str
@@ -38,13 +38,13 @@ class Template(typing.NamedTuple):
         'Status',
         'Name',
         'Version',
-        'Reponame',
+        'Repository',
         'Download Size (MB)',
-        'Build Time',
-        'Install Time',
-        'License',
-        'URL',
-        'Summary'
+        'Build',
+        'Install',
+        #'License',
+        #'URL',
+        #'Summary'
     ]
 
     @staticmethod
@@ -57,9 +57,8 @@ class Template(typing.NamedTuple):
             int(entry['size']) // 1000000,
             entry['buildtime'],
             entry['installtime'],
-            entry['license'],
-            entry['url'],
-            entry['summary'],
+            #entry['license'],
+            #entry['url'],
             entry['description'],
             status
         )
