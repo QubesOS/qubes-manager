@@ -1,5 +1,6 @@
 import asyncio
 import collections
+from datetime import datetime
 import itertools
 import json
 import os
@@ -17,6 +18,9 @@ from . import utils
 
 BASE_CMD = ['qvm-template', '--enablerepo=*', '--yes']
 
+# singleton for "no date"
+ZERO_DATE = datetime.utcfromtimestamp(0)
+
 # pylint: disable=too-few-public-methods,inherit-non-class
 class Template(typing.NamedTuple):
     status: str
@@ -24,8 +28,8 @@ class Template(typing.NamedTuple):
     evr: str
     reponame: str
     size: int
-    buildtime: str
-    installtime: str
+    buildtime: datetime
+    installtime: typing.Optional[datetime]
     #licence: str
     #url: str
     #summary: str
@@ -49,14 +53,20 @@ class Template(typing.NamedTuple):
 
     @staticmethod
     def build(status, entry):
+        cli_format = '%Y-%m-%d %H:%M:%S'
+        buildtime = datetime.strptime(entry['buildtime'], cli_format)
+        if entry['installtime']:
+            installtime = datetime.strptime(entry['installtime'], cli_format)
+        else:
+            installtime = ZERO_DATE
         return Template(
             status,
             entry['name'],
             '%s:%s-%s' % (entry['epoch'], entry['version'], entry['release']),
             entry['reponame'],
             int(entry['size']) // 1000000,
-            entry['buildtime'],
-            entry['installtime'],
+            buildtime,
+            installtime,
             #entry['license'],
             #entry['url'],
             entry['description'],
@@ -159,15 +169,20 @@ class TemplateModel(PyQt5.QtCore.QAbstractItemModel):
 
     def data(self, index, role=PyQt5.QtCore.Qt.DisplayRole):
         if index.isValid():
+            data = self.children[index.row()][index.column()]
             if role == PyQt5.QtCore.Qt.DisplayRole:
-                return self.children[index.row()][index.column()]
+                if data is ZERO_DATE:
+                    return ''
+                if isinstance(data, datetime):
+                    return data.strftime('%d %b %Y')
+                return data
             if role == PyQt5.QtCore.Qt.FontRole:
                 font = PyQt5.QtGui.QFont()
                 tpl = self.children[index.row()]
                 font.setBold(tpl.status != tpl.default_status)
                 return font
             if role == PyQt5.QtCore.Qt.TextAlignmentRole:
-                if isinstance(self.children[index.row()][index.column()], int):
+                if isinstance(data, int):
                     return PyQt5.QtCore.Qt.AlignRight
                 return PyQt5.QtCore.Qt.AlignLeft
         return None
