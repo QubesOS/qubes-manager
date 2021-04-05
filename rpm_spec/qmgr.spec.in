@@ -64,6 +64,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/bin/qubes-qube-manager
 /usr/bin/qubes-log-viewer
 /usr/bin/qubes-template-manager
+/usr/bin/qvm-template-gui
 /usr/libexec/qubes-manager/mount_for_backup.sh
 /usr/libexec/qubes-manager/qvm_about.sh
 /usr/libexec/qubes-manager/dsa-4371-update
@@ -92,6 +93,7 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/bootfromdevice.py
 %{python3_sitelib}/qubesmanager/device_list.py
 %{python3_sitelib}/qubesmanager/template_manager.py
+%{python3_sitelib}/qubesmanager/qvm_template_gui.py
 
 %{python3_sitelib}/qubesmanager/resources_rc.py
 
@@ -111,6 +113,9 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/ui_devicelist.py
 %{python3_sitelib}/qubesmanager/ui_templatemanager.py
 %{python3_sitelib}/qubesmanager/ui_clonevmdlg.py
+%{python3_sitelib}/qubesmanager/ui_qvmtemplate.py
+%{python3_sitelib}/qubesmanager/ui_templateinstallconfirmdlg.py
+%{python3_sitelib}/qubesmanager/ui_templateinstallprogressdlg.py
 %{python3_sitelib}/qubesmanager/i18n/qubesmanager_*.qm
 %{python3_sitelib}/qubesmanager/i18n/qubesmanager_*.ts
 

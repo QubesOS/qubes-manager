@@ -27,6 +27,7 @@ if __name__ == '__main__':
                 'qubes-backup-restore = qubesmanager.restore:main',
                 'qubes-qube-manager = qubesmanager.qube_manager:main',
                 'qubes-log-viewer = qubesmanager.log_dialog:main',
-                'qubes-template-manager = qubesmanager.template_manager:main'
+                'qubes-template-manager = qubesmanager.template_manager:main',
+                'qvm-template-gui = qubesmanager.qvm_template_gui:main'
             ],
         })
