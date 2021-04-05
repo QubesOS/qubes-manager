@@ -84,7 +84,7 @@ def main():
     qubes_app = Qubes()
     qt_app = QtWidgets.QApplication(sys.argv)
 
-    log_window = LogDialog(qubes_app, sys.argv[1])
+    log_window = LogDialog(qubes_app, sys.argv[1:])
     log_window.show()
 
     qt_app.exec_()
