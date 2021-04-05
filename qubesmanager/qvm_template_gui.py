@@ -168,6 +168,7 @@ class TemplateModel(PyQt5.QtCore.QAbstractItemModel):
         return index == PyQt5.QtCore.QModelIndex()
 
     def data(self, index, role=PyQt5.QtCore.Qt.DisplayRole):
+        # pylint: disable=too-many-return-statements
         if index.isValid():
             data = self.children[index.row()][index.column()]
             if role == PyQt5.QtCore.Qt.DisplayRole:
