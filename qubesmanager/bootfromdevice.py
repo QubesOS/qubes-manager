@@ -170,7 +170,8 @@ def main(args=None):
     vm = args.domains.pop()
 
     window = utils.run_synchronous(functools.partial(VMBootFromDeviceWindow, vm))
-    qvm_start.main(['--cdrom', window.cdrom_location, vm.name])
+    if window.result() == 1 and window.cdrom_location is not None:
+        qvm_start.main(['--cdrom', window.cdrom_location, vm.name])
 
 if __name__ == "__main__":
     main()
