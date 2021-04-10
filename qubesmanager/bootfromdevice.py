@@ -24,6 +24,7 @@ from . import ui_bootfromdevice  # pylint: disable=no-name-in-module
 from PyQt5 import QtWidgets, QtGui  # pylint: disable=import-error
 from qubesadmin import tools
 from qubesadmin import exc
+from qubesadmin.tools import qvm_start
 
 
 class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
@@ -168,8 +169,8 @@ def main(args=None):
     args = parser.parse_args(args)
     vm = args.domains.pop()
 
-    utils.run_synchronous(functools.partial(VMBootFromDeviceWindow, vm))
-
+    window = utils.run_synchronous(functools.partial(VMBootFromDeviceWindow, vm))
+    qvm_start.main(['--cdrom', window.cdrom_location, vm.name])
 
 if __name__ == "__main__":
     main()
