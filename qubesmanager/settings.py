@@ -627,7 +627,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.warn_too_much_mem_label.setVisible(True)
 
     def check_warn_templatenetvm(self):
-        if self.vm.klass == 'TemplateVM':
+        if self.vm.klass != 'TemplateVM':
+            return
+
+        current_netvm = self.netVM.currentData()
+        if current_netvm is None:
+            return
+
+        if current_netvm != qubesadmin.DEFAULT:
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Warning!"),
