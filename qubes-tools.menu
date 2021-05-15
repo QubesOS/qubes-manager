@@ -12,6 +12,7 @@
             <Filename>qubes-global-settings.desktop</Filename>
             <Filename>qubes-qube-manager.desktop</Filename>
             <Filename>qubes-template-manager.desktop</Filename>
+            <Filename>qubes-update-gui.desktop</Filename>
           </Include>
         </Menu>
 </Menu>
