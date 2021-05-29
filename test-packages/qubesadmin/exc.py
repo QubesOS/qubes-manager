@@ -6,6 +6,10 @@ class QubesException(BaseException):
     pass
 
 
+class QubesVMNotFoundError(BaseException):
+    pass
+
+
 class QubesVMNotStartedError(BaseException):
     pass
 

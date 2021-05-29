@@ -1059,7 +1059,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                             update(event="outdated")
             self.proxy.invalidate()
             self.table_selection_changed()
-        except exc.QubesDaemonAccessError:
+        except (exc.QubesDaemonAccessError, exc.QubesVMNotFoundError):
             return  # the VM was deleted before its status could be updated
         except KeyError:  # adding the VM failed for some reason
             self.on_domain_added(None, None, vm)
