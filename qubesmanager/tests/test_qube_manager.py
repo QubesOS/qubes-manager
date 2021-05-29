@@ -457,11 +457,10 @@ class QubeManagerTest(unittest.TestCase):
         with unittest.mock.patch.object(selected_vm, 'shutdown')\
                 as mock_shutdown:
             self.dialog.action_shutdownvm.trigger()
-            mock_shutdown.assert_called_once_with()
+            mock_shutdown.assert_called_once_with(force=False)
             mock_monitor.assert_called_once_with(
-                selected_vm,
-                unittest.mock.ANY, unittest.mock.ANY,
-                unittest.mock.ANY, unittest.mock.ANY)
+                selected_vm, unittest.mock.ANY, unittest.mock.ANY,
+                unittest.mock.ANY)
             mock_timer.assert_called_once_with(unittest.mock.ANY,
                                                unittest.mock.ANY)
 
@@ -546,10 +545,9 @@ class QubeManagerTest(unittest.TestCase):
         with unittest.mock.patch.object(selected_vm, 'shutdown')\
                 as mock_shutdown:
             action.trigger()
-            mock_shutdown.assert_called_once_with()
+            mock_shutdown.assert_called_once_with(force=True)
             mock_monitor.assert_called_once_with(
-                selected_vm, unittest.mock.ANY,
-                unittest.mock.ANY, True, unittest.mock.ANY)
+                 selected_vm, 1000, True, unittest.mock.ANY)
 
     @unittest.mock.patch('qubesmanager.qube_manager.StartVMThread')
     @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox.question",
@@ -1484,7 +1482,7 @@ class QubeManagerTest(unittest.TestCase):
         for row in range(self.dialog.table.model().rowCount()):
             template = self._get_table_item(row, "Template")
             vm = self._get_table_vm(row)
-            if template != 'AdminVM' and \
+            if template != 'AdminVM' and not vm.provides_network and \
                     (running is None
                      or (running and vm.is_running())
                      or (not running and not vm.is_running())):
@@ -1691,8 +1689,9 @@ class VMShutdownMonitorTest(unittest.TestCase):
         mock_vm = unittest.mock.Mock()
         mock_vm.is_running.return_value = True
         mock_vm.start_time = datetime.datetime.now().timestamp() - 3000
+        mock_vm.shutdown_timeout = 60
 
-        monitor = qube_manager.VmShutdownMonitor(mock_vm, shutdown_time=1)
+        monitor = qube_manager.VmShutdownMonitor(mock_vm)
         time.sleep(3)
 
         monitor.check_if_vm_has_shutdown()
@@ -1708,8 +1707,9 @@ class VMShutdownMonitorTest(unittest.TestCase):
         mock_vm = unittest.mock.Mock()
         mock_vm.is_running.return_value = True
         mock_vm.start_time = datetime.datetime.now().timestamp() - 3000
+        mock_vm.shutdown_timeout = 1
 
-        monitor = qube_manager.VmShutdownMonitor(mock_vm, shutdown_time=1)
+        monitor = qube_manager.VmShutdownMonitor(mock_vm)
         time.sleep(3)
         monitor.restart_vm_if_needed = unittest.mock.Mock()
 
@@ -1725,8 +1725,9 @@ class VMShutdownMonitorTest(unittest.TestCase):
         mock_vm = unittest.mock.Mock()
         mock_vm.is_running.return_value = True
         mock_vm.start_time = datetime.datetime.now().timestamp() - 3000
+        mock_vm.shutdown_timeout = 30
 
-        monitor = qube_manager.VmShutdownMonitor(mock_vm, shutdown_time=3000)
+        monitor = qube_manager.VmShutdownMonitor(mock_vm)
         time.sleep(1)
 
         monitor.check_if_vm_has_shutdown()
