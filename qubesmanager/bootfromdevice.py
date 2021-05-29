@@ -169,7 +169,8 @@ def main(args=None):
     args = parser.parse_args(args)
     vm = args.domains.pop()
 
-    window = utils.run_synchronous(functools.partial(VMBootFromDeviceWindow, vm))
+    window = utils.run_synchronous(
+        functools.partial(VMBootFromDeviceWindow, vm))
     if window.result() == 1 and window.cdrom_location is not None:
         qvm_start.main(['--cdrom', window.cdrom_location, vm.name])
 
