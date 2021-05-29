@@ -1273,7 +1273,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot(name='on_action_createvm_triggered')
     def action_createvm_triggered(self):
         with common_threads.busy_cursor():
-            create_window = create_new_vm.NewVmDlg(self.qt_app, self.qubes_app)
+            create_window = create_new_vm.NewVmDlg(
+                    self.qt_app, self.qubes_app, self)
         create_window.exec_()
 
     # noinspection PyArgumentList
@@ -1519,8 +1520,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         try:
             with common_threads.busy_cursor():
                 settings_window = settings.VMSettingsWindow(
-                    vm, init_page=tab, qapp=self.qt_app,
-                    qubesapp=self.qubes_app)
+                    vm, tab, self.qt_app, self.qubes_app, self)
             settings_window.show()
             self.settings_windows[vm.name] = settings_window
         except exc.QubesException as ex:
@@ -1623,7 +1623,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         with common_threads.busy_cursor():
             global_settings_window = global_settings.GlobalSettingsWindow(
                 self.qt_app,
-                self.qubes_app)
+                self.qubes_app,
+                self)
         global_settings_window.show()
         self.settings_windows['global_settings_window'] = global_settings_window
 
@@ -1646,7 +1647,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     def action_restore_triggered(self):
         with common_threads.busy_cursor():
             restore_window = restore.RestoreVMsWindow(self.qt_app,
-                                                      self.qubes_app)
+                                                      self.qubes_app, self)
         restore_window.exec_()
 
     # noinspection PyArgumentList
@@ -1696,7 +1697,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_about_qubes_triggered')
     def action_about_qubes_triggered(self):  # pylint: disable=no-self-use
-        about = AboutDialog()
+        about = AboutDialog(self)
         about.exec_()
 
     def createPopupMenu(self):  # pylint: disable=invalid-name

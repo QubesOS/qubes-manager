@@ -564,3 +564,5 @@ def run_synchronous(window_class):
 
     qt_app.exec_()
     qt_app.exit()
+
+    return window

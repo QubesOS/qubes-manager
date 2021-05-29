@@ -35,7 +35,7 @@ class TemplateManagerWindow(
 
     def __init__(self, qt_app, qubes_app, dispatcher, parent=None):
         # pylint: disable=unused-argument
-        super().__init__()
+        super().__init__(parent)
         self.setupUi(self)
 
         self.qubes_app = qubes_app

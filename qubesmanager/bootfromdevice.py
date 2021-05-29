@@ -23,22 +23,24 @@ from . import utils
 from . import ui_bootfromdevice  # pylint: disable=no-name-in-module
 from PyQt5 import QtWidgets, QtGui  # pylint: disable=import-error
 from qubesadmin import tools
-from qubesadmin.tools import qvm_start
 from qubesadmin import exc
+from qubesadmin.tools import qvm_start
 
 
 class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
                              QtWidgets.QDialog):
-    def __init__(self, vm, qapp, qubesapp=None, parent=None):
+    def __init__(self, vm, qapp, qubesapp=None, parent=None, new_vm=False):
         super().__init__(parent)
 
         self.vm = vm
         self.qapp = qapp
         self.qubesapp = qubesapp
+        self.cdrom_location = None
+        self.new_vm = new_vm
 
         self.setupUi(self)
         self.setWindowTitle(
-            self.tr("Boot {vm} from device").format(vm=self.vm.name))
+            self.tr("Boot {vm} from device").format(vm=self.vm))
 
         self.buttonBox.accepted.connect(self.save_and_apply)
         self.buttonBox.rejected.connect(self.reject)
@@ -52,14 +54,11 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
         self.qapp.setApplicationName(self.tr("Boot Qube From Device"))
         self.qapp.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
 
-    def reject(self):
-        self.done(0)
-
     def save_and_apply(self):
         if self.blockDeviceRadioButton.isChecked():
-            cdrom_location = self.blockDeviceComboBox.currentText()
+            self.cdrom_location = self.blockDeviceComboBox.currentText()
         elif self.fileRadioButton.isChecked():
-            cdrom_location = str(self.fileVM.currentData()) + \
+            self.cdrom_location = str(self.fileVM.currentData()) + \
                              ":" + self.pathText.text()
         else:
             QtWidgets.QMessageBox.warning(
@@ -70,14 +69,14 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
 
         # warn user if the VM is currently running
         self.__warn_if_running__()
-
-        qvm_start.main(['--cdrom', cdrom_location, self.vm.name])
-
-        self.done(0)
+        self.accept()
 
     def __warn_if_running__(self):
+        if self.new_vm:
+            return
+
         try:
-            if self.vm.is_running():
+            if self.qubesapp.domains[self.vm].is_running():
                 QtWidgets.QMessageBox.warning(
                     self,
                     self.tr("Warning!"),
@@ -107,7 +106,8 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
         )
 
         device_choice = []
-        for domain in self.vm.app.domains:
+
+        for domain in self.qubesapp.domains:
             try:
                 for device in domain.devices["block"]:
                     device_choice.append((str(device), device))
@@ -169,8 +169,9 @@ def main(args=None):
     args = parser.parse_args(args)
     vm = args.domains.pop()
 
-    utils.run_synchronous(functools.partial(VMBootFromDeviceWindow, vm))
-
+    window = utils.run_synchronous(functools.partial(VMBootFromDeviceWindow, vm))
+    if window.result() == 1 and window.cdrom_location is not None:
+        qvm_start.main(['--cdrom', window.cdrom_location, vm.name])
 
 if __name__ == "__main__":
     main()

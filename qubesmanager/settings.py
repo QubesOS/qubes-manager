@@ -30,8 +30,10 @@ import traceback
 from qubesadmin.tools import QubesArgumentParser
 from qubesadmin import devices
 from qubesadmin import utils as admin_utils
+from qubesadmin.tools import qvm_start
 import qubesadmin.exc
 
+from . import bootfromdevice
 from . import utils
 from . import multiselectwidget
 from . import common_threads
@@ -1023,8 +1025,12 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.check_mem_changes()
 
     def boot_from_cdrom_button_pressed(self):
-        self.save_and_apply()
-        subprocess.check_call(['qubes-vm-boot-from-device', self.vm.name])
+        boot_dialog = bootfromdevice.VMBootFromDeviceWindow(
+                self.vm.name, self.qapp, self.qubesapp, self)
+        if boot_dialog.exec_():
+            self.save_and_apply()
+            qvm_start.main(
+                    ['--cdrom', boot_dialog.cdrom_location, self.vm.name])
 
     def virt_mode_changed(self, new_idx):  # pylint: disable=unused-argument
         self.update_pv_warning()
