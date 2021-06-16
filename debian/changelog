@@ -1,3 +1,80 @@
+qubes-manager (4.1.16-1) unstable; urgency=medium
+
+  [ WillyPillow ]
+  * qvm-template: Initial GUI implementation.
+  * qvm-template: Port initial code to PyQt.
+  * qvm-template: Disable multi-selection for simplicity.
+  * qvm-template: Change size unit from kB to MB.
+  * qvm-template: Include files in deb/rpm package
+
+  [ Marek Marczykowski-Górecki ]
+  * qvm-template-gui: UI improvements
+  * qvm-template-gui: improve displaying progress
+  * Make pylint happy
+  * qvm-template-gui: UX improvements
+  * qvm-template-gui: change date format to '%d %b %Y'
+  * qvm-template-gui: auto resize columns to the content
+
+  [ Demi Marie Obenour ]
+  * Pass the command line arguments to LogDialog
+
+  [ Encrypted Giraffe ]
+  * Fix spelling mistake in warning message
+
+  [ Frédéric Pierret (fepitre) ]
+  * spec: improve reproducibility when generating QT files
+  * Fix pyc unreproducibility
+
+  [ Marek Marczykowski-Górecki ]
+  * Make pylint happy
+
+  [ donoban ]
+  * Cascade shutdown
+  * Fix pylint warnings
+  * Avoid infite loop while waiting vm to shutdown
+  * Fix wrong identation (thanks pylint)
+  * First initiate shutdown for all vm's, then wait
+  * Don't wait!
+  * Rewrite without cascade var
+  * Join all connected VM's in same warning
+  * use force=True when restarting a netvm with connected vms
+  * Show all non halted vm's as running
+  * Fix pylint warning
+  * Use internal vm.shutdown_timeout
+  * Tests suite fixes
+  * Improved window size and margins
+  * Removed qvm_start call from bootfromdevice
+  * Removed unneded reject() definition
+  * Use vm.name instead vm object
+  * Removed unneeded reject() definition
+  * Added bootfromdevice dialog to create_new_vm (instead
+    subprocess.call)
+  * Fix 'Line too long'
+  * Fix pylint warning
+  * Close dialog after finish qvm_start()
+  * Restored reject() call with ui
+  * Revert "Restored reject() call with ui"
+  * Retored reject() connect
+  * Added parent to all __init__()
+  * Fix pylint warning
+  * Fix main()
+  * Add check before launch qvm_start()
+
+  [ 3hhh ]
+  * manager: Handle removal of VM during on_shutdown.
+  * mock QubesVMNotFoundError
+
+  [ Saswat Padhi ]
+  * Avoid spurious warnings when setting NetVM
+
+  [ herypt ]
+  * Add updater to Qubes Tools menu
+
+  [ Marek Marczykowski-Górecki ]
+  * Fix too long line
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Wed, 16 Jun 2021 17:26:40 +0200
+
 qubes-manager (4.1.15-1) unstable; urgency=medium
 
   [ Marek Marczykowski-Górecki ]
