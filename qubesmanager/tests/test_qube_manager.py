@@ -1504,7 +1504,7 @@ class QubeManagerTest(unittest.TestCase):
             template = self._get_table_item(row, "Template")
             vm = self._get_table_vm(row)
             if template == 'TemplateVM' and \
-                    (template not in different_than) and \
+                    (vm not in different_than) and \
                     (running is None
                      or (bool(running) == bool(vm.is_running()))):
                 index = self.dialog.table.model().index(row, 0)
