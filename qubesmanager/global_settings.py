@@ -50,16 +50,15 @@ def _run_qrexec_repo(service, arg=''):
         env=env
     )
     if p.stderr:
-        raise exc.QubesException(
-            QtCore.QCoreApplication.translate(
-                "GlobalSettings", 'qrexec call stderr was not empty'),
-            {'stderr': p.stderr.decode('utf-8')})
-    if p.returncode != 0:
-        raise exc.QubesException(
-            QtCore.QCoreApplication.translate(
+        msg = QtCore.QCoreApplication.translate(
                 "GlobalSettings",
-                'qrexec call exited with non-zero return code'),
-            {'returncode': p.returncode})
+                'qrexec call stderr was not empty')
+        raise exc.QubesException(msg + '(%s)', p.stderr.decode('utf-8'))
+    if p.returncode != 0:
+        msg = QtCore.QCoreApplication.translate(
+                "GlobalSettings",
+                'qrexec call exited with non-zero return code')
+        raise exc.QubesException(msg + '(%s)', p.returncode)
     return p.stdout.decode('utf-8')
 
 
@@ -441,29 +440,30 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             self.itl_tmpl_updates_repo.setEnabled(False)
             self.comm_tmpl_updates_repo.setEnabled(False)
 
-        if repos['qubes-dom0-unstable']['enabled']:
+        if repos.get('qubes-dom0-unstable', {}).get('enabled', None):
             self.dom0_updates_repo.setCurrentIndex(3)
-        elif repos['qubes-dom0-current-testing']['enabled']:
+        elif repos.get('qubes-dom0-current-testing', {}).get('enabled', None):
             self.dom0_updates_repo.setCurrentIndex(2)
-        elif repos['qubes-dom0-security-testing']['enabled']:
+        elif repos.get('qubes-dom0-security-testing', {}).get('enabled', None):
             self.dom0_updates_repo.setCurrentIndex(1)
-        elif repos['qubes-dom0-current']['enabled']:
+        elif repos.get('qubes-dom0-current', {}).get('enabled', None):
             self.dom0_updates_repo.setCurrentIndex(0)
         else:
             raise Exception(
                 self.tr('Cannot detect enabled dom0 update repositories'))
 
-        if repos['qubes-templates-itl-testing']['enabled']:
+        if repos.get('qubes-templates-itl-testing', {}).get('enabled', None):
             self.itl_tmpl_updates_repo.setCurrentIndex(1)
-        elif repos['qubes-templates-itl']['enabled']:
+        elif repos.get('qubes-templates-itl', {}).get('enabled', None):
             self.itl_tmpl_updates_repo.setCurrentIndex(0)
         else:
             raise Exception(self.tr('Cannot detect enabled ITL template update '
                                     'repositories'))
 
-        if repos['qubes-templates-community-testing']['enabled']:
+        if repos.get(
+                'qubes-templates-community-testing', {}).get('enabled', None):
             self.comm_tmpl_updates_repo.setCurrentIndex(2)
-        elif repos['qubes-templates-community']['enabled']:
+        elif repos.get('qubes-templates-community', {}).get('enabled', None):
             self.comm_tmpl_updates_repo.setCurrentIndex(1)
         else:
             self.comm_tmpl_updates_repo.setCurrentIndex(0)
