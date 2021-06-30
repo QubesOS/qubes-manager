@@ -53,12 +53,12 @@ def _run_qrexec_repo(service, arg=''):
         msg = QtCore.QCoreApplication.translate(
                 "GlobalSettings",
                 'qrexec call stderr was not empty')
-        raise exc.QubesException(msg + '(%s)', p.stderr.decode('utf-8'))
+        raise exc.QubesException(msg + ' (%s)', p.stderr.decode('utf-8'))
     if p.returncode != 0:
         msg = QtCore.QCoreApplication.translate(
                 "GlobalSettings",
                 'qrexec call exited with non-zero return code')
-        raise exc.QubesException(msg + '(%s)', p.returncode)
+        raise exc.QubesException(msg + ' (%s)', p.returncode)
     return p.stdout.decode('utf-8')
 
 
