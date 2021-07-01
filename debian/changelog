@@ -1,3 +1,18 @@
+qubes-manager (4.1.17-1) unstable; urgency=medium
+
+  [ Frédéric Pierret (fepitre) ]
+  * global_settings: better handling of exc in GuiVM
+  * global_settings: add space in QubesException msg
+
+  [ Marek Marczykowski-Górecki ]
+  * Fix test after changing how installing fresh qube is done
+  * Fix tests after changing how settings window is opened
+  * Skip tests that depends on a VM to not be running, if it's running
+  * tests: fix choosing different template
+  * Fix return value of QubesTableModel.flags()
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Thu, 01 Jul 2021 05:29:04 +0200
+
 qubes-manager (4.1.16-1) unstable; urgency=medium
 
   [ WillyPillow ]
