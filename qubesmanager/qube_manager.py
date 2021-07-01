@@ -486,7 +486,7 @@ class QubesTableModel(QAbstractTableModel):
 
     def flags(self, index):
         if not index.isValid():
-            return False
+            return Qt.NoItemFlags
 
         def_flags = QAbstractTableModel.flags(self, index)
         if self.columns_indices[index.column()] == "Backup":
