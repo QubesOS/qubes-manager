@@ -181,8 +181,9 @@ class NewVmTest(unittest.TestCase):
             unittest.mock.ANY, unittest.mock.ANY,
             unittest.mock.ANY, unittest.mock.ANY)
 
-    @unittest.mock.patch('subprocess.check_call')
-    def test_10_standalone_empty(self, mock_call):
+    @unittest.mock.patch('qubesmanager.bootfromdevice.VMBootFromDeviceWindow')
+    @unittest.mock.patch('qubesadmin.tools.qvm_start')
+    def test_10_standalone_empty(self, mock_qvm_start, mock_bootwindow):
         self.dialog.name.setText("test-vm")
         for i in range(self.dialog.vm_type.count()):
             opt_text = self.dialog.vm_type.itemText(i).lower()
@@ -191,6 +192,8 @@ class NewVmTest(unittest.TestCase):
                 break
         # select "(none)" template
         self.dialog.template_vm.setCurrentIndex(self.dialog.template_vm.count()-1)
+
+        mock_bootwindow.return_value.cdrom_location = 'CDROM_LOCATION'
 
         self.__click_ok()
         self.mock_thread.assert_called_once_with(
@@ -201,8 +204,9 @@ class NewVmTest(unittest.TestCase):
         self.mock_thread().msg = None
         self.dialog.create_finished()
 
-        mock_call.assert_called_once_with(['qubes-vm-boot-from-device',
-                                           'test-vm'])
+        mock_bootwindow.return_value.exec_.assert_called_once_with()
+        mock_qvm_start.main.assert_called_once_with(
+                ['--cdrom', 'CDROM_LOCATION', 'test-vm'])
 
     @unittest.mock.patch('subprocess.check_call')
     def test_11_standalone_empty_not_install(self, mock_call):

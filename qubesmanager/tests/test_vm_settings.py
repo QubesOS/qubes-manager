@@ -511,15 +511,20 @@ class VMSettingsTest(unittest.TestCase):
 
         self.assertTrue(self.vm.property_is_default('default_dispvm'))
 
-    @unittest.mock.patch('subprocess.check_call')
-    def test_27_boot_cdrom(self, mock_call):
+    @unittest.mock.patch('qubesmanager.bootfromdevice.VMBootFromDeviceWindow')
+    @unittest.mock.patch('qubesmanager.settings.qvm_start')
+    def test_27_boot_cdrom(self, mock_qvm_start, mock_bootwindow):
         self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
 
         self.dialog = vm_settings.VMSettingsWindow(
             self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
 
+        mock_bootwindow.return_value.cdrom_location = 'CDROM_LOCATION'
+
         self.dialog.boot_from_device_button.click()
-        mock_call.assert_called_with(['qubes-vm-boot-from-device', "test-vm"])
+        mock_bootwindow.return_value.exec_.assert_called_once_with()
+        mock_qvm_start.main.assert_called_once_with(
+                ['--cdrom', 'CDROM_LOCATION', 'test-vm'])
 
     def test_28_advanced_debug_false(self):
         self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")

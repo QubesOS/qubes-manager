@@ -60,6 +60,18 @@ def listen_for_events(func):
             self.loop.run_forever()
     return wrapper
 
+
+def skip_if_running(*vmnames):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            if any(self.qapp.domains[name].is_running() for name in vmnames):
+                self.skipTest('Any of {} VM is running'.format(vmnames))
+            return func(self, *args, **kwargs)
+        return wrapper
+    return decorator
+
+
 class QubeManagerTest(unittest.TestCase):
     def setUp(self):
         super(QubeManagerTest, self).setUp()
@@ -291,7 +303,7 @@ class QubeManagerTest(unittest.TestCase):
         QtTest.QTest.mouseClick(widget,
                                 QtCore.Qt.LeftButton)
         mock_window.assert_called_once_with(
-            selected_vm, qapp=self.qtapp, init_page="basic", qubesapp=self.qapp)
+            selected_vm, "basic", self.qtapp, self.qapp, self.dialog)
 
     def test_201_vm_open_settings_admin(self):
         self._select_admin_vm()
@@ -312,8 +324,7 @@ class QubeManagerTest(unittest.TestCase):
         QtTest.QTest.mouseClick(widget,
                                 QtCore.Qt.LeftButton)
         mock_window.assert_called_once_with(
-            selected_vm, qapp=self.qtapp, init_page="firewall",
-            qubesapp=self.qapp)
+            selected_vm, "firewall", self.qtapp, self.qapp, self.dialog)
 
     @unittest.mock.patch('qubesmanager.settings.VMSettingsWindow')
     def test_203_vm_open_apps(self, mock_window):
@@ -324,8 +335,7 @@ class QubeManagerTest(unittest.TestCase):
         QtTest.QTest.mouseClick(widget,
                                 QtCore.Qt.LeftButton)
         mock_window.assert_called_once_with(
-            selected_vm, qapp=self.qtapp, init_page="applications",
-            qubesapp=self.qapp)
+            selected_vm, "applications", self.qtapp, self.qapp, self.dialog)
 
     @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
     def test_204_vm_keyboard(self, mock_message):
@@ -847,13 +857,11 @@ class QubeManagerTest(unittest.TestCase):
 
     @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.question')
     @listen_for_events
+    @skip_if_running('work')
     def test_250_template_menu_single(self, mock_question):
         mock_question.return_value = QtWidgets.QMessageBox.Yes
         target_vm_name = 'work'
         selected_vm = self.qapp.domains[target_vm_name]
-        if selected_vm.is_running():
-            self.skipTest(
-                'VM {!s} is running, please stop it first'.format(selected_vm))
         current_template = selected_vm.template
         new_template = self._select_templatevm(
             different_than=[str(current_template)])
@@ -897,14 +905,13 @@ class QubeManagerTest(unittest.TestCase):
 
     @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.question')
     @listen_for_events
+    @skip_if_running('work', 'personal', 'untrusted')
     def test_251_template_menu_multiple(self, mock_question):
         mock_question.return_value = QtWidgets.QMessageBox.Yes
         target_vm_names = ['work', 'personal', 'untrusted']
         work = self.qapp.domains['work']
         personal = self.qapp.domains['personal']
         untrusted = self.qapp.domains['untrusted']
-        if any(vm.is_running() for vm in [work, personal, untrusted]):
-            self.skipTest('Any of work, personal, untrusted VM is running')
 
         old_template = work.template
         new_template = self._select_templatevm(
@@ -1046,8 +1053,8 @@ class QubeManagerTest(unittest.TestCase):
                 as mock_settings:
             self.dialog.action_settings.trigger()
             mock_settings.assert_called_once_with(
-                self.qapp.domains["test-vm"], qapp = self.qtapp,
-                init_page = "basic", qubesapp = self.qapp)
+                self.qapp.domains["test-vm"], "basic",
+                self.qtapp, self.qapp, self.dialog)
 
     def test_401_event_domain_removed(self):
         initial_vms = self._create_set_of_current_vms()
@@ -1139,6 +1146,7 @@ class QubeManagerTest(unittest.TestCase):
 
         self.assertEqual(new_label.toImage(), icon.toImage(), "Incorrect label")
 
+    @skip_if_running('work')
     def test_406_prop_change_template(self):
         target_vm_name = "work"
         vm_row = self._find_vm_row(target_vm_name)
@@ -1496,7 +1504,7 @@ class QubeManagerTest(unittest.TestCase):
             template = self._get_table_item(row, "Template")
             vm = self._get_table_vm(row)
             if template == 'TemplateVM' and \
-                    (template not in different_than) and \
+                    (vm not in different_than) and \
                     (running is None
                      or (bool(running) == bool(vm.is_running()))):
                 index = self.dialog.table.model().index(row, 0)
