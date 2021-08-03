@@ -489,8 +489,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 getattr(self.vm, 'visible_netmask', None) or "none")
             self.gateway_label.setText(
                 getattr(self.vm, 'visible_gateway', None) or "none")
-            dns_list = getattr(self.vm, 'dns', ['10.139.1.1', '10.139.1.2'])
-            self.dns_label.setText(", ".join(dns_list))
+            dns_list = getattr(self.vm, 'dns', '10.139.1.1 10.139.1.2')
+            self.dns_label.setText(dns_list.replace(' ', ', '))
         else:
             self.networking_groupbox.setEnabled(False)
 
