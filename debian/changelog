@@ -1,3 +1,9 @@
+qubes-manager (4.1.18-1) unstable; urgency=medium
+
+  * Fix DNS formatting
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Tue, 24 Aug 2021 02:44:11 +0200
+
 qubes-manager (4.1.17-1) unstable; urgency=medium
 
   [ Frédéric Pierret (fepitre) ]
