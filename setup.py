@@ -14,7 +14,7 @@ if __name__ == '__main__':
         url='https://www.qubes-os.org/',
         packages=setuptools.find_packages(),
         package_data={
-            'qubesmanager': ['i18n/*']
+            'qubesmanager': ['i18n/*', '*.css']
         },
         entry_points={
             'console_scripts': [
