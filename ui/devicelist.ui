@@ -52,7 +52,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Which PCI devices should use the no strict reset option?</string>
+    <string>Which PCI devices should use the &quot;no strict reset&quot; option?</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_2">
@@ -70,7 +70,7 @@
     </font>
    </property>
    <property name="text">
-    <string>Note: use this option only if &quot;unable to reset PCI device&quot; error occurs. </string>
+    <string>Note: Use this option only if an &quot;unable to reset PCI device&quot; error occurs. </string>
    </property>
    <property name="wordWrap">
     <bool>true</bool>

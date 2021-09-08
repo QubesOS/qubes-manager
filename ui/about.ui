@@ -84,7 +84,7 @@
      <item>
       <widget class="QPushButton" name="informationNotes">
        <property name="text">
-        <string>Version Information</string>
+        <string>Version information</string>
        </property>
       </widget>
      </item>

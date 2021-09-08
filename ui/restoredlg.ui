@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Qubes OS - Restore qubes</string>
+   <string>Qubes Backup Restore</string>
   </property>
   <property name="locale">
    <locale language="English" country="UnitedStates"/>
@@ -49,27 +49,27 @@
        <item row="0" column="0">
         <widget class="QCheckBox" name="ignore_missing">
          <property name="toolTip">
-          <string>Ignore missing templates or netvms, restore VMs anyway.</string>
+          <string>Ignore missing templates and net qubes; restore qubes anyway.</string>
          </property>
          <property name="text">
-          <string>Ignore missing templates and net VMs</string>
+          <string>Ignore missing templates and net qubes.</string>
          </property>
         </widget>
        </item>
        <item row="3" column="0">
         <widget class="QCheckBox" name="ignore_uname_mismatch">
          <property name="toolTip">
-          <string>Ignore dom0 username mismatch while restoring homedir.</string>
+          <string>Ignore dom0 username mismatch when restoring home directory.</string>
          </property>
          <property name="text">
-          <string>Ignore username mismatch</string>
+          <string>Ignore dom0 username mismatch.</string>
          </property>
         </widget>
        </item>
        <item row="0" column="1">
         <widget class="QCheckBox" name="verify_only">
          <property name="text">
-          <string>Verify backup integrity, do not restore the data</string>
+          <string>Test restore to verify backup integrity (no data actually restored).</string>
          </property>
         </widget>
        </item>
@@ -113,7 +113,7 @@
           </size>
          </property>
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Backup file:&lt;br&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;(for old backup format select qubes.xml file)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Backup file:&lt;br&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;(For legacy backup formats, select the qubes.xml file.)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -169,7 +169,7 @@
        <item row="1" column="0">
         <widget class="QLabel" name="label_5">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Decryption / Verification&lt;br/&gt;passphrase:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Decryption passphrase:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -272,7 +272,7 @@ p, li { white-space: pre-wrap; }
     <item>
      <widget class="QCheckBox" name="showFileDialog">
       <property name="text">
-       <string>When finished, open file selection dialog to allow me to unmount the disk</string>
+       <string>When finished, open file selection dialog to allow me to unmount the disk.</string>
       </property>
      </widget>
     </item>

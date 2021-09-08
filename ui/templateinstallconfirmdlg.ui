@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Template Install Confirmation</string>
+   <string>Template installation confirmation</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

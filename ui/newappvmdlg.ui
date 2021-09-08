@@ -106,7 +106,7 @@
        <item row="7" column="1" colspan="3">
         <widget class="QCheckBox" name="launch_settings">
          <property name="text">
-          <string>launch settings after creation</string>
+          <string>Launch settings after creation</string>
          </property>
         </widget>
        </item>
@@ -180,7 +180,7 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Caution&lt;/span&gt;: changing these settings can compromise your system or make the qube unable to boot. Use only if you know what you are doing.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Caution&lt;/span&gt;: Changing these settings can compromise your system or make the qube unable to boot. Use only if you know what you are doing.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="wordWrap">
           <bool>true</bool>
@@ -214,14 +214,14 @@
           <bool>false</bool>
          </property>
          <property name="text">
-          <string>install system from device (also available from settings)</string>
+          <string>Install system from device (also available from settings)</string>
          </property>
         </widget>
        </item>
        <item row="1" column="0" colspan="2">
         <widget class="QCheckBox" name="provides_network">
          <property name="text">
-          <string>provides network to other qubes</string>
+          <string>Provides network access to other qubes</string>
          </property>
         </widget>
        </item>

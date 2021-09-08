@@ -35,7 +35,7 @@
          <bool>true</bool>
         </property>
         <property name="text">
-         <string>Minimal qube memory:</string>
+         <string>Minimum qube memory:</string>
         </property>
        </widget>
       </item>
@@ -61,7 +61,7 @@
          <bool>true</bool>
         </property>
         <property name="toolTip">
-         <string>Additional memory allocated to dom0 by Qubes Memory Balancer.</string>
+         <string>Additional memory allocated to dom0 by Qubes Memory Balancer</string>
         </property>
         <property name="suffix">
          <string> MiB</string>
@@ -80,7 +80,7 @@
          <bool>true</bool>
         </property>
         <property name="toolTip">
-         <string>Additional memory allocated to dom0 by Qubes Memory Balancer.</string>
+         <string>Additional memory allocated to dom0 by Qubes Memory Balancer</string>
         </property>
         <property name="text">
          <string>Additional dom0 memory:</string>
@@ -109,7 +109,7 @@
       <item row="0" column="2">
        <widget class="QCheckBox" name="updates_vm">
         <property name="toolTip">
-         <string>Default value for new qubes; to change it for existing qubes, use buttons below.</string>
+         <string>Default value for new qubes. To change it for existing qubes, use the buttons below.</string>
         </property>
         <property name="text">
          <string>Check for qube updates by default</string>
@@ -120,12 +120,12 @@
        <widget class="QComboBox" name="itl_tmpl_updates_repo">
         <item>
          <property name="text">
-          <string>ITL template updates</string>
+          <string>Official template updates</string>
          </property>
         </item>
         <item>
          <property name="text">
-          <string>ITL template updates (testing)</string>
+          <string>Official template updates (testing)</string>
          </property>
         </item>
        </widget>
@@ -157,7 +157,7 @@
       <item row="1" column="2">
        <widget class="QPushButton" name="disable_updates_all">
         <property name="text">
-         <string>Disable checking for updates for all qubes</string>
+         <string>Disable update checking for all qubes</string>
         </property>
        </widget>
       </item>
@@ -183,7 +183,7 @@
       <item row="2" column="2">
        <widget class="QPushButton" name="enable_updates_all">
         <property name="text">
-         <string>Enable checking for updates for all qubes</string>
+         <string>Enable update checking for all qubes</string>
         </property>
        </widget>
       </item>
@@ -196,7 +196,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>dom0 updates:</string>
+         <string>Dom0 updates:</string>
         </property>
        </widget>
       </item>
@@ -308,21 +308,21 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Dom0 UpdateVM:</string>
+         <string>Dom0 update qube:</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
        <widget class="QComboBox" name="update_vm_combo">
         <property name="toolTip">
-         <string>This is updateVM ONLY for dom0; if you want to change updateVMs for other VMs, use /etc/qubes-rpc/policy/qubes.UpdatesProxy</string>
+         <string>This update qube is only for dom0. For other qubes, see: /etc/qubes-rpc/policy/qubes.UpdatesProxy</string>
         </property>
        </widget>
       </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label_2">
         <property name="text">
-         <string>ClockVM:</string>
+         <string>Clock qube:</string>
         </property>
        </widget>
       </item>
@@ -332,7 +332,7 @@
       <item row="2" column="0">
        <widget class="QLabel" name="label_3">
         <property name="text">
-         <string>Default netVM:</string>
+         <string>Default net qube:</string>
         </property>
        </widget>
       </item>
@@ -358,7 +358,7 @@
       <item row="4" column="0">
        <widget class="QLabel" name="label_8">
         <property name="text">
-         <string>Default DisposableVM Template:</string>
+         <string>Default disposable template:</string>
         </property>
        </widget>
       </item>
@@ -384,7 +384,7 @@
       <item row="1" column="0">
        <widget class="QLabel" name="label_13">
         <property name="text">
-         <string>Secure copy:</string>
+         <string>Global clipboard copy:</string>
         </property>
        </widget>
       </item>
@@ -394,7 +394,7 @@
       <item row="2" column="0">
        <widget class="QLabel" name="label_15">
         <property name="text">
-         <string>Secure paste:</string>
+         <string>Global clipboard paste:</string>
         </property>
        </widget>
       </item>
