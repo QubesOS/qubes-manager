@@ -169,12 +169,22 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
 
         # default netvm
         if utils.did_widget_selection_change(self.default_netvm_combo):
-            try:
-                self.qubes_app.default_netvm = \
-                    self.default_netvm_combo.currentData()
-            except exc.QubesException as ex:
+            new_default_netvm = self.default_netvm_combo.currentData()
+            if new_default_netvm.property_is_default('netvm'):
                 self.errors.append(
-                    "Failed to set Default NetVM due to {}".format(str(ex)))
+                    "Cannot set {} as the default net qube. Reason: {}'s net"
+                    " qube is already set to 'default', and a qube cannot be "
+                    "its own net qube. Please change {}'s net qube and try "
+                    "again.".format(
+                        str(new_default_netvm), str(new_default_netvm),
+                        str(new_default_netvm)))
+            else:
+                try:
+                    self.qubes_app.default_netvm = \
+                        self.default_netvm_combo.currentData()
+                except exc.QubesException as ex:
+                    self.errors.append(
+                        "Cannot set default net qube: {}".format(str(ex)))
 
         # default template
         if utils.did_widget_selection_change(self.default_template_combo):
