@@ -420,7 +420,7 @@ def get_path_from_vm(vm, service_name):
     :return: path to file, checked for validity
     """
 
-    path_re = re.compile(r"[a-zA-Z0-9/:.,_+=() -]*")
+    path_re = re.compile(r"[a-zA-Z0-9/:.,_+=() ?-]*")
     path_max_len = 512
 
     if not vm:
