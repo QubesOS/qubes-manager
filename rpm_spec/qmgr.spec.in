@@ -12,7 +12,6 @@ Requires:	python%{python3_pkgversion}-PyQt5
 Requires:	python%{python3_pkgversion}-inotify
 Requires:	python%{python3_pkgversion}-qubesadmin >= 4.1.8
 Requires:	python%{python3_pkgversion}-qasync
-Requires:	python%{python3_pkgversion}-setuptools
 Requires:	qubes-desktop-linux-common >= 4.1.2
 Requires:	qubes-artwork
 Requires:	pmount
@@ -20,6 +19,7 @@ Requires:	cryptsetup
 Requires:	wmctrl
 BuildRequires:	python%{python3_pkgversion}-PyQt5-devel
 BuildRequires:	python%{python3_pkgversion}-devel
+BuildRequires:	python%{python3_pkgversion}-setuptools
 %if 0%{?fedora} >= 33 || 0%{?rhel} >= 7
 BuildRequires:  qt5-qtbase-devel
 %else
