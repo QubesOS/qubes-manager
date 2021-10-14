@@ -28,7 +28,7 @@
     <item>
      <widget class="QLabel" name="label">
       <property name="text">
-       <string>Select actions to perform in &quot;Status&quot; column:</string>
+       <string>Select actions to perform in the &quot;Status&quot; column:</string>
       </property>
      </widget>
     </item>
@@ -57,7 +57,7 @@
        <bool>true</bool>
       </property>
       <property name="placeholderText">
-       <string>Use &quot;Status&quot; column to select actions to execute on a given template; when desired actions are selected, use &quot;Apply&quot; to perform them.</string>
+       <string>Use the &quot;Status&quot; column to select actions to execute on a given template. Once the desired actions are selected, use &quot;Apply&quot; to perform them.</string>
       </property>
      </widget>
     </item>

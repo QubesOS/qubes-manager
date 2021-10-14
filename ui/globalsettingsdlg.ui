@@ -347,7 +347,7 @@
             </sizepolicy>
            </property>
            <property name="text">
-            <string>DisposableVM Template</string>
+            <string>disposable template</string>
            </property>
           </widget>
          </item>
@@ -360,7 +360,7 @@
             </sizepolicy>
            </property>
            <property name="text">
-            <string>NetVM</string>
+            <string>net qube</string>
            </property>
           </widget>
          </item>
@@ -416,7 +416,7 @@
             </sizepolicy>
            </property>
            <property name="text">
-            <string>ClockVM</string>
+            <string>Clock qube</string>
            </property>
           </widget>
          </item>
@@ -429,7 +429,7 @@
             </sizepolicy>
            </property>
            <property name="text">
-            <string>dom0 Updates Proxy</string>
+            <string>Dom0 update qube</string>
            </property>
           </widget>
          </item>
@@ -668,12 +668,12 @@
            </property>
            <item>
             <property name="text">
-             <string>ITL template updates</string>
+             <string>Official template updates</string>
             </property>
            </item>
            <item>
             <property name="text">
-             <string>ITL template updates (testing)</string>
+             <string>Official template updates (testing)</string>
             </property>
            </item>
           </widget>
@@ -739,7 +739,7 @@
          <item row="2" column="0">
           <widget class="QLabel" name="label_36">
            <property name="text">
-            <string>Minimal qube memory:</string>
+            <string>Minimum qube memory:</string>
            </property>
           </widget>
          </item>
@@ -771,7 +771,7 @@
             <bool>true</bool>
            </property>
            <property name="toolTip">
-            <string>Additional memory allocated to dom0 by Qubes Memory Balancer.</string>
+            <string>Additional memory allocated to dom0 by Qubes Memory Balancer</string>
            </property>
            <property name="suffix">
             <string> MiB</string>

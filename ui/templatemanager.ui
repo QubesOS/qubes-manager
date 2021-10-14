@@ -102,7 +102,7 @@
         <item>
          <widget class="QPushButton" name="clear_selection_button">
           <property name="text">
-           <string>Clear Selection</string>
+           <string>Clear selection</string>
           </property>
          </widget>
         </item>

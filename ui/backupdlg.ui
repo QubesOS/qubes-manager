@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Qubes OS - Backup qubes</string>
+   <string>Qubes Backup</string>
   </property>
   <property name="locale">
    <locale language="English" country="UnitedStates"/>
@@ -26,7 +26,7 @@
       <item row="0" column="0">
        <widget class="QLabel" name="label_4">
         <property name="text">
-         <string>Select qubes to backup:</string>
+         <string>Select qubes to back up:</string>
         </property>
        </widget>
       </item>
@@ -83,7 +83,7 @@
     <item>
      <widget class="QCheckBox" name="compress_checkbox">
       <property name="text">
-       <string>Compress the backup</string>
+       <string>Compress backup</string>
       </property>
       <property name="checked">
        <bool>true</bool>
@@ -137,7 +137,7 @@
        </font>
       </property>
       <property name="text">
-       <string>Warning: unrecognized data found in configuration files. </string>
+       <string>Warning: Unrecognized data found in configuration files. </string>
       </property>
      </widget>
     </item>
@@ -238,7 +238,7 @@
           </font>
          </property>
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;WARNING: password will be saved in dom0 in plain text.&lt;br/&gt;The file is located in dom0 in /etc/qubes/backup/qubes-manager-backup .&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;WARNING: Passphrase will be saved in dom0 in plain text.&lt;br/&gt;File location: /etc/qubes/backup/qubes-manager-backup&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -260,14 +260,14 @@
        <item row="2" column="0">
         <widget class="QLabel" name="label_11">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Reenter passphrase:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Confirm passphrase:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
        <item row="0" column="0">
         <widget class="QLabel" name="label_12">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Encryption / Verification&lt;br/&gt;passphrase:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Encryption passphrase:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -307,7 +307,7 @@
        </font>
       </property>
       <property name="text">
-       <string>NOTE: Only running qubes are listed.</string>
+       <string>Note: Only running qubes are listed.</string>
       </property>
      </widget>
     </item>

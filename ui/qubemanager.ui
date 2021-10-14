@@ -146,7 +146,7 @@
         <string>Name</string>
        </property>
        <property name="toolTip">
-        <string>Qube name</string>
+        <string>The name of each qube</string>
        </property>
       </column>
       <column>
@@ -154,7 +154,7 @@
         <string>State</string>
        </property>
        <property name="toolTip">
-        <string>Update info</string>
+        <string>The running state and update status of each qube</string>
        </property>
       </column>
       <column>
@@ -162,15 +162,15 @@
         <string>Template</string>
        </property>
        <property name="toolTip">
-        <string>Qube template</string>
+        <string>The template on which each qube is based</string>
        </property>
       </column>
       <column>
        <property name="text">
-        <string>NetVM</string>
+        <string>Net qube</string>
        </property>
        <property name="toolTip">
-        <string>Qube netVM</string>
+        <string>The qube that provides network access to each qube</string>
        </property>
       </column>
       <column>
@@ -178,15 +178,24 @@
         <string>Disk
 usage</string>
        </property>
+       <property name="toolTip">
+        <string>The amount of disk space used by each qube</string>
+       </property>
       </column>
       <column>
        <property name="text">
         <string>Internal</string>
        </property>
+       <property name="toolTip">
+        <string>Whether each qube is internal to the operation of the system and not intended for normal use by end users</string>
+       </property>
       </column>
       <column>
        <property name="text">
         <string>IP</string>
+       </property>
+       <property name="toolTip">
+        <string>The internal IP address assigned to each qube</string>
        </property>
       </column>
       <column>
@@ -194,27 +203,42 @@ usage</string>
         <string>Include
 in backups</string>
        </property>
+       <property name="toolTip">
+        <string>Whether each qube is included in backups by default</string>
+       </property>
       </column>
       <column>
        <property name="text">
         <string>Last backup</string>
        </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Default DisposableVM
-Template</string>
+       <property name="toolTip">
+        <string>Timestamp indicating the last time at which each qube was backed up</string>
        </property>
       </column>
       <column>
        <property name="text">
-        <string>DisposableVM
-Template</string>
+        <string>Default disposable
+template</string>
+       </property>
+       <property name="toolTip">
+        <string>The disposable template used by default when launching disposables from each qube</string>
        </property>
       </column>
       <column>
        <property name="text">
-        <string>Virtualization Mode</string>
+        <string>Disposable
+template</string>
+       </property>
+       <property name="toolTip">
+        <string>Whether each qube is itself a disposable template</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Virtualization mode</string>
+       </property>
+       <property name="toolTip">
+        <string>The hypervisor mode used when running each qube as a virtual machine</string>
        </property>
       </column>
      </widget>
@@ -473,7 +497,7 @@ Template</string>
     <string>&amp;Delete qube</string>
    </property>
    <property name="toolTip">
-    <string>Remove an existing qube (must be stopped first)</string>
+    <string>Remove an existing qube (must be shut down first)</string>
    </property>
   </action>
   <action name="action_resumevm">
@@ -503,7 +527,7 @@ Template</string>
     <string>Emergency &amp;pause</string>
    </property>
    <property name="toolTip">
-    <string>&lt;p&gt;Pause selected qube&lt;/p&gt;&lt;p&gt;Stops all CPU activity in the selected VM until the VM is unpaused. This action does not change how much memory is allocated to the VM. (EXPERIMENTAL)&lt;/p&gt;</string>
+    <string>&lt;p&gt;Pause selected qube&lt;/p&gt;&lt;p&gt;Stops all CPU activity in the selected qube until the qube is unpaused. This action does not change how much memory is allocated to the qube. (EXPERIMENTAL)&lt;/p&gt;</string>
    </property>
   </action>
   <action name="action_shutdownvm">
@@ -518,7 +542,7 @@ Template</string>
     <string>&amp;Shutdown</string>
    </property>
    <property name="toolTip">
-    <string>Shutdown selected qube</string>
+    <string>Shut down selected qube</string>
    </property>
   </action>
   <action name="action_restartvm">
@@ -563,7 +587,7 @@ Template</string>
     <string>&amp;Update</string>
    </property>
    <property name="toolTip">
-    <string>Update qube system</string>
+    <string>Update qube</string>
    </property>
   </action>
   <action name="action_editfwrules">
@@ -590,7 +614,7 @@ Template</string>
     <string>Show graphs</string>
    </property>
    <property name="toolTip">
-    <string>Show Graphs</string>
+    <string>Show graphs</string>
    </property>
   </action>
   <action name="action_options">
@@ -622,7 +646,7 @@ Template</string>
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>&amp;NetVM</string>
+    <string>&amp;Net qube</string>
    </property>
   </action>
   <action name="action_settings">
@@ -634,7 +658,7 @@ Template</string>
     <string>S&amp;ettings</string>
    </property>
    <property name="toolTip">
-    <string>Qube Settings</string>
+    <string>Qube settings</string>
    </property>
   </action>
   <action name="action_restore">
@@ -658,7 +682,7 @@ Template</string>
     <string>&amp;Backup</string>
    </property>
    <property name="toolTip">
-    <string>Backup qubes</string>
+    <string>Back up qubes</string>
    </property>
   </action>
   <action name="action_global_settings">
@@ -676,7 +700,7 @@ Template</string>
      <normaloff>:/networking.png</normaloff>:/networking.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Qubes Network</string>
+    <string>&amp;Qubes network</string>
    </property>
    <property name="visible">
     <bool>false</bool>
@@ -728,7 +752,7 @@ Template</string>
     <string>T&amp;ype</string>
    </property>
    <property name="toolTip">
-    <string>Qube Type</string>
+    <string>Qube type</string>
    </property>
   </action>
   <action name="action_label">
@@ -848,10 +872,10 @@ Template</string>
      <normaloff>:/resumevm.png</normaloff>:/resumevm.png</iconset>
    </property>
    <property name="text">
-    <string>Start qube for Window Tools installation</string>
+    <string>Start qube for Qubes Windows Tools installation</string>
    </property>
    <property name="toolTip">
-    <string>Start qube for Window Tools installation</string>
+    <string>Start qube for Qubes Windows Tools installation</string>
    </property>
   </action>
   <action name="action_ip">
@@ -916,10 +940,10 @@ Template</string>
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Default DisposableVM Template</string>
+    <string>Default disposable template</string>
    </property>
    <property name="toolTip">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Default DisposableVM Template&lt;br/&gt;&lt;br/&gt;Which qube should be used by default as a template for DisposableVMs started from this one? DisposableVMs will inherit their template's configuration and installed programs.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Default disposable template&lt;br/&gt;&lt;br/&gt;Which qube should be used by default as a template for disposables started from this one? Disposables will inherit their template's configuration and installed programs.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
   <action name="action_is_dvm_template">
@@ -933,7 +957,7 @@ Template</string>
     <string>DisposableVM Template</string>
    </property>
    <property name="toolTip">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;DisposableVM Template&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Allows using this qube as a template for DisposableVMs. The DisposableVMs will inherit the VM's state (configuration, installed programs etc.), but their state will not persist between restarts. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Disposable template&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Allows using this qube as a template for disposables. Disposables will inherit the qube's state (configuration, installed programs, etc.), but their state will not persist between restarts. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
   <action name="action_virt_mode">
@@ -944,7 +968,7 @@ Template</string>
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Virtualization Mode</string>
+    <string>Virtualization mode</string>
    </property>
   </action>
   <action name="action_open_console">
@@ -957,7 +981,7 @@ Template</string>
     <string>Open console in qube</string>
    </property>
    <property name="toolTip">
-    <string>Open a secure Xen console in the qube. Useful chiefly for debugging purposes: for normal operation, use &quot;Run Terminal&quot; from the Domains widget. </string>
+    <string>Open a secure Xen console in the qube. Useful chiefly for debugging purposes. For normal operation, use &quot;Run Terminal&quot; from Qubes Domains. </string>
    </property>
   </action>
   <action name="action_show_logs">
@@ -974,7 +998,7 @@ Template</string>
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Compact View</string>
+    <string>Compact view</string>
    </property>
   </action>
  </widget>

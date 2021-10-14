@@ -134,7 +134,7 @@
                <bool>true</bool>
               </property>
               <property name="text">
-               <string>System storage max. size:</string>
+               <string>System storage max size:</string>
               </property>
              </widget>
             </item>
@@ -166,7 +166,7 @@
             <item row="0" column="0">
              <widget class="QLabel" name="label_3">
               <property name="text">
-               <string>Private storage max. size:</string>
+               <string>Private storage max size:</string>
               </property>
               <property name="buddy">
                <cstring>max_priv_storage</cstring>
@@ -192,7 +192,7 @@
          <item row="2" column="1">
           <widget class="QGroupBox" name="networking_groupbox">
            <property name="title">
-            <string>Networking</string>
+            <string>Net qube</string>
            </property>
            <layout class="QFormLayout" name="formLayout_3">
             <property name="fieldGrowthPolicy">
@@ -371,7 +371,7 @@ border-width: 1px;</string>
             <item row="2" column="3">
              <widget class="QLabel" name="warn_netvm_dispvm">
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Caution:&lt;/span&gt; The Default DisposableVM Template (see the Advanced tab) has a different Networking setting than this qube. This configuration may result in unexpected network access. For example, you may have set this qube's Networking to &amp;quot;none&amp;quot; in order to prevent any data from being transmitted out. However, if the Default DisposableVM Template's Networking is set to &amp;quot;sys-firewall,&amp;quot; then a DisposableVM started from this qube may be able to transmit data out, contrary to your intention. You may wish to set the Default DisposableVM Template for this qube to one with equally restrictive Networking settings.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Caution:&lt;/span&gt; The default disposable template (see the Advanced tab) has a different net qube setting than this qube. This configuration may result in unexpected network access. For example, you may have set this qube's net qube to &amp;quot;none&amp;quot; in order to prevent any data from being transmitted out. However, if the default disposable template's net qube is set to &amp;quot;sys-firewall,&amp;quot; then a disposable started from this qube may be able to transmit data out, contrary to your intention. You may wish to set the default disposable template for this qube to one with equally restrictive networking settings.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
                <string/>
@@ -401,7 +401,7 @@ border-width: 1px;</string>
             <item row="2" column="1" colspan="2">
              <widget class="QComboBox" name="netVM">
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&amp;quot;default ([name])&amp;quot; denotes system-wide default - if the default is changed in Global Settings, the networking qube will change. &lt;br/&gt;If you want to keep using a given networking qube regardless of system settings, select &amp;quot;[name]&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&amp;quot;default ([name])&amp;quot; denotes the system-wide default. If the default is changed in Global Settings, the net qube will change. &lt;br/&gt;If you want to keep using a given net qube regardless of system settings, select &amp;quot;[name]&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
              </widget>
             </item>
@@ -425,7 +425,7 @@ border-width: 1px;</string>
             <item row="2" column="0">
              <widget class="QLabel" name="label_18">
               <property name="text">
-               <string>Networking:</string>
+               <string>Net qube:</string>
               </property>
               <property name="buddy">
                <cstring>netVM</cstring>
@@ -481,7 +481,7 @@ border-width: 1px;</string>
                  </sizepolicy>
                 </property>
                 <property name="text">
-                 <string>VCPUs no.:</string>
+                 <string>VCPUs:</string>
                 </property>
                 <property name="buddy">
                  <cstring>vcpus</cstring>
@@ -752,17 +752,17 @@ border-width: 1px;</string>
               <item row="3" column="0">
                <widget class="QCheckBox" name="dvm_template_checkbox">
                 <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allows using this qube as a template for DisposableVMs. The DisposableVMs will inherit the VM's state (configuration, installed programs etc.), but their state will not persist between restarts. &lt;/p&gt;&lt;p&gt;Setting this option will cause this qube to be listed as an option in the &amp;quot;Default DisposableVM Template&amp;quot; dropdown for all other qubes. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allows using this qube as a template for disposables. Disposables will inherit the qube's state (configuration, installed programs, etc.), but their state will not persist between restarts. &lt;/p&gt;&lt;p&gt;Setting this option will cause this qube to be listed as an option in the &amp;quot;Default disposable template&amp;quot; list for all other qubes. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="text">
-                 <string>Disposable VM Template</string>
+                 <string>Disposable template</string>
                 </property>
                </widget>
               </item>
               <item row="8" column="0" colspan="2">
                <widget class="QPushButton" name="boot_from_device_button">
                 <property name="text">
-                 <string>Boot qube from CDROM</string>
+                 <string>Boot qube from CD-ROM</string>
                 </property>
                </widget>
               </item>
@@ -772,7 +772,7 @@ border-width: 1px;</string>
                  <widget class="QPushButton" name="seamless_on_button">
                   <property name="toolTip">
                    <string>Windows (with Qubes Windows Tools installed) only.
-The qube must be running to enable seamless mode;  this setting is not persistent.</string>
+The qube must be running to enable seamless mode. This setting is not persistent.</string>
                   </property>
                   <property name="text">
                    <string>Enable seamless mode</string>
@@ -783,7 +783,7 @@ The qube must be running to enable seamless mode;  this setting is not persisten
                  <widget class="QPushButton" name="seamless_off_button">
                   <property name="toolTip">
                    <string>Windows (with Qubes Windows Tools installed) only.
-The qube must be running to disable seamless mode; this setting is not persistent.</string>
+The qube must be running to disable seamless mode. This setting is not persistent.</string>
                   </property>
                   <property name="text">
                    <string>Disable seamless mode</string>
@@ -797,10 +797,10 @@ The qube must be running to disable seamless mode; this setting is not persisten
                 <item>
                  <widget class="QLabel" name="label_26">
                   <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Which qube should be used by default as a template for DisposableVMs started from this one? DisposableVMs will inherit their template's configuration and installed programs.&lt;br/&gt;For a qube to to appear in this list, it must have the &amp;quot;DisposableVM Template&amp;quot; checkbox enabled. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Which qube should be used by default as a template for disposables started from this one? Disposables will inherit their template's configuration and installed programs.&lt;br/&gt;For a qube to to appear in this list, it must have the &amp;quot;Disposable template&amp;quot; setting enabled. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                   </property>
                   <property name="text">
-                   <string>Default DisposableVM Template</string>
+                   <string>Default disposable template</string>
                   </property>
                   <property name="buddy">
                    <cstring>default_dispvm</cstring>
@@ -816,7 +816,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
                    </sizepolicy>
                   </property>
                   <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Which qube should be used by default as a template for DisposableVMs started from this one? DisposableVMs will inherit their template's configuration and installed programs.&lt;br/&gt;For a qube to to appear in this list, it must have the &amp;quot;DisposableVM Template&amp;quot; checkbox enabled. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Which qube should be used by default as a template for disposables started from this one? Disposables will inherit their template's configuration and installed programs.&lt;br/&gt;For a qube to to appear in this list, it must have the &amp;quot;Disposable template&amp;quot; setting enabled. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                   </property>
                  </widget>
                 </item>
@@ -864,7 +864,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
               </sizepolicy>
              </property>
              <property name="title">
-              <string>Window Options</string>
+              <string>Window options</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_12">
               <item row="0" column="0">
@@ -1107,7 +1107,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
                  </font>
                 </property>
                 <property name="text">
-                 <string>PVH mode is recommended if possible (Linux kernel 4.11 or newer, no PCI passthrough). For Windows qubes always use HVM.</string>
+                 <string>PVH mode is recommended, if possible (Linux kernel 4.11 or newer, no PCI passthrough). For Windows qubes, always use HVM.</string>
                 </property>
                 <property name="wordWrap">
                  <bool>true</bool>
@@ -1194,7 +1194,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
          <item row="10" column="0" colspan="2">
           <widget class="QLabel" name="label_22">
            <property name="text">
-            <string>NOTE:  To block all network access, set Networking to (none) on the Basic settings tab. This tab provides a very simplified firewall configuration. All DNS requests and ICMP (pings) will be allowed. For more granular control, use the command line tool qvm-firewall.</string>
+            <string>NOTE:  To block all network access, set the net qube to '(none)' on the Basic settings tab. This tab provides a very simplified firewall configuration. All DNS requests and ICMP (pings) will be allowed. For more granular control, use the command line tool 'qvm-firewall'.</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -1251,7 +1251,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
             </font>
            </property>
            <property name="text">
-            <string>This qube has no networking - it will not have any network access anyway.</string>
+            <string>This qube has no net qube. It will not have any network access anyway.</string>
            </property>
            <property name="wordWrap">
             <bool>true</bool>
@@ -1268,7 +1268,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
          <item row="7" column="0">
           <widget class="QLabel" name="firewal_rules_label">
            <property name="text">
-            <string>List of allowed (whitelisted) addresses:</string>
+            <string>List of allowed addresses:</string>
            </property>
           </widget>
          </item>
@@ -1319,7 +1319,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
             </font>
            </property>
            <property name="text">
-            <string>Networking qube does not support 'qubes-firewall' - firewall restrictions will not be applied.</string>
+            <string>Net qube does not support 'qubes-firewall'. Firewall restrictions will not be applied.</string>
            </property>
           </widget>
          </item>
@@ -1370,7 +1370,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
             </font>
            </property>
            <property name="text">
-            <string>Firewall has been modified manually - please use qvm-firewall for any further configuration.</string>
+            <string>Firewall has been modified manually. Please use the 'qvm-firewall' command in dom0 for any further configuration.</string>
            </property>
           </widget>
          </item>
@@ -1492,7 +1492,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
            <item>
             <widget class="QRadioButton" name="policy_allow_radio_button">
              <property name="text">
-              <string>Allow all outgoing Internet connections</string>
+              <string>Allow all outgoing connections</string>
              </property>
             </widget>
            </item>
@@ -1502,7 +1502,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
               <string>Changing firewall settings does NOT affect existing connections.</string>
              </property>
              <property name="text">
-              <string>Limit outgoing Internet connections to ...</string>
+              <string>Limit outgoing connections to ...</string>
              </property>
             </widget>
            </item>
@@ -1555,7 +1555,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
             </font>
            </property>
            <property name="text">
-            <string>This qube has direct network access and Qubes Firewall settings will not be used. Configure other qubes' network access in their network settings or in a dedicated firewall qube.</string>
+            <string>This qube has direct network access. Therefore, Qubes firewall settings cannot be used. Configure other qubes' network access in their network settings or in a dedicated firewall qube.</string>
            </property>
            <property name="wordWrap">
             <bool>true</bool>
@@ -1591,7 +1591,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
               <string notr="true">color: rgb(255, 0, 0)</string>
              </property>
              <property name="text">
-              <string>You've enabled dynamic memory balancing, some devices might not work!</string>
+              <string>You've enabled dynamic memory balancing. Some devices might not work!</string>
              </property>
             </widget>
            </item>
@@ -1605,7 +1605,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
               </font>
              </property>
              <property name="text">
-              <string>To modify PCI devices you have to turn off the qube.</string>
+              <string>To modify PCI devices, you must first shut down the qube.</string>
              </property>
             </widget>
            </item>
@@ -1619,7 +1619,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
               </font>
              </property>
              <property name="text">
-              <string>Currently PVH qubes don't support PCI passthrough. Select another virtualization mode if you want to add PCI devices</string>
+              <string>Currently, PVH qubes don't support PCI passthrough. Select another virtualization mode if you want to add PCI devices.</string>
              </property>
             </widget>
            </item>
@@ -1652,7 +1652,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
             </sizepolicy>
            </property>
            <property name="text">
-            <string>Refresh Applications</string>
+            <string>Refresh applications</string>
            </property>
           </widget>
          </item>
@@ -1682,7 +1682,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
          <item row="11" column="0" colspan="2">
           <widget class="QLabel" name="label_7">
            <property name="text">
-            <string>Checked services will be turned on.</string>
+            <string>Selected services will be turned on.</string>
            </property>
           </widget>
          </item>
@@ -1696,7 +1696,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
          <item row="12" column="0" colspan="2">
           <widget class="QLabel" name="label_8">
            <property name="text">
-            <string>Unchecked services will be turned off.</string>
+            <string>Unselected services will be turned off.</string>
            </property>
           </widget>
          </item>

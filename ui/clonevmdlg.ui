@@ -131,7 +131,7 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Caution&lt;/span&gt;: changing these settings can compromise your system or make the qube unable to boot. Use only if you know what you are doing.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Caution&lt;/span&gt;: Changing these settings can compromise your system or make the qube unable to boot. Use only if you know what you are doing.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="wordWrap">
           <bool>true</bool>
