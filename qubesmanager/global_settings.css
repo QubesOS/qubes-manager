@@ -1,0 +1,26 @@
+
+QPushButton {
+    padding: 10px;
+    margin-left: 30px;
+}
+
+QComboBox {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+QLabel#label_release {
+    padding-left: 20px;
+    padding-top: 0px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+QLabel#logo_label {
+    margin-left: 30px;
+}
+
+QCheckBox::indicator {
+    width: 25px;
+    height: 25px;
+}

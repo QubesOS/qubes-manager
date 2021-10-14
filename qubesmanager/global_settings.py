@@ -22,10 +22,13 @@
 
 import os
 import subprocess
+import pkg_resources
 from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
 
 from qubesadmin.utils import parse_size
 from qubesadmin import exc
+from qubesmanager.releasenotes import ReleaseNotesDialog
+from qubesmanager.informationnotes import InformationNotesDialog
 
 from . import ui_globalsettingsdlg  # pylint: disable=no-name-in-module
 from . import utils
@@ -68,7 +71,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
     def __init__(self, app, qubes_app, parent=None):
         super().__init__(parent)
 
-        self.app = app
+        self.app: QtWidgets.QApplication = app
         self.qubes_app = qubes_app
         self.vm = self.qubes_app.domains[self.qubes_app.local_name]
 
@@ -76,6 +79,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
 
         self.buttonBox.accepted.connect(self.save_and_apply)
         self.buttonBox.rejected.connect(self.reject)
+
+        self.__init_ux()
 
         self.__init_system_defaults__()
         self.__init_kernel_defaults__()
@@ -88,6 +93,43 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
     def setup_application(self):
         self.app.setApplicationName(self.tr("Qubes Global Settings"))
         self.app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
+
+    def __init_ux(self):
+        icon = QtGui.QIcon.fromTheme('qubes-manager')
+        pixmap = icon.pixmap(QtCore.QSize(128, 128))
+        self.logo_label.setPixmap(pixmap)
+        self.logo_label.setAttribute(
+            QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
+
+        self.setStyleSheet(pkg_resources.resource_string(
+            __name__, 'global_settings.css').decode())
+
+        self.label_release.linkActivated.connect(self._link_activated)
+
+        for button in self.buttonBox.buttons():
+            button.setMinimumWidth(200)
+
+        self.show()
+
+        # The magical constants of 120 here are derived from margins set
+        # in the .ui file
+        req_width = self.scrollAreaWidgetContents_2.sizeHint().width() + 120
+        avail_width = self.app.desktop().availableGeometry().width() * 0.9
+
+        req_height = self.scrollAreaWidgetContents_2.sizeHint().height() + 120
+        avail_height = self.app.desktop().availableGeometry().height() * 0.9
+
+        self.resize(min(req_width, avail_width), min(req_height, avail_height))
+
+    def _link_activated(self, link):
+        if link == "version":
+            dialog = InformationNotesDialog(self)
+        elif link == "release":
+            dialog = ReleaseNotesDialog(self)
+        else:
+            return
+
+        dialog.exec_()
 
     def setup_widget_with_vms(self, widget, filter_function,
                               allow_none, holder, property_name):
@@ -482,7 +524,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         reply = QtWidgets.QMessageBox.question(
             self, self.tr("Change state of all qubes"),
             self.tr("Are you sure you want to set all qubes to check "
-                    "for updates?"),
+                    "for updates? This will override current qube settings."),
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel)
         if reply == QtWidgets.QMessageBox.Cancel:
             return
@@ -493,7 +535,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         reply = QtWidgets.QMessageBox.question(
             self, self.tr("Change state of all qubes"),
             self.tr("Are you sure you want to set all qubes to not check "
-                    "for updates?"),
+                    "for updates? This will override current qube settings."),
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel)
         if reply == QtWidgets.QMessageBox.Cancel:
             return

@@ -97,6 +97,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %{python3_sitelib}/qubesmanager/resources_rc.py
 
+%{python3_sitelib}/qubesmanager/global_settings.css
 %{python3_sitelib}/qubesmanager/ui_backupdlg.py
 %{python3_sitelib}/qubesmanager/ui_bootfromdevice.py
 %{python3_sitelib}/qubesmanager/ui_globalsettingsdlg.py

@@ -40,6 +40,8 @@
 
 /usr/lib/*/dist-packages/qubesmanager/resources_rc.py
 
+/usr/lib/*/dist-packages/qubesmanager/global_settings.css
+
 /usr/lib/*/dist-packages/qubesmanager/ui_backupdlg.py
 /usr/lib/*/dist-packages/qubesmanager/ui_bootfromdevice.py
 /usr/lib/*/dist-packages/qubesmanager/ui_globalsettingsdlg.py
