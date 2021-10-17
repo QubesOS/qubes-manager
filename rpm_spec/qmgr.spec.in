@@ -8,7 +8,11 @@ Vendor:		Invisible Things Lab
 License:	GPL
 URL:		https://www.qubes-os.org
 Requires:	python%{python3_pkgversion}
+%if 0%{?fedora} >= 34
+Requires:	python%{python3_pkgversion}-qt5
+%else
 Requires:	python%{python3_pkgversion}-PyQt5
+%endif
 Requires:	python%{python3_pkgversion}-inotify
 Requires:	python%{python3_pkgversion}-qubesadmin >= 4.1.8
 Requires:	python%{python3_pkgversion}-qasync
@@ -20,6 +24,7 @@ Requires:	wmctrl
 BuildRequires:	python%{python3_pkgversion}-PyQt5-devel
 BuildRequires:	python%{python3_pkgversion}-devel
 BuildRequires:	python%{python3_pkgversion}-setuptools
+BuildRequires:	make
 %if 0%{?fedora} >= 33 || 0%{?rhel} >= 7
 BuildRequires:  qt5-qtbase-devel
 %else
