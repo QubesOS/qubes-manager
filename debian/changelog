@@ -1,3 +1,28 @@
+qubes-manager (4.1.20-1) unstable; urgency=medium
+
+  [ Marta Marczykowska-Górecka ]
+  * Fix resizing of Device List widget in VM settings
+  * Better error message on some cycles on setting default NetVM
+  * Improved design of Global Settings
+
+  [ Marek Marczykowski-Górecki ]
+  * rpm: add BR python3-setuptools
+
+  [ Marta Marczykowska-Górecka ]
+  * Add '?' to allowed characters in file paths in Manager tools
+
+  [ Andrew David Wong ]
+  * Improve language
+
+  [ Marek Marczykowski-Górecki ]
+  * Update translation source files
+  * Make python3-setuptools really a BR
+
+  [ Frédéric Pierret (fepitre) ]
+  * spec: add BR make and update R pyqt5
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sat, 30 Oct 2021 02:52:56 +0200
+
 qubes-manager (4.1.19-1) unstable; urgency=medium
 
   * restore: do not show error after unmounting a backup disk
