@@ -1,3 +1,11 @@
+qubes-manager (4.1.21-1) unstable; urgency=medium
+
+  [ Marta Marczykowska-Górecka ]
+  * Fix overzealous Default NetVM sanity check
+  * Change spacing in Global Settings
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Thu, 04 Nov 2021 03:57:41 +0100
+
 qubes-manager (4.1.20-1) unstable; urgency=medium
 
   [ Marta Marczykowska-Górecka ]
