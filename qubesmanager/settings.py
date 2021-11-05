@@ -273,6 +273,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
     def apply(self):
         self.save_changes()
 
+        self.vm.clear_cache()
+
         # these signals must be disconnected to avoid unintended behavior
         # on refreshing the drop-downs
         self.netVM.currentIndexChanged.disconnect()
