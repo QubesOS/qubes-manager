@@ -46,6 +46,14 @@ from PyQt5 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
 
 from . import ui_settingsdlg  # pylint: disable=no-name-in-module
 
+SERVICE_PREFIX = "service."
+SUPPORTED_SERVICE_PREFIX = "supported-service."
+
+IDLE_SUPPORTED_SERVICE = f"{SUPPORTED_SERVICE_PREFIX}shutdown-idle"
+IDLE_SERVICE = f"{SERVICE_PREFIX}shutdown-idle"
+
+INTERNAL_SERVICE_FEATURES = [IDLE_SERVICE]
+INTERNAL_SUPPORTED_FEATURES = [IDLE_SUPPORTED_SERVICE]
 
 # pylint: disable=too-few-public-methods
 class RenameVMThread(common_threads.QubesThread):
@@ -442,11 +450,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.include_in_backups.setEnabled(False)
 
         try:
-            has_shutdown_idle = self.vm.features.get(
-                "supported-service.shutdown-idle", False)
+            has_shutdown_idle = self.vm.features.check_with_template(
+                IDLE_SUPPORTED_SERVICE, False)
             if has_shutdown_idle:
-                self.idle_shutdown_checkbox.setChecked(self.vm.features.get(
-                    "shutdown-idle", False))
+                self.idle_shutdown_checkbox.setChecked(
+                    bool(self.vm.features.get(IDLE_SERVICE, False)))
             else:
                 text = "Shut down when idle "
                 if getattr(self.vm, 'template', None):
@@ -457,9 +465,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     additional_text = "(unavailable: package " \
                                       "qubes-app-shutdown-idle missing " \
                                       "in the qube)"
-                self.idle_shutdown_checkbox.setText(
-                    text + additional_text)
-            self.idle_shutdown_checkbox.setEnabled(False)
+                self.idle_shutdown_checkbox.setText(text + additional_text)
+                self.idle_shutdown_checkbox.setEnabled(False)
         except qubesadmin.exc.QubesDaemonCommunicationError:
             self.idle_shutdown_checkbox.setText(
                 self.idle_shutdown_checkbox.text() +
@@ -569,10 +576,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         # shutdown-idle
         try:
-            current_idle = self.vm.features.get("shutdown-idle", False)
+            current_idle = self.vm.features.get(IDLE_SERVICE, False)
             if self.idle_shutdown_checkbox.isEnabled() and \
                     self.idle_shutdown_checkbox.isChecked() != current_idle:
-                self.vm.features["shutdown-idle"] = \
+                self.vm.features[IDLE_SERVICE] = \
                     self.idle_shutdown_checkbox.isChecked()
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
@@ -1307,9 +1314,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.new_srv_dict = {}
         try:
             for feature in self.vm.features:
-                if not feature.startswith('service.'):
+                if not feature.startswith(SERVICE_PREFIX) or \
+                        feature in INTERNAL_SERVICE_FEATURES:
                     continue
-                service = feature[len('service.'):]
+                service = feature[len(SERVICE_PREFIX):]
                 item = QtWidgets.QListWidgetItem(service)
                 item.setCheckState(ui_settingsdlg.QtCore.Qt.Checked
                                    if self.vm.features[feature]
@@ -1323,16 +1331,18 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.service_line_edit.addItem("")
 
         supported_services = set()
-        service_prefix = "supported-service."
 
         for feature in self.vm.features:
-            if feature.startswith(service_prefix):
-                supported_services.add(feature[len(service_prefix):])
+            if feature.startswith(SUPPORTED_SERVICE_PREFIX) and \
+                    feature not in INTERNAL_SUPPORTED_FEATURES:
+                supported_services.add(feature[len(SUPPORTED_SERVICE_PREFIX):])
         if getattr(self.vm, "template", None):
             try:
                 for feature in self.vm.template.features:
-                    if feature.startswith(service_prefix):
-                        supported_services.add(feature[len(service_prefix):])
+                    if feature.startswith(SUPPORTED_SERVICE_PREFIX) and \
+                            feature not in INTERNAL_SUPPORTED_FEATURES:
+                        supported_services.add(
+                            feature[len(SUPPORTED_SERVICE_PREFIX):])
             except qubesadmin.exc.QubesDaemonAccessError:
                 pass
 
@@ -1390,14 +1400,15 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     (item.checkState() == ui_settingsdlg.QtCore.Qt.Checked)
 
             for service, v in self.new_srv_dict.items():
-                feature = 'service.' + service
+                feature = SERVICE_PREFIX + service
                 if v != self.vm.features.get(feature, object()):
                     self.vm.features[feature] = v
 
             for feature in self.vm.features:
-                if not feature.startswith('service.'):
+                if not feature.startswith(SERVICE_PREFIX) or \
+                        feature in INTERNAL_SERVICE_FEATURES:
                     continue
-                service = feature[len('service.'):]
+                service = feature[len(SERVICE_PREFIX):]
                 if service not in self.new_srv_dict:
                     del self.vm.features[feature]
         except qubesadmin.exc.QubesException as ex:
