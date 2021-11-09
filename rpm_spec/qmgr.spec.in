@@ -14,7 +14,7 @@ Requires:	python%{python3_pkgversion}-qt5
 Requires:	python%{python3_pkgversion}-PyQt5
 %endif
 Requires:	python%{python3_pkgversion}-inotify
-Requires:	python%{python3_pkgversion}-qubesadmin >= 4.1.8
+Requires:	python%{python3_pkgversion}-qubesadmin >= 4.1.18
 Requires:	python%{python3_pkgversion}-qasync
 Requires:	qubes-desktop-linux-common >= 4.1.2
 Requires:	qubes-artwork
