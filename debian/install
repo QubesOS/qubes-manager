@@ -11,7 +11,6 @@
 /usr/bin/qubes-vm-clone
 /usr/libexec/qubes-manager/mount_for_backup.sh
 /usr/libexec/qubes-manager/qvm_about.sh
-/usr/libexec/qubes-manager/dsa-4371-update
 
 /usr/lib/*/dist-packages/qubesmanager/__pycache__
 /usr/lib/*/dist-packages/qubesmanager/__init__.py

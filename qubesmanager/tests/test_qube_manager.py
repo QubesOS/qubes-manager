@@ -1619,9 +1619,6 @@ class QubeManagerThreadTest(unittest.TestCase):
 
         thread.run()
 
-        mock_open.assert_called_with(
-            '/usr/libexec/qubes-manager/dsa-4371-update', 'rb')
-
         vm.run_service_for_stdio.assert_called_once_with(
             "qubes.VMShell", user='root', input=unittest.mock.ANY)
 
@@ -1643,9 +1640,6 @@ class QubeManagerThreadTest(unittest.TestCase):
 
         thread = qube_manager.UpdateVMThread(vm)
         thread.run()
-
-        mock_open.assert_called_with(
-            '/usr/libexec/qubes-manager/dsa-4371-update', 'rb')
 
         vm.start.assert_called_once_with()
 

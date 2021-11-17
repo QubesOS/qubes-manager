@@ -607,24 +607,6 @@ class UpdateVMThread(common_threads.QubesThread):
                     except exc.QubesDaemonAccessError:
                         # permission denied, let us hope for the best
                         pass
-                # apply DSA-4371
-                with open('/usr/libexec/qubes-manager/dsa-4371-update', 'rb') \
-                        as dsa4371update:
-                    stdout, stderr = self.vm.run_service_for_stdio(
-                            "qubes.VMShell",
-                            user="root",
-                            input=dsa4371update.read())
-                if stdout == b'changed=yes\n':
-                    subprocess.call(
-                        ['notify-send', '-i', 'dialog-information',
-                         self.tr('Debian DSA-4371 fix installed in {}').format(
-                                self.vm.name)])
-                elif stdout == b'changed=no\n':
-                    pass
-                else:
-                    raise exc.QubesException(
-                            self.tr("Failed to apply DSA-4371 fix: {}").format(
-                                stderr.decode('ascii')))
                 self.vm.run_service("qubes.InstallUpdatesGUI",
                                     user="root", wait=False)
         except (ChildProcessError, exc.QubesException) as ex:

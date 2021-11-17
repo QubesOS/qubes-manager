@@ -36,7 +36,6 @@ install:
 	mkdir -p $(DESTDIR)/usr/libexec/qubes-manager/
 	cp qubesmanager/mount_for_backup.sh $(DESTDIR)/usr/libexec/qubes-manager/
 	cp qubesmanager/qvm_about.sh $(DESTDIR)/usr/libexec/qubes-manager/
-	cp qubesmanager/dsa-4371-update $(DESTDIR)/usr/libexec/qubes-manager/
 
 	mkdir -p $(DESTDIR)/usr/share/applications
 	cp qubes-global-settings.desktop $(DESTDIR)/usr/share/applications/

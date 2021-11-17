@@ -1763,16 +1763,6 @@ The qube must be running to disable seamless mode; this setting is not persisten
 <context>
     <name>UpdateVMThread</name>
     <message>
-        <location filename="../qube_manager.py" line="618"/>
-        <source>Debian DSA-4371 fix installed in {}</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../qube_manager.py" line="625"/>
-        <source>Failed to apply DSA-4371 fix: {}</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../qube_manager.py" line="631"/>
         <source>Error on qube update!</source>
         <translation type="unfinished"></translation>
