@@ -78,9 +78,9 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>0</y>
-        <width>1019</width>
-        <height>617</height>
+        <y>-176</y>
+        <width>1016</width>
+        <height>779</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
@@ -99,169 +99,6 @@
        <property name="spacing">
         <number>10</number>
        </property>
-       <item row="5" column="0">
-        <layout class="QGridLayout" name="layout_repos">
-         <property name="spacing">
-          <number>6</number>
-         </property>
-         <item row="2" column="1">
-          <widget class="QComboBox" name="comm_tmpl_updates_repo">
-           <item>
-            <property name="text">
-             <string>(Community templates disabled)</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Community template updates</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Community template updates (testing)</string>
-            </property>
-           </item>
-          </widget>
-         </item>
-         <item row="0" column="0" colspan="2">
-          <widget class="QLabel" name="label_6">
-           <property name="font">
-            <font>
-             <pointsize>18</pointsize>
-             <weight>37</weight>
-             <bold>false</bold>
-            </font>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">font-weight: 300</string>
-           </property>
-           <property name="text">
-            <string>Source repositories</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="1">
-          <widget class="QComboBox" name="dom0_updates_repo">
-           <item>
-            <property name="text">
-             <string>Stable updates</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Testing updates (security only)</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Testing updates</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Unstable updates</string>
-            </property>
-           </item>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="label_40">
-           <property name="text">
-            <string>Qubes OS official templates:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QComboBox" name="itl_tmpl_updates_repo">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <item>
-            <property name="text">
-             <string>Official template updates</string>
-            </property>
-           </item>
-           <item>
-            <property name="text">
-             <string>Official template updates (testing)</string>
-            </property>
-           </item>
-          </widget>
-         </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="label_38">
-           <property name="text">
-            <string>Community templates:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="0">
-          <widget class="QLabel" name="label_39">
-           <property name="text">
-            <string>dom0 updates:</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="2" column="1">
-        <layout class="QGridLayout" name="layout_kernel">
-         <property name="spacing">
-          <number>6</number>
-         </property>
-         <item row="1" column="0">
-          <widget class="QLabel" name="label">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="font">
-            <font>
-             <pointsize>10</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string>Default kernel used by qubes:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QComboBox" name="default_kernel_combo">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="0" colspan="2">
-          <widget class="QLabel" name="label_8">
-           <property name="font">
-            <font>
-             <pointsize>18</pointsize>
-             <weight>37</weight>
-             <bold>false</bold>
-            </font>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">font-weight: 300</string>
-           </property>
-           <property name="text">
-            <string>Linux kernel</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
        <item row="4" column="0" colspan="2">
         <widget class="Line" name="line_2">
          <property name="frameShadow">
@@ -275,18 +112,112 @@
          </property>
         </widget>
        </item>
-       <item row="6" column="0" colspan="2">
-        <widget class="Line" name="line">
-         <property name="frameShadow">
-          <enum>QFrame::Plain</enum>
+       <item row="5" column="1">
+        <layout class="QGridLayout" name="layout_mem">
+         <property name="spacing">
+          <number>6</number>
          </property>
-         <property name="lineWidth">
-          <number>2</number>
-         </property>
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
+         <item row="3" column="1">
+          <widget class="QSpinBox" name="dom0_mem_boost">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="toolTip">
+            <string>Additional memory allocated to dom0 by Qubes Memory Balancer</string>
+           </property>
+           <property name="suffix">
+            <string> MiB</string>
+           </property>
+           <property name="maximum">
+            <number>999999999</number>
+           </property>
+           <property name="singleStep">
+            <number>50</number>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QSpinBox" name="min_vm_mem">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="suffix">
+            <string> MiB</string>
+           </property>
+           <property name="maximum">
+            <number>999999999</number>
+           </property>
+           <property name="singleStep">
+            <number>50</number>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0" colspan="2">
+          <widget class="QLabel" name="label_7">
+           <property name="font">
+            <font>
+             <pointsize>18</pointsize>
+             <weight>38</weight>
+             <bold>false</bold>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">font-weight: 300</string>
+           </property>
+           <property name="text">
+            <string>Memory balancing</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0" colspan="2">
+          <widget class="QLabel" name="label_37">
+           <property name="font">
+            <font>
+             <pointsize>9</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Enabled as default for all qubes, except for those with connected PCI devices</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="2">
+          <spacer name="horizontalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_36">
+           <property name="text">
+            <string>Minimum qube memory:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_35">
+           <property name="text">
+            <string>Additional dom0 memory:</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item row="10" column="0">
         <layout class="QVBoxLayout" name="layout_updater">
@@ -298,7 +229,7 @@
            <property name="font">
             <font>
              <pointsize>18</pointsize>
-             <weight>37</weight>
+             <weight>38</weight>
              <bold>false</bold>
             </font>
            </property>
@@ -406,113 +337,6 @@
          </item>
         </layout>
        </item>
-       <item row="5" column="1">
-        <layout class="QGridLayout" name="layout_mem">
-         <property name="spacing">
-          <number>6</number>
-         </property>
-         <item row="3" column="1">
-          <widget class="QSpinBox" name="dom0_mem_boost">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-           <property name="toolTip">
-            <string>Additional memory allocated to dom0 by Qubes Memory Balancer</string>
-           </property>
-           <property name="suffix">
-            <string> MiB</string>
-           </property>
-           <property name="maximum">
-            <number>999999999</number>
-           </property>
-           <property name="singleStep">
-            <number>50</number>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QSpinBox" name="min_vm_mem">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="suffix">
-            <string> MiB</string>
-           </property>
-           <property name="maximum">
-            <number>999999999</number>
-           </property>
-           <property name="singleStep">
-            <number>50</number>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="0" colspan="2">
-          <widget class="QLabel" name="label_7">
-           <property name="font">
-            <font>
-             <pointsize>18</pointsize>
-             <weight>37</weight>
-             <bold>false</bold>
-            </font>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">font-weight: 300</string>
-           </property>
-           <property name="text">
-            <string>Memory balancing</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0" colspan="2">
-          <widget class="QLabel" name="label_37">
-           <property name="font">
-            <font>
-             <pointsize>9</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string>Enabled as default for all qubes, except for those with connected PCI devices</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="2">
-          <spacer name="horizontalSpacer_2">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="label_36">
-           <property name="text">
-            <string>Minimum qube memory:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="0">
-          <widget class="QLabel" name="label_35">
-           <property name="text">
-            <string>Additional dom0 memory:</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
        <item row="9" column="0" colspan="2">
         <widget class="Line" name="line_3">
          <property name="frameShadow">
@@ -526,51 +350,36 @@
          </property>
         </widget>
        </item>
-       <item row="7" column="1">
-        <layout class="QGridLayout" name="layout_kbd">
+       <item row="5" column="0">
+        <layout class="QGridLayout" name="layout_repos">
          <property name="spacing">
           <number>6</number>
          </property>
          <item row="2" column="1">
-          <widget class="QComboBox" name="securecopy">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="1">
-          <widget class="QComboBox" name="securepaste"/>
-         </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="label_25">
-           <property name="text">
-            <string>Copy (inter-qube):</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0" colspan="2">
-          <widget class="QLabel" name="label_26">
-           <property name="font">
-            <font>
-             <pointsize>10</pointsize>
-             <weight>75</weight>
-             <bold>true</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string>Global Clipboard</string>
-           </property>
+          <widget class="QComboBox" name="comm_tmpl_updates_repo">
+           <item>
+            <property name="text">
+             <string>(Community templates disabled)</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Community template updates</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Community template updates (testing)</string>
+            </property>
+           </item>
           </widget>
          </item>
          <item row="0" column="0" colspan="2">
-          <widget class="QLabel" name="label_5">
+          <widget class="QLabel" name="label_6">
            <property name="font">
             <font>
              <pointsize>18</pointsize>
-             <weight>37</weight>
+             <weight>38</weight>
              <bold>false</bold>
             </font>
            </property>
@@ -578,14 +387,72 @@
             <string notr="true">font-weight: 300</string>
            </property>
            <property name="text">
-            <string>Keyboard shortcuts</string>
+            <string>Source repositories</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QComboBox" name="dom0_updates_repo">
+           <item>
+            <property name="text">
+             <string>Stable updates</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Testing updates (security only)</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Testing updates</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Unstable updates</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_40">
+           <property name="text">
+            <string>Qubes OS official templates:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QComboBox" name="itl_tmpl_updates_repo">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <item>
+            <property name="text">
+             <string>Official template updates</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Official template updates (testing)</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_38">
+           <property name="text">
+            <string>Community templates:</string>
            </property>
           </widget>
          </item>
          <item row="3" column="0">
-          <widget class="QLabel" name="label_27">
+          <widget class="QLabel" name="label_39">
            <property name="text">
-            <string>Paste (inter-qube):</string>
+            <string>dom0 updates:</string>
            </property>
           </widget>
          </item>
@@ -682,7 +549,7 @@
            <property name="font">
             <font>
              <pointsize>18</pointsize>
-             <weight>37</weight>
+             <weight>38</weight>
              <bold>false</bold>
             </font>
            </property>
@@ -712,39 +579,6 @@
            </property>
            <property name="alignment">
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="2" column="0">
-        <layout class="QGridLayout" name="layout_title">
-         <item row="0" column="0" rowspan="2">
-          <widget class="QLabel" name="logo_label">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1" rowspan="2">
-          <widget class="QLabel" name="label_release">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Montserrat'; font-size:24pt; font-weight:200;&quot;&gt;Qubes OS 4.1&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;/&gt;&lt;a href=&quot;release&quot;&gt;&lt;span style=&quot; font-weight:600; text-decoration: underline; color:#0000ff;&quot;&gt;Release Notes&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-weight:600;&quot;&gt; · &lt;/span&gt;&lt;a href=&quot;version&quot;&gt;&lt;span style=&quot; font-weight:600; text-decoration: underline; color:#0000ff;&quot;&gt;Version Information&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
            </property>
           </widget>
          </item>
@@ -797,7 +631,7 @@
            <property name="font">
             <font>
              <pointsize>18</pointsize>
-             <weight>37</weight>
+             <weight>38</weight>
              <bold>false</bold>
             </font>
            </property>
@@ -811,7 +645,209 @@
          </item>
         </layout>
        </item>
-       <item row="11" column="0">
+       <item row="2" column="0">
+        <layout class="QGridLayout" name="layout_title">
+         <item row="0" column="0" rowspan="2">
+          <widget class="QLabel" name="logo_label">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1" rowspan="2">
+          <widget class="QLabel" name="label_release">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Montserrat'; font-size:24pt; font-weight:200;&quot;&gt;Qubes OS 4.1&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;/&gt;&lt;a href=&quot;release&quot;&gt;&lt;span style=&quot; font-weight:600; text-decoration: underline; color:#0000ff;&quot;&gt;Release Notes&lt;/span&gt;&lt;/a&gt;&lt;span style=&quot; font-weight:600;&quot;&gt; · &lt;/span&gt;&lt;a href=&quot;version&quot;&gt;&lt;span style=&quot; font-weight:600; text-decoration: underline; color:#0000ff;&quot;&gt;Version Information&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="11" column="0" colspan="2">
+        <widget class="Line" name="line_4">
+         <property name="frameShadow">
+          <enum>QFrame::Plain</enum>
+         </property>
+         <property name="lineWidth">
+          <number>2</number>
+         </property>
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0" colspan="2">
+        <widget class="Line" name="line">
+         <property name="frameShadow">
+          <enum>QFrame::Plain</enum>
+         </property>
+         <property name="lineWidth">
+          <number>2</number>
+         </property>
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="0">
+        <layout class="QVBoxLayout" name="verticalLayout">
+         <item>
+          <widget class="QLabel" name="label_9">
+           <property name="font">
+            <font>
+             <pointsize>18</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Security</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="security_hide_dots">
+           <property name="text">
+            <string>Hide dots during disk decryption</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="2" column="1">
+        <layout class="QGridLayout" name="layout_kernel">
+         <property name="spacing">
+          <number>6</number>
+         </property>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Default kernel used by qubes:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QComboBox" name="default_kernel_combo">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0" colspan="2">
+          <widget class="QLabel" name="label_8">
+           <property name="font">
+            <font>
+             <pointsize>18</pointsize>
+             <weight>38</weight>
+             <bold>false</bold>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">font-weight: 300</string>
+           </property>
+           <property name="text">
+            <string>Linux kernel</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="7" column="1">
+        <layout class="QGridLayout" name="layout_kbd">
+         <property name="spacing">
+          <number>6</number>
+         </property>
+         <item row="2" column="1">
+          <widget class="QComboBox" name="securecopy">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QComboBox" name="securepaste"/>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_25">
+           <property name="text">
+            <string>Copy (inter-qube):</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0" colspan="2">
+          <widget class="QLabel" name="label_26">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>Global Clipboard</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0" colspan="2">
+          <widget class="QLabel" name="label_5">
+           <property name="font">
+            <font>
+             <pointsize>18</pointsize>
+             <weight>38</weight>
+             <bold>false</bold>
+            </font>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">font-weight: 300</string>
+           </property>
+           <property name="text">
+            <string>Keyboard shortcuts</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_27">
+           <property name="text">
+            <string>Paste (inter-qube):</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="15" column="0">
         <spacer name="verticalSpacer">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -842,8 +878,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
+     <x>254</x>
+     <y>637</y>
     </hint>
     <hint type="destinationlabel">
      <x>157</x>
@@ -858,8 +894,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
+     <x>322</x>
+     <y>637</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>

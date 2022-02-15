@@ -66,6 +66,7 @@ def _run_qrexec_repo(service, arg=''):
     return p.stdout.decode('utf-8')
 
 class ApplyGlobalSettingsThread(common_threads.QubesThread):
+    # pylint: disable=too-few-public-methods
     def __init__(self, vm, settings):
         super().__init__(vm)
         self.settings = settings
@@ -78,6 +79,7 @@ class ApplyGlobalSettingsThread(common_threads.QubesThread):
         self.__apply_updates__()
         self.__apply_repos__()
         self.__apply_gui_defaults()
+        self.__apply_security_defaults__()
 
         if self.errors:
             err_msg = "Failed to apply some settings:\n" + "\n".join(
@@ -165,6 +167,20 @@ class ApplyGlobalSettingsThread(common_threads.QubesThread):
                                     feature='gui-default-secure-copy-sequence')
         self.__apply_feature_change(widget=cfg.securepaste,
                                     feature='gui-default-secure-paste-sequence')
+
+    def __apply_security_defaults__(self):
+        cfg = self.settings
+
+        if cfg.security_hide_dots.isEnabled() and \
+            cfg.security_hide_dots.isChecked() != cfg.security_hide_dots_val:
+            theme = "qubes-dark-no-echo" if cfg.security_hide_dots.isChecked() \
+                else "qubes-dark"
+            try:
+                subprocess.run(["sudo", "plymouth-set-default-theme",
+                    "-R", theme], check=True)
+            except subprocess.CalledProcessError:
+                self.errors.append(
+                    "Failed to change plymouth theme")
 
     def __apply_feature_change(self, widget, feature):
         cfg = self.settings
@@ -385,6 +401,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.__init_mem_defaults__()
         self.__init_updates__()
         self.__init_gui_defaults()
+        self.__init_security_defaults__()
 
     def setup_application(self):
         self.app.setApplicationName(self.tr("Qubes Global Settings"))
@@ -558,6 +575,18 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             ],
             selected_value=utils.get_feature(
                 self.vm, 'gui-default-secure-paste-sequence', None))
+
+    def __init_security_defaults__(self):
+        try:
+            plymouth_theme = subprocess.run(["plymouth-set-default-theme"],
+                stdout=subprocess.PIPE, check=True).stdout.rstrip()
+        except subprocess.CalledProcessError:
+            QtWidgets.QMessageBox.warning(
+                self, "Error!",
+                "Failed get current plymouth theme")
+
+        self.security_hide_dots_val = plymouth_theme == b"qubes-dark-no-echo"
+        self.security_hide_dots.setChecked(self.security_hide_dots_val)
 
     def __init_mem_defaults__(self):
         # qmemman settings
