@@ -32,6 +32,7 @@ from qubesmanager.informationnotes import InformationNotesDialog
 
 from . import ui_globalsettingsdlg  # pylint: disable=no-name-in-module
 from . import utils
+from . import common_threads
 
 from configparser import ConfigParser
 
@@ -64,6 +65,300 @@ def _run_qrexec_repo(service, arg=''):
         raise exc.QubesException(msg + ' (%s)', p.returncode)
     return p.stdout.decode('utf-8')
 
+class ApplyGlobalSettingsThread(common_threads.QubesThread):
+    def __init__(self, vm, settings):
+        super().__init__(vm)
+        self.settings = settings
+        self.errors = []
+
+    def run(self):
+        self.__apply_system_defaults__()
+        self.__apply_kernel_defaults__()
+        self.__apply_mem_defaults__()
+        self.__apply_updates__()
+        self.__apply_repos__()
+        self.__apply_gui_defaults()
+
+        if self.errors:
+            err_msg = "Failed to apply some settings:\n" + "\n".join(
+                self.errors)
+            QtWidgets.QMessageBox.warning(self, "Error", err_msg)
+
+    def __apply_system_defaults__(self):
+        cfg = self.settings
+
+        # updatevm
+        if utils.did_widget_selection_change(cfg.update_vm_combo):
+            try:
+                cfg.qubes_app.updatevm = cfg.update_vm_combo.currentData()
+            except exc.QubesException as ex:
+                self.errors.append(
+                    "Failed to set UpdateVM due to {}".format(str(ex)))
+
+        # clockvm
+        if utils.did_widget_selection_change(cfg.clock_vm_combo):
+            try:
+                cfg.qubes_app.clockvm = cfg.clock_vm_combo.currentData()
+            except exc.QubesException as ex:
+                self.errors.append(
+                    "Failed to set ClockVM due to {}".format(str(ex)))
+
+        # default netvm
+        if utils.did_widget_selection_change(cfg.default_netvm_combo):
+            new_default_netvm = cfg.default_netvm_combo.currentData()
+            if new_default_netvm and \
+                    new_default_netvm.property_is_default('netvm'):
+                self.errors.append(
+                    "Cannot set {} as the default net qube. Reason: {}'s net"
+                    " qube is already set to 'default', and a qube cannot be "
+                    "its own net qube. Please change {}'s net qube and try "
+                    "again.".format(
+                        str(new_default_netvm), str(new_default_netvm),
+                        str(new_default_netvm)))
+            else:
+                try:
+                    cfg.qubes_app.default_netvm = \
+                        cfg.default_netvm_combo.currentData()
+                except exc.QubesException as ex:
+                    self.errors.append(
+                        "Cannot set default net qube: {}".format(str(ex)))
+
+        # default template
+        if utils.did_widget_selection_change(cfg.default_template_combo):
+            try:
+                cfg.qubes_app.default_template = \
+                    cfg.default_template_combo.currentData()
+            except exc.QubesException as ex:
+                self.errors.append(
+                    "Failed to set Default Template due to {}".format(str(ex)))
+
+        # default_dispvm
+        if utils.did_widget_selection_change(cfg.default_dispvm_combo):
+            try:
+                cfg.qubes_app.default_dispvm = \
+                    cfg.default_dispvm_combo.currentData()
+            except exc.QubesException as ex:
+                self.errors.append(
+                    "Failed to set Default DispVM due to {}".format(str(ex)))
+
+    def __apply_kernel_defaults__(self):
+        cfg = self.settings
+
+        if utils.did_widget_selection_change(cfg.default_kernel_combo):
+            try:
+                cfg.qubes_app.default_kernel = \
+                    cfg.default_kernel_combo.currentData()
+            except exc.QubesException as ex:
+                self.errors.append(
+                    "Failed to set Default Kernel due to {}".format(str(ex)))
+
+    def __apply_gui_defaults(self):
+        cfg = self.settings
+
+        self.__apply_feature_change(widget=cfg.allow_fullscreen,
+                                    feature='gui-default-allow-fullscreen')
+        self.__apply_feature_change(widget=cfg.allow_utf8,
+                                    feature='gui-default-allow-utf8-titles')
+        self.__apply_feature_change(widget=cfg.trayicon,
+                                    feature='gui-default-trayicon-mode')
+        self.__apply_feature_change(widget=cfg.securecopy,
+                                    feature='gui-default-secure-copy-sequence')
+        self.__apply_feature_change(widget=cfg.securepaste,
+                                    feature='gui-default-secure-paste-sequence')
+
+    def __apply_feature_change(self, widget, feature):
+        cfg = self.settings
+
+        if utils.did_widget_selection_change(widget):
+            if widget.currentData() is None:
+                try:
+                    del cfg.vm.features[feature]
+                except exc.QubesDaemonAccessError:
+                    self.errors.append(
+                        "Failed to set {} due to insufficient "
+                        "permissions".format(feature))
+            else:
+                try:
+                    cfg.vm.features[feature] = widget.currentData()
+                except exc.QubesDaemonAccessError:
+                    self.errors.append(
+                        "Failed to set {} due to insufficient "
+                        "permissions".format(feature))
+
+    def __apply_mem_defaults__(self):
+        cfg = self.settings
+
+        if not cfg.min_vm_mem.isEnabled() or \
+                not cfg.dom0_mem_boost.isEnabled():
+            return
+
+        # qmemman settings
+        current_min_vm_mem = cfg.min_vm_mem.value()
+        current_dom0_mem_boost = cfg.dom0_mem_boost.value()
+
+        if current_min_vm_mem * 1024 * 1024 != cfg.vm_min_mem_val or \
+                current_dom0_mem_boost * 1024 * 1024 != cfg.dom0_mem_boost_val:
+
+            current_min_vm_mem = str(current_min_vm_mem) + 'MiB'
+            current_dom0_mem_boost = str(current_dom0_mem_boost) + 'MiB'
+
+            if not cfg.qmemman_config.has_section('global'):
+                # add the whole section
+                cfg.qmemman_config.add_section('global')
+                cfg.qmemman_config.set(
+                    'global', 'vm-min-mem', current_min_vm_mem)
+                cfg.qmemman_config.set(
+                    'global', 'dom0-mem-boost', current_dom0_mem_boost)
+                cfg.qmemman_config.set(
+                    'global', 'cache-margin-factor', str(1.3))
+                # removed qmemman_algo.CACHE_FACTOR
+
+                try:
+                    qmemman_config_file = open(qmemman_config_path, 'a')
+                    cfg.qmemman_config.write(qmemman_config_file)
+                    qmemman_config_file.close()
+                except Exception as ex:  # pylint: disable=broad-except
+                    self.errors.append(
+                        "Failed to set memory settings due to {}".format(
+                            str(ex)))
+
+            else:
+                # If there already is a 'global' section, we don't use
+                # SafeConfigParser.write() - it would get rid of
+                # all the comments...
+
+                lines_to_add = {}
+                lines_to_add['vm-min-mem'] = \
+                    "vm-min-mem = " + current_min_vm_mem + "\n"
+                lines_to_add['dom0-mem-boost'] = \
+                    "dom0-mem-boost = " + current_dom0_mem_boost + "\n"
+
+                config_lines = []
+
+                try:
+                    qmemman_config_file = open(qmemman_config_path, 'r')
+                except Exception as ex:  # pylint: disable=broad-except
+                    self.errors.append(
+                        "Failed to set memory settings due to {}".format(
+                            str(ex)))
+                    return
+
+                for line in qmemman_config_file:
+                    if line.strip().startswith('vm-min-mem'):
+                        config_lines.append(lines_to_add['vm-min-mem'])
+                        del lines_to_add['vm-min-mem']
+                    elif line.strip().startswith('dom0-mem-boost'):
+                        config_lines.append(lines_to_add['dom0-mem-boost'])
+                        del lines_to_add['dom0-mem-boost']
+                    else:
+                        config_lines.append(line)
+
+                qmemman_config_file.close()
+
+                for line in lines_to_add:
+                    config_lines.append(line)
+
+                try:
+                    qmemman_config_file = open(qmemman_config_path, 'w')
+                    qmemman_config_file.writelines(config_lines)
+                    qmemman_config_file.close()
+                except Exception as ex:  # pylint: disable=broad-except
+                    self.errors.append(
+                        "Failed to set memory settings due to {}".format(
+                            str(ex)))
+                    return
+
+    def __apply_updates__(self):
+        cfg = self.settings
+
+        if cfg.updates_dom0.isEnabled() and \
+                cfg.updates_dom0.isChecked() != cfg.updates_dom0_val:
+            try:
+                cfg.qubes_app.domains['dom0'].features[
+                    'service.qubes-update-check'] = \
+                    cfg.updates_dom0.isChecked()
+            except exc.QubesDaemonAccessError:
+                self.errors.append("Failed to change dom0 update value due "
+                                   "to insufficient permissions.")
+
+        if cfg.updates_vm.isEnabled() and \
+                cfg.qubes_app.check_updates_vm != cfg.updates_vm.isChecked():
+            try:
+                cfg.qubes_app.check_updates_vm = cfg.updates_vm.isChecked()
+            except exc.QubesDaemonAccessError:
+                self.errors.append("Failed to set qube update checking due "
+                                   "to insufficient permissions.")
+
+    def _manage_repos(self, repolist, action):
+        cfg = self.settings
+
+        for name in repolist:
+            if cfg.repos[name]['enabled'] and action == 'Enable' or \
+                    not cfg.repos[name]['enabled'] and action == 'Disable':
+                continue
+
+            try:
+                result = _run_qrexec_repo('qubes.repos.' + action, name)
+                if result != 'ok\n':
+                    raise RuntimeError(
+                        self.tr('qrexec call stdout did not contain "ok"'
+                                ' as expected'),
+                        {'stdout': result})
+            except RuntimeError as ex:
+                msg = '{desc}; {args}'.format(desc=ex.args[0], args=', '.join(
+                    # This is kind of hard to mentally parse but really all
+                    # it does is pretty-print args[1], which is a dictionary
+                    ['{key}: {val}'.format(key=i[0], val=i[1]) for i in
+                     ex.args[1].items()]
+                ))
+                QtWidgets.QMessageBox.warning(
+                    None,
+                    self.tr("ERROR!"),
+                    self.tr("Error managing {repo} repository settings:"
+                            " {msg}".format(repo=name, msg=msg)))
+
+    def _handle_dom0_updates_combobox(self, idx):
+        idx += 1
+        repolist = ['qubes-dom0-current', 'qubes-dom0-security-testing',
+                    'qubes-dom0-current-testing', 'qubes-dom0-unstable']
+        enable = repolist[:idx]
+        disable = repolist[idx:]
+        self._manage_repos(enable, 'Enable')
+        self._manage_repos(disable, 'Disable')
+
+    # pylint: disable=invalid-name
+    def _handle_itl_tmpl_updates_combobox(self, idx):
+        idx += 1
+        repolist = ['qubes-templates-itl', 'qubes-templates-itl-testing']
+        enable = repolist[:idx]
+        disable = repolist[idx:]
+        self._manage_repos(enable, 'Enable')
+        self._manage_repos(disable, 'Disable')
+
+    # pylint: disable=invalid-name
+    def _handle_comm_tmpl_updates_combobox(self, idx):
+        # We don't increment idx by 1 because this is the only combobox that
+        # has an explicit "disable this repository entirely" option
+        repolist = ['qubes-templates-community',
+                    'qubes-templates-community-testing']
+        enable = repolist[:idx]
+        disable = repolist[idx:]
+        self._manage_repos(enable, 'Enable')
+        self._manage_repos(disable, 'Disable')
+
+
+    def __apply_repos__(self):
+        cfg = self.settings
+
+        if cfg.dom0_updates_repo.isEnabled():
+            self._handle_dom0_updates_combobox(
+                cfg.dom0_updates_repo.currentIndex())
+        if cfg.itl_tmpl_updates_repo.isEnabled():
+            self._handle_itl_tmpl_updates_combobox(
+                cfg.itl_tmpl_updates_repo.currentIndex())
+        if cfg.comm_tmpl_updates_repo.isEnabled():
+            self._handle_comm_tmpl_updates_combobox(
+                cfg.comm_tmpl_updates_repo.currentIndex())
 
 class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                            QtWidgets.QDialog):
@@ -74,6 +369,9 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.app: QtWidgets.QApplication = app
         self.qubes_app = qubes_app
         self.vm = self.qubes_app.domains[self.qubes_app.local_name]
+        self.threads_list = []
+        self.progress = None
+        self.thread_closes = False
 
         self.setupUi(self)
 
@@ -87,8 +385,6 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.__init_mem_defaults__()
         self.__init_updates__()
         self.__init_gui_defaults()
-
-        self.errors = []
 
     def setup_application(self):
         self.app.setApplicationName(self.tr("Qubes Global Settings"))
@@ -192,61 +488,6 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             property_name="default_dispvm"
         )
 
-    def __apply_system_defaults__(self):
-        # updatevm
-        if utils.did_widget_selection_change(self.update_vm_combo):
-            try:
-                self.qubes_app.updatevm = self.update_vm_combo.currentData()
-            except exc.QubesException as ex:
-                self.errors.append(
-                    "Failed to set UpdateVM due to {}".format(str(ex)))
-
-        # clockvm
-        if utils.did_widget_selection_change(self.clock_vm_combo):
-            try:
-                self.qubes_app.clockvm = self.clock_vm_combo.currentData()
-            except exc.QubesException as ex:
-                self.errors.append(
-                    "Failed to set ClockVM due to {}".format(str(ex)))
-
-        # default netvm
-        if utils.did_widget_selection_change(self.default_netvm_combo):
-            new_default_netvm = self.default_netvm_combo.currentData()
-            if new_default_netvm and \
-                    new_default_netvm.property_is_default('netvm'):
-                self.errors.append(
-                    "Cannot set {} as the default net qube. Reason: {}'s net"
-                    " qube is already set to 'default', and a qube cannot be "
-                    "its own net qube. Please change {}'s net qube and try "
-                    "again.".format(
-                        str(new_default_netvm), str(new_default_netvm),
-                        str(new_default_netvm)))
-            else:
-                try:
-                    self.qubes_app.default_netvm = \
-                        self.default_netvm_combo.currentData()
-                except exc.QubesException as ex:
-                    self.errors.append(
-                        "Cannot set default net qube: {}".format(str(ex)))
-
-        # default template
-        if utils.did_widget_selection_change(self.default_template_combo):
-            try:
-                self.qubes_app.default_template = \
-                    self.default_template_combo.currentData()
-            except exc.QubesException as ex:
-                self.errors.append(
-                    "Failed to set Default Template due to {}".format(str(ex)))
-
-        # default_dispvm
-        if utils.did_widget_selection_change(self.default_dispvm_combo):
-            try:
-                self.qubes_app.default_dispvm = \
-                    self.default_dispvm_combo.currentData()
-            except exc.QubesException as ex:
-                self.errors.append(
-                    "Failed to set Default DispVM due to {}".format(str(ex)))
-
     def __init_kernel_defaults__(self):
         try:
             utils.initialize_widget_with_kernels(
@@ -259,15 +500,6 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             self.default_kernel_combo.clear()
             self.default_kernel_combo.setCurrentText("unavailable")
             self.default_kernel_combo.setEnabled(False)
-
-    def __apply_kernel_defaults__(self):
-        if utils.did_widget_selection_change(self.default_kernel_combo):
-            try:
-                self.qubes_app.default_kernel = \
-                    self.default_kernel_combo.currentData()
-            except exc.QubesException as ex:
-                self.errors.append(
-                    "Failed to set Default Kernel due to {}".format(str(ex)))
 
     def __init_gui_defaults(self):
         utils.initialize_widget(
@@ -327,35 +559,6 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
             selected_value=utils.get_feature(
                 self.vm, 'gui-default-secure-paste-sequence', None))
 
-    def __apply_feature_change(self, widget, feature):
-        if utils.did_widget_selection_change(widget):
-            if widget.currentData() is None:
-                try:
-                    del self.vm.features[feature]
-                except exc.QubesDaemonAccessError:
-                    self.errors.append(
-                        "Failed to set {} due to insufficient "
-                        "permissions".format(feature))
-            else:
-                try:
-                    self.vm.features[feature] = widget.currentData()
-                except exc.QubesDaemonAccessError:
-                    self.errors.append(
-                        "Failed to set {} due to insufficient "
-                        "permissions".format(feature))
-
-    def __apply_gui_defaults(self):
-        self.__apply_feature_change(widget=self.allow_fullscreen,
-                                    feature='gui-default-allow-fullscreen')
-        self.__apply_feature_change(widget=self.allow_utf8,
-                                    feature='gui-default-allow-utf8-titles')
-        self.__apply_feature_change(widget=self.trayicon,
-                                    feature='gui-default-trayicon-mode')
-        self.__apply_feature_change(widget=self.securecopy,
-                                    feature='gui-default-secure-copy-sequence')
-        self.__apply_feature_change(widget=self.securepaste,
-                                    feature='gui-default-secure-paste-sequence')
-
     def __init_mem_defaults__(self):
         # qmemman settings
         try:
@@ -381,88 +584,6 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         except exc.QubesException:
             self.min_vm_mem.setEnabled(False)
             self.dom0_mem_boost.setEnabled(False)
-
-    def __apply_mem_defaults__(self):
-
-        if not self.min_vm_mem.isEnabled() or \
-                not self.dom0_mem_boost.isEnabled():
-            return
-
-        # qmemman settings
-        current_min_vm_mem = self.min_vm_mem.value()
-        current_dom0_mem_boost = self.dom0_mem_boost.value()
-
-        if current_min_vm_mem * 1024 * 1024 != self.vm_min_mem_val or \
-                current_dom0_mem_boost * 1024 * 1024 != self.dom0_mem_boost_val:
-
-            current_min_vm_mem = str(current_min_vm_mem) + 'MiB'
-            current_dom0_mem_boost = str(current_dom0_mem_boost) + 'MiB'
-
-            if not self.qmemman_config.has_section('global'):
-                # add the whole section
-                self.qmemman_config.add_section('global')
-                self.qmemman_config.set(
-                    'global', 'vm-min-mem', current_min_vm_mem)
-                self.qmemman_config.set(
-                    'global', 'dom0-mem-boost', current_dom0_mem_boost)
-                self.qmemman_config.set(
-                    'global', 'cache-margin-factor', str(1.3))
-                # removed qmemman_algo.CACHE_FACTOR
-
-                try:
-                    qmemman_config_file = open(qmemman_config_path, 'a')
-                    self.qmemman_config.write(qmemman_config_file)
-                    qmemman_config_file.close()
-                except Exception as ex:  # pylint: disable=broad-except
-                    self.errors.append(
-                        "Failed to set memory settings due to {}".format(
-                            str(ex)))
-
-            else:
-                # If there already is a 'global' section, we don't use
-                # SafeConfigParser.write() - it would get rid of
-                # all the comments...
-
-                lines_to_add = {}
-                lines_to_add['vm-min-mem'] = \
-                    "vm-min-mem = " + current_min_vm_mem + "\n"
-                lines_to_add['dom0-mem-boost'] = \
-                    "dom0-mem-boost = " + current_dom0_mem_boost + "\n"
-
-                config_lines = []
-
-                try:
-                    qmemman_config_file = open(qmemman_config_path, 'r')
-                except Exception as ex:  # pylint: disable=broad-except
-                    self.errors.append(
-                        "Failed to set memory settings due to {}".format(
-                            str(ex)))
-                    return
-
-                for line in qmemman_config_file:
-                    if line.strip().startswith('vm-min-mem'):
-                        config_lines.append(lines_to_add['vm-min-mem'])
-                        del lines_to_add['vm-min-mem']
-                    elif line.strip().startswith('dom0-mem-boost'):
-                        config_lines.append(lines_to_add['dom0-mem-boost'])
-                        del lines_to_add['dom0-mem-boost']
-                    else:
-                        config_lines.append(line)
-
-                qmemman_config_file.close()
-
-                for line in lines_to_add:
-                    config_lines.append(line)
-
-                try:
-                    qmemman_config_file = open(qmemman_config_path, 'w')
-                    qmemman_config_file.writelines(config_lines)
-                    qmemman_config_file.close()
-                except Exception as ex:  # pylint: disable=broad-except
-                    self.errors.append(
-                        "Failed to set memory settings due to {}".format(
-                            str(ex)))
-                    return
 
     def __init_updates__(self):
         self.updates_dom0_val = bool(
@@ -558,108 +679,45 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 "Failed to set state for some qubes: {}".format(
                     ", ".join(errors)))
 
-    def __apply_updates__(self):
-        if self.updates_dom0.isEnabled() and \
-                self.updates_dom0.isChecked() != self.updates_dom0_val:
-            try:
-                self.qubes_app.domains['dom0'].features[
-                    'service.qubes-update-check'] = \
-                    self.updates_dom0.isChecked()
-            except exc.QubesDaemonAccessError:
-                self.errors.append("Failed to change dom0 update value due "
-                                   "to insufficient permissions.")
-
-        if self.updates_vm.isEnabled() and \
-                self.qubes_app.check_updates_vm != self.updates_vm.isChecked():
-            try:
-                self.qubes_app.check_updates_vm = self.updates_vm.isChecked()
-            except exc.QubesDaemonAccessError:
-                self.errors.append("Failed to set qube update checking due "
-                                   "to insufficient permissions.")
-
-    def _manage_repos(self, repolist, action):
-        for name in repolist:
-            if self.repos[name]['enabled'] and action == 'Enable' or \
-                    not self.repos[name]['enabled'] and action == 'Disable':
-                continue
-
-            try:
-                result = _run_qrexec_repo('qubes.repos.' + action, name)
-                if result != 'ok\n':
-                    raise RuntimeError(
-                        self.tr('qrexec call stdout did not contain "ok"'
-                                ' as expected'),
-                        {'stdout': result})
-            except RuntimeError as ex:
-                msg = '{desc}; {args}'.format(desc=ex.args[0], args=', '.join(
-                    # This is kind of hard to mentally parse but really all
-                    # it does is pretty-print args[1], which is a dictionary
-                    ['{key}: {val}'.format(key=i[0], val=i[1]) for i in
-                     ex.args[1].items()]
-                ))
-                QtWidgets.QMessageBox.warning(
-                    None,
-                    self.tr("ERROR!"),
-                    self.tr("Error managing {repo} repository settings:"
-                            " {msg}".format(repo=name, msg=msg)))
-
-    def _handle_dom0_updates_combobox(self, idx):
-        idx += 1
-        repolist = ['qubes-dom0-current', 'qubes-dom0-security-testing',
-                    'qubes-dom0-current-testing', 'qubes-dom0-unstable']
-        enable = repolist[:idx]
-        disable = repolist[idx:]
-        self._manage_repos(enable, 'Enable')
-        self._manage_repos(disable, 'Disable')
-
-    # pylint: disable=invalid-name
-    def _handle_itl_tmpl_updates_combobox(self, idx):
-        idx += 1
-        repolist = ['qubes-templates-itl', 'qubes-templates-itl-testing']
-        enable = repolist[:idx]
-        disable = repolist[idx:]
-        self._manage_repos(enable, 'Enable')
-        self._manage_repos(disable, 'Disable')
-
-    # pylint: disable=invalid-name
-    def _handle_comm_tmpl_updates_combobox(self, idx):
-        # We don't increment idx by 1 because this is the only combobox that
-        # has an explicit "disable this repository entirely" option
-        repolist = ['qubes-templates-community',
-                    'qubes-templates-community-testing']
-        enable = repolist[:idx]
-        disable = repolist[idx:]
-        self._manage_repos(enable, 'Enable')
-        self._manage_repos(disable, 'Disable')
-
-    def __apply_repos__(self):
-        if self.dom0_updates_repo.isEnabled():
-            self._handle_dom0_updates_combobox(
-                self.dom0_updates_repo.currentIndex())
-        if self.itl_tmpl_updates_repo.isEnabled():
-            self._handle_itl_tmpl_updates_combobox(
-                self.itl_tmpl_updates_repo.currentIndex())
-        if self.comm_tmpl_updates_repo.isEnabled():
-            self._handle_comm_tmpl_updates_combobox(
-                self.comm_tmpl_updates_repo.currentIndex())
-
     def reject(self):
         self.done(0)
 
+    def clear_threads(self):
+        for thread in self.threads_list:
+            if thread.isFinished():
+                if self.progress:
+                    self.progress.hide()
+                    self.progress = None
+
+                if thread.msg:
+                    (title, msg) = thread.msg
+                    QtWidgets.QMessageBox.warning(
+                        self,
+                        title,
+                        msg)
+
+                self.threads_list.remove(thread)
+
+                if self.thread_closes:
+                    self.done(0)
+
+                return
+
+        raise RuntimeError(self.tr('No finished thread found'))
+
     def save_and_apply(self):
-        self.errors = []
+        thread = ApplyGlobalSettingsThread(self.vm, self)
+        self.threads_list.append(thread)
+        thread.finished.connect(self.clear_threads)
 
-        self.__apply_system_defaults__()
-        self.__apply_kernel_defaults__()
-        self.__apply_mem_defaults__()
-        self.__apply_updates__()
-        self.__apply_repos__()
-        self.__apply_gui_defaults()
+        self.progress = QtWidgets.QProgressDialog(
+            self.tr("Applying global settings..."), "", 0, 0)
+        self.progress.setCancelButton(None)
+        self.progress.setModal(True)
+        self.thread_closes = True
+        self.progress.show()
 
-        if self.errors:
-            err_msg = "Failed to apply some settings:\n" + "\n".join(
-                self.errors)
-            QtWidgets.QMessageBox.warning(self, "Error", err_msg)
+        thread.start()
 
 
 def main():

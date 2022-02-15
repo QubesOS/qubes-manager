@@ -175,12 +175,18 @@ class GlobalSettingsTest(unittest.TestCase):
 
         self.__click_ok()
 
+        for thread in self.dialog.threads_list:
+            thread.wait()
+
         self.setattr_mock.assert_called_once_with('updatevm', new_updatevm_name)
 
     def test_11_set_update_vm_to_none(self):
         self.__set_none(self.dialog.update_vm_combo)
 
         self.__click_ok()
+
+        for thread in self.dialog.threads_list:
+            thread.wait()
 
         self.setattr_mock.assert_called_once_with('updatevm', None)
 
@@ -189,6 +195,9 @@ class GlobalSettingsTest(unittest.TestCase):
 
         self.__click_ok()
 
+        for thread in self.dialog.threads_list:
+            thread.wait()
+
         self.setattr_mock.assert_called_once_with('clockvm', new_clockvm_name)
 
     def test_21_set_clock_vm_to_none(self):
@@ -196,12 +205,18 @@ class GlobalSettingsTest(unittest.TestCase):
 
         self.__click_ok()
 
+        for thread in self.dialog.threads_list:
+            thread.wait()
+
         self.setattr_mock.assert_called_once_with('clockvm', None)
 
     def test_30_set_default_netvm(self):
         new_netvm_name = self.__set_noncurrent(self.dialog.default_netvm_combo)
 
         self.__click_ok()
+
+        for thread in self.dialog.threads_list:
+            thread.wait()
 
         self.setattr_mock.assert_called_once_with('default_netvm',
                                                   new_netvm_name)
@@ -211,6 +226,9 @@ class GlobalSettingsTest(unittest.TestCase):
 
         self.__click_ok()
 
+        for thread in self.dialog.threads_list:
+            thread.wait()
+
         self.setattr_mock.assert_called_once_with('default_netvm', None)
 
     def test_40_set_default_template(self):
@@ -218,6 +236,9 @@ class GlobalSettingsTest(unittest.TestCase):
             self.dialog.default_template_combo)
 
         self.__click_ok()
+
+        for thread in self.dialog.threads_list:
+            thread.wait()
 
         self.setattr_mock.assert_called_once_with('default_template',
                                                   new_def_template_name)
@@ -228,6 +249,9 @@ class GlobalSettingsTest(unittest.TestCase):
 
         self.__click_ok()
 
+        for thread in self.dialog.threads_list:
+            thread.wait()
+
         self.setattr_mock.assert_called_once_with('default_kernel',
                                                   new_def_kernel_name)
 
@@ -235,6 +259,9 @@ class GlobalSettingsTest(unittest.TestCase):
         self.__set_none(self.dialog.default_kernel_combo)
 
         self.__click_ok()
+
+        for thread in self.dialog.threads_list:
+            thread.wait()
 
         self.setattr_mock.assert_called_once_with('default_kernel',
                                                   None)
@@ -247,6 +274,8 @@ class GlobalSettingsTest(unittest.TestCase):
                 type(self.dialog.qubes_app.domains['dom0'].features),
                 '__setitem__') as mock_features:
             self.__click_ok()
+            for thread in self.dialog.threads_list:
+                thread.wait()
             mock_features.assert_called_once_with('service.qubes-update-check',
                                                   not current_state)
 
@@ -255,6 +284,9 @@ class GlobalSettingsTest(unittest.TestCase):
         self.dialog.updates_vm.setChecked(not current_state)
 
         self.__click_ok()
+
+        for thread in self.dialog.threads_list:
+            thread.wait()
 
         self.setattr_mock.assert_called_once_with('check_updates_vm',
                                                   not current_state)
@@ -301,6 +333,9 @@ class GlobalSettingsTest(unittest.TestCase):
 
         self.__click_ok()
 
+        for thread in self.dialog.threads_list:
+            thread.wait()
+
         self.setattr_mock.assert_called_once_with('default_dispvm',
                                                   new_dispvm_name)
 
@@ -308,6 +343,9 @@ class GlobalSettingsTest(unittest.TestCase):
         self.__set_none(self.dialog.default_dispvm_combo)
 
         self.__click_ok()
+
+        for thread in self.dialog.threads_list:
+            thread.wait()
 
         self.setattr_mock.assert_called_once_with('default_dispvm', None)
 
