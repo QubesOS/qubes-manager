@@ -627,7 +627,7 @@ class UpdateVMThread(common_threads.QubesThread):
                                 stderr.decode('ascii')))
                 self.vm.run_service("qubes.InstallUpdatesGUI",
                                     user="root", wait=False)
-        except (ChildProcessError, exc.QubesException) as ex:
+        except (ChildProcessError, subprocess.CalledProcessError, exc.QubesException) as ex:
             self.msg = (self.tr("Error on qube update!"), str(ex))
 
 
@@ -640,7 +640,7 @@ class RunCommandThread(common_threads.QubesThread):
     def run(self):
         try:
             self.vm.run(self.command_to_run)
-        except (ChildProcessError, exc.QubesException) as ex:
+        except (ChildProcessError, subprocess.CalledProcessError, exc.QubesException) as ex:
             self.msg = (self.tr("Error while running command!"), str(ex))
 
 class QubesProxyModel(QSortFilterProxyModel):
