@@ -1605,9 +1605,8 @@ class QubeManagerThreadTest(unittest.TestCase):
         check_call.assert_called_once_with(
             ["/usr/bin/qubes-dom0-update", "--clean", "--gui"])
 
-    @unittest.mock.patch('builtins.open')
     @unittest.mock.patch('subprocess.call')
-    def test_21_update_vm_thread_running(self, mock_call, mock_open):
+    def test_21_update_vm_thread_running(self, mock_call):
         vm = unittest.mock.Mock(
             spec=['klass', 'is_running', 'run_service_for_stdio', 'run_service'],
             **{'is_running.return_value': True})
@@ -1619,17 +1618,13 @@ class QubeManagerThreadTest(unittest.TestCase):
 
         thread.run()
 
-        vm.run_service_for_stdio.assert_called_once_with(
-            "qubes.VMShell", user='root', input=unittest.mock.ANY)
-
         vm.run_service.assert_called_once_with(
             "qubes.InstallUpdatesGUI", user="root", wait=False)
 
         self.assertEqual(mock_call.call_count, 0)
 
-    @unittest.mock.patch('builtins.open')
     @unittest.mock.patch('subprocess.call')
-    def test_22_update_vm_thread_not_running(self, mock_call, mock_open):
+    def test_22_update_vm_thread_not_running(self, mock_call):
         vm = unittest.mock.Mock(
             spec=['klass', 'is_running', 'run_service_for_stdio',
                   'run_service', 'start', 'name'],
@@ -1643,13 +1638,10 @@ class QubeManagerThreadTest(unittest.TestCase):
 
         vm.start.assert_called_once_with()
 
-        vm.run_service_for_stdio.assert_called_once_with(
-            "qubes.VMShell", user='root', input=unittest.mock.ANY)
-
         vm.run_service.assert_called_once_with(
             "qubes.InstallUpdatesGUI", user="root", wait=False)
 
-        self.assertEqual(mock_call.call_count, 1)
+        self.assertEqual(mock_call.call_count, 0)
 
     @unittest.mock.patch('builtins.open')
     @unittest.mock.patch('subprocess.check_call')
