@@ -21,6 +21,7 @@
 #
 
 import os
+import sys
 import subprocess
 import pkg_resources
 from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
@@ -52,16 +53,17 @@ def _run_qrexec_repo(service, arg=''):
         check=False,
         env=env
     )
-    if p.stderr:
-        msg = QtCore.QCoreApplication.translate(
-                "GlobalSettings",
-                'qrexec call stderr was not empty')
-        raise exc.QubesException(msg + ' (%s)', p.stderr.decode('utf-8'))
     if p.returncode != 0:
         msg = QtCore.QCoreApplication.translate(
                 "GlobalSettings",
                 'qrexec call exited with non-zero return code')
-        raise exc.QubesException(msg + ' (%s)', p.returncode)
+        raise exc.QubesException(msg + ' (%s): %s',
+                p.returncode, p.stderr.decode('utf-8'))
+    if p.stderr:
+        msg = QtCore.QCoreApplication.translate(
+                "GlobalSettings",
+                '%s qrexec call stderr was not empty (%s)')
+        print(msg % (service, p.stderr.decode('utf-8')), file=sys.stderr)
     return p.stdout.decode('utf-8')
 
 
