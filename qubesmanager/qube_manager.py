@@ -1096,9 +1096,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         if not self.manager_settings.value("view/menubar_visible",
                                            defaultValue=True):
             self.action_menubar.setChecked(False)
+            self.menubar.setVisible(False)
         if not self.manager_settings.value("view/toolbar_visible",
                                            defaultValue=True):
             self.action_toolbar.setChecked(False)
+            self.toolbar.setVisible(False)
         if self.manager_settings.value("view/compactview",
                                            defaultValue="false") != "false":
             self.action_compact_view.setChecked(True)
