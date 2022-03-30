@@ -622,7 +622,8 @@ class RunCommandThread(common_threads.QubesThread):
     def run(self):
         try:
             self.vm.run(self.command_to_run)
-        except (ChildProcessError, exc.QubesException) as ex:
+        except (ChildProcessError, exc.QubesException,
+                subprocess.CalledProcessError) as ex:
             self.msg = (self.tr("Error while running command!"), str(ex))
 
 class QubesProxyModel(QSortFilterProxyModel):
