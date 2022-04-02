@@ -231,7 +231,7 @@ class TemplateManagerWindow(
                 except Exception as ex:  # pylint: disable=broad-except
                     errors[vm] = str(ex)
         if errors:
-            error_messages = [vm + ": " + errors[vm] for vm in errors]
+            error_messages = [vm + ": " + error for vm, error in errors.items()]
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Errors encountered!"),

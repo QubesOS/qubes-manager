@@ -68,16 +68,16 @@ class LogDialog(ui_logdlg.Ui_LogDialog, QtWidgets.QDialog):
     def set_current_log(self, log_path):
         self.displayed_text = ""
         self.setWindowTitle(log_path)
-        log = open(log_path)
-        log.seek(0, os.SEEK_END)
-        if log.tell() > LOG_DISPLAY_SIZE:
-            self.displayed_text = self.tr(
-                "(Showing only last %d bytes of file)\n") % LOG_DISPLAY_SIZE
-            log.seek(log.tell()-LOG_DISPLAY_SIZE, os.SEEK_SET)
-        else:
-            log.seek(0, os.SEEK_SET)
-        self.displayed_text += log.read()
-        log.close()
+        with open(log_path) as log:
+            log.seek(0, os.SEEK_END)
+            if log.tell() > LOG_DISPLAY_SIZE:
+                self.displayed_text = (self.tr(
+                    "(Showing only last %d bytes of file)\n") %
+                        LOG_DISPLAY_SIZE)
+                log.seek(log.tell()-LOG_DISPLAY_SIZE, os.SEEK_SET)
+            else:
+                log.seek(0, os.SEEK_SET)
+            self.displayed_text += log.read()
         self.log_text.setPlainText(self.displayed_text)
 
 def main():

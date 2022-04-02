@@ -412,9 +412,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 # removed qmemman_algo.CACHE_FACTOR
 
                 try:
-                    qmemman_config_file = open(qmemman_config_path, 'a')
-                    self.qmemman_config.write(qmemman_config_file)
-                    qmemman_config_file.close()
+                    with open(qmemman_config_path, 'a') as qmemman_config_file:
+                        self.qmemman_config.write(qmemman_config_file)
                 except Exception as ex:  # pylint: disable=broad-except
                     self.errors.append(
                         "Failed to set memory settings due to {}".format(
@@ -434,32 +433,29 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 config_lines = []
 
                 try:
-                    qmemman_config_file = open(qmemman_config_path, 'r')
+                    with open(qmemman_config_path, 'r') as qmemman_config_file:
+                        for line in qmemman_config_file:
+                            if line.strip().startswith('vm-min-mem'):
+                                config_lines.append(lines_to_add['vm-min-mem'])
+                                del lines_to_add['vm-min-mem']
+                            elif line.strip().startswith('dom0-mem-boost'):
+                                config_lines.append(
+                                        lines_to_add['dom0-mem-boost'])
+                                del lines_to_add['dom0-mem-boost']
+                            else:
+                                config_lines.append(line)
                 except Exception as ex:  # pylint: disable=broad-except
                     self.errors.append(
                         "Failed to set memory settings due to {}".format(
                             str(ex)))
                     return
 
-                for line in qmemman_config_file:
-                    if line.strip().startswith('vm-min-mem'):
-                        config_lines.append(lines_to_add['vm-min-mem'])
-                        del lines_to_add['vm-min-mem']
-                    elif line.strip().startswith('dom0-mem-boost'):
-                        config_lines.append(lines_to_add['dom0-mem-boost'])
-                        del lines_to_add['dom0-mem-boost']
-                    else:
-                        config_lines.append(line)
-
-                qmemman_config_file.close()
-
                 for line in lines_to_add:
                     config_lines.append(line)
 
                 try:
-                    qmemman_config_file = open(qmemman_config_path, 'w')
-                    qmemman_config_file.writelines(config_lines)
-                    qmemman_config_file.close()
+                    with open(qmemman_config_path, 'w') as qmemman_config_file:
+                        qmemman_config_file.writelines(config_lines)
                 except Exception as ex:  # pylint: disable=broad-except
                     self.errors.append(
                         "Failed to set memory settings due to {}".format(

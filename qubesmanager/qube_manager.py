@@ -742,8 +742,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.table.customContextMenuRequested.connect(self.open_context_menu)
 
         # Create view menu
-        for col_no in range(len(self.qubes_model.columns_indices)):
-            column = self.qubes_model.columns_indices[col_no]
+        for col_no, column in enumerate(self.qubes_model.columns_indices):
             action = self.menu_view.addAction(column)
             action.setData(column)
             action.setCheckable(True)
@@ -1572,6 +1571,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     def action_open_console_triggered(self):
         # pylint: disable=invalid-name
         for vm in self.get_selected_vms():
+            # pylint: disable=consider-using-with
             subprocess.Popen(['qvm-console-dispvm', vm.name],
                              stdout=subprocess.DEVNULL,
                              stderr=subprocess.DEVNULL)
