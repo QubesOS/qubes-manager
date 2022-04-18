@@ -1,0 +1,11 @@
+host:
+  rpm:
+    spec:
+    - rpm_spec/qmgr.spec
+vm:
+  rpm:
+    spec:
+    - rpm_spec/qmgr.spec
+  deb:
+    build:
+    - debian
