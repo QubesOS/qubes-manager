@@ -60,9 +60,10 @@ def copy_text_to_qubes_clipboard(text):
                     "Clipboard", "Error while locking Qubes clipboard!"))
         else:
             try:
-                with open(CLIPBOARD_CONTENTS, "w") as contents:
+                with open(CLIPBOARD_CONTENTS, "w", encoding='utf-8') \
+                        as contents:
                     contents.write(text)
-                with open(CLIPBOARD_SOURCE, "w") as source:
+                with open(CLIPBOARD_SOURCE, "w", encoding='utf-8') as source:
                     source.write("dom0")
             except Exception:  # pylint: disable=broad-except
                 QMessageBox.warning(

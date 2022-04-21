@@ -68,7 +68,7 @@ class LogDialog(ui_logdlg.Ui_LogDialog, QtWidgets.QDialog):
     def set_current_log(self, log_path):
         self.displayed_text = ""
         self.setWindowTitle(log_path)
-        with open(log_path) as log:
+        with open(log_path, encoding='ascii', errors='ignore') as log:
             log.seek(0, os.SEEK_END)
             if log.tell() > LOG_DISPLAY_SIZE:
                 self.displayed_text = (self.tr(

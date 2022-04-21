@@ -36,7 +36,7 @@ class AboutDialog(ui_about.Ui_AboutDialog, QDialog):
         self.setupUi(self)
 
         self.icon.setPixmap(QIcon().fromTheme("qubes-manager").pixmap(96))
-        with open('/etc/qubes-release', 'r') as release_file:
+        with open('/etc/qubes-release', 'r', encoding='ascii') as release_file:
             self.release.setText(release_file.read())
 
         self.ok.clicked.connect(self.accept)

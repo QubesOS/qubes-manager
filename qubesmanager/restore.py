@@ -255,8 +255,7 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
         try:
             log_record = self.feedback_queue.get_nowait()
             while log_record:
-                if log_record.levelno == logging.ERROR or\
-                                log_record.levelno == logging.CRITICAL:
+                if log_record.levelno in (logging.ERROR, logging.CRITICAL):
                     output = '<font color="red">{0}</font>'.format(
                         log_record.getMessage())
                 else:

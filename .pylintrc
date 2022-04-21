@@ -33,6 +33,7 @@ disable=
   locally-enabled,
   logging-format-interpolation,
   missing-docstring,
+  consider-using-f-string,
   star-args,
   useless-super-delegation,
   wrong-import-order

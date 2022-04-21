@@ -147,7 +147,7 @@ def load_backup_profile(use_temp=False):
 
     path = get_profile_path(use_temp)
 
-    with open(path) as profile_file:
+    with open(path, encoding='utf-8') as profile_file:
         profile_data = yaml.safe_load(profile_file)
     return profile_data
 
@@ -162,5 +162,5 @@ def write_backup_profile(args, use_temp=False):
 
     path = get_profile_path(use_temp)
 
-    with open(path, 'w') as profile_file:
+    with open(path, 'w', encoding='utf-8') as profile_file:
         yaml.safe_dump(profile_data, profile_file)

@@ -166,7 +166,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         self.current_row = None
 
         self.__column_names = {0: "Address", 1: "Port/Service", 2: "Protocol", }
-        self.__services = list()
+        self.__services = []
 
         self.port_range_pattern = re.compile(r'\d+-\d+')
         self.service_port_pattern = re.compile(r'(\d*) \([a-zA-Z0-9-]*\)')
@@ -354,7 +354,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
             self.fw_changed = True
 
         conf = {"allow": allow,
-                "rules": list()
+                "rules": []
                 }
 
         conf['rules'].extend(self.children)
@@ -456,7 +456,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         self.fw_changed = True
 
     def clear_children(self):
-        self.__children = list()
+        self.__children = []
 
     def __len__(self):
         return len(self.children)

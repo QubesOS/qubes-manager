@@ -412,7 +412,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 # removed qmemman_algo.CACHE_FACTOR
 
                 try:
-                    with open(qmemman_config_path, 'a') as qmemman_config_file:
+                    with open(qmemman_config_path, 'a', encoding='utf-8') \
+                            as qmemman_config_file:
                         self.qmemman_config.write(qmemman_config_file)
                 except Exception as ex:  # pylint: disable=broad-except
                     self.errors.append(
@@ -433,7 +434,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 config_lines = []
 
                 try:
-                    with open(qmemman_config_path, 'r') as qmemman_config_file:
+                    with open(qmemman_config_path, 'r', encoding='utf-8') \
+                            as qmemman_config_file:
                         for line in qmemman_config_file:
                             if line.strip().startswith('vm-min-mem'):
                                 config_lines.append(lines_to_add['vm-min-mem'])
@@ -454,7 +456,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                     config_lines.append(line)
 
                 try:
-                    with open(qmemman_config_path, 'w') as qmemman_config_file:
+                    with open(qmemman_config_path, 'w', encoding='utf-8') \
+                            as qmemman_config_file:
                         qmemman_config_file.writelines(config_lines)
                 except Exception as ex:  # pylint: disable=broad-except
                     self.errors.append(
@@ -478,12 +481,12 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         self.enable_updates_all.clicked.connect(self.__enable_updates_all)
         self.disable_updates_all.clicked.connect(self.__disable_updates_all)
 
-        self.repos = repos = dict()
+        self.repos = repos = {}
         try:
             for i in _run_qrexec_repo('qubes.repos.List').split('\n'):
                 lst = i.split('\0')
                 # Keyed by repo name
-                dct = repos[lst[0]] = dict()
+                dct = repos[lst[0]] = {}
                 dct['prettyname'] = lst[1]
                 dct['enabled'] = lst[2] == 'enabled'
         except exc.QubesException:
