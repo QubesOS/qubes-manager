@@ -36,8 +36,23 @@ class AboutDialog(ui_about.Ui_AboutDialog, QDialog):
         self.setupUi(self)
 
         self.icon.setPixmap(QIcon().fromTheme("qubes-manager").pixmap(96))
-        with open('/etc/qubes-release', 'r', encoding='ascii') as release_file:
-            self.release.setText(release_file.read())
+        try:
+            with open('/etc/qubes-release', 'r', encoding='ascii') \
+                    as release_file:
+                self.release.setText(release_file.read())
+        except FileNotFoundError:
+            # running in a VM?
+            try:
+                with open('/usr/share/qubes/marker-vm', 'r', encoding='ascii') \
+                        as marker_file:
+                    release = [l.strip() for l in marker_file.readlines()
+                               if l.strip() and not l.startswith('#')]
+                    if release and release[0] and release[0][0].isdigit():
+                        self.release.setText(release[0])
+                    else:
+                        self.release.setText('unknown')
+            except FileNotFoundError:
+                self.release.setText('unknown')
 
         self.ok.clicked.connect(self.accept)
         self.releaseNotes.clicked.connect(self.on_release_notes_clicked)
