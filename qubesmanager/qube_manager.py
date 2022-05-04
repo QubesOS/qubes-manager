@@ -36,10 +36,11 @@ from PyQt5.QtCore import (Qt, QAbstractTableModel, QObject, pyqtSlot, QEvent,
 # pylint: disable=import-error
 from PyQt5.QtWidgets import (QLineEdit, QStyledItemDelegate, QToolTip,
     QMenu, QInputDialog, QMainWindow, QProgressDialog, QStyleOptionViewItem,
-    QMessageBox)
+    QMessageBox, QShortcut)
 
 # pylint: disable=import-error
-from PyQt5.QtGui import (QIcon, QPixmap, QRegExpValidator, QFont, QColor)
+from PyQt5.QtGui import (QIcon, QPixmap, QRegExpValidator, QFont, QColor,
+                         QKeySequence)
 
 from qubesmanager.about import AboutDialog
 
@@ -685,6 +686,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             QRegExp("[a-zA-Z0-9_-]*", Qt.CaseInsensitive), None))
         self.searchbox.textChanged.connect(self.do_search)
         self.searchContainer.insertWidget(1, self.searchbox)
+
+        self.search_shortcut = QShortcut(QKeySequence('Ctrl+F'), self)
+        self.search_shortcut.activated.connect(self.searchbox.setFocus)
 
         self.settings_windows = {}
 
