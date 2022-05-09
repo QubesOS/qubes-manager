@@ -1,10 +1,10 @@
 host:
   rpm:
-    spec:
+    build:
     - rpm_spec/qmgr.spec
 vm:
   rpm:
-    spec:
+    build:
     - rpm_spec/qmgr.spec
   deb:
     build:
