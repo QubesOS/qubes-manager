@@ -336,6 +336,11 @@ class QubesCache(QAbstractTableModel):
             return self._info_by_id[qid]
         return next(x for x in self._info_list if x.name == name)
 
+    def update_model_data(self, *args, **kwargs):
+        for vm_info in self._info_list:
+            vm_info.vm._power_state_cache = None
+            vm_info.update()
+
     def __len__(self):
         return len(self._info_list)
 
@@ -774,6 +779,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         # Connect events
         self.dispatcher = dispatcher
+        dispatcher.add_handler('connection-established', self.qubes_cache.update_model_data)
         dispatcher.add_handler('domain-pre-start',
                                self.on_domain_status_changed)
         dispatcher.add_handler('domain-start', self.on_domain_status_changed)
