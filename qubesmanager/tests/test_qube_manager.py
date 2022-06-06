@@ -1385,11 +1385,17 @@ class QubeManagerTest(unittest.TestCase):
             call_count = self._get_table_vminfo(
                 i).update.call_count
             if self._get_table_item(i, "Template") == target_vm_name:
-                self.assertGreater(call_count, 0)
+                self.assertGreater(call_count, 0,
+                        "'update' not called for VM '{}'".format(
+                            self._get_table_item(i, "Name")))
             elif self._get_table_item(i, "Name") == target_vm_name:
-                self.assertGreater(call_count, 0)
+                self.assertGreater(call_count, 0,
+                        "'update' not called for VM '{}'".format(
+                            self._get_table_item(i, "Name")))
             else:
-                self.assertEqual(call_count, 0)
+                self.assertEqual(call_count, 0,
+                        "Unexpected 'update' call for VM '{}'".format(
+                            self._get_table_item(i, "Name")))
 
     @unittest.mock.patch('qubesmanager.log_dialog.LogDialog')
     def test_500_logs(self, mock_log_dialog):
