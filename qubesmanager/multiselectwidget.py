@@ -1,3 +1,9 @@
+# SPDX-FileCopyrightText: 2015 Michael Carbone, <michael@qubes-os.org> et al.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
+
+
 from PyQt5 import QtCore, QtWidgets  # pylint: disable=import-error
 from . import ui_multiselectwidget  # pylint: disable=no-name-in-module
 
