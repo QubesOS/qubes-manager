@@ -1,0 +1,8 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: Qubes
+Upstream-Contact: Michael Carbone <michael@qubes-os.org>
+Source: https://github.com/NSfsfe/qubes-manager.git
+
+Files: icons/*
+Copyright: 2015 Qubes
+License: GPL-2.0-only
