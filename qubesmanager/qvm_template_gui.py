@@ -106,18 +106,15 @@ class TemplateStatusDelegate(PyQt5.QtWidgets.QStyledItemDelegate):
         return None
 
     def setEditorData(self, editor, index):
-        #pylint: disable=no-self-use
         cur = index.data()
         idx = editor.findText(cur)
         if idx >= 0:
             editor.setCurrentIndex(idx)
 
     def setModelData(self, editor, model, index):
-        #pylint: disable=no-self-use
         model.setData(index, editor.currentText())
 
     def updateEditorGeometry(self, editor, option, index):
-        #pylint: disable=no-self-use
         _ = index # unused
         editor.setGeometry(option.rect)
 
@@ -149,22 +146,18 @@ class TemplateModel(PyQt5.QtCore.QAbstractItemModel):
         return self.createIndex(row, column, self.children[row])
 
     def parent(self, child):
-        #pylint: disable=no-self-use
         _ = child # unused
         return PyQt5.QtCore.QModelIndex()
 
     def rowCount(self, parent=PyQt5.QtCore.QModelIndex()):
-        #pylint: disable=no-self-use
         _ = parent # unused
         return len(self.children)
 
     def columnCount(self, parent=PyQt5.QtCore.QModelIndex()):
-        #pylint: disable=no-self-use
         _ = parent # unused
         return len(Template.COL_NAMES)
 
     def hasChildren(self, index=PyQt5.QtCore.QModelIndex()):
-        #pylint: disable=no-self-use
         return index == PyQt5.QtCore.QModelIndex()
 
     def data(self, index, role=PyQt5.QtCore.Qt.DisplayRole):
@@ -200,7 +193,6 @@ class TemplateModel(PyQt5.QtCore.QAbstractItemModel):
 
     def headerData(self, section, orientation,
             role=PyQt5.QtCore.Qt.DisplayRole):
-        #pylint: disable=no-self-use
         if section < len(Template.COL_NAMES) \
                 and orientation == PyQt5.QtCore.Qt.Horizontal \
                 and role == PyQt5.QtCore.Qt.DisplayRole:

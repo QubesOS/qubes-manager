@@ -337,7 +337,10 @@ class QubesCache(QAbstractTableModel):
         return next(x for x in self._info_list if x.name == name)
 
     def update_model_data(self, *args, **kwargs):
+        # pylint: disable=unused-argument
         for vm_info in self._info_list:
+            # FIXME: add helper maybe?
+            # pylint: disable=protected-access
             vm_info.vm._power_state_cache = None
             vm_info.update()
 
@@ -779,7 +782,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         # Connect events
         self.dispatcher = dispatcher
-        dispatcher.add_handler('connection-established', self.qubes_cache.update_model_data)
+        dispatcher.add_handler('connection-established',
+                               self.qubes_cache.update_model_data)
         dispatcher.add_handler('domain-pre-start',
                                self.on_domain_status_changed)
         dispatcher.add_handler('domain-start', self.on_domain_status_changed)
@@ -1627,7 +1631,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_manage_templates_triggered')
     def action_manage_templates_triggered(self):
-        # pylint: disable=no-self-use
         subprocess.check_call('qubes-template-manager')
 
     # noinspection PyArgumentList
@@ -1692,7 +1695,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_about_qubes_triggered')
-    def action_about_qubes_triggered(self):  # pylint: disable=no-self-use
+    def action_about_qubes_triggered(self):
         about = AboutDialog(self)
         about.exec_()
 

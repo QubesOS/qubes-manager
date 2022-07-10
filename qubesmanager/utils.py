@@ -75,7 +75,7 @@ def translate(string):
 
 class SizeSpinBox(QtWidgets.QSpinBox):
     """A SpinBox subclass with extended handling for sizes in MB and GB"""
-    # pylint: disable=invalid-name, no-self-use
+    # pylint: disable=invalid-name
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -363,8 +363,8 @@ def initialize_widget_with_labels(widget, qubes_app,
     labels = sorted(qubes_app.labels.values(), key=lambda l: l.index)
     choices = [(label.name, label) for label in labels]
 
-    icon_getter = (lambda label:
-                   QtGui.QIcon.fromTheme(label.icon))
+    def icon_getter(label):
+        return QtGui.QIcon.fromTheme(label.icon)
 
     if holder:
         initialize_widget_for_property(widget=widget,

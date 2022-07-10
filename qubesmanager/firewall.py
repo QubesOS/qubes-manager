@@ -397,7 +397,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
 
         return self.createIndex(row, column, self.children[row])
 
-    def parent(self, child):  # pylint: disable=unused-argument,no-self-use
+    def parent(self, child):  # pylint: disable=unused-argument
         return QtCore.QModelIndex()
 
     # pylint: disable=invalid-name,unused-argument
@@ -408,7 +408,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
     def columnCount(self, parent=QtCore.QModelIndex()):
         return len(self.__column_names)
 
-    # pylint: disable=invalid-name,no-self-use
+    # pylint: disable=invalid-name
     def hasChildren(self, index=QtCore.QModelIndex()):
         parent_item = index.internalPointer()
         return parent_item is None
