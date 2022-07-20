@@ -1,3 +1,31 @@
+qubes-manager (4.1.24-1) unstable; urgency=medium
+
+  [ Marek Marczykowski-Górecki ]
+  * Fix issues found by pylint
+
+  [ logoerthiner1 ]
+  * Update qube_manager.py
+
+  [ Marek Marczykowski-Górecki ]
+  * wrap long lines
+  * Fix issues found by pylint
+  * about: get qubes release in a VM too
+
+  [ Frédéric Pierret (fepitre) ]
+  * Drop Travis CI
+
+  [ Marta Marczykowska-Górecka ]
+  * Fix missing error catch
+  * Restore Ctrl+F shortcut for Manager
+  * Fix loading menu and toolbar state from settings
+  * Refresh VM state at connection established in manager
+
+  [ Marek Marczykowski-Górecki ]
+  * tests: add more details to failure message
+  * make pylint happy
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Wed, 20 Jul 2022 18:23:36 +0200
+
 qubes-manager (4.1.23-1) unstable; urgency=medium
 
   [ xaki23 ]
