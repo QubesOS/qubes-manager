@@ -1,5 +1,10 @@
 #!/usr/bin/python3
 #
+
+# SPDX-FileCopyrightText: 2015 Michael Carbone, <michael@qubes-os.org> et al.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+
 # The Qubes OS Project, http://www.qubes-os.org
 #
 # Copyright (C) 2012  Agnieszka Kostrzewa <agnieszka.kostrzewa@gmail.com>
