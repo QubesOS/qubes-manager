@@ -1381,19 +1381,21 @@ class QubeManagerTest(unittest.TestCase):
         self._run_command_and_process_events(
             ["qvm-start", target_vm_name], timeout=60)
 
+        # update() is called on every row once at dispatcher startup, so count
+        # any _extra_ calls
         for i in range(self.dialog.table.model().rowCount()):
             call_count = self._get_table_vminfo(
                 i).update.call_count
             if self._get_table_item(i, "Template") == target_vm_name:
-                self.assertGreater(call_count, 0,
+                self.assertGreater(call_count, 1,
                         "'update' not called for VM '{}'".format(
                             self._get_table_item(i, "Name")))
             elif self._get_table_item(i, "Name") == target_vm_name:
-                self.assertGreater(call_count, 0,
+                self.assertGreater(call_count, 1,
                         "'update' not called for VM '{}'".format(
                             self._get_table_item(i, "Name")))
             else:
-                self.assertEqual(call_count, 0,
+                self.assertEqual(call_count, 1,
                         "Unexpected 'update' call for VM '{}'".format(
                             self._get_table_item(i, "Name")))
 
