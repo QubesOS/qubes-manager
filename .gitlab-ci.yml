@@ -1,14 +1,19 @@
-include:
-  - project: 'QubesOS/qubes-continuous-integration'
-    file: '/r4.1/gitlab-base.yml'
-  - project: 'QubesOS/qubes-continuous-integration'
-    file: '/r4.1/gitlab-dom0.yml'
-  - project: 'QubesOS/qubes-continuous-integration'
-    file: '/r4.1/gitlab-vm.yml'
-
 checks:pylint:
-  stage: checks
   before_script:
-    - pip3 install --quiet -r ci/requirements.txt
+  - pip3 install --quiet -r ci/requirements.txt
   script:
-    - PYTHONPATH="test-packages:$PYTHONPATH" python3 -m pylint qubesmanager
+  - PYTHONPATH="test-packages:$PYTHONPATH" python3 -m pylint qubesmanager
+  stage: checks
+include:
+- file: /r4.1/gitlab-base.yml
+  project: QubesOS/qubes-continuous-integration
+- file: /r4.1/gitlab-dom0.yml
+  project: QubesOS/qubes-continuous-integration
+- file: /r4.1/gitlab-vm.yml
+  project: QubesOS/qubes-continuous-integration
+- file: /r4.2/gitlab-base.yml
+  project: QubesOS/qubes-continuous-integration
+- file: /r4.2/gitlab-host.yml
+  project: QubesOS/qubes-continuous-integration
+- file: /r4.2/gitlab-vm.yml
+  project: QubesOS/qubes-continuous-integration
