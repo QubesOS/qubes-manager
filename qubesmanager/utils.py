@@ -341,7 +341,7 @@ def initialize_widget_with_kernels(
     choices = [(kernel, kernel) for kernel in kernels]
 
     if allow_none:
-        choices.append((translate("(none)"), None))
+        choices.append((translate("(provided by qube)"), ''))
 
     initialize_widget_for_property(
         widget=widget, choices=choices, holder=holder,
