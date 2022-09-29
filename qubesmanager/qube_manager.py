@@ -481,6 +481,9 @@ class QubesTableModel(QAbstractTableModel):
                 return ordered_state + updated
             if col_name == "Disk Usage":
                 return vm.disk_float
+            if col_name == "Backup":
+                # sort True before False, hence the not
+                return not vm.inc_backup
             return self.data(index, Qt.DisplayRole)
 
     # pylint: disable=invalid-name
