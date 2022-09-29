@@ -465,7 +465,12 @@ class QubesTableModel(QAbstractTableModel):
             if col_name == "Type":
                 return vm.klass
             if col_name == "Label":
-                return str(vm.label)
+                vmtype, vmcolor = vm.icon.split("-")
+                try:
+                    processed_color = str(vm.label.index)
+                except ValueError:
+                    processed_color = vmcolor
+                return vmtype + processed_color
             if col_name == "State":
                 # sorting order is based on a logical order (from running to
                 # progressively less running) and update state
