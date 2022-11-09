@@ -211,17 +211,10 @@
        <string>Save backup profile</string>
       </property>
       <layout class="QFormLayout" name="formLayout_3">
-       <item row="0" column="0">
-        <widget class="QLabel" name="label_8">
-         <property name="text">
-          <string>Save settings as default backup profile:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
+       <item row="0" column="0" colspan="2">
         <widget class="QCheckBox" name="save_profile_checkbox">
          <property name="text">
-          <string/>
+          <string>Save settings as default backup profile</string>
          </property>
          <property name="checked">
           <bool>true</bool>
@@ -436,7 +429,6 @@ p, li { white-space: pre-wrap; }
   <tabstop>select_path_button</tabstop>
   <tabstop>passphrase_line_edit</tabstop>
   <tabstop>passphrase_line_edit_verify</tabstop>
-  <tabstop>save_profile_checkbox</tabstop>
   <tabstop>turn_off_checkbox</tabstop>
   <tabstop>textEdit</tabstop>
   <tabstop>showFileDialog</tabstop>
