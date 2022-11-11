@@ -436,9 +436,12 @@ p, li { white-space: pre-wrap; }
   <tabstop>select_path_button</tabstop>
   <tabstop>passphrase_line_edit</tabstop>
   <tabstop>passphrase_line_edit_verify</tabstop>
+  <tabstop>show_passwd_button</tabstop>
+  <tabstop>save_profile_checkbox</tabstop>
+  <tabstop>save_passphrase_checkbox</tabstop>
   <tabstop>turn_off_checkbox</tabstop>
-  <tabstop>textEdit</tabstop>
   <tabstop>showFileDialog</tabstop>
+  <tabstop>textEdit</tabstop>
  </tabstops>
  <resources>
   <include location="../resources.qrc"/>
