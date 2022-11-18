@@ -121,8 +121,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         self.unrecognized_config_label.setVisible(False)
         self.load_settings()
 
-        self.show_passwd_button.pressed.connect(self.show_password)
-        self.show_passwd_button.released.connect(self.hide_password)
+        self.show_passwd_button.pressed.connect(self.show_hide_password)
 
         selected = self.vms_to_include()
         self.__fill_vms_list__(selected)
@@ -133,13 +132,13 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         self.dispatcher = dispatcher
         dispatcher.add_handler('backup-progress', self.on_backup_progress)
 
-    def show_password(self):
-        self.passphrase_line_edit.setEchoMode(QtWidgets.QLineEdit.Normal)
-        self.show_passwd_button.setIcon(QtGui.QIcon(':/eye.svg'))
-
-    def hide_password(self):
-        self.passphrase_line_edit.setEchoMode(QtWidgets.QLineEdit.Password)
-        self.show_passwd_button.setIcon(QtGui.QIcon(':/eye-off.svg'))
+    def show_hide_password(self):
+        if self.show_passwd_button.isChecked():
+            self.passphrase_line_edit.setEchoMode(QtWidgets.QLineEdit.Password)
+            self.show_passwd_button.setIcon(QtGui.QIcon(':/eye-off.svg'))
+        else:
+            self.passphrase_line_edit.setEchoMode(QtWidgets.QLineEdit.Normal)
+            self.show_passwd_button.setIcon(QtGui.QIcon(':/eye.svg'))
 
     def setup_application(self):
         self.qt_app.setApplicationName(self.tr("Qubes Backup VMs"))
