@@ -26,6 +26,7 @@ import collections
 import functools
 import re
 import subprocess
+import sys
 import traceback
 from qubesadmin.tools import QubesArgumentParser
 from qubesadmin import devices
@@ -1498,11 +1499,17 @@ parser.set_defaults(
 def main(args=None):
     args = parser.parse_args(args)
     vm = args.domains.pop()
+    if vm.klass == 'AdminVM':
+        print("This tool cannot be used to change properties of an "
+              f"AdminVM ({vm.name}).")
+        print("You can use command-line tools such as qvm-prefs "
+              "and qvm-features to change properties of an AdminVM")
+        return 1
 
     utils.run_synchronous(functools.partial(VMSettingsWindow, vm, args.tab))
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
 
 # vim:sw=4:et:
