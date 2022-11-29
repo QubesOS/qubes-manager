@@ -915,7 +915,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Failed to set seamless mode"),
-                self.tr("Error occured: {}".format(str(ex))))
+                self.tr("Error occurred: {}".format(str(ex))))
 
     def disable_seamless(self):
         try:
@@ -925,7 +925,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Failed to set fullscreen mode"),
-                self.tr("Error occured: {}".format(str(ex))))
+                self.tr("Error occurred: {}".format(str(ex))))
 
     def __apply_advanced_tab__(self):
         msg = []

@@ -488,7 +488,7 @@ def handle_exception(exc_type, exc_value, exc_traceback):
     msg_box.setWindowTitle(QtCore.QCoreApplication.translate(
         "ManagerUtils", "Houston, we have a problem..."))
     msg_box.setText(QtCore.QCoreApplication.translate(
-        "ManagerUtils", "Whoops. A critical error has occured. "
+        "ManagerUtils", "Whoops. A critical error has occurred. "
                         "This is most likely a bug in Qubes Manager.<br><br>"
                         "<b><i>{0}</i></b><br/>at line <b>{1}</b><br/>of file "
                         "{2}.<br/><br/>").format(error, line, filename))
