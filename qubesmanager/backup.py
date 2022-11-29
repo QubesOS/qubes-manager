@@ -124,6 +124,12 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         self.show_passwd_button.pressed.connect(self.show_password)
         self.show_passwd_button.released.connect(self.hide_password)
 
+        self.save_profile_checkbox.stateChanged.connect(
+            self.save_profile_changed)
+        self.save_passphrase_checkbox.stateChanged.connect(
+            self.save_profile_changed)
+        self.save_profile_changed()
+
         selected = self.vms_to_include()
         self.__fill_vms_list__(selected)
 
@@ -140,6 +146,12 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
     def hide_password(self):
         self.passphrase_line_edit.setEchoMode(QtWidgets.QLineEdit.Password)
         self.show_passwd_button.setIcon(QtGui.QIcon(':/eye-off.svg'))
+
+    def save_profile_changed(self):
+        save_profile = self.save_profile_checkbox.isChecked()
+        self.save_passphrase_checkbox.setEnabled(save_profile)
+        self.save_passphrase_warning.setEnabled(save_profile and
+                self.save_passphrase_checkbox.isChecked())
 
     def setup_application(self):
         self.qt_app.setApplicationName(self.tr("Qubes Backup VMs"))
@@ -202,11 +214,14 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
             self.passphrase_line_edit.setText(profile_data['passphrase_text'])
             self.passphrase_line_edit_verify.setText(
                 profile_data['passphrase_text'])
+            self.save_passphrase_checkbox.setChecked(True)
+        else:
+            self.save_passphrase_checkbox.setChecked(False)
 
         if 'compression' in profile_data:
             self.compress_checkbox.setChecked(profile_data['compression'])
 
-    def save_settings(self, use_temp):
+    def save_settings(self, use_temp, save_passphrase=True):
         """
         Helper function that saves backup profile to either
         /etc/qubes/backup/qubes-manager-backup.conf or
@@ -217,8 +232,10 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         settings = {'destination_vm': self.appvm_combobox.currentText(),
                     'destination_path': self.dir_line_edit.text(),
                     'include': [vm.name for vm in self.selected_vms],
-                    'passphrase_text': self.passphrase_line_edit.text(),
                     'compression': self.compress_checkbox.isChecked()}
+
+        if save_passphrase:
+            settings['passphrase_text'] = self.passphrase_line_edit.text()
 
         backup_utils.write_backup_profile(settings, use_temp)
 
@@ -345,7 +362,9 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         elif self.currentPage() is self.commit_page:
 
             if self.save_profile_checkbox.isChecked():
-                self.save_settings(use_temp=False)
+                save_passphrase = self.save_passphrase_checkbox.isChecked()
+                self.save_settings(use_temp=False,
+                   save_passphrase=save_passphrase)
 
             self.button(self.FinishButton).setDisabled(True)
             self.showFileDialog.setEnabled(
