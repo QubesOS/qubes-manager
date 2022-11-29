@@ -236,11 +236,12 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
                 except exc.QubesDaemonAccessError:
                     self.size = None
 
+            text = vm.name + " (" + vm.klass + ")"
             if self.size is not None:
-                text = vm.name + " (" + admin_utils.size_to_human(
+                text = text + " (" + admin_utils.size_to_human(
                     self.size) + ")"
             else:
-                text = vm.name + " (size unavailable)"
+                text = text + " (size unavailable)"
                 self.size = 0
             super(BackupVMsWindow.VmListItem, self).__init__(text)
 
