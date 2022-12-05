@@ -1,3 +1,29 @@
+qubes-manager (4.1.26-1) unstable; urgency=medium
+
+  [ Marta Marczykowska-Górecka ]
+  * Add class to VM list in Backup widget
+  * Fix display of kernels for Qube Settings
+
+  [ Maja Kądziołka ]
+  * Consistent checkbox placement
+  * Allow saving backup settings without passphrase
+  * Use a more intuitive tab order
+
+  [ Marta Marczykowska-Górecka ]
+  * Make show password buttons in backup gui toggleable
+
+  [ Marek Marczykowski-Górecki ]
+  * typo fix
+
+  [ Marta Marczykowska-Górecka ]
+  * Fix VM sorting order in Qube Manager if Sorting by State
+  * Fix sorting for Backup column
+  * Make "Copy to global clipboard" selection-aware in log browser
+  * Fix sorting by icons in Qube Manager
+  * Add explanation why you can't use vm settings with AdminVMs
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 05 Dec 2022 15:01:41 +0100
+
 qubes-manager (4.1.25-1) unstable; urgency=medium
 
   [ Marek Marczykowski-Górecki ]
