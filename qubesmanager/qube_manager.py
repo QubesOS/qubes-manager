@@ -465,11 +465,30 @@ class QubesTableModel(QAbstractTableModel):
             if col_name == "Type":
                 return vm.klass
             if col_name == "Label":
-                return str(vm.label)
+                vmtype, vmcolor = vm.icon.split("-")
+                try:
+                    processed_color = str(vm.label.index)
+                except ValueError:
+                    processed_color = vmcolor
+                return vmtype + processed_color
             if col_name == "State":
-                return str(vm.state)
+                # sorting order is based on a logical order (from running to
+                # progressively less running) and update state
+                state = vm.state.get('power', '')
+                try:
+                    ordered_state = str(
+                        ["Running", "Transient", "Halting", "Paused",
+                         "Suspended", "Dying", "Crashed",
+                         "Halted", "NA"].index(state))
+                except ValueError:
+                    ordered_state = state
+                updated = vm.state.get('outdated', '')
+                return ordered_state + updated
             if col_name == "Disk Usage":
                 return vm.disk_float
+            if col_name == "Backup":
+                # sort True before False, hence the not
+                return not vm.inc_backup
             return self.data(index, Qt.DisplayRole)
 
     # pylint: disable=invalid-name

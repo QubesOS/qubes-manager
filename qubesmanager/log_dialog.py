@@ -45,8 +45,6 @@ class LogDialog(ui_logdlg.Ui_LogDialog, QtWidgets.QDialog):
 
         self.copy_to_qubes_clipboard.clicked.connect(
             self.copy_to_clipboard_triggered)
-        self.copy_to_qubes_clipboard.clicked.connect(
-            self.copy_to_clipboard_triggered)
 
         self.__init_log_text__()
 
@@ -63,7 +61,8 @@ class LogDialog(ui_logdlg.Ui_LogDialog, QtWidgets.QDialog):
         self.buttonsLayout.itemAt(0).widget().click()
 
     def copy_to_clipboard_triggered(self):
-        clipboard.copy_text_to_qubes_clipboard(self.displayed_text)
+        text = self.log_text.textCursor().selectedText() or self.displayed_text
+        clipboard.copy_text_to_qubes_clipboard(text)
 
     def set_current_log(self, log_path):
         self.displayed_text = ""
