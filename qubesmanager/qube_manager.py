@@ -1084,6 +1084,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
     def load_manager_settings(self):
         # Load view menu settings
+        # QSettings stores True as 'true' string and False as 'false' string
         for action in self.menu_view.actions():
             column = action.data()
             if column is not None:
@@ -1108,12 +1109,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         else:
             self.table.sortByColumn(sort_column, order)
 
-        if not self.manager_settings.value("view/menubar_visible",
-                                           defaultValue=True):
+        if self.manager_settings.value("view/menubar_visible") == 'false':
             self.action_menubar.setChecked(False)
             self.menubar.setVisible(False)
-        if not self.manager_settings.value("view/toolbar_visible",
-                                           defaultValue=True):
+        if self.manager_settings.value("view/toolbar_visible") == 'false':
             self.action_toolbar.setChecked(False)
             self.toolbar.setVisible(False)
         if self.manager_settings.value("view/compactview",
