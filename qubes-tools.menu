@@ -6,10 +6,10 @@
           <Name>Qubes Tools</Name>
           <Directory>qubes-tools.directory</Directory>
           <Include>
-            <Filename>qubes-vm-create.desktop</Filename>
+            <Filename>qubes-new-qube.desktop</Filename>
             <Filename>qubes-backup.desktop</Filename>
             <Filename>qubes-backup-restore.desktop</Filename>
-            <Filename>qubes-global-settings.desktop</Filename>
+            <Filename>qubes-global-config.desktop</Filename>
             <Filename>qubes-qube-manager.desktop</Filename>
             <Filename>qubes-template-manager.desktop</Filename>
             <Filename>qubes-update-gui.desktop</Filename>
