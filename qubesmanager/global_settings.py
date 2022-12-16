@@ -303,7 +303,9 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
                 ('thick border', 'border2'),
                 ('tinted icon', 'tint'),
                 ('tinted icon with modified white', 'tint+whitehack'),
-                ('tinted icon with 50% saturation', 'tint+saturation50')
+                ('tinted icon with 50% saturation', 'tint+saturation50'),
+                ('tinted icon with thin border', 'tint+border1'),
+                ('tinted icon with thick border', 'tint+border2')
             ],
             selected_value=utils.get_feature(
                 self.vm, 'gui-default-trayicon-mode', None))
