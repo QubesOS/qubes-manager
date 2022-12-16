@@ -1,3 +1,16 @@
+qubes-manager (4.1.27-1) unstable; urgency=medium
+
+  [ Demi Marie Obenour ]
+  * Rip out DOCTYPE declarations
+
+  [ Rusty Bird ]
+  * global_settings: expose tint+border configurations
+
+  [ Marta Marczykowska-Górecka ]
+  * Correctly interact with QSettings
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Fri, 16 Dec 2022 18:22:35 +0100
+
 qubes-manager (4.1.26-1) unstable; urgency=medium
 
   [ Marta Marczykowska-Górecka ]
