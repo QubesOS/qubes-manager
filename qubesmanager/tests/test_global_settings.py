@@ -29,6 +29,15 @@ from qubesmanager.tests import init_qtapp
 import qubesmanager.global_settings as global_settings
 
 
+def _helper_none_patcher(x):
+    """Helper function to patch Qubes object to return none properties"""
+    if x == 'check_updates_vm':
+        return False
+    if x == 'default_kernel':
+        return ''
+    return None
+
+
 class GlobalSettingsTest(unittest.TestCase):
     def setUp(self):
         super(GlobalSettingsTest, self).setUp()
@@ -88,7 +97,7 @@ class GlobalSettingsTest(unittest.TestCase):
         # correctly selected default kernel
         selected_default_kernel = self.dialog.default_kernel_combo.currentText()
         self.assertTrue(selected_default_kernel.startswith(
-            str(getattr(self.qapp, 'default_kernel', '(none)'))),
+            str(getattr(self.qapp, 'default_kernel', '(provided by qube)'))),
             "Incorrect default kernel loaded")
 
         # correct ClockVM
@@ -134,7 +143,8 @@ class GlobalSettingsTest(unittest.TestCase):
 
         widget.setCurrentIndex(0)
         while widget.currentText().endswith("(current)") \
-                or widget.currentText().startswith("(none)"):
+                or widget.currentText().startswith("(none)") \
+                or widget.currentText().startswith('(provided by qube)'):
             widget.setCurrentIndex(widget.currentIndex() + 1)
 
         return widget.currentData()
@@ -142,8 +152,16 @@ class GlobalSettingsTest(unittest.TestCase):
     def __set_none(self, widget):
         widget.setCurrentIndex(0)
         while not widget.currentText().startswith("(none)"):
-            if widget.currentIndex() == widget.count():
+            if widget.currentIndex() == widget.count() - 1:
                 self.skipTest("none not available for " + widget.objectName())
+            widget.setCurrentIndex(widget.currentIndex() + 1)
+
+    def __set_text(self, widget, text):
+        widget.setCurrentIndex(0)
+        while not widget.currentText().startswith(text):
+            if widget.currentIndex() == widget.count() - 1:
+                self.skipTest(text + " not available for " +
+                              widget.objectName())
             widget.setCurrentIndex(widget.currentIndex() + 1)
 
     def __click_ok(self):
@@ -232,12 +250,12 @@ class GlobalSettingsTest(unittest.TestCase):
                                                   new_def_kernel_name)
 
     def test_51_set_default_kernel_to_none(self):
-        self.__set_none(self.dialog.default_kernel_combo)
+        self.__set_text(self.dialog.default_kernel_combo, '(provided by qube)')
 
         self.__click_ok()
 
         self.setattr_mock.assert_called_once_with('default_kernel',
-                                                  None)
+                                                  '')
 
     def test_60_set_dom0_updates_true(self):
         current_state = self.dialog.updates_dom0.isChecked()
@@ -312,8 +330,7 @@ class GlobalSettingsTest(unittest.TestCase):
         self.setattr_mock.assert_called_once_with('default_dispvm', None)
 
     @unittest.mock.patch.object(
-        type(Qubes()), '__getattr__',
-        side_effect=(lambda x: False if x == 'check_updates_vm' else None))
+        type(Qubes()), '__getattr__', side_effect=_helper_none_patcher)
     def test_90_test_all_set_none(self, mock_qubes):
         mock_qubes.configure_mock()
         self.dialog = global_settings.GlobalSettingsWindow(
@@ -332,7 +349,7 @@ class GlobalSettingsTest(unittest.TestCase):
                          "(none) (current)",
                          "Default template displays as none incorrectly")
         self.assertEqual(self.dialog.default_kernel_combo.currentText(),
-                         "(none) (current)",
+                         "(provided by qube) (current)",
                          "Defautl kernel displays as none incorrectly")
         self.assertEqual(self.dialog.default_dispvm_combo.currentText(),
                          "(none) (current)",
