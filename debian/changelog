@@ -1,3 +1,10 @@
+qubes-manager (4.1.28-1) unstable; urgency=medium
+
+  [ Marta Marczykowska-Górecka ]
+  * Fix tests for kernel settings
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sun, 18 Dec 2022 03:51:34 +0100
+
 qubes-manager (4.1.27-1) unstable; urgency=medium
 
   [ Demi Marie Obenour ]
