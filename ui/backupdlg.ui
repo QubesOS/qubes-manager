@@ -91,6 +91,22 @@
      </widget>
     </item>
     <item>
+     <widget class="QLabel" name="metadata_warning_label">
+      <property name="font">
+       <font>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Warning: The backup will include metadata of all qubes, regardless of whether they are selected.</string>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
      <widget class="QLabel" name="unrecognized_config_label">
       <property name="palette">
        <palette>

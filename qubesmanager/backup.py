@@ -99,6 +99,8 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         # but completeChanged twice. Somehow.
         self.select_vms_widget.selectedChanged.connect(
             self.select_vms_page.completeChanged.emit)
+        self.select_vms_widget.selectedChanged.connect(
+            self.update_metadata_warning)
         self.passphrase_line_edit.textChanged.connect(
             self.backup_location_changed)
         self.passphrase_line_edit_verify.textChanged.connect(
@@ -151,6 +153,10 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         self.save_passphrase_checkbox.setEnabled(save_profile)
         self.save_passphrase_warning.setEnabled(save_profile and
                 self.save_passphrase_checkbox.isChecked())
+
+    def update_metadata_warning(self):
+        self.metadata_warning_label.setVisible(
+            self.select_vms_widget.available_list.count() > 0)
 
     def setup_application(self):
         self.qt_app.setApplicationName(self.tr("Qubes Backup VMs"))
@@ -279,6 +285,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
 
         self.total_size_label.setText(
             admin_utils.size_to_human(self.total_size))
+        self.update_metadata_warning()
 
     def vms_added(self, items):
         for i in items:
