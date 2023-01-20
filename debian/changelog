@@ -1,3 +1,13 @@
+qubes-manager (4.2.0-1) unstable; urgency=medium
+
+  [ Maja Kądziołka ]
+  * Warn about metadata leaks in backups
+
+  [ Marta Marczykowska-Górecka ]
+  * Remove menu positions from old menu
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Fri, 20 Jan 2023 04:52:17 +0100
+
 qubes-manager (4.1.28-1) unstable; urgency=medium
 
   [ Marta Marczykowska-Górecka ]
