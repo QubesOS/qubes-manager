@@ -190,7 +190,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         self.__children = None  # list of rules in the FW
 
     def sort(self, idx, order):
-        rev = (order == QtCore.Qt.AscendingOrder)
+        rev = order == QtCore.Qt.AscendingOrder
         self.children.sort(key=lambda x: self.get_column_string(idx, x),
                            reverse=rev)
 
@@ -294,7 +294,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
 
             raise FirewallModifiedOutsideError(self.tr('it does not add up.'))
 
-        conf['allow'] = (common_action == 'accept')
+        conf['allow'] = common_action == 'accept'
 
         if not allow_icmp and not conf['allow']:
             raise FirewallModifiedOutsideError(self.tr('ICMP must be allowed.'))

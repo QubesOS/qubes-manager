@@ -1240,7 +1240,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     self.vm.devices['pci'].detach(current_assignment)
 
                     current_assignment.options['no-strict-reset'] = \
-                        (dev.ident in self.new_strict_reset_list)
+                        dev.ident in self.new_strict_reset_list
 
                     self.vm.devices['pci'].attach(current_assignment)
 
@@ -1403,7 +1403,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             for i in range(self.services_list.count()):
                 item = self.services_list.item(i)
                 self.new_srv_dict[str(item.text())] = \
-                    (item.checkState() == ui_settingsdlg.QtCore.Qt.Checked)
+                    item.checkState() == ui_settingsdlg.QtCore.Qt.Checked
 
             for service, v in self.new_srv_dict.items():
                 feature = SERVICE_PREFIX + service

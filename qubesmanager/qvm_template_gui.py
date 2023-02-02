@@ -134,7 +134,7 @@ class TemplateModel(PyQt5.QtCore.QAbstractItemModel):
         return super().flags(index)
 
     def sort(self, idx, order):
-        rev = (order == PyQt5.QtCore.Qt.AscendingOrder)
+        rev = order == PyQt5.QtCore.Qt.AscendingOrder
         self.children.sort(key=lambda x: x[idx], reverse=rev)
 
         self.dataChanged.emit(*self.row_index(0, self.rowCount() - 1))

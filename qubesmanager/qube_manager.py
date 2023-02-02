@@ -507,8 +507,8 @@ class QubesTableModel(QAbstractTableModel):
             col_name = self.columns_indices[index.column()]
             if col_name == "Backup":
                 vm = self.qubes_cache.get_vm(index.row())
-                vm.vm.include_in_backups = (value == Qt.Checked)
-                vm.inc_backup = (value == Qt.Checked)
+                vm.vm.include_in_backups = value == Qt.Checked
+                vm.inc_backup = value == Qt.Checked
                 return True
         return False
 

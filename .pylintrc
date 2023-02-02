@@ -17,12 +17,7 @@ ignore=tests,
 extension-pkg-whitelist=PyQt5
 
 [MESSAGES CONTROL]
-# abstract-class-little-used: see http://www.logilab.org/ticket/111138
-# deprecated-method:
-#   enable again after disabling py-3.4.3 asyncio.ensure_future compat hack
 disable=
-  abstract-class-little-used,
-  bad-continuation,
   cyclic-import,
   deprecated-method,
   duplicate-code,
@@ -30,11 +25,9 @@ disable=
   fixme,
   inconsistent-return-statements,
   locally-disabled,
-  locally-enabled,
   logging-format-interpolation,
   missing-docstring,
   consider-using-f-string,
-  star-args,
   useless-super-delegation,
   wrong-import-order
 
