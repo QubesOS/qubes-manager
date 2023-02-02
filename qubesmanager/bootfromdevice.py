@@ -21,7 +21,7 @@ import functools
 import subprocess
 from . import utils
 from . import ui_bootfromdevice  # pylint: disable=no-name-in-module
-from PyQt5 import QtWidgets, QtGui  # pylint: disable=import-error
+from PyQt5 import QtWidgets, QtGui, Qt  # pylint: disable=import-error
 from qubesadmin import tools
 from qubesadmin import exc
 from qubesadmin.tools import qvm_start
@@ -41,6 +41,9 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
         self.setupUi(self)
         self.setWindowTitle(
             self.tr("Boot {vm} from device").format(vm=self.vm))
+        self.setWindowFlags(self.windowFlags() |
+                            Qt.Qt.WindowMaximizeButtonHint |
+                            Qt.Qt.WindowMinimizeButtonHint)
 
         self.buttonBox.accepted.connect(self.save_and_apply)
         self.buttonBox.rejected.connect(self.reject)

@@ -20,7 +20,7 @@
 #
 #
 
-from PyQt5 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
+from PyQt5 import QtCore, QtWidgets, QtGui, Qt  # pylint: disable=import-error
 import os
 import os.path
 import logging
@@ -74,6 +74,9 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
 
         self.qt_app = qt_app
         self.qubes_app = qubes_app
+        self.setWindowFlags(self.windowFlags() |
+                            Qt.Qt.WindowMaximizeButtonHint |
+                            Qt.Qt.WindowMinimizeButtonHint)
 
         self.vms_to_restore = None
         self.func_output = []

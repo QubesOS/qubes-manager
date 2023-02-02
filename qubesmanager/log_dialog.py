@@ -22,7 +22,7 @@
 import sys
 import os
 from functools import partial
-from PyQt5 import QtWidgets  # pylint: disable=import-error
+from PyQt5 import QtWidgets, Qt  # pylint: disable=import-error
 from qubesadmin import Qubes
 from . import ui_logdlg   # pylint: disable=no-name-in-module
 from . import clipboard
@@ -42,6 +42,9 @@ class LogDialog(ui_logdlg.Ui_LogDialog, QtWidgets.QDialog):
         self.displayed_text = ""
 
         self.setupUi(self)
+        self.setWindowFlags(self.windowFlags() |
+                            Qt.Qt.WindowMaximizeButtonHint |
+                            Qt.Qt.WindowMinimizeButtonHint)
 
         self.copy_to_qubes_clipboard.clicked.connect(
             self.copy_to_clipboard_triggered)
