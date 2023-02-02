@@ -482,6 +482,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         except qubesadmin.exc.QubesDaemonAccessError:
             self.autostart_vm.setEnabled(False)
         except AttributeError:
+            self.autostart_vm.setEnabled(False)
             self.autostart_vm.setVisible(False)
 
         # type
@@ -540,9 +541,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         # vm label changed
         try:
-            if self.vmlabel.isVisible():
-                if utils.did_widget_selection_change(self.vmlabel):
-                    self.vm.label = self.vmlabel.currentData()
+            if utils.did_widget_selection_change(self.vmlabel):
+                self.vm.label = self.vmlabel.currentData()
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
@@ -571,7 +571,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         # autostart_vm
         try:
-            if self.autostart_vm.isVisible():
+            if self.autostart_vm.isEnabled():
                 if self.vm.autostart != self.autostart_vm.isChecked():
                     self.vm.autostart = self.autostart_vm.isChecked()
         except qubesadmin.exc.QubesException as ex:
@@ -827,7 +827,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 self.kernel_opts.setText(getattr(self.vm, 'kernelopts', '-'))
             except qubesadmin.exc.QubesDaemonAccessError:
                 self.kernel_groupbox.setVisible(False)
+                self.kernel.setEnabled(False)
         else:
+            self.kernel.setEnabled(False)
             self.kernel_groupbox.setVisible(False)
 
         if not hasattr(self.vm, 'default_dispvm'):
@@ -887,6 +889,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.run_in_debug_mode.setVisible(True)
         except AttributeError:
             self.run_in_debug_mode.setVisible(False)
+            self.run_in_debug_mode.setEnabled(False)
 
         utils.initialize_widget(
             widget=self.allow_fullscreen,
@@ -958,7 +961,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             msg.append(str(ex))
 
         # in case VM is not Linux
-        if hasattr(self.vm, "kernel") and self.kernel_groupbox.isVisible():
+        if hasattr(self.vm, "kernel"):
             try:
                 if utils.did_widget_selection_change(self.kernel):
                     self.vm.kernel = self.kernel.currentData()
@@ -999,7 +1002,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         # run_in_debug_mode
         try:
-            if self.run_in_debug_mode.isVisible():
+            if self.run_in_debug_mode.isEnabled():
                 if self.vm.debug != self.run_in_debug_mode.isChecked():
                     self.vm.debug = self.run_in_debug_mode.isChecked()
         except qubesadmin.exc.QubesException as ex:
