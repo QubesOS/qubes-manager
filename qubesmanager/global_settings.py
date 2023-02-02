@@ -505,7 +505,7 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         elif repos.get('qubes-dom0-current', {}).get('enabled', None):
             self.dom0_updates_repo.setCurrentIndex(0)
         else:
-            raise Exception(
+            raise exc.QubesException(
                 self.tr('Cannot detect enabled dom0 update repositories'))
 
         if repos.get('qubes-templates-itl-testing', {}).get('enabled', None):
@@ -513,8 +513,8 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         elif repos.get('qubes-templates-itl', {}).get('enabled', None):
             self.itl_tmpl_updates_repo.setCurrentIndex(0)
         else:
-            raise Exception(self.tr('Cannot detect enabled ITL template update '
-                                    'repositories'))
+            raise exc.QubesException(self.tr('Cannot detect enabled ITL '
+                                             'template update repositories'))
 
         if repos.get(
                 'qubes-templates-community-testing', {}).get('enabled', None):
