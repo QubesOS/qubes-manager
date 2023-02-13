@@ -116,10 +116,11 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
         # The magical constants of 60 here are derived from margins set
         # in the .ui file
         req_width = self.scrollAreaWidgetContents_2.sizeHint().width() + 60
-        avail_width = self.app.desktop().availableGeometry().width() * 0.95
+        avail_width = int(self.app.desktop().availableGeometry().width() * 0.95)
 
         req_height = self.scrollAreaWidgetContents_2.sizeHint().height() + 60
-        avail_height = self.app.desktop().availableGeometry().height() * 0.95
+        avail_height = int(
+            self.app.desktop().availableGeometry().height() * 0.95)
 
         self.resize(min(req_width, avail_width), min(req_height, avail_height))
 
