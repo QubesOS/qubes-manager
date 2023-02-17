@@ -1464,13 +1464,15 @@ class QubeManagerTest(unittest.TestCase):
 
         if additional_timeout:
             (done, pending) = self.loop.run_until_complete(
-                asyncio.wait({future1, future2}, timeout=timeout,
+                asyncio.wait({future1,
+                              asyncio.create_task(future2)}, timeout=timeout,
                              return_when=asyncio.FIRST_COMPLETED))
             (done, pending) = self.loop.run_until_complete(
                 asyncio.wait(pending, timeout=additional_timeout))
         else:
             (done, pending) = self.loop.run_until_complete(
-                asyncio.wait({future1, future2}, timeout=timeout))
+                asyncio.wait({future1,
+                              asyncio.create_task(future2)}, timeout=timeout))
 
         for task in pending:
             with contextlib.suppress(asyncio.CancelledError):
