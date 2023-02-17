@@ -43,7 +43,7 @@ from . import clone_vm
 
 from .appmenu_select import AppmenuSelectManager
 from . import firewall
-from PyQt5 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
+from PyQt5 import QtCore, QtWidgets, QtGui, Qt  # pylint: disable=import-error
 
 from . import ui_settingsdlg  # pylint: disable=no-name-in-module
 
@@ -151,6 +151,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         self.setupUi(self)
         self.setWindowTitle(self.tr("Settings: {vm}").format(vm=self.vm.name))
+        self.setWindowFlags(self.windowFlags() |
+                            Qt.Qt.WindowMaximizeButtonHint |
+                            Qt.Qt.WindowMinimizeButtonHint)
         if init_page in self.tabs_indices:
             idx = self.tabs_indices[init_page]
             assert idx in range(self.tabWidget.count())

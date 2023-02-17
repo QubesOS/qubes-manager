@@ -24,7 +24,7 @@ import signal
 from qubesadmin import exc
 from qubesadmin import utils as admin_utils
 
-from PyQt5 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
+from PyQt5 import QtCore, QtWidgets, QtGui, Qt  # pylint: disable=import-error
 from . import ui_backupdlg  # pylint: disable=no-name-in-module
 from . import multiselectwidget
 
@@ -79,6 +79,10 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         self.thread = None
 
         self.setupUi(self)
+
+        self.setWindowFlags(self.windowFlags() |
+                            Qt.Qt.WindowMaximizeButtonHint |
+                            Qt.Qt.WindowMinimizeButtonHint)
 
         self.progress_status.text = self.tr("Backup in progress...")
         self.dir_line_edit.setReadOnly(False)

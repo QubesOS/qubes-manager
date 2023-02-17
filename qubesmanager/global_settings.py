@@ -24,7 +24,7 @@ import os
 import sys
 import subprocess
 import pkg_resources
-from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
+from PyQt5 import QtWidgets, QtCore, QtGui, Qt  # pylint: disable=import-error
 
 from qubesadmin.utils import parse_size
 from qubesadmin import exc
@@ -81,6 +81,10 @@ class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
 
         self.buttonBox.accepted.connect(self.save_and_apply)
         self.buttonBox.rejected.connect(self.reject)
+
+        self.setWindowFlags(self.windowFlags() |
+                            Qt.Qt.WindowMaximizeButtonHint |
+                            Qt.Qt.WindowMinimizeButtonHint)
 
         self.__init_ux()
 
