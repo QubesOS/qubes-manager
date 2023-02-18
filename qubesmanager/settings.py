@@ -223,6 +223,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         ####### apps tab
         if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
             self.app_list = multiselectwidget.MultiSelectWidget(self)
+            self.app_list.change_labels(
+                available="All available applications",
+                selected="Applications shown in App Menu")
             self.apps_layout.addWidget(self.app_list)
             self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
             self.refresh_apps_button.clicked.connect(
@@ -1153,6 +1156,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
     ######## devices tab
     def __init_devices_tab__(self):
         self.dev_list = multiselectwidget.MultiSelectWidget(self)
+        self.dev_list.change_labels(
+            available="Available devices",
+            selected="Devices always connected to this qube")
         self.dev_list.add_all_button.setVisible(False)
         self.devices_layout.addWidget(self.dev_list)
 

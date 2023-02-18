@@ -65,3 +65,8 @@ class MultiSelectWidget(
     def clear(self):
         self.available_list.clear()
         self.selected_list.clear()
+
+    def change_labels(self, available: str, selected: str):
+        """Set Available and Selected labels to provided text."""
+        self.selected_label.setText(selected)
+        self.available_label.setText(available)

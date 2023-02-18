@@ -48,7 +48,7 @@
         </spacer>
        </item>
        <item>
-        <widget class="QLabel" name="label">
+        <widget class="QLabel" name="available_label">
          <property name="text">
           <string>Available</string>
          </property>
@@ -150,7 +150,7 @@
         </spacer>
        </item>
        <item>
-        <widget class="QLabel" name="label_2">
+        <widget class="QLabel" name="selected_label">
          <property name="text">
           <string>Selected</string>
          </property>
