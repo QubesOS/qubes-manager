@@ -854,7 +854,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             for info in selected_vms:
                 try:
                     info.vm.template = template
-                except exc.QubesValueError as ex:
+                except exc.QubesException as ex:
                     errors.append((info.name, str(ex)))
 
             for error in errors:
