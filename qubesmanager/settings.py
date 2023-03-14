@@ -1304,7 +1304,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
     def refresh_finished(self):
         self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
         self.refresh_apps_button.setEnabled(True)
-        self.refresh_apps_button.setText(self.tr('Refresh Applications'))
+        self.refresh_apps_button.setText(self.tr('Refresh applications'))
 
     def template_apps_change(self):
         if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
