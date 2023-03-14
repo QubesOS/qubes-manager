@@ -671,11 +671,14 @@ class QubesProxyModel(QSortFilterProxyModel):
 
     # pylint: disable=too-many-return-statements
     def filterAcceptsRow(self, sourceRow, sourceParent):
-        if self.window.show_all.isChecked():
-            return super().filterAcceptsRow(sourceRow, sourceParent)
-
         index = self.sourceModel().index(sourceRow, 0, sourceParent)
         vm = self.sourceModel().data(index, Qt.UserRole)
+
+        # if hide internal is true, ignore all other filters
+        if not self.window.show_internal_action.isChecked() and vm.internal:
+            return False
+        if self.window.show_all.isChecked():
+            return super().filterAcceptsRow(sourceRow, sourceParent)
 
         if self.window.show_running.isChecked() and \
                 vm.state['power'] != 'Halted':
@@ -748,6 +751,33 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.fill_cache()
         self.qubes_model = QubesTableModel(self.qubes_cache)
 
+        self.show_running.stateChanged.connect(self.invalidate)
+        self.show_halted.stateChanged.connect(self.invalidate)
+        self.show_network.stateChanged.connect(self.invalidate)
+        self.show_templates.stateChanged.connect(self.invalidate)
+        self.show_standalone.stateChanged.connect(self.invalidate)
+        self.show_all.stateChanged.connect(self.invalidate)
+
+        # Create view menu
+        for col_no, column in enumerate(self.qubes_model.columns_indices):
+            action = self.menu_view.addAction(column)
+            action.setData(column)
+            action.setCheckable(True)
+            action.toggled.connect(partial(self.showhide_column, col_no))
+
+        self.menu_view.addSeparator()
+        self.show_internal_action = self.menu_view.addAction(
+            self.tr('Show internal qubes'))
+        self.show_internal_action.setCheckable(True)
+        self.show_internal_action.toggled.connect(self.invalidate)
+
+        self.menu_view.addSeparator()
+        self.menu_view.addAction(self.action_toolbar)
+        self.menu_view.addAction(self.action_menubar)
+
+        self.menu_view.addSeparator()
+        self.menu_view.addAction(self.action_compact_view)
+
         self.proxy = QubesProxyModel(self)
         self.proxy.setSourceModel(self.qubes_model)
         self.proxy.setSortRole(Qt.UserRole + 1)
@@ -758,13 +788,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.proxy.layoutChanged.connect(self.update_template_menu)
         self.proxy.layoutChanged.connect(self.update_network_menu)
 
-        self.show_running.stateChanged.connect(self.invalidate)
-        self.show_halted.stateChanged.connect(self.invalidate)
-        self.show_network.stateChanged.connect(self.invalidate)
-        self.show_templates.stateChanged.connect(self.invalidate)
-        self.show_standalone.stateChanged.connect(self.invalidate)
-        self.show_all.stateChanged.connect(self.invalidate)
-
         self.table.setModel(self.proxy)
         self.table.setItemDelegateForColumn(3, StateIconDelegate())
         self.table.resizeColumnsToContents()
@@ -773,19 +796,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         self.table.setContextMenuPolicy(Qt.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self.open_context_menu)
-
-        # Create view menu
-        for col_no, column in enumerate(self.qubes_model.columns_indices):
-            action = self.menu_view.addAction(column)
-            action.setData(column)
-            action.setCheckable(True)
-            action.toggled.connect(partial(self.showhide_column, col_no))
-
-        self.menu_view.addSeparator()
-        self.menu_view.addAction(self.action_toolbar)
-        self.menu_view.addAction(self.action_menubar)
-        self.menu_view.addSeparator()
-        self.menu_view.addAction(self.action_compact_view)
 
         try:
             self.load_manager_settings()
@@ -941,6 +951,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self.show_templates.isChecked())
         self.manager_settings.setValue('show/standalone',
                 self.show_standalone.isChecked())
+        self.manager_settings.setValue('show/internal',
+                self.show_internal_action.isChecked())
         self.manager_settings.setValue('show/all', self.show_all.isChecked())
 
     def save_sorting(self):
@@ -1152,6 +1164,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.show_all.setChecked(self.manager_settings.value(
             'show/all', "true") == "true")
 
+        self.show_internal_action.setChecked(self.manager_settings.value(
+            'show/internal', "false") == "true")
         # load last window size
         self.resize(self.manager_settings.value("window_size",
                                                 QSize(1100, 600)))
