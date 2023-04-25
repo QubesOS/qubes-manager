@@ -637,7 +637,7 @@ class UpdateVMThread(common_threads.QubesThread):
                         pass
                 self.vm.run_service("qubes.InstallUpdatesGUI",
                                     user="root", wait=False)
-        except (ChildProcessError, subprocess.CalledProcessError,
+        except (OSError, subprocess.SubprocessError,
                 exc.QubesException) as ex:
             self.msg = (self.tr("Error on qube update!"), str(ex))
 
