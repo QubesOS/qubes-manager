@@ -1415,7 +1415,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     self.tr("'qubes-windows-tools' is not installed in dom0."))
         for vm_info in self.get_selected_vms():
             vm = vm_info.vm
-            qvm_start.main(['--cdrom', 
+            qvm_start.main(['--cdrom',
                 'dom0:/usr/lib/qubes/qubes-windows-tools.iso', vm.name])
 
     @pyqtSlot(name='on_action_pausevm_triggered')
