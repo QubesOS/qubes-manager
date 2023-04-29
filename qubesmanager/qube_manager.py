@@ -1405,9 +1405,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_startvm_tools_install_triggered')
-    # TODO: error handling
+    # TODO: unhardcode path
     def action_startvm_tools_install_triggered(self):
         # pylint: disable=invalid-name
+        if not path.exists(r'/usr/lib/qubes/qubes-windows-tools.iso'):
+            QMessageBox.warning(
+                    self,
+                    self.tr("QWT not found"),
+                    self.tr("'qubes-windows-tools' is not installed in dom0."))
         for vm_info in self.get_selected_vms():
             qvm_start.main(['--cdrom', 'dom0:/usr/lib/qubes/qubes-windows-tools.iso', vm_info.vm.name])
 
