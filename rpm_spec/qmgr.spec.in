@@ -144,6 +144,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/applications/qubes-backup-restore.desktop
 /usr/share/applications/qubes-qube-manager.desktop
 /usr/share/applications/qubes-template-manager.desktop
+/usr/share/applications/qubes-template-switcher.desktop
 /usr/share/desktop-directories/qubes-tools.directory
 /etc/xdg/menus/applications-merged/qubes-tools.menu
 
