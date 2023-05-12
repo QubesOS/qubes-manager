@@ -556,7 +556,26 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         # vm netvm changed
         try:
             if utils.did_widget_selection_change(self.netVM):
-                self.vm.netvm = self.netVM.currentData()
+                if self.netVM.currentData() == qubesadmin.DEFAULT:
+                    netvm = self.vm.property_get_default('netvm')
+                else:
+                    netvm = self.netVM.currentData()
+                if self.vm.get_power_state() == 'Running' and netvm and \
+                        netvm.get_power_state() != 'Running':
+                    reply = QtWidgets.QMessageBox.question(
+                        self, self.tr("Qube Start Confirmation"),
+                        self.tr("<br>Can not change netvm of a running qube"
+                                "to a halted Qube.<br>"
+                                "Do you want to start the Qube"
+                                " <b>'{0}'</b>?").format(netvm.name),
+                        QtWidgets.QMessageBox.Yes |
+                        QtWidgets.QMessageBox.Cancel)
+
+                    if reply == QtWidgets.QMessageBox.Yes:
+                        netvm.start()
+                        self.vm.netvm = self.netVM.currentData()
+                else:
+                    self.vm.netvm = self.netVM.currentData()
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
