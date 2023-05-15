@@ -46,7 +46,6 @@ from qubesmanager.about import AboutDialog
 
 from . import ui_qubemanager  # pylint: disable=no-name-in-module
 from . import settings
-from . import global_settings
 from . import restore
 from . import backup
 from . import create_new_vm
@@ -1652,13 +1651,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_global_settings_triggered')
     def action_global_settings_triggered(self):  # pylint: disable=invalid-name
-        with common_threads.busy_cursor():
-            global_settings_window = global_settings.GlobalSettingsWindow(
-                self.qt_app,
-                self.qubes_app,
-                self)
-        global_settings_window.show()
-        self.settings_windows['global_settings_window'] = global_settings_window
+        subprocess.check_call('qubes-global-config')
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_manage_templates_triggered')

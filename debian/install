@@ -1,4 +1,3 @@
-/usr/bin/qubes-global-settings
 /usr/bin/qubes-vm-settings
 /usr/bin/qubes-vm-create
 /usr/bin/qubes-vm-boot-from-device
@@ -19,7 +18,6 @@
 /usr/lib/*/dist-packages/qubesmanager/backup.py
 /usr/lib/*/dist-packages/qubesmanager/backup_utils.py
 /usr/lib/*/dist-packages/qubesmanager/firewall.py
-/usr/lib/*/dist-packages/qubesmanager/global_settings.py
 /usr/lib/*/dist-packages/qubesmanager/multiselectwidget.py
 /usr/lib/*/dist-packages/qubesmanager/restore.py
 /usr/lib/*/dist-packages/qubesmanager/settings.py
@@ -39,11 +37,8 @@
 
 /usr/lib/*/dist-packages/qubesmanager/resources_rc.py
 
-/usr/lib/*/dist-packages/qubesmanager/global_settings.css
-
 /usr/lib/*/dist-packages/qubesmanager/ui_backupdlg.py
 /usr/lib/*/dist-packages/qubesmanager/ui_bootfromdevice.py
-/usr/lib/*/dist-packages/qubesmanager/ui_globalsettingsdlg.py
 /usr/lib/*/dist-packages/qubesmanager/ui_multiselectwidget.py
 /usr/lib/*/dist-packages/qubesmanager/ui_newappvmdlg.py
 /usr/lib/*/dist-packages/qubesmanager/ui_newfwruledlg.py
@@ -67,7 +62,6 @@
 /usr/lib/*/dist-packages/qubesmanager/tests/__init__.py
 /usr/lib/*/dist-packages/qubesmanager/tests/test_backup.py
 /usr/lib/*/dist-packages/qubesmanager/tests/test_backup_utils.py
-/usr/lib/*/dist-packages/qubesmanager/tests/test_global_settings.py
 /usr/lib/*/dist-packages/qubesmanager/tests/test_qube_manager.py
 /usr/lib/*/dist-packages/qubesmanager/tests/test_create_new_vm.py
 /usr/lib/*/dist-packages/qubesmanager/tests/test_vm_settings.py
@@ -75,7 +69,6 @@
 
 /usr/lib/*/dist-packages/qubesmanager-*.egg-info/*
 
-/usr/share/applications/qubes-global-settings.desktop
 /usr/share/applications/qubes-vm-create.desktop
 /usr/share/applications/qubes-backup.desktop
 /usr/share/applications/qubes-backup-restore.desktop

@@ -691,7 +691,7 @@ template</string>
      <normaloff>:/global-settings.png</normaloff>:/global-settings.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Global settings</string>
+    <string>&amp;Global config</string>
    </property>
   </action>
   <action name="action_show_network">

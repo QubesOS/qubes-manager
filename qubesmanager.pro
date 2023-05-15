@@ -3,7 +3,6 @@ SOURCES = \
           ui/backupdlg.ui \
           ui/bootfromdevice.ui \
           ui/devicelist.ui \
-          ui/globalsettingsdlg.ui \
           ui/informationnotes.ui \
           ui/logdlg.ui \
           ui/multiselectwidget.ui \
@@ -24,7 +23,6 @@ SOURCES = \
           qubesmanager/create_new_vm.py \
           qubesmanager/device_list.py \
           qubesmanager/firewall.py \
-          qubesmanager/global_settings.py \
           qubesmanager/informationnotes.py \
           qubesmanager/log_dialog.py \
           qubesmanager/multiselectwidget.py \
@@ -38,7 +36,6 @@ SOURCES = \
           qubesmanager/ui_backupdlg.py \
           qubesmanager/ui_bootfromdevice.py \
           qubesmanager/ui_devicelist.py \
-          qubesmanager/ui_globalsettingsdlg.py \
           qubesmanager/ui_informationnotes.py \
           qubesmanager/ui_logdlg.py \
           qubesmanager/ui_multiselectwidget.py \

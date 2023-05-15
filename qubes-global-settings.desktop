@@ -1,9 +1,0 @@
-[Desktop Entry]
-Type=Application
-Exec=qubes-global-settings
-Icon=qubes-manager
-Terminal=false
-Name=Qubes Global Settings
-GenericName=Qubes Global Settings
-StartupNotify=false
-Categories=Settings;X-XFCE-SettingsDialog
