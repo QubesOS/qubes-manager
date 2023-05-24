@@ -872,7 +872,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 QMessageBox.warning(self, self.tr("{0} template change failed!")
                         .format(error[0]), error[1])
 
-
     def change_network(self, netvm_name):
         selected_vms = self.get_selected_vms()
         reply = QMessageBox.question(
@@ -885,10 +884,13 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         if reply != QMessageBox.Yes:
             return
 
-        if netvm_name not in [None, 'default']:
+        if netvm_name:
             check_power = any(info.state['power'] == 'Running' for info
                     in self.get_selected_vms())
-            netvm = self.qubes_cache.get_vm(name=netvm_name)
+            if netvm_name == 'default':
+                netvm = self._get_default_netvm()
+            else:
+                netvm = self.qubes_cache.get_vm(name=netvm_name)
             if check_power and netvm.state['power'] != 'Running':
                 reply = QMessageBox.question(
                     self, self.tr("Qube Start Confirmation"),
