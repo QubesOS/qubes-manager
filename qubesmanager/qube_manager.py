@@ -28,6 +28,7 @@ from os import path
 
 from qubesadmin import exc
 from qubesadmin import utils
+from qubesadmin.tools import qvm_start
 
 # pylint: disable=import-error
 from PyQt5.QtCore import (Qt, QAbstractTableModel, QObject, pyqtSlot, QEvent,
@@ -1404,10 +1405,18 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_startvm_tools_install_triggered')
-    # TODO: replace with boot from device
+    # TODO: unhardcode path
     def action_startvm_tools_install_triggered(self):
         # pylint: disable=invalid-name
-        pass
+        if not path.exists(r'/usr/lib/qubes/qubes-windows-tools.iso'):
+            QMessageBox.warning(
+                    self,
+                    self.tr("QWT not found"),
+                    self.tr("'qubes-windows-tools' is not installed in dom0."))
+        for vm_info in self.get_selected_vms():
+            vm = vm_info.vm
+            qvm_start.main(['--cdrom',
+                'dom0:/usr/lib/qubes/qubes-windows-tools.iso', vm.name])
 
     @pyqtSlot(name='on_action_pausevm_triggered')
     def action_pausevm_triggered(self):
