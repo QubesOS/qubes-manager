@@ -18,7 +18,6 @@ if __name__ == '__main__':
         },
         entry_points={
             'console_scripts': [
-                'qubes-global-settings = qubesmanager.global_settings:main',
                 'qubes-vm-settings = qubesmanager.settings:main',
                 'qubes-vm-create = qubesmanager.create_new_vm:main',
                 'qubes-vm-clone = qubesmanager.clone_vm:main',

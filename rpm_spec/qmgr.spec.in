@@ -60,7 +60,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-/usr/bin/qubes-global-settings
 /usr/bin/qubes-vm-settings
 /usr/bin/qubes-vm-create
 /usr/bin/qubes-vm-clone
@@ -82,7 +81,6 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/backup.py
 %{python3_sitelib}/qubesmanager/backup_utils.py
 %{python3_sitelib}/qubesmanager/firewall.py
-%{python3_sitelib}/qubesmanager/global_settings.py
 %{python3_sitelib}/qubesmanager/multiselectwidget.py
 %{python3_sitelib}/qubesmanager/restore.py
 %{python3_sitelib}/qubesmanager/settings.py
@@ -102,10 +100,8 @@ rm -rf $RPM_BUILD_ROOT
 
 %{python3_sitelib}/qubesmanager/resources_rc.py
 
-%{python3_sitelib}/qubesmanager/global_settings.css
 %{python3_sitelib}/qubesmanager/ui_backupdlg.py
 %{python3_sitelib}/qubesmanager/ui_bootfromdevice.py
-%{python3_sitelib}/qubesmanager/ui_globalsettingsdlg.py
 %{python3_sitelib}/qubesmanager/ui_multiselectwidget.py
 %{python3_sitelib}/qubesmanager/ui_newappvmdlg.py
 %{python3_sitelib}/qubesmanager/ui_newfwruledlg.py
@@ -129,7 +125,6 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/tests/__init__.py
 %{python3_sitelib}/qubesmanager/tests/test_backup.py
 %{python3_sitelib}/qubesmanager/tests/test_backup_utils.py
-%{python3_sitelib}/qubesmanager/tests/test_global_settings.py
 %{python3_sitelib}/qubesmanager/tests/test_qube_manager.py
 %{python3_sitelib}/qubesmanager/tests/test_create_new_vm.py
 %{python3_sitelib}/qubesmanager/tests/test_vm_settings.py
@@ -138,7 +133,6 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{python3_sitelib}/qubesmanager-*.egg-info
 %{python3_sitelib}/qubesmanager-*.egg-info/*
 
-/usr/share/applications/qubes-global-settings.desktop
 /usr/share/applications/qubes-vm-create.desktop
 /usr/share/applications/qubes-backup.desktop
 /usr/share/applications/qubes-backup-restore.desktop
