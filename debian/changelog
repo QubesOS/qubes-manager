@@ -1,3 +1,27 @@
+qubes-manager (4.2.3-1) unstable; urgency=medium
+
+  [ Marta Marczykowska-Górecka ]
+  * Catch exceptions less conservatively
+  * Add a "show internal" option to Qube Manager
+  * Fix capitalization inconsistency in VM settings
+
+  [ Demi Marie Obenour ]
+  * Catch more exceptions
+
+  [ Augsch123 ]
+  * Preliminary GUI initiated QWT install
+  * Handle missing QWT package
+  * Make pylint happy
+  * Make pylint happy again
+
+  [ Marta Marczykowska-Górecka ]
+  * Rename old Template Manager to Template Switcher
+  * Check if default_netvm is running when changing netvm
+  * Improve experience when changing netvm in vm settings
+  * Remove old global settings
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Wed, 24 May 2023 04:39:59 +0200
+
 qubes-manager (4.2.2-1) unstable; urgency=medium
 
   [ Marta Marczykowska-Górecka ]
