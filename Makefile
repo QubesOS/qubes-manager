@@ -44,6 +44,7 @@ install:
 	cp qubes-backup-restore.desktop $(DESTDIR)/usr/share/applications/
 	cp qubes-qube-manager.desktop $(DESTDIR)/usr/share/applications/
 	cp qubes-template-manager.desktop $(DESTDIR)/usr/share/applications/
+	cp qubes-template-switcher.desktop $(DESTDIR)/usr/share/applications/
 
 	mkdir -p $(DESTDIR)/usr/share/desktop-directories/
 	cp qubes-tools.directory $(DESTDIR)/usr/share/desktop-directories/
