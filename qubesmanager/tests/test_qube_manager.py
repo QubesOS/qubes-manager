@@ -105,7 +105,8 @@ class QubeManagerTest(unittest.TestCase):
             self.assertEqual(name_item, vm.name,
                              "Incorrect VM name for {}".format(vm.name))
 
-        actual_vms = [vm.name for vm in self.qapp.domains]
+        actual_vms = [vm.name for vm in self.qapp.domains
+                      if not vm.features.get('internal', False)]
 
         self.assertEqual(len(vms_in_table), len(actual_vms),
                          "Incorrect number of VMs loaded")
@@ -708,7 +709,8 @@ class QubeManagerTest(unittest.TestCase):
 
         # clear search
         self.dialog.searchbox.setText("")
-        expected_number = len([vm for vm in self.qapp.domains])
+        expected_number = len([vm for vm in self.qapp.domains
+                               if not vm.features.get('internal', False)])
         actual_number = self._count_visible_table_rows()
         self.assertEqual(expected_number, actual_number,
                          "Incorrect number of vms shown for cleared search box")
@@ -736,7 +738,8 @@ class QubeManagerTest(unittest.TestCase):
         self.assertEqual(self.dialog.searchbox.text(), "",
                          "Escape failed to clear searchbox")
 
-        expected_number = len([vm for vm in self.qapp.domains])
+        expected_number = len([vm for vm in self.qapp.domains
+                               if not vm.features.get('internal', False)])
         actual_number = self._count_visible_table_rows()
         self.assertEqual(expected_number, actual_number,
                          "Incorrect number of vms shown for cleared search box")
@@ -1034,7 +1037,8 @@ class QubeManagerTest(unittest.TestCase):
         # table contains the correct vms
         vms_in_table = self._create_set_of_current_vms()
 
-        vms_in_system = set([vm.name for vm in self.qapp.domains])
+        vms_in_system = set([vm.name for vm in self.qapp.domains
+                             if not vm.features.get('internal', False)])
 
         self.assertEqual(vms_in_table, vms_in_system, "Table not updated "
                                                       "correctly after add")
