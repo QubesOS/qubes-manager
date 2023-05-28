@@ -622,16 +622,15 @@ class QubeManagerTest(unittest.TestCase):
             self.assertEqual(mock_kill.call_count, 0,
                              "Ignored Cancel on kill VM")
 
-    @unittest.mock.patch('qubesmanager.global_settings.GlobalSettingsWindow')
-    def test_226_global_settings(self, mock_settings):
+    @unittest.mock.patch('subprocess.check_call')
+    def test_226_global_settings(self, mock_subprocess):
         self._select_non_admin_vm()
         self.dialog.action_global_settings.trigger()
-        self.assertEqual(mock_settings.call_count, 1,
-                         "Global Settings not opened")
+        mock_subprocess.assert_called_once_with('qubes-global-config')
 
         self._select_admin_vm()
         self.dialog.action_global_settings.trigger()
-        self.assertEqual(mock_settings.call_count, 2,
+        self.assertEqual(mock_subprocess.call_count, 2,
                          "Global Settings not opened for the second time")
 
     @unittest.mock.patch('qubesmanager.backup.BackupVMsWindow')
