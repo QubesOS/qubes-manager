@@ -880,7 +880,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 netvm = self._get_default_netvm()
             else:
                 netvm = self.qubes_cache.get_vm(name=netvm_name)
-            if check_power and netvm.state['power'] != 'Running':
+                netvm = netvm.vm
+            if check_power and netvm and not netvm.is_running():
                 reply = QMessageBox.question(
                     self, self.tr("Qube Start Confirmation"),
                     self.tr("<br>Can not change netvm to a halted Qube.<br>"
@@ -889,7 +890,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     QMessageBox.Yes | QMessageBox.Cancel)
 
                 if reply == QMessageBox.Yes:
-                    self.start_vm(netvm.vm, True)
+                    self.start_vm(netvm, True)
                 else:
                     return
 
