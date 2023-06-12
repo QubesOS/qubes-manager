@@ -87,7 +87,7 @@ class RenameVMThread(common_threads.QubesThread):
                                     "and {} qubes. To resolve this, please "
                                     "check and change the following properties "
                                     "and remove the qube {} manually.<br>"
-                                    ).format(self.vm.name, self.vm.name,
+                                    ).format(self.vm.name, self.new_vm_name,
                                              self.vm.name) + list_text)
 
         except qubesadmin.exc.QubesException as ex:
