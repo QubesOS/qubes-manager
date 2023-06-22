@@ -1,3 +1,26 @@
+qubes-manager (4.1.29-1) unstable; urgency=medium
+
+  [ Maja Kądziołka ]
+  * Warn about metadata leaks in backups
+
+  [ Marta Marczykowska-Górecka ]
+  * Fix detecting if widget was changed in VM settings
+  * Pylint version update
+  * Catch exceptions less conservatively
+  * Fix capitalization inconsistency in VM settings
+
+  [ Demi Marie Obenour ]
+  * Catch more exceptions
+
+  [ Marta Marczykowska-Górecka ]
+  * Check if default_netvm is running when changing netvm
+  * Improve experience when changing netvm in vm settings
+
+  [ Marek Marczykowski-Górecki ]
+  * Fix setting netvm to the default one
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Thu, 22 Jun 2023 05:46:09 +0200
+
 qubes-manager (4.1.28-1) unstable; urgency=medium
 
   [ Marta Marczykowska-Górecka ]
