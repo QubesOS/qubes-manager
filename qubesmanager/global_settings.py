@@ -18,11 +18,8 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 #
-#
 
-import os
-import sys
-import subprocess
+
 import pkg_resources
 from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
 
@@ -30,6 +27,7 @@ from qubesadmin.utils import parse_size
 from qubesadmin import exc
 from qubesmanager.releasenotes import ReleaseNotesDialog
 from qubesmanager.informationnotes import InformationNotesDialog
+from qrexec.client import call as qrexec_call  # pylint: disable=import-error
 
 from . import ui_globalsettingsdlg  # pylint: disable=no-name-in-module
 from . import utils
@@ -40,31 +38,7 @@ qmemman_config_path = '/etc/qubes/qmemman.conf'
 
 
 def _run_qrexec_repo(service, arg=''):
-    # Set default locale to C in order to prevent error msg
-    # in subprocess call related to falling back to C locale
-    env = os.environ.copy()
-    env['LC_ALL'] = 'C'
-    # Fake up a "qrexec call" to dom0 because dom0 can't qrexec to itself yet
-    cmd = '/etc/qubes-rpc/' + service
-    p = subprocess.run(
-        ['sudo', cmd, arg],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-        env=env
-    )
-    if p.returncode != 0:
-        msg = QtCore.QCoreApplication.translate(
-                "GlobalSettings",
-                'qrexec call exited with non-zero return code')
-        raise exc.QubesException(msg + ' (%s): %s',
-                p.returncode, p.stderr.decode('utf-8'))
-    if p.stderr:
-        msg = QtCore.QCoreApplication.translate(
-                "GlobalSettings",
-                '%s qrexec call stderr was not empty (%s)')
-        print(msg % (service, p.stderr.decode('utf-8')), file=sys.stderr)
-    return p.stdout.decode('utf-8')
+    return qrexec_call('dom0', service, arg)
 
 
 class GlobalSettingsWindow(ui_globalsettingsdlg.Ui_GlobalSettings,
