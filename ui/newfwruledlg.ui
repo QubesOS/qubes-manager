@@ -20,6 +20,16 @@
    <bool>true</bool>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="1" column="0">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
    <item row="0" column="0">
     <layout class="QGridLayout" name="gridLayout_2">
      <property name="leftMargin">
@@ -31,6 +41,32 @@
      <property name="verticalSpacing">
       <number>6</number>
      </property>
+     <item row="2" column="1">
+      <widget class="QRadioButton" name="tcp_radio">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>TCP</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1" colspan="3">
+      <widget class="QComboBox" name="addressComboBox">
+       <property name="editable">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
      <item row="2" column="2">
       <widget class="QRadioButton" name="udp_radio">
        <property name="sizePolicy">
@@ -50,17 +86,17 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label_4">
-       <property name="text">
-        <string>Port/Service</string>
-       </property>
-      </widget>
-     </item>
      <item row="0" column="0">
       <widget class="QLabel" name="label_2">
        <property name="text">
         <string>Address</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Protocol</string>
        </property>
       </widget>
      </item>
@@ -89,14 +125,14 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="1" colspan="3">
-      <widget class="QComboBox" name="addressComboBox">
-       <property name="editable">
-        <bool>true</bool>
+     <item row="3" column="0">
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>Port/Service</string>
        </property>
       </widget>
      </item>
-     <item row="1" column="1" colspan="3">
+     <item row="3" column="1" colspan="3">
       <widget class="QComboBox" name="serviceComboBox">
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Port/service can be provided as a port number (e.g. 122), port range (1024-1234), or service name (e.g. smtp). For a full list of known services, see /etc/services in dom0.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -106,52 +142,16 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="1">
-      <widget class="QRadioButton" name="tcp_radio">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>0</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="text">
-        <string>TCP</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0">
-      <widget class="QLabel" name="label">
-       <property name="text">
-        <string>Protocol</string>
-       </property>
-      </widget>
-     </item>
     </layout>
-   </item>
-   <item row="1" column="0">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-    </widget>
    </item>
   </layout>
  </widget>
  <tabstops>
   <tabstop>addressComboBox</tabstop>
-  <tabstop>serviceComboBox</tabstop>
   <tabstop>tcp_radio</tabstop>
   <tabstop>udp_radio</tabstop>
   <tabstop>any_radio</tabstop>
+  <tabstop>serviceComboBox</tabstop>
   <tabstop>buttonBox</tabstop>
  </tabstops>
  <resources/>
