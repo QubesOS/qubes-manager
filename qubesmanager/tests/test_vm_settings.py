@@ -580,7 +580,7 @@ class VMSettingsTest(unittest.TestCase):
             self.skipTest("not enough choices for " + widget.objectName())
 
         widget.setCurrentIndex(0)
-        while "default" not in widget.currentText():
+        while "default " not in widget.currentText():
             widget.setCurrentIndex(widget.currentIndex() + 1)
 
         return widget.currentText()
