@@ -1,3 +1,16 @@
+qubes-manager (4.2.5-1) unstable; urgency=medium
+
+  [ Oleg Drokin ]
+  * Fix error message when qube renaming fails.
+
+  [ Marek Marczykowski-Górecki ]
+  * tests: fix vm settings tests with 'default-dvm' DispVM
+
+  [ Marta Marczykowska-Górecka ]
+  * Fix widget order in new FW rule windows
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Tue, 18 Jul 2023 14:28:57 +0200
+
 qubes-manager (4.2.4-1) unstable; urgency=medium
 
   * Fix setting netvm to the default one
