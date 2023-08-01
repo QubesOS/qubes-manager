@@ -203,6 +203,7 @@ class VmInfo():
         self.label = getattr(self.vm, 'label', None)
         self.klass = getattr(self.vm, 'klass', None)
         self.icon = getattr(vm, 'icon', 'appvm-black')
+        self.auto_cleanup = getattr(vm, 'auto_cleanup', False)
 
         self.state = {'power': "", 'outdated': ""}
         self.updateable = getattr(vm, 'updateable', False)
@@ -1250,7 +1251,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self.network_menu.setEnabled(False)
             elif vm.klass == 'DispVM':
                 self.action_appmenus.setEnabled(False)
-                self.action_restartvm.setEnabled(False)
+                if vm.auto_cleanup:
+                    self.action_restartvm.setEnabled(False)
                 self.template_menu.setEnabled(False)
             elif vm.klass == 'TemplateVM':
                 self.template_menu.setEnabled(False)
