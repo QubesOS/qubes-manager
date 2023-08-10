@@ -849,6 +849,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.progress = None
 
         self.check_updates()
+        self.size_on_disk_timer = QTimer()
+        self.size_on_disk_timer.timeout.connect(self.update_running_size)
+        self.size_on_disk_timer.setInterval(1000 * 60 * 5)  # every 5 mins
+        self.size_on_disk_timer.start()
 
     def change_template(self, template):
         selected_vms = self.get_selected_vms()
@@ -1065,6 +1069,12 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         except exc.QubesDaemonAccessError:
             return
 
+    def update_running_size(self, *_args):
+        for vm in self.qubes_app.domains:
+            if vm.is_running():
+                self.qubes_cache.get_vm(qid=vm.qid).update(
+                    update_size_on_disk=True, event='disk_size')
+
     def on_domain_added(self, _submitter, _event, vm, **_kwargs):
         try:
             domain = self.qubes_app.domains[vm]
@@ -1083,7 +1093,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
     def on_domain_status_changed(self, vm, event, **_kwargs):
         try:
-            self.qubes_cache.get_vm(qid=vm.qid).update(event=event)
+            self.qubes_cache.get_vm(qid=vm.qid).update(update_size_on_disk=True,
+                                                       event=event)
             if vm.klass in {'TemplateVM'}:
                 for appvm in vm.appvms:
                     self.qubes_cache.get_vm(qid=appvm.qid).\
