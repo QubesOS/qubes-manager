@@ -1665,12 +1665,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_global_settings_triggered')
     def action_global_settings_triggered(self):  # pylint: disable=invalid-name
-        subprocess.check_call('qubes-global-config')
+        # pylint: disable=consider-using-with
+        subprocess.Popen('qubes-global-config')
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_manage_templates_triggered')
     def action_manage_templates_triggered(self):
-        subprocess.check_call('qubes-template-manager')
+        # pylint: disable=consider-using-with
+        subprocess.Popen('qubes-template-manager')
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_show_network_triggered')
