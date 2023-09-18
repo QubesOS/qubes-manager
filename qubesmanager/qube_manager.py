@@ -21,7 +21,9 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #
+import shlex
 import subprocess
+import threading
 from datetime import datetime, timedelta
 from functools import partial
 from os import path
@@ -54,6 +56,14 @@ from . import log_dialog
 from . import utils as manager_utils
 from . import common_threads
 from . import clone_vm
+
+
+def spawn_in_background(cmd: str | list[str]) -> None:
+    if isinstance(cmd, str):
+        cmd = shlex.split(cmd)
+    # pylint: disable=consider-using-with
+    p = subprocess.Popen(cmd)
+    threading.Thread(target=lambda: p.wait(), daemon=True).start()
 
 
 class SearchBox(QLineEdit):
@@ -1666,13 +1676,13 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot(name='on_action_global_settings_triggered')
     def action_global_settings_triggered(self):  # pylint: disable=invalid-name
         # pylint: disable=consider-using-with
-        subprocess.Popen('qubes-global-config')
+        spawn_in_background('qubes-global-config')
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_manage_templates_triggered')
     def action_manage_templates_triggered(self):
         # pylint: disable=consider-using-with
-        subprocess.Popen('qubes-template-manager')
+        spawn_in_background.Popen('qubes-template-manager')
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_show_network_triggered')
