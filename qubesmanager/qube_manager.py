@@ -63,7 +63,7 @@ def spawn_in_background(cmd: str | list[str]) -> None:
         cmd = shlex.split(cmd)
     # pylint: disable=consider-using-with
     p = subprocess.Popen(cmd)
-    threading.Thread(target=lambda: p.wait(), daemon=True).start()
+    threading.Thread(target=p.wait, daemon=True).start()
 
 
 class SearchBox(QLineEdit):
@@ -1682,7 +1682,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot(name='on_action_manage_templates_triggered')
     def action_manage_templates_triggered(self):
         # pylint: disable=consider-using-with
-        spawn_in_background.Popen('qubes-template-manager')
+        spawn_in_background('qubes-template-manager')
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_show_network_triggered')
