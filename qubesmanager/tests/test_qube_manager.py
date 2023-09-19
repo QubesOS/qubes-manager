@@ -369,22 +369,6 @@ class QubeManagerTest(unittest.TestCase):
         self._select_admin_vm()
         self.assertFalse(self.dialog.action_set_keyboard_layout.isEnabled())
 
-    @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox.question",
-                         return_value=QtWidgets.QMessageBox.Yes)
-    def test_207_update_vm_not_running(self, _):
-        selected_vm = self._select_templatevm(running=False)
-        self.assertIsNotNone(selected_vm, "No valid template VM found")
-
-        widget = self.dialog.toolbar.widgetForAction(
-            self.dialog.action_updatevm)
-
-        with unittest.mock.patch('qubesmanager.qube_manager.UpdateVMThread') \
-                as mock_update:
-            QtTest.QTest.mouseClick(widget,
-                                    QtCore.Qt.LeftButton)
-            mock_update.assert_called_once_with(selected_vm)
-            mock_update().start.assert_called_once_with()
-
     def test_208_update_vm_admin(self):
         selected_vm = self._select_admin_vm()
         self.assertIsNotNone(selected_vm, "No valid admin VM found")
@@ -392,11 +376,11 @@ class QubeManagerTest(unittest.TestCase):
         widget = self.dialog.toolbar.widgetForAction(
             self.dialog.action_updatevm)
 
-        with unittest.mock.patch('qubesmanager.qube_manager.UpdateVMThread') \
+        with unittest.mock.patch('qubesmanager.qube_manager.UpdateVMsThread') \
                 as mock_update:
             QtTest.QTest.mouseClick(widget,
                                     QtCore.Qt.LeftButton)
-            mock_update.assert_called_once_with(selected_vm)
+            mock_update.assert_called_once_with([selected_vm.name])
             mock_update().start.assert_called_once_with()
 
     @unittest.mock.patch("PyQt5.QtWidgets.QInputDialog.getText",
@@ -577,26 +561,13 @@ class QubeManagerTest(unittest.TestCase):
                 self.dialog.clear_threads)
             mock_thread().start.assert_called_once_with()
 
-    @unittest.mock.patch('qubesmanager.qube_manager.UpdateVMThread')
+    @unittest.mock.patch('qubesmanager.qube_manager.UpdateVMsThread')
     def test_223_updatevm_running(self, mock_thread):
         selected_vm = self._select_non_admin_vm(running=True)
 
         self.dialog.action_updatevm.trigger()
 
-        mock_thread.assert_called_once_with(selected_vm)
-        mock_thread().finished.connect.assert_called_once_with(
-            self.dialog.clear_threads)
-        mock_thread().start.assert_called_once_with()
-
-    @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox.question",
-                         return_value=QtWidgets.QMessageBox.Yes)
-    @unittest.mock.patch('qubesmanager.qube_manager.UpdateVMThread')
-    def test_224_updatevm_halted(self, mock_thread, _):
-        selected_vm = self._select_non_admin_vm(running=False)
-
-        self.dialog.action_updatevm.trigger()
-
-        mock_thread.assert_called_once_with(selected_vm)
+        mock_thread.assert_called_once_with([selected_vm.name])
         mock_thread().finished.connect.assert_called_once_with(
             self.dialog.clear_threads)
         mock_thread().start.assert_called_once_with()
@@ -1610,62 +1581,37 @@ class QubeManagerThreadTest(unittest.TestCase):
 
     @unittest.mock.patch('subprocess.check_call')
     def test_20_update_vm_thread_dom0(self, check_call):
-        vm = unittest.mock.Mock(spec=['klass'])
+        vm = unittest.mock.Mock(spec=['klass', 'name'])
         vm.klass = 'AdminVM'
-        thread = qube_manager.UpdateVMThread(vm)
+        vm.name = 'dom0'
+        thread = qube_manager.UpdateVMsThread([vm.name])
         thread.run()
 
         check_call.assert_called_once_with(
-            ["/usr/bin/qubes-dom0-update", "--clean", "--gui"])
+            ["/usr/bin/qubes-update-gui", "--targets", "dom0"])
 
-    @unittest.mock.patch('subprocess.call')
+    @unittest.mock.patch('subprocess.check_call')
     def test_21_update_vm_thread_running(self, mock_call):
         vm = unittest.mock.Mock(
-            spec=['klass', 'is_running', 'run_service_for_stdio', 'run_service'],
+            spec=['klass', 'is_running', 'run_service_for_stdio',
+                  'run_service', 'name'],
             **{'is_running.return_value': True})
 
         vm.klass = 'AppVM'
+        vm.name = 'testvm'
         vm.run_service_for_stdio.return_value = (b'changed=no\n', None)
 
-        thread = qube_manager.UpdateVMThread(vm)
+        thread = qube_manager.UpdateVMsThread([vm.name])
 
         thread.run()
 
-        vm.run_service.assert_called_once_with(
-            "qubes.InstallUpdatesGUI", user="root", wait=False)
+        mock_call.assert_called_once_with(
+            ["/usr/bin/qubes-update-gui", "--targets", "testvm"])
 
-        self.assertEqual(mock_call.call_count, 0)
-
-    @unittest.mock.patch('subprocess.call')
-    def test_22_update_vm_thread_not_running(self, mock_call):
-        vm = unittest.mock.Mock(
-            spec=['klass', 'is_running', 'run_service_for_stdio',
-                  'run_service', 'start', 'name'],
-            **{'is_running.return_value': False})
-
-        vm.klass = 'AppVM'
-        vm.run_service_for_stdio.return_value = (b'changed=yes\n', None)
-
-        thread = qube_manager.UpdateVMThread(vm)
-        thread.run()
-
-        vm.start.assert_called_once_with()
-
-        vm.run_service.assert_called_once_with(
-            "qubes.InstallUpdatesGUI", user="root", wait=False)
-
-        self.assertEqual(mock_call.call_count, 0)
-
-    @unittest.mock.patch('builtins.open')
     @unittest.mock.patch('subprocess.check_call')
-    def test_23_update_vm_thread_error(self, *_args):
-        vm = unittest.mock.Mock(
-            spec=['klass', 'is_running'],
-            **{'is_running.side_effect': ChildProcessError})
-
-        vm.klass = 'AppVM'
-
-        thread = qube_manager.UpdateVMThread(vm)
+    def test_23_update_vm_thread_error(self, mock_call):
+        mock_call.side_effect = subprocess.SubprocessError
+        thread = qube_manager.UpdateVMsThread(['test'])
         thread.run()
 
         self.assertIsNotNone(thread.msg)
