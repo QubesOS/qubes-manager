@@ -623,23 +623,14 @@ class StartVMThread(common_threads.QubesThread):
 
 
 # pylint: disable=too-few-public-methods
-class UpdateVMThread(common_threads.QubesThread):
+class UpdateVMsThread(common_threads.QubesThread):
     def run(self):
+        vm_names = self.vm
+
         try:
-            if self.vm.klass == 'AdminVM':
-                subprocess.check_call(
-                    ["/usr/bin/qubes-dom0-update", "--clean", "--gui"])
-            else:
-                if not manager_utils.is_running(self.vm, False):
-                    try:
-                        self.vm.start()
-                    except exc.QubesDaemonAccessError:
-                        # permission denied, let us hope for the best
-                        pass
-                self.vm.run_service("qubes.InstallUpdatesGUI",
-                                    user="root", wait=False)
-        except (OSError, subprocess.SubprocessError,
-                exc.QubesException) as ex:
+            subprocess.check_call(
+                ["/usr/bin/qubes-update-gui", "--targets", ",".join(vm_names)])
+        except subprocess.SubprocessError as ex:
             self.msg = (self.tr("Error on qube update!"), str(ex))
 
 
@@ -1595,23 +1586,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_updatevm_triggered')
     def action_updatevm_triggered(self):
-        for vm_info in self.get_selected_vms():
-            vm = vm_info.vm
-            if not manager_utils.is_running(vm, True):
-                reply = QMessageBox.question(
-                    self, self.tr("Qube Update Confirmation"),
-                    self.tr(
-                        "<b>{0}</b>"
-                        "<br>The Qube has to be running to be updated."
-                        "<br>Do you want to start it?<br>").format(vm.name),
-                    QMessageBox.Yes | QMessageBox.Cancel)
-                if reply != QMessageBox.Yes:
-                    return
-
-            thread = UpdateVMThread(vm)
-            self.threads_list.append(thread)
-            thread.finished.connect(self.clear_threads)
-            thread.start()
+        vms = [vm_info.name for vm_info in self.get_selected_vms()]
+        thread = UpdateVMsThread(vms)
+        self.threads_list.append(thread)
+        thread.finished.connect(self.clear_threads)
+        thread.start()
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_run_command_in_vm_triggered')
