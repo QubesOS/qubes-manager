@@ -1,3 +1,25 @@
+qubes-manager (4.2.6-1) unstable; urgency=medium
+
+  [ Marta Marczykowska-Górecka ]
+  * Restart should be possible for persistent dispvms
+  * Use subprocess.Popen to spawn global config in manager
+  * Use updater GUI for Qube Manager updates
+
+  [ Rudd-O ]
+  * Fix uses of subprocess.Popen
+
+  [ Manuel Amador (Rudd-O) ]
+  * Correct CI errors.
+
+  [ Marta Marczykowska-Górecka ]
+  * Set menu-items feature instead of running qvm-appmenus
+  * Fix tests for new updater
+
+  [ Marek Marczykowski-Górecki ]
+  * Update tests after fixing QubesOS/qubes-issues#8387
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sun, 08 Oct 2023 03:50:03 +0200
+
 qubes-manager (4.2.5-1) unstable; urgency=medium
 
   [ Oleg Drokin ]
