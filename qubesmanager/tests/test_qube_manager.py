@@ -593,11 +593,11 @@ class QubeManagerTest(unittest.TestCase):
             self.assertEqual(mock_kill.call_count, 0,
                              "Ignored Cancel on kill VM")
 
-    @unittest.mock.patch('subprocess.check_call')
+    @unittest.mock.patch('subprocess.Popen')
     def test_226_global_settings(self, mock_subprocess):
         self._select_non_admin_vm()
         self.dialog.action_global_settings.trigger()
-        mock_subprocess.assert_called_once_with('qubes-global-config')
+        mock_subprocess.assert_called_once_with(['qubes-global-config'])
 
         self._select_admin_vm()
         self.dialog.action_global_settings.trigger()
@@ -632,12 +632,12 @@ class QubeManagerTest(unittest.TestCase):
             self.dialog.action_exit.trigger()
             mock_close.assert_called_once_with()
 
-    @unittest.mock.patch('subprocess.check_call')
+    @unittest.mock.patch('subprocess.Popen')
     def test_231_template_manager(self, mock_subprocess):
         self.assertTrue(self.dialog.action_manage_templates.isEnabled())
 
         self.dialog.action_manage_templates.trigger()
-        mock_subprocess.assert_called_once_with('qubes-template-manager')
+        mock_subprocess.assert_called_once_with(['qubes-template-manager'])
 
     @unittest.mock.patch('qubesmanager.clone_vm.CloneVMDlg')
     def test_232_clonevm(self, mock_clone):
