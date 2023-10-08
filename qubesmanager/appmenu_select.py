@@ -119,16 +119,10 @@ class AppmenuSelectManager:
         if set(new_whitelisted) == set(self.whitelisted):
             return False
 
-        with subprocess.Popen([
-                'qvm-appmenus',
-                '--set-whitelist', '-',
-                '--update', self.vm.name],
-                stdin=subprocess.PIPE) as p:
-            p.communicate('\n'.join(new_whitelisted).encode())
-            if p.returncode != 0:
-                exception_text = QtCore.QCoreApplication.translate(
-                    "Command {command} failed", "exception").format(
-                    command='qvm-appmenus --set-whitelist')
-                raise RuntimeError(exception_text)
+        try:
+            self.vm.features['menu-items'] = " ".join(new_whitelisted)
+        except exc.QubesException as ex:
+            raise RuntimeError(QtCore.QCoreApplication.translate(
+                "exception", 'Failed to set menu items')) from ex
 
         return True
