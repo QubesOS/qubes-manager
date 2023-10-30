@@ -1,3 +1,10 @@
+qubes-manager (4.1.31-1) unstable; urgency=medium
+
+  [ Marta Marczykowska-Górecka ]
+  * Show Global Settings even if no dom0 updates are enabled
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 30 Oct 2023 06:01:47 +0100
+
 qubes-manager (4.1.30-1) unstable; urgency=medium
 
   [ Marta Marczykowska-Górecka ]
