@@ -1,3 +1,10 @@
+qubes-manager (4.2.7-1) unstable; urgency=medium
+
+  [ Marta Marczykowska-Górecka ]
+  * Update size on disk in Qube Manager occassionally
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Wed, 22 Nov 2023 14:55:24 +0100
+
 qubes-manager (4.2.6-1) unstable; urgency=medium
 
   [ Marta Marczykowska-Górecka ]
