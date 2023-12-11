@@ -47,15 +47,15 @@ from PyQt5.QtGui import (QIcon, QPixmap, QRegExpValidator, QFont, QColor,
 
 from qubesmanager.about import AboutDialog
 
-from . import ui_qubemanager  # pylint: disable=no-name-in-module
-from . import settings
-from . import restore
-from . import backup
-from . import create_new_vm
-from . import log_dialog
-from . import utils as manager_utils
-from . import common_threads
-from . import clone_vm
+from qubesmanager import ui_qubemanager  # pylint: disable=no-name-in-module
+from qubesmanager import settings
+from qubesmanager import restore
+from qubesmanager import backup
+from qubesmanager import create_new_vm
+from qubesmanager import log_dialog
+from qubesmanager import utils as manager_utils
+from qubesmanager import common_threads
+from qubesmanager import clone_vm
 
 
 def spawn_in_background(cmd: str | list[str]) -> None:
