@@ -1461,9 +1461,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.set_allow(model.allow)
         if model.temp_full_access_expire_time:
             self.temp_full_access.setChecked(True)
-            self.temp_full_access_time.setValue(
-                (model.temp_full_access_expire_time -
-                 int(firewall.datetime.datetime.now().strftime("%s"))) / 60)
+            expire_time = model.temp_full_access_expire_time - \
+                          firewall.datetime.datetime.now().strftime("%s")
+            self.temp_full_access_time.setValue(int(expire_time / 60))
 
     def disable_all_fw_conf(self):
         self.firewall_modified_outside_label.setVisible(True)
