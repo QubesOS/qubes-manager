@@ -1,3 +1,11 @@
+qubes-manager (4.2.8-1) unstable; urgency=medium
+
+  [ Marta Marczykowska-Górecka ]
+  * Remove relative imports from qubesmanager
+  * Fix broken VM settings for a VM with temporary unlocked FW
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Fri, 05 Jan 2024 03:28:42 +0100
+
 qubes-manager (4.2.7-1) unstable; urgency=medium
 
   [ Marta Marczykowska-Górecka ]
