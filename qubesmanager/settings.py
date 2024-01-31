@@ -1096,7 +1096,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             devs_attached = self.dev_list.selected_list.count() != 0
         else:
             try:
-                devs_attached = bool(list(self.vm.devices['pci'].persistent()))
+                devs_attached = bool(list(
+                    self.vm.devices['pci'].get_assigned_devices(
+                        required_only=True))
+                )
             except qubesadmin.exc.QubesException:
                 devs_attached = False
 
@@ -1183,8 +1186,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         try:
             dom0_devs = \
-                list(self.vm.app.domains['dom0'].devices['pci'].available())
-            attached_devs = list(self.vm.devices['pci'].persistent())
+                list(self.vm.app.domains['dom0'].
+                     devices['pci'].get_exposed_devices())
+            attached_devs = list(
+                self.vm.devices['pci'].get_assigned_devices(required_only=True))
         except qubesadmin.exc.QubesException:
             # no permission to access devices
             self.tabWidget.setTabEnabled(self.tabs_indices['devices'], False)
@@ -1237,7 +1242,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             return msg
 
         try:
-            old_devs = list(self.vm.devices['pci'].persistent())
+            old_devs = list(
+                self.vm.devices['pci'].get_assigned_devices(required_only=True))
 
             new_devs = [self.dev_list.selected_list.item(i).dev
                         for i in range(self.dev_list.selected_list.count())]
@@ -1249,13 +1255,15 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                         options['no-strict-reset'] = True
                     ass = devices.DeviceAssignment(
                         self.vm.app.domains['dom0'],
-                        dev.ident, persistent=True, options=options)
-                    self.vm.devices['pci'].attach(ass)
+                        dev.ident, devclass='pci',
+                        attach_automatically=True, required=True,
+                        options=options)
+                    self.vm.devices['pci'].assign(ass)
                 elif (dev.ident in self.current_strict_reset_list) != \
                         (dev.ident in self.new_strict_reset_list):
                     current_assignment = None
-                    for assignment in self.vm.devices['pci'].assignments(
-                            persistent=True):
+                    for assignment in self.vm.devices[
+                            'pci'].get_assigned_devices(required_only=True):
                         if assignment.ident == dev.ident:
                             current_assignment = assignment
                             break
@@ -1265,16 +1273,17 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                                    dev.ident)
                         continue
 
-                    self.vm.devices['pci'].detach(current_assignment)
+                    self.vm.devices['pci'].unassign(current_assignment)
 
                     current_assignment.options['no-strict-reset'] = \
                         dev.ident in self.new_strict_reset_list
 
-                    self.vm.devices['pci'].attach(current_assignment)
+                    self.vm.devices['pci'].assign(current_assignment)
 
-            for ass in self.vm.devices['pci'].assignments(persistent=True):
+            for ass in self.vm.devices['pci'].get_assigned_devices(
+                    required_only=True):
                 if ass.device not in new_devs:
-                    self.vm.devices['pci'].detach(ass)
+                    self.vm.devices['pci'].unassign(ass)
 
         except qubesadmin.exc.QubesException as ex:
             if utils.is_debug():
@@ -1305,7 +1314,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.pvh_dont_support_devs.setVisible(False)
 
     def define_strict_reset_devices(self):
-        for assignment in self.vm.devices['pci'].assignments():
+        for assignment in self.vm.devices['pci'].get_assigned_devices(
+                required_only=True):
             if assignment.options.get('no-strict-reset', False):
                 self.current_strict_reset_list.append(
                     assignment.ident.replace('_', ':'))
