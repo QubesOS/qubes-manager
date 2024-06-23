@@ -476,7 +476,7 @@ class QubesTableModel(QAbstractTableModel):
             if col_name == "Type":
                 return vm.klass
             if col_name == "Label":
-                vmtype, vmcolor = vm.icon.split("-")
+                vmtype, vmcolor = vm.icon.split("-", 1)
                 try:
                     processed_color = str(vm.label.index)
                 except ValueError:
