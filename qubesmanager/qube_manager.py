@@ -1597,7 +1597,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     "Qube settings cannot be opened. The qube might have "
                     "been removed or unavailable due to policy settings."
                     "\nError: {}".format(str(ex))))
-            return
 
     def closeEvent(self, _):
         self.save_showing()
