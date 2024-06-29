@@ -138,7 +138,7 @@ class VMSettingsTest(unittest.TestCase):
 
         self.assertEqual(self.dialog.ip_label.text(),
                          self.vm.ip,
-                         "Incorrect IP displayed")
+                         "Incorrect IP Address displayed")
         self.assertEqual(self.dialog.netmask_label.text(),
                          self.vm.visible_netmask,
                          "Incorrect netmask displayed")
@@ -175,7 +175,7 @@ class VMSettingsTest(unittest.TestCase):
 
         self.assertEqual(self.dialog.ip_label.text(),
                          "---",
-                         "Incorrect IP displayed")
+                         "Incorrect IP Address displayed")
         self.assertEqual(self.dialog.netmask_label.text(),
                          "---",
                          "Incorrect netmask displayed")

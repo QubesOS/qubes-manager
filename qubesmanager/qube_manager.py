@@ -378,7 +378,7 @@ class QubesTableModel(QAbstractTableModel):
                 "NetVM",
                 "Disk Usage",
                 "Internal",
-                "IP",
+                "IP Address",
                 "Backup",
                 "Last backup",
                 "Default DispVM",
@@ -422,7 +422,7 @@ class QubesTableModel(QAbstractTableModel):
                 return vm.disk
             if col_name == "Internal":
                 return "Yes" if vm.internal else ""
-            if col_name == "IP":
+            if col_name == "IP Address":
                 return vm.ip
             if col_name == "Last backup":
                 return vm.last_backup

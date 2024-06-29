@@ -2233,7 +2233,7 @@ Error: {}</source>
     </message>
     <message>
         <location filename="../ui_qubemanager.py" line="416"/>
-        <source>IP</source>
+        <source>IP Address</source>
         <translation type="obsolete">IP</translation>
     </message>
     <message>
