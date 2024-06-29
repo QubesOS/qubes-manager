@@ -192,7 +192,7 @@ usage</string>
       </column>
       <column>
        <property name="text">
-        <string>IP</string>
+        <string>IP Address</string>
        </property>
        <property name="toolTip">
         <string>The internal IP address assigned to each qube</string>

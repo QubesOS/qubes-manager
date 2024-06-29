@@ -174,7 +174,7 @@ class QubeManagerTest(unittest.TestCase):
         for row in range(self.dialog.table.model().rowCount()):
             vm = self._get_table_vm(row)
 
-            ip_item = self._get_table_item(row, "IP")
+            ip_item = self._get_table_item(row, "IP Address")
             if hasattr(vm, 'ip'):
                 ip_value = getattr(vm, 'ip')
                 ip_value = "" if ip_value is None else ip_value
@@ -1197,7 +1197,7 @@ class QubeManagerTest(unittest.TestCase):
         target_vm_name = "work"
         vm_row = self._find_vm_row(target_vm_name)
 
-        old_ip = self._get_table_item(vm_row, "IP")
+        old_ip = self._get_table_item(vm_row, "IP Address")
         new_ip = old_ip.replace(".0.", ".5.")
 
         self.addCleanup(
@@ -1206,12 +1206,12 @@ class QubeManagerTest(unittest.TestCase):
             ["qvm-prefs", target_vm_name, "ip", new_ip])
 
         self.assertNotEqual(old_ip,
-                            self._get_table_item(vm_row, "IP"),
-                            "IP did not change")
+                            self._get_table_item(vm_row, "IP Address"),
+                            "IP Address did not change")
         self.assertEqual(
-            self._get_table_item(vm_row, "IP"),
+            self._get_table_item(vm_row, "IP Address"),
             self.qapp.domains[target_vm_name].ip,
-            "Incorrect IP")
+            "Incorrect IP Address")
 
     def test_410_prop_change_in_backups(self):
         target_vm_name = "work"
