@@ -648,7 +648,7 @@ p, li { white-space: pre-wrap; }
     <name>MainWindow</name>
     <message>
         <location filename="../ui_templatemanager.py" line="84"/>
-        <source>Template Manager</source>
+        <source>Template Switcher</source>
         <translation>Administrador de plantillas</translation>
     </message>
     <message>
@@ -1756,7 +1756,7 @@ The qube must be running to disable seamless mode; this setting is not persisten
     </message>
     <message>
         <location filename="../template_manager.py" line="66"/>
-        <source>Template Manager</source>
+        <source>Template Switcher</source>
         <translation>Administrador de plantillas</translation>
     </message>
 </context>
