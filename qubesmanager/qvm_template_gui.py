@@ -366,6 +366,7 @@ class QvmTemplateWindow(
 
         self.qubes_app = qubes_app
         self.qt_app = qt_app
+        self.qt_app.setWindowIcon(PyQt5.QtGui.QIcon.fromTheme("qubes-manager"))
         self.dispatcher = dispatcher
 
         self.listing_model = TemplateModel()
