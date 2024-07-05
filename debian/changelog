@@ -1,3 +1,19 @@
+qubes-manager (4.3.1-1) unstable; urgency=medium
+
+  [ Marek Marczykowski-Górecki ]
+  * Remove useless return
+  * ci: remove R4.1 and R4.2, add R4.3
+
+  [ Ali Mirjamali ]
+  * Allow Hyphen character in custom labels
+  * Rename the Window title of old Template Manager to Template Switcher
+  * Loading Template Manager (qvm-template-gui) Window Icon
+  * Qube Manager: Replace "IP" with "IP Address"
+  * Visually indicate unsupported Templates & StandaloneVMs in Qube
+    Manager
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Fri, 05 Jul 2024 17:36:04 +0200
+
 qubes-manager (4.3.0-1) unstable; urgency=medium
 
   [ Piotr Bartman ]
