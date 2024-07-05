@@ -102,6 +102,7 @@ class StateIconDelegate(QStyledItemDelegate):
                 "update" : QIcon(":/update-recommended.png"),
                 "outdated" : QIcon(":/outdated.png"),
                 "to-be-outdated" : QIcon(":/to-be-outdated.png"),
+                "eol": QIcon(':/warning.png')
                 }
         self.outdatedTooltips = {
                 "update" : self.tr("Updates pending!"),
@@ -111,6 +112,9 @@ class StateIconDelegate(QStyledItemDelegate):
                 "to-be-outdated" : self.tr(
                     "The Template must be stopped before changes from its "
                     "current session can be picked up by this qube."),
+                "eol": self.tr(
+                    "This qube is based on a distribution that is no longer "
+                    "supported\nInstall new template with Template Manager")
                 }
 
     def sizeHint(self, option, index):
@@ -239,10 +243,16 @@ class VmInfo():
                     except exc.QubesDaemonAccessError:
                         pass
 
-            if self.vm.klass in {'TemplateVM', 'StandaloneVM'} and \
-                    manager_utils.get_feature(
+            if self.vm.klass in {'TemplateVM', 'StandaloneVM'}:
+                if manager_utils.get_feature(
                         self.vm, 'updates-available', False):
-                self.state['outdated'] = 'update'
+                    self.state['outdated'] = 'update'
+                elif manager_utils.get_feature(
+                        self.vm, 'os-eol', None):
+                    eol_string: str = self.vm.features.get('os-eol', '')
+                    eol = datetime.strptime(eol_string, '%Y-%m-%d')
+                    if datetime.now() > eol:
+                        self.state['outdated'] = 'eol'
         except exc.QubesDaemonAccessError:
             pass
 
