@@ -20,6 +20,8 @@ class MultiSelectWidget(
             QtWidgets.QAbstractItemView.ExtendedSelection)
         self.selected_list.setSelectionMode(
             QtWidgets.QAbstractItemView.ExtendedSelection)
+        self.available_list.itemDoubleClicked.connect(self.add_selected)
+        self.selected_list.itemDoubleClicked.connect(self.remove_selected)
 
     def switch_selected(self, src, dst):
         selected = src.selectedItems()
@@ -39,9 +41,11 @@ class MultiSelectWidget(
 
     def add_selected(self):
         self.switch_selected(self.available_list, self.selected_list)
+        self.available_list.selectionModel().clear()
 
     def remove_selected(self):
         self.switch_selected(self.selected_list, self.available_list)
+        self.selected_list.selectionModel().clear()
 
     def move_all(self, src, dst):
         items = []
