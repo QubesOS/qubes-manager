@@ -897,6 +897,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.dvm_template_checkbox.setChecked(
             getattr(self.vm, 'template_for_dispvms', False))
 
+        if not hasattr(self.vm, 'template_for_dispvms'):
+            self.dvm_template_checkbox.setEnabled(False)
+
         self.provides_network_checkbox.setChecked(
             getattr(self.vm, 'provides_network', False))
         if self.provides_network_checkbox.isChecked():
