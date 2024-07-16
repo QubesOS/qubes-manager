@@ -752,7 +752,7 @@ border-width: 1px;</string>
               <item row="3" column="0">
                <widget class="QCheckBox" name="dvm_template_checkbox">
                 <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allows using this qube as a template for disposables. Disposables will inherit the qube's state (configuration, installed programs, etc.), but their state will not persist between restarts. &lt;/p&gt;&lt;p&gt;Setting this option will cause this qube to be listed as an option in the &amp;quot;Default disposable template&amp;quot; list for all other qubes. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allows using this qube as a template for disposables. Disposables will inherit the qube's state (configuration, installed programs, etc.), but their state will not persist between restarts. &lt;/p&gt;&lt;p&gt;Setting this option will cause this qube to be listed as an option in the &amp;quot;Default disposable template&amp;quot; list for all other qubes.&lt;/p&gt;&lt;p&gt;Only AppVMs and StandaloneVMs could be turned in to Disposable Templates&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="text">
                  <string>Disposable template</string>
