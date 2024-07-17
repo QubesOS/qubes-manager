@@ -1,5 +1,6 @@
 checks:pylint:
   before_script:
+  - sudo dnf install -y python3-pip
   - pip3 install --quiet -r ci/requirements.txt
   script:
   - PYTHONPATH="test-packages:$PYTHONPATH" python3 -m pylint qubesmanager
