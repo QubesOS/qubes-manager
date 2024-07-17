@@ -105,6 +105,7 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
         utils.initialize_widget_with_vms(
             widget=self.fileVM,
             qubes_app=self.qubesapp,
+            filter_function=(lambda x: x != self.vm),
             allow_internal=True
         )
 
