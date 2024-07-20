@@ -1,3 +1,18 @@
+qubes-manager (4.3.2-1) unstable; urgency=medium
+
+  [ Marek Marczykowski-Górecki ]
+  * ci: ensure pip is installed
+
+  [ Ali Mirjamali ]
+  * Disable "Disposable template" checkbox if not applicable
+  * "Boot qubes from CD-ROM" shouldnt show the same qube as source
+  * Enabling double-click for VM Settings -> Available Apps <> Menu Apps
+
+  [ Santiago Piccinini ]
+  * Fix crash on VM settings for a VM with temporary unlocked FW
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sat, 20 Jul 2024 05:23:37 +0200
+
 qubes-manager (4.3.1-1) unstable; urgency=medium
 
   [ Marek Marczykowski-Górecki ]
