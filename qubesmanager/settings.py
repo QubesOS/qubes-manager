@@ -231,6 +231,22 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.refresh_apps_button.clicked.connect(
                 self.refresh_apps_button_pressed)
 
+            # Enable Drag & Drop between between two panels
+            # ToDo: Disable D&D between multiple instances of qubes-vm-settings
+            # - by overriding QListWidget.dragMoveEvent event
+            self.app_list.available_list.setDragEnabled(True)
+            self.app_list.available_list.setAcceptDrops(True)
+            self.app_list.available_list.setDragDropMode(
+                QtWidgets.QListWidget.DragDrop)
+            self.app_list.available_list.setDefaultDropAction(
+                QtCore.Qt.MoveAction)
+            self.app_list.selected_list.setDragEnabled(True)
+            self.app_list.selected_list.setAcceptDrops(True)
+            self.app_list.selected_list.setDragDropMode(
+                QtWidgets.QListWidget.DragDrop)
+            self.app_list.selected_list.setDefaultDropAction(
+                QtCore.Qt.MoveAction)
+
             # template change
             if self.template_name.isEnabled():
                 self.template_name.currentIndexChanged.connect(
