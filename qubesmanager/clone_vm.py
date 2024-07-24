@@ -143,7 +143,7 @@ class CloneVMDlg(QtWidgets.QDialog, Ui_CloneVMDlg):
                 self.tr("ERROR: {0}").format(self.thread.msg))
         else:
             (title, msg) = self.thread.msg
-            QtWidgets.QMessageBox.warning(
+            QtWidgets.QMessageBox.information(
                 self,
                 title,
                 msg)
