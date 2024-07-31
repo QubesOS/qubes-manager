@@ -104,6 +104,16 @@ class SizeSpinBox(QtWidgets.QSpinBox):
         return int(float(value) * multiplier)
 
 
+class QubeManagerToolBar(QtWidgets.QToolBar): # pylint: disable=too-few-public-methods
+    """a toolbar that does not collapse immediately on mouse leave event"""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+    def event(self, e):
+        if e.type() == QtCore.QEvent.Leave:
+            return True
+        return super().event(e)
+
+
 def get_feature(vm, feature_name, default_value):
     try:
         return vm.features.get(feature_name, default_value)
@@ -112,7 +122,7 @@ def get_feature(vm, feature_name, default_value):
 
 
 def get_boolean_feature(vm, feature_name):
-    """heper function to get a feature converted to a Bool if it does exist.
+    """helper function to get a feature converted to a Bool if it does exist.
     Necessary because of the true/false in features being coded as 1/empty
     string."""
     result = get_feature(vm, feature_name, None)

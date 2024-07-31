@@ -425,7 +425,7 @@ template</string>
    <addaction name="menu_view"/>
    <addaction name="menu_about"/>
   </widget>
-  <widget class="QToolBar" name="toolbar">
+  <widget class="QubeManagerToolBar" name="toolbar">
    <property name="sizePolicy">
     <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
      <horstretch>0</horstretch>
@@ -1002,6 +1002,13 @@ template</string>
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QubeManagerToolBar</class>
+   <extends>QToolBar</extends>
+   <header>qubesmanager/utils.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../resources.qrc"/>
  </resources>
