@@ -36,6 +36,8 @@ class AppListWidgetItem(QtWidgets.QListWidgetItem):
             tooltip += "\n" + additional_description
         self.setToolTip(tooltip)
         self.ident = ident
+        # Using identity as tooltip which also enables drag-and-drop
+        self.setWhatsThis(ident)
 
     @classmethod
     def from_line(cls, line):
