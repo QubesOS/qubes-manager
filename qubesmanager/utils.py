@@ -32,6 +32,9 @@ import sys
 import qasync
 from qubesadmin import events
 from qubesadmin import exc
+import xdg.BaseDirectory
+import pathlib
+import shutil
 
 from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
 
@@ -48,6 +51,25 @@ from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
 #       default - initialize_widget_with_default
 # - just a list, no properties or defaults, just a nice list with a "current"
 #       value - initialize_widget
+
+def set_organization():
+    """set the organization and config home directory for Qt based Apps."""
+    # migrate old config file to the unified config directory
+    # TODO: remove the below block when Qubes R4.3 becomes End-of-Life
+    old_config_home = xdg.BaseDirectory.xdg_config_home + \
+        '/The Qubes Project'
+    new_config_home = xdg.BaseDirectory.xdg_config_home + '/qubes-os'
+    config_file = 'qubes-qube-manager.conf'
+    old_config_file = old_config_home + '/' + config_file
+    new_config_file = new_config_home + '/' + config_file
+    if os.path.isfile(old_config_file) and \
+            not os.path.isfile(new_config_file):
+        pathlib.Path(new_config_home).mkdir(parents=True, exist_ok=True)
+        shutil.copy(old_config_file, new_config_file)
+
+    QtCore.QCoreApplication.setOrganizationName('qubes-os')
+    QtCore.QCoreApplication.setOrganizationDomain('qubes-os.org')
+    QtCore.QCoreApplication.setApplicationName('qubes-qube-manager')
 
 def is_internal(vm):
     """checks if the VM is either an AdminVM or has the 'internal' features"""
@@ -507,6 +529,7 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 
 
 def run_asynchronous(window_class):
+    set_organization()
     qt_app = QtWidgets.QApplication(sys.argv)
 
     translator = QtCore.QTranslator(qt_app)
@@ -518,8 +541,6 @@ def run_asynchronous(window_class):
     qt_app.installTranslator(translator)
     QtCore.QCoreApplication.installTranslator(translator)
 
-    qt_app.setOrganizationName("The Qubes Project")
-    qt_app.setOrganizationDomain("http://qubes-os.org")
     qt_app.lastWindowClosed.connect(loop_shutdown)
 
     qubes_app = qubesadmin.Qubes()
@@ -547,6 +568,7 @@ def run_asynchronous(window_class):
 
 
 def run_synchronous(window_class):
+    set_organization()
     qt_app = QtWidgets.QApplication(sys.argv)
 
     translator = QtCore.QTranslator(qt_app)
@@ -557,9 +579,6 @@ def run_synchronous(window_class):
     translator.load("qubesmanager_{!s}.qm".format(locale), i18n_dir)
     qt_app.installTranslator(translator)
     QtCore.QCoreApplication.installTranslator(translator)
-
-    qt_app.setOrganizationName("The Qubes Project")
-    qt_app.setOrganizationDomain("http://qubes-os.org")
 
     sys.excepthook = handle_exception
 
