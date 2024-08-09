@@ -282,6 +282,7 @@ class VmInfo():
                 self.netvm = str(self.netvm)
             else:
                 self.netvm = "n/a"
+                self.ip = ""
             try:
                 if hasattr(self.vm, 'netvm') \
                         and self.vm.property_is_default("netvm"):
