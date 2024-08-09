@@ -164,7 +164,7 @@
           <string>(default)</string>
          </property>
          <property name="suffix">
-          <string> MB</string>
+          <string> MiB</string>
          </property>
          <property name="maximum">
           <number>90000000</number>

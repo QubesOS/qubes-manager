@@ -497,13 +497,13 @@ border-width: 1px;</string>
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
                 <property name="suffix">
-                 <string> MB</string>
+                 <string> MiB</string>
                 </property>
                 <property name="minimum">
                  <number>0</number>
                 </property>
                 <property name="maximum">
-                 <number>10000000</number>
+                 <number>10485760</number>
                 </property>
                 <property name="singleStep">
                  <number>50</number>
@@ -535,13 +535,13 @@ border-width: 1px;</string>
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                 </property>
                 <property name="suffix">
-                 <string> MB</string>
+                 <string> MiB</string>
                 </property>
                 <property name="minimum">
                  <number>0</number>
                 </property>
                 <property name="maximum">
-                 <number>1000000</number>
+                 <number>1048576</number>
                 </property>
                 <property name="singleStep">
                  <number>50</number>
