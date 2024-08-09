@@ -293,8 +293,12 @@ class VmInfo():
             self.internal = manager_utils.get_boolean_feature(
                 self.vm, 'internal')
 
-        if not event or event.endswith(':ip'):
-            self.ip = getattr(self.vm, 'ip', "n/a")
+        if not event or event.endswith(':ip') or event.endswith(':netvm'):
+            if getattr(self.vm, 'netvm', None) \
+                    or getattr(self.vm, 'provides_network', False):
+                self.ip = getattr(self.vm, 'ip', "n/a")
+            else:
+                self.ip = "n/a"
 
         if not event or event.endswith(':include_in_backups'):
             self.inc_backup = getattr(self.vm, 'include_in_backups', None)
