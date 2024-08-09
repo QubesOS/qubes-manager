@@ -21,6 +21,7 @@
 #
 
 from PyQt5 import QtCore, QtWidgets, QtGui, Qt  # pylint: disable=import-error
+import argparse
 import os
 import os.path
 import logging
@@ -38,6 +39,17 @@ from qubesadmin.backup import restore
 
 
 # pylint: disable=too-few-public-methods
+def parse_args() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+            '--log', action='store', default='INFO',
+            choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+            help='Provide logging level. Values: DEBUG, INFO, '
+            'INFO (default), ERROR, CRITICAL')
+    args = parser.parse_args()
+    return args
+
+
 class RestoreThread(QtCore.QThread):
     def __init__(self, backup_restore, vms_to_restore):
         QtCore.QThread.__init__(self)
@@ -70,6 +82,7 @@ class RestoreThread(QtCore.QThread):
 
 class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
     def __init__(self, qt_app, qubes_app, parent=None):
+        cliargs = parse_args()
         super().__init__(parent)
 
         self.qt_app = qt_app
@@ -88,7 +101,7 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
         handler = logging.handlers.QueueHandler(self.feedback_queue)
         logger = logging.getLogger('qubesadmin.backup')
         logger.addHandler(handler)
-        logger.setLevel(logging.INFO)
+        logger.setLevel(cliargs.log)
 
         self.backup_restore = None
         self.target_appvm = None
@@ -114,6 +127,8 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
         backup_utils.fill_appvms_list(self)
 
         self.passwd_show_button.pressed.connect(self.show_hide_password)
+        self.passphrase_line_edit.returnPressed.connect(
+                self.button(QtWidgets.QWizard.NextButton).click)
 
     def show_hide_password(self):
         if self.passwd_show_button.isChecked():
