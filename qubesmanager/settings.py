@@ -1218,7 +1218,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         class DevListWidgetItem(QtWidgets.QListWidgetItem):
             def __init__(self, dev, unknown=False, parent=None):
                 super().__init__(parent)
-                name = dev.ident.replace('_', ":") + ' ' + dev.description
+                name = dev.port_id.replace('_', ":") + ' ' + dev.description
                 if unknown:
                     name += ' (unknown)'
                 self.setText(name)
@@ -1270,32 +1270,32 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             for dev in new_devs:
                 if dev not in old_devs:
                     options = {}
-                    if dev.ident in self.new_strict_reset_list:
+                    if dev.port_id in self.new_strict_reset_list:
                         options['no-strict-reset'] = True
                     ass = devices.DeviceAssignment(
-                        self.vm.app.domains['dom0'],
-                        dev.ident, devclass='pci',
-                        attach_automatically=True, required=True,
+                        devices.Port(
+                            self.vm.app.domains['dom0'], dev.port_id, 'pci'),
+                        mode='required',
                         options=options)
                     self.vm.devices['pci'].assign(ass)
-                elif (dev.ident in self.current_strict_reset_list) != \
-                        (dev.ident in self.new_strict_reset_list):
+                elif (dev.port_id in self.current_strict_reset_list) != \
+                        (dev.port_id in self.new_strict_reset_list):
                     current_assignment = None
                     for assignment in self.vm.devices[
                             'pci'].get_assigned_devices(required_only=True):
-                        if assignment.ident == dev.ident:
+                        if assignment.port_id == dev.port_id:
                             current_assignment = assignment
                             break
                     if current_assignment is None:
                         # it would be very weird if this happened
                         msg.append(self.tr("Error re-assigning device ") +
-                                   dev.ident)
+                                   dev.port_id)
                         continue
 
                     self.vm.devices['pci'].unassign(current_assignment)
 
                     current_assignment.options['no-strict-reset'] = \
-                        dev.ident in self.new_strict_reset_list
+                        dev.port_id in self.new_strict_reset_list
 
                     self.vm.devices['pci'].assign(current_assignment)
 
@@ -1337,7 +1337,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 required_only=True):
             if assignment.options.get('no-strict-reset', False):
                 self.current_strict_reset_list.append(
-                    assignment.ident.replace('_', ':'))
+                    assignment.port_id.replace('_', ':'))
         self.new_strict_reset_list = self.current_strict_reset_list.copy()
 
     def strict_reset_button_pressed(self):

@@ -43,10 +43,10 @@ class PCIDeviceListWindow(ui_devicelist.Ui_Dialog, QtWidgets.QDialog):
 
         for i in range(self.dev_list.selected_list.count()):
             text = self.dev_list.selected_list.item(i).text()
-            ident = self.dev_list.selected_list.item(i).dev.ident
+            port_id = self.dev_list.selected_list.item(i).dev.port_id
             self.device_list.addItem(text)
-            self.ident_list[text] = ident
-            if ident in self.no_strict_reset_list:
+            self.ident_list[text] = port_id
+            if port_id in self.no_strict_reset_list:
                 self.device_list.item(self.device_list.count()-1).setSelected(
                     True)
 
