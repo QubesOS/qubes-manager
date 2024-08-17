@@ -715,6 +715,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     settings_loaded = False
 
     def __init__(self, qt_app, qubes_app, dispatcher, _parent=None):
+        # pylint: disable=too-many-statements
         super().__init__()
         self.setupUi(self)
 
@@ -753,6 +754,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.action_toolbar.toggled.connect(self.showhide_toolbar)
         self.action_show_logs.triggered.connect(self.show_log)
         self.action_compact_view.toggled.connect(self.set_compactview)
+        self.action_scroll_to_top.triggered.connect(
+                self.scroll_to_top)
+        self.action_scroll_to_bottom.triggered.connect(
+                self.scroll_to_bottom)
 
         self.table.resizeColumnsToContents()
 
@@ -865,6 +870,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.size_on_disk_timer.timeout.connect(self.update_running_size)
         self.size_on_disk_timer.setInterval(1000 * 60 * 5)  # every 5 mins
         self.size_on_disk_timer.start()
+
+    def scroll_to_top(self):
+        self.table.selectRow(0)
+        self.table.scrollToTop()
+
+    def scroll_to_bottom(self):
+        self.table.selectRow(self.table.model().rowCount() - 1)
+        self.table.scrollToBottom()
 
     def change_template(self, template):
         selected_vms = self.get_selected_vms()

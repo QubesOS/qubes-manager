@@ -241,6 +241,8 @@ template</string>
         <string>The hypervisor mode used when running each qube as a virtual machine</string>
        </property>
       </column>
+      <addaction name="action_scroll_to_top"/>
+      <addaction name="action_scroll_to_bottom"/>
      </widget>
     </item>
     <item row="0" column="0">
@@ -480,6 +482,9 @@ template</string>
    </property>
    <property name="text">
     <string>&amp;New qube</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
    </property>
    <property name="toolTip">
     <string>Create a new qube</string>
@@ -923,6 +928,9 @@ template</string>
    <property name="text">
     <string>&amp;Exit Qube Manager</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
   </action>
   <action name="action_manage_templates">
    <property name="text">
@@ -999,6 +1007,16 @@ template</string>
    </property>
    <property name="text">
     <string>Compact view</string>
+   </property>
+  </action>
+  <action name="action_scroll_to_top">
+   <property name="shortcut">
+    <string>Home</string>
+   </property>
+  </action>
+  <action name="action_scroll_to_bottom">
+   <property name="shortcut">
+    <string>End</string>
    </property>
   </action>
  </widget>
