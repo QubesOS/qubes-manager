@@ -49,6 +49,7 @@
 /usr/lib/*/dist-packages/qubesmanager/ui_releasenotes.py
 /usr/lib/*/dist-packages/qubesmanager/ui_informationnotes.py
 /usr/lib/*/dist-packages/qubesmanager/ui_qubemanager.py
+/usr/lib/*/dist-packages/qubesmanager/ui_templatemanger2.py
 /usr/lib/*/dist-packages/qubesmanager/ui_devicelist.py
 /usr/lib/*/dist-packages/qubesmanager/ui_templatemanager.py
 /usr/lib/*/dist-packages/qubesmanager/ui_clonevmdlg.py
