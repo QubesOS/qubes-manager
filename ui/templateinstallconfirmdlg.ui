@@ -6,18 +6,25 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>290</height>
+    <width>414</width>
+    <height>127</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Template installation confirmation</string>
+   <string>Template action confirmation</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QLabel" name="label">
+    <widget class="QLabel" name="desc_label">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;WARNING: Local changes made to the following templates will be overwritten! Continue?&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>Operation_description</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="warn_label">
+     <property name="text">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;WARNING: Local changes made to this template will be overwritten! Continue?&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -25,22 +32,12 @@
     </widget>
    </item>
    <item>
-    <widget class="QTreeView" name="treeView">
-     <property name="sortingEnabled">
-      <bool>true</bool>
-     </property>
-     <property name="expandsOnDoubleClick">
-      <bool>false</bool>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QDialogButtonBox" name="buttonBox">
+    <widget class="QDialogButtonBox" name="button_box">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
      <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+      <set>QDialogButtonBox::NoButton</set>
      </property>
     </widget>
    </item>
@@ -49,7 +46,7 @@
  <resources/>
  <connections>
   <connection>
-   <sender>buttonBox</sender>
+   <sender>button_box</sender>
    <signal>accepted()</signal>
    <receiver>TemplateInstallConfirmDlg</receiver>
    <slot>accept()</slot>
@@ -65,7 +62,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>buttonBox</sender>
+   <sender>button_box</sender>
    <signal>rejected()</signal>
    <receiver>TemplateInstallConfirmDlg</receiver>
    <slot>reject()</slot>
