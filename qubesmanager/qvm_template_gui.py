@@ -1,206 +1,418 @@
+# -*- encoding: utf8 -*-
+#
+# The Qubes OS Project, http://www.qubes-os.org
+#
+# Copyright (C) 2023 Marta Marczykowska-Górecka
+#                               <marmarta@invisiblethingslab.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation; either version 2.1 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program; if not, see <http://www.gnu.org/licenses/>.
+
+# disabling invalid name checking due to amount of Qt functions that
+# need to be overwritten and have a camelCase name
+# pylint: disable=invalid-name
+
+import abc
 import asyncio
 import collections
+import functools
+import subprocess
+import threading
 from datetime import datetime
-import itertools
+from datetime import UTC
 import json
 import os
 import typing
+import shlex
 
 import PyQt5  # pylint: disable=import-error
 import PyQt5.QtWidgets  # pylint: disable=import-error
+import PyQt5.QtCore  # pylint: disable=import-error
+import PyQt5.QtGui  # pylint: disable=import-error
 
-from . import ui_qvmtemplate  # pylint: disable=no-name-in-module
 from . import ui_templateinstallconfirmdlg  # pylint: disable=no-name-in-module
 from . import ui_templateinstallprogressdlg  # pylint: disable=no-name-in-module
+from . import ui_templatemanger2 # pylint: disable=no-name-in-module
 from . import utils
-
-#pylint: disable=invalid-name
-
-BASE_CMD = ['qvm-template', '--enablerepo=*', '--yes']
+from qui.utils import EOL_DATES, SUFFIXES # pylint: disable=import-error
+BASE_CMD = ['qvm-template', '--yes']
 
 # singleton for "no date"
-ZERO_DATE = datetime.utcfromtimestamp(0)
+ZERO_DATE = datetime.fromtimestamp(0, UTC)
 
-# pylint: disable=too-few-public-methods,inherit-non-class
-class Template(typing.NamedTuple):
-    status: str
-    name: str
-    evr: str
-    reponame: str
-    size: int
-    buildtime: datetime
-    installtime: typing.Optional[datetime]
-    #licence: str
-    #url: str
-    #summary: str
-    # ---- internal ----
-    description: str
-    default_status: str
-    # ------------------
+tr = functools.partial(PyQt5.QtCore.QCoreApplication.translate, "Template GUI")
 
+HELP_TEXT = tr("""
+This tool can be used to manage templates on your system. \
+
+Installed templates are the ones currently present in the system - you \
+can update or remove them here. Caution: updating a template is different from \
+updating its contents - in most cases you want to normally run the Qubes \
+Update tool to update the packages withing your templates. However, \
+if a template is for some reason malfunctioning, you can try to upgrade it \
+here, replacing the existing template with a newer release, or reinstall it - \
+but remember that both of those operations replace your template with a fresh \
+copy and all of your changes will be lost.
+
+Available templates are the templates available online - from official Qubes \
+OS repositories and, if enabled, from community repositories. After installing \
+a new template, you can switch your qubes to use it quickly using the \
+Template Switcher tool. 
+""")
+
+
+# Todo:
+# - tests
+# - packaging
+
+# tests:
+# - run with data, see if there are things listed
+# - check button visibility?
+
+# later bullcrap
+# - fix qvm-template
+# - update eol table
+
+class TreeItem(abc.ABC):
     COL_NAMES = [
-        'Status',
         'Name',
+        'Status',
         'Version',
         'Repository',
-        'Download Size (MB)',
-        'Build',
-        'Install',
-        #'License',
-        #'URL',
-        #'Summary'
     ]
 
-    @staticmethod
-    def build(status, entry):
-        cli_format = '%Y-%m-%d %H:%M:%S'
-        buildtime = datetime.strptime(entry['buildtime'], cli_format)
-        if entry['installtime']:
-            installtime = datetime.strptime(entry['installtime'], cli_format)
-        else:
-            installtime = ZERO_DATE
-        return Template(
-            status,
-            entry['name'],
-            '%s:%s-%s' % (entry['epoch'], entry['version'], entry['release']),
-            entry['reponame'],
-            int(entry['size']) // 1000000,
-            buildtime,
-            installtime,
-            #entry['license'],
-            #entry['url'],
-            entry['description'],
-            status
-        )
+    @property
+    @abc.abstractmethod
+    def description(self) -> str:
+        """Verbose description of the item"""
 
-class Action(typing.NamedTuple):
-    op: str
-    name: str
-    evr: str
+    @property
+    @abc.abstractmethod
+    def name(self) -> str:
+        """Item name"""
 
-    TYPES = [str, str, str]
-    COL_NAMES = ['Operation', 'Name', 'Version']
+    @property
+    def full_name(self) -> str:
+        """Extended name, used as a parameter for template modification
+        commands"""
+        return self.name
 
-class TemplateStatusDelegate(PyQt5.QtWidgets.QStyledItemDelegate):
-    OPS = [
-        ['Installed', 'Reinstall', 'Remove'],
-        ['Extra', 'Remove'],
-        ['Upgradable', 'Upgrade', 'Remove'],
-        ['Downgradable', 'Downgrade', 'Remove'],
-        ['Available', 'Install']
-    ]
+    @property
+    @abc.abstractmethod
+    def children(self) -> typing.List['TreeItem']:
+        """Item's children"""
 
-    def createEditor(self, parent, option, index):
-        _ = option # unused
-        editor = PyQt5.QtWidgets.QComboBox(parent)
-        # Otherwise the internalPointer can be overwritten with a QComboBox
-        index = index.model().index(index.row(), index.column())
-        kind = index.internalPointer().default_status
-        for op_list in TemplateStatusDelegate.OPS:
-            if op_list[0] == kind:
-                for op in op_list:
-                    editor.addItem(op)
-                editor.currentIndexChanged.connect(self.currentIndexChanged)
-                editor.showPopup()
-                return editor
+    @property
+    @abc.abstractmethod
+    def parent(self) -> 'TreeItem':
+        """Parent of this item"""
+
+    def get_installable(self) -> bool:
+        return False
+
+    def get_reinstallable(self) -> bool:
+        return False
+
+    def get_uninstallable(self) -> bool:
+        return False
+
+    def get_upgradable(self) -> bool:
+        return False
+
+    def status(self, role):  # pylint: disable=unused-argument
         return None
 
-    def setEditorData(self, editor, index):
-        cur = index.data()
-        idx = editor.findText(cur)
-        if idx >= 0:
-            editor.setCurrentIndex(idx)
+    def version(self):
+        return None
 
-    def setModelData(self, editor, model, index):
-        model.setData(index, editor.currentText())
+    def repository(self):
+        return None
 
-    def updateEditorGeometry(self, editor, option, index):
-        _ = index # unused
-        editor.setGeometry(option.rect)
 
-    @PyQt5.QtCore.pyqtSlot()
-    def currentIndexChanged(self):
-        self.commitData.emit(self.sender())
+class Template(TreeItem):
+    def __init__(self, entry: dict):
+        self.template_status: str = entry['status']
+        self.template_name: str = entry['name']
+
+        cli_format = '%Y-%m-%d %H:%M:%S'
+
+        self.build_time = datetime.strptime(entry['buildtime'], cli_format)
+
+        self.install_time: typing.Optional[str] = None
+        if entry['installtime']:
+            self.install_time = datetime.strptime(entry['installtime'],
+                                                  cli_format)
+        else:
+            self.install_time = None
+
+        self.version_release: str = '%s:%s-%s' % (entry['epoch'],
+                                                  entry['version'],
+                                                  entry['release'])
+        self.repository_name: str = entry['reponame']
+        self.size: int = int(entry['size']) // 1000000
+        self.license = entry['license']
+        # install_size
+        self._description = entry['description']
+        self._parent = None
+
+    @property
+    def description(self) -> str:
+        text = tr("<b>Template name:</b> ") + self.template_name + '<br>'
+        text += tr("<b>Version:</b> ") + self.version_release + '<br>'
+        text += tr("<b>Repository:</b> ") + self.repository_name + '<br>'
+        text += tr("<b>License:</b> ") + self.license + "<br><br>"
+
+        if self.installed:
+            status = tr("yes")
+        else:
+            status = tr("no")
+        if self.template_status == "extra":
+            status += tr(" (local template, not available from repositories)")
+
+        text += tr("<b>Installed:</b> ") + status + '<br>'
+        if self.installed:
+            text += tr("<b>Template upgrade available: </b>")
+            if self.template_status == 'upgradable':
+                text += tr("yes <br>")
+            else:
+                text += tr("no <br>")
+
+        if self.obsolete():
+            text += tr("<b>THIS TEMPLATE IS NO LONGER SUPPORTED AND WILL "
+                       "NOT RECEIVE SECURITY UPDATES</b><br>")
+
+        text += '<br>'
+        if self.size > 1000:
+            size_txt = str(self.size / 1000) + " GB"
+        else:
+            size_txt = str(self.size) + " MB"
+        text += tr("<b>Download size:</b> ") + size_txt + "<br>"
+        text += tr("<b>Build time:</b> ") + self.build_time.strftime(
+            "%Y-%m-%d %H:%M") + "<br>"
+        if self.install_time:
+            text += tr("<b>Install time:</b> ") + self.install_time.strftime(
+                "%Y-%m-%d %H:%M") + "<br>"
+        text += "<br>"
+        text += self._description
+        return text
+
+    @property
+    def name(self) -> str:
+        return self.template_name
+
+    @property
+    def full_name(self) -> str:
+        return self.template_name + "-" + self.version_release
+
+    @property
+    def children(self) -> typing.List['TreeItem']:
+        """Children of this item"""
+        return []
+
+    def set_parent(self, parent: TreeItem):
+        self._parent = parent
+
+    @property
+    def parent(self) -> 'TreeItem':
+        """Parent of this item"""
+        return self._parent
+
+    @property
+    def installed(self) -> bool:
+        return self.template_status != 'available'
+
+    def get_installable(self) -> bool:
+        return self.template_status == 'available'
+
+    def get_reinstallable(self) -> bool:
+        return self.template_status in ["installed", "downgrade"]
+
+    def get_uninstallable(self) -> bool:
+        return self.template_status in ["installed", "extra", "upgradable",
+                                        "downgrade"]
+
+    def get_upgradable(self) -> bool:
+        return self.template_status == 'upgradable'
+
+    def status(self, role):
+        # pylint: disable=too-many-return-statements
+        if self.obsolete():
+            if role == PyQt5.QtCore.Qt.ToolTipRole:
+                return tr("This template is obsolete and no longer receives "
+                          "updates")
+            if role == PyQt5.QtCore.Qt.DecorationRole:
+                return ":/obsolete.svg"
+        if self.template_status == 'extra':
+            if role == PyQt5.QtCore.Qt.ToolTipRole:
+                return tr("This template is a local template, not installed "
+                          "from a repository")
+            if role == PyQt5.QtCore.Qt.DecorationRole:
+                return ':/checkmark-with-plus.svg'
+        if self.template_status in ['installed', 'upgradable']:
+            if role == PyQt5.QtCore.Qt.ToolTipRole:
+                return tr("This template is installed")
+            if role == PyQt5.QtCore.Qt.DecorationRole:
+                return ':/checkmark.svg'
+        return None
+
+    def version(self):
+        return self.version_release
+
+    def repository(self):
+        return self.repository_name
+
+    def obsolete(self) -> bool:
+        name = self.template_name
+        for suffix in SUFFIXES:
+            name = name.removesuffix(suffix)
+        eol_string = EOL_DATES.get(name, None)
+        if not eol_string:
+            return False
+        eol = datetime.strptime(eol_string, '%Y-%m-%d')
+        return eol > datetime.now()
+
+
+class DescriptiveItem(TreeItem):
+    NAMES = {
+        tr("Installed"): tr("Installed templates"),
+        tr("Available"): tr("Available templates"),
+        tr("Downgradable"): tr("Template downgrades")
+    }
+    DESCRIPTIONS = {
+        tr("Installed"):
+            tr("Templates in this group are currently installed in your "
+               "system. Templates may come from official or unofficial "
+               "repositories (the default and recommended way of installing "
+               "templates), but you might also encounter templates installed "
+               "from RPM packages, especially if some of your templates are "
+               "restored from older Qubes OS versions."),
+        tr("Available"):
+            tr("Templates in this group are available from repositories "
+               "online. Templates that come from ITL repository are "
+               "officially supported by the Qubes OS team, while templates "
+               "from the Community repository are maintained by the members "
+               "of the community. You can adjust which repositories to use in "
+               "Global Settings - Update - Template Repository Settings."),
+        tr("Downgradable"):
+            tr("Templates in this group are old versions of templates you "
+               "already have installed. It is not recommended to install them.")
+    }
+
+    def __init__(self, name):
+        self._name = name
+        self._children: typing.List[TreeItem] = []
+        self._parent = PyQt5.QtCore.QModelIndex()
+
+    @property
+    def name(self) -> str:
+        return self.NAMES.get(self._name, self._name)
+
+    @property
+    def description(self) -> str:
+        return self.DESCRIPTIONS.get(self._name, self._name)
+
+    @property
+    def children(self) -> typing.List[TreeItem]:
+        return self._children
+
+    @property
+    def parent(self) -> TreeItem:
+        return self._parent
+
 
 class TemplateModel(PyQt5.QtCore.QAbstractItemModel):
     def __init__(self):
         super().__init__()
-
         self.children = []
-
-    def flags(self, index):
-        if index.isValid() and index.column() == 0:
-            return super().flags(index) | PyQt5.QtCore.Qt.ItemIsEditable
-        return super().flags(index)
-
-    def sort(self, idx, order):
-        rev = order == PyQt5.QtCore.Qt.AscendingOrder
-        self.children.sort(key=lambda x: x[idx], reverse=rev)
-
-        self.dataChanged.emit(*self.row_index(0, self.rowCount() - 1))
 
     def index(self, row, column, parent=PyQt5.QtCore.QModelIndex()):
         if not self.hasIndex(row, column, parent):
             return PyQt5.QtCore.QModelIndex()
+        if not parent.isValid():
+            child_item = self.children[row]
+        else:
+            child_item = parent.internalPointer().children[row]
+        return self.createIndex(row, column, child_item)
 
-        return self.createIndex(row, column, self.children[row])
-
-    def parent(self, child):
-        _ = child # unused
-        return PyQt5.QtCore.QModelIndex()
+    def parent(self, child_index: PyQt5.QtCore.QModelIndex):
+        node = PyQt5.QtCore.QModelIndex()
+        if child_index.isValid():
+            own_object = child_index.internalPointer()
+            if own_object is not None:
+                parent = own_object.parent
+                if not parent:
+                    return node
+                if parent != node:
+                    # thankfully we have only one level of depth
+                    row = self.children.index(parent)
+                    node = self.createIndex(row, 0, parent)
+        return node
 
     def rowCount(self, parent=PyQt5.QtCore.QModelIndex()):
-        _ = parent # unused
+        if parent.internalPointer():
+            return len(parent.internalPointer().children)
         return len(self.children)
 
-    def columnCount(self, parent=PyQt5.QtCore.QModelIndex()):
-        _ = parent # unused
+    def columnCount(self, _parent=PyQt5.QtCore.QModelIndex()):
         return len(Template.COL_NAMES)
-
-    def hasChildren(self, index=PyQt5.QtCore.QModelIndex()):
-        return index == PyQt5.QtCore.QModelIndex()
 
     def data(self, index, role=PyQt5.QtCore.Qt.DisplayRole):
         # pylint: disable=too-many-return-statements
         if index.isValid():
-            data = self.children[index.row()][index.column()]
+            data = index.internalPointer()
+            if role == PyQt5.QtCore.Qt.ItemDataRole:
+                return data.description
             if role == PyQt5.QtCore.Qt.DisplayRole:
-                if data is ZERO_DATE:
-                    return ''
-                if isinstance(data, datetime):
-                    return data.strftime('%d %b %Y')
-                return data
-            if role == PyQt5.QtCore.Qt.FontRole:
-                font = PyQt5.QtGui.QFont()
-                tpl = self.children[index.row()]
-                font.setBold(tpl.status != tpl.default_status)
-                return font
+                if index.column() == 0:
+                    return data.name
+                if index.column() == 1:
+                    return None
+                if index.column() == 2:
+                    return data.version()
+                if index.column() == 3:
+                    return data.repository()
+                return data.name
+            if role == PyQt5.QtCore.Qt.ToolTipRole:
+                if index.column() == 0:
+                    return "Template name"
+                if index.column() == 1:
+                    return data.status(role)
+                if index.column() == 2:
+                    return "Template version"
+                if index.column() == 3:
+                    return "Repository"
             if role == PyQt5.QtCore.Qt.TextAlignmentRole:
                 if isinstance(data, int):
                     return PyQt5.QtCore.Qt.AlignRight
                 return PyQt5.QtCore.Qt.AlignLeft
+            if role == PyQt5.QtCore.Qt.DecorationRole:
+                if index.column() == 1:
+                    icon_name = data.status(role)
+                    if icon_name:
+                        return PyQt5.QtGui.QIcon(icon_name)
+            if role == PyQt5.QtCore.Qt.UserRole:
+                return data
         return None
 
-    def setData(self, index, value, role=PyQt5.QtCore.Qt.EditRole):
-        if index.isValid() and role == PyQt5.QtCore.Qt.EditRole:
-            old_list = list(self.children[index.row()])
-            old_list[index.column()] = value
-            new_tpl = Template(*old_list)
-            self.children[index.row()] = new_tpl
-            self.dataChanged.emit(index, index)
-            return True
-        return False
-
     def headerData(self, section, orientation,
-            role=PyQt5.QtCore.Qt.DisplayRole):
+                   role=PyQt5.QtCore.Qt.DisplayRole):
         if section < len(Template.COL_NAMES) \
                 and orientation == PyQt5.QtCore.Qt.Horizontal \
                 and role == PyQt5.QtCore.Qt.DisplayRole:
             return Template.COL_NAMES[section]
         return None
 
-    def removeRows(self, row, count, parent=PyQt5.QtCore.QModelIndex()):
-        _ = parent # unused
+    def removeRows(self, row, count, _parent=PyQt5.QtCore.QModelIndex()):
         self.beginRemoveRows(PyQt5.QtCore.QModelIndex(), row, row + count)
         del self.children[row:row+count]
         self.endRemoveRows()
@@ -210,30 +422,13 @@ class TemplateModel(PyQt5.QtCore.QAbstractItemModel):
         return self.createIndex(low, 0), \
             self.createIndex(high, self.columnCount())
 
-    def set_templates(self, templates):
-        self.removeRows(0, self.rowCount())
-        cnt = sum(len(g) for _, g in templates.items())
-        self.beginInsertRows(PyQt5.QtCore.QModelIndex(), 0, cnt - 1)
-        for status, grp in templates.items():
-            for tpl in grp:
-                self.children.append(Template.build(status, tpl))
-        self.endInsertRows()
-        self.dataChanged.emit(*self.row_index(0, self.rowCount() - 1))
-
-    def get_actions(self):
-        actions = []
-        for tpl in self.children:
-            if tpl.status != tpl.default_status:
-                actions.append(Action(tpl.status, tpl.name, tpl.evr))
-        return actions
-
     async def refresh(self, refresh=True):
         cmd = BASE_CMD[:]
         if refresh:
             # Force refresh if triggered by button press
             cmd.append('--refresh')
         cmd.extend(['info', '--machine-readable-json', '--installed',
-            '--available', '--upgrades', '--extras'])
+                    '--available', '--upgrades', '--extras'])
         proc = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
@@ -243,61 +438,125 @@ class TemplateModel(PyQt5.QtCore.QAbstractItemModel):
         if proc.returncode != 0:
             stderr = stderr.decode('ASCII')
             return False, stderr
+        # remove old rows
+        rows_to_remove = len(self.children)
+        self.beginRemoveRows(PyQt5.QtCore.QModelIndex(), 0,
+                             rows_to_remove)
+        self.children = []
+        self.endRemoveRows()
+        self.dataChanged.emit(*self.row_index(0, rows_to_remove))
+
         # Default type is dict as we're going to replace the lists with
         # dicts shortly after
         tpls = collections.defaultdict(dict, json.loads(output))
-        # Remove duplicates
-        # Should this be done in qvm-template?
         # TODO: Merge templates with same name?
         #       If so, we may need to have a separate UI to force versions.
+
         local_names = set(x['name'] for x in tpls['installed'])
+
         # Convert to dict for easier subtraction
+
         for key in tpls:
             tpls[key] = {
-                (x['name'], x['epoch'], x['version'], x['release']): x
+                (x['name'], x['epoch']): x
                 for x in tpls[key]}
-        tpls['installed'] = {
-            k: v for k, v in tpls['installed'].items()
-                if k not in tpls['extra'] and k not in tpls['upgradable']}
+            for x in tpls[key].values():
+                x['status'] = key  # add status info to templates
+
+        # if a template is 'extra' or 'upgradable', adjust the status
+        # accordingly
+
+        for k in tpls['extra'].keys():
+            if k in tpls['installed']:
+                tpls['installed'][k]['status'] = 'extra'
+        for k in tpls['upgradable'].keys():
+            if k in tpls['installed']:
+                tpls['installed'][k]['status'] = 'upgradable'
+
+        # create available list
         tpls['available'] = {
             k: v for k, v in tpls['available'].items()
                 if k not in tpls['installed']
                     and k not in tpls['upgradable']}
+
         # If the package name is installed but the specific version is
         # neither installed or an upgrade, then it must be a downgrade
+
         tpls['downgradable'] = {
             k: v for k, v in tpls['available'].items()
-                if k[0] in local_names}
+            if k[0] in local_names}
         tpls['available'] = {
             k: v for k, v in tpls['available'].items()
-                if k not in tpls['downgradable']}
+            if k not in tpls['downgradable']}
+        # remove obsolete keys
+        del tpls['upgradable']
+        del tpls['extra']
+
         # Convert back to list
         tpls = {k.title(): list(v.values()) for k, v in tpls.items()}
-        self.set_templates(tpls)
+        self.beginInsertRows(PyQt5.QtCore.QModelIndex(), 0, len(tpls) - 1)
+        for template_type, template_list in tpls.items():
+            if not template_list:
+                continue
+            itm = DescriptiveItem(template_type)
+            self.children.append(itm)
+            for template in template_list:
+                template_item = Template(template)
+                template_item.set_parent(itm)
+                itm.children.append(template_item)
+        self.dataChanged.emit(*self.row_index(0, self.rowCount() - 1))
+        self.endInsertRows()
         return True, None
+
 
 class TemplateInstallConfirmDialog(
         ui_templateinstallconfirmdlg.Ui_TemplateInstallConfirmDlg,
         PyQt5.QtWidgets.QDialog):
-    def __init__(self, actions):
+    # pylint: disable=too-few-public-methods
+    def __init__(self, question: str, operation_name: str,
+                 palette: PyQt5.QtGui.QPalette, enable_warn: bool = False):
         super().__init__()
         self.setupUi(self)
 
-        model = PyQt5.QtGui.QStandardItemModel()
-        model.setHorizontalHeaderLabels(Action.COL_NAMES)
-        self.treeView.setModel(model)
+        self.desc_label.setText(question)
+        self.warn_label.setVisible(enable_warn)
 
-        for act in actions:
-            model.appendRow([PyQt5.QtGui.QStandardItem(x) for x in act])
+        ok_button = self.button_box.addButton(
+            operation_name,
+            PyQt5.QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole)
+        ok_button.setPalette(palette)
+
+        self.button_box.addButton(
+            "Cancel",
+            PyQt5.QtWidgets.QDialogButtonBox.ButtonRole.RejectRole)
+
 
 class TemplateInstallProgressDialog(
         ui_templateinstallprogressdlg.Ui_TemplateInstallProgressDlg,
         PyQt5.QtWidgets.QDialog):
-    def __init__(self, actions):
+    def __init__(self, command: typing.List[str],
+                 palette: PyQt5.QtGui.QPalette,
+                 window_title: typing.Optional[str] = None):
+        """
+        :param command: a list of strings containing the command to be used
+        by this process
+        """
         super().__init__()
         self.setupUi(self)
-        self.actions = actions
-        self.buttonBox.hide()
+        self.command = command
+        self.qubes_palette = palette
+        self.window().setWindowTitle(window_title)
+
+        self.cancel_button = self.button_box.addButton(
+            "Abort",
+            PyQt5.QtWidgets.QDialogButtonBox.ButtonRole.RejectRole)
+
+    def add_ok_button(self):
+        self.button_box.removeButton(self.cancel_button)
+        ok_button: PyQt5.QtWidgets.QPushButton = self.button_box.addButton(
+            "OK",
+            PyQt5.QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole)
+        ok_button.setPalette(self.qubes_palette)
 
     @staticmethod
     def _process_cr(text):
@@ -314,127 +573,220 @@ class TemplateInstallProgressDialog(
 
     def install(self):
         async def coro():
-            self.actions.sort()
-            for oper, grp in itertools.groupby(self.actions, lambda x: x[0]):
-                oper = oper.lower()
-                # No need to specify versions for local operations
-                if oper in ('remove', 'purge'):
-                    specs = [x.name for x in grp]
-                else:
-                    specs = [x.name + '-' + x.evr for x in grp]
-                # FIXME: (C)Python versions before 3.9 fully-buffers stderr in
-                #        this context, cf. https://bugs.python.org/issue13601
-                #        Forcing it to be unbuffered for the time being so that
-                #        the messages can be displayed in time.
-                envs = os.environ.copy()
-                envs['PYTHONUNBUFFERED'] = '1'
-                proc = await asyncio.create_subprocess_exec(
-                    *(BASE_CMD + [oper, '--'] + specs),
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.STDOUT,
-                    env=envs)
-                #pylint: disable=cell-var-from-loop
-                status_text = ''
-                while True:
-                    line = await proc.stdout.read(100)
-                    if line == b'':
-                        break
-                    line = line.decode('UTF-8')
-                    status_text = self._process_cr(status_text + line)
-                    self.textEdit.setPlainText(status_text)
-                if await proc.wait() != 0:
-                    self.buttonBox.show()
-                    self.progressBar.setMaximum(100)
-                    self.progressBar.setValue(0)
-                    return False
+            # FIXME: (C)Python versions before 3.9 fully-buffers stderr in
+            #        this context, cf. https://bugs.python.org/issue13601
+            #        Forcing it to be unbuffered for the time being so that
+            #        the messages can be displayed in time.
+            envs = os.environ.copy()
+            envs['PYTHONUNBUFFERED'] = '1'
+            proc = await asyncio.create_subprocess_exec(
+                *self.command,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                env=envs)
+            status_text = ''
+            while True:
+                line = await proc.stdout.read(100)
+                if line == b'':
+                    break
+                line = line.decode('UTF-8')
+                status_text = self._process_cr(status_text + line)
+                self.textEdit.setPlainText(status_text)
+            if await proc.wait() != 0:
+                self.add_ok_button()
+                self.progressBar.setMaximum(100)
+                self.progressBar.setValue(0)
+                return False
+            self.add_ok_button()
             self.progressBar.setMaximum(100)
             self.progressBar.setValue(100)
-            self.buttonBox.show()
             return True
         asyncio.create_task(coro())
 
-class QvmTemplateWindow(
-        ui_qvmtemplate.Ui_QubesTemplateManager,
-        PyQt5.QtWidgets.QMainWindow):
-    def __init__(self, qt_app, qubes_app, dispatcher, parent=None):
-        _ = parent # unused
 
+class QvmTemplateWindow(
+        ui_templatemanger2.Ui_MainWindow,
+        PyQt5.QtWidgets.QMainWindow):
+    def __init__(self, qt_app, qubes_app, dispatcher, _parent=None):
         super().__init__()
         self.setupUi(self)
-        self.listing.header().setSectionResizeMode(
+        self.template_tree.header().setSectionResizeMode(
             PyQt5.QtWidgets.QHeaderView.ResizeToContents)
 
         self.qubes_app = qubes_app
-        self.qt_app = qt_app
+        self.qt_app: PyQt5.QtWidgets.QApplication = qt_app
         self.qt_app.setWindowIcon(PyQt5.QtGui.QIcon.fromTheme("qubes-manager"))
         self.dispatcher = dispatcher
 
-        self.listing_model = TemplateModel()
-        self.listing_delegate = TemplateStatusDelegate(self.listing)
+        self.template_model = TemplateModel()
+        self.template_tree.setModel(self.template_model)
 
-        self.listing.setModel(self.listing_model)
-        self.listing.setItemDelegateForColumn(0, self.listing_delegate)
+        self.template_tree.selectionModel() \
+            .selectionChanged.connect(self.template_selected)
+
+        self.template_info.setText(HELP_TEXT)
+        self.install_button.setVisible(False)
+        self.uninstall_button.setVisible(False)
+        self.reinstall_button.setVisible(False)
+        self.upgrade_button.setVisible(False)
+
+        self.install_button.pressed.connect(self.do_install)
+        self.uninstall_button.pressed.connect(self.do_uninstall)
+        self.reinstall_button.pressed.connect(self.do_reinstall)
+        self.upgrade_button.pressed.connect(self.do_upgrade)
 
         self.refresh(False)
-        self.listing.setItemDelegateForColumn(0, self.listing_delegate)
-        self.listing.selectionModel() \
-            .selectionChanged.connect(self.update_info)
 
-        self.actionRefresh.triggered.connect(lambda: self.refresh(True))
-        self.actionInstall.triggered.connect(self.do_install)
+        self.actionRefreshRepositoryData.triggered.connect(
+            lambda: self.refresh(True))
+        self.actionHelp.triggered.connect(self.show_help)
+        self.actionTemplate_switcher.triggered.connect(
+            lambda: self.run_in_background("qubes-template-manager"))
+        self.actionRepository_settings.triggered.connect(
+            lambda: self.run_in_background("qubes-global-config"))
 
-    def update_info(self, selected):
-        _ = selected # unused
-        indices = [
-            x
-            for x in self.listing.selectionModel().selectedIndexes()
-            if x.column() == 0]
-        if len(indices) == 0:
+        self.qubes_palette = self.initialize_styles()
+
+    def initialize_styles(self):
+        qubes_style_buttons = [self.upgrade_button, self.install_button,
+                               self.reinstall_button, self.uninstall_button]
+        palette = self.qt_app.palette()
+        palette.setColor(PyQt5.QtGui.QPalette.Button, PyQt5.QtGui.QColor(
+            "#4180c9"))
+        palette.setColor(PyQt5.QtGui.QPalette.ButtonText, PyQt5.QtGui.QColor(
+            "#ffffff"))
+
+        for button in qubes_style_buttons:
+            button.setPalette(palette)
+
+        return palette
+
+    def show_help(self):
+        """Action on pressing Help button"""
+        self.template_tree.selectionModel().clearSelection()
+        self._show_help()
+
+    def _show_help(self):
+        self.template_info.setText(HELP_TEXT)
+        self.install_button.setVisible(False)
+        self.uninstall_button.setVisible(False)
+        self.reinstall_button.setVisible(False)
+        self.upgrade_button.setVisible(False)
+
+    def run_in_background(self, command):
+        if isinstance(command, str):
+            command = shlex.split(command)
+        # pylint: disable=consider-using-with
+        p = subprocess.Popen(command)
+        threading.Thread(target=p.wait, daemon=True).start()
+
+    def _get_selected_item(self) -> typing.Optional[TreeItem]:
+        selected_indexes = self.template_tree.selectionModel().selectedIndexes()
+        if not selected_indexes:
+            return None
+        # we just grab the first item, because we don't care about details
+        # and the selection model is single-row
+        selected_item = selected_indexes[0]
+        item = self.template_model.data(selected_item,
+                                        PyQt5.QtCore.Qt.UserRole)
+        return item
+
+    def template_selected(self, _selected: PyQt5.QtCore.QItemSelection):
+        item = self._get_selected_item()
+        if not item:
+            self._show_help()
             return
-        self.infobox.clear()
-        cursor = PyQt5.QtGui.QTextCursor(self.infobox.document())
-        bold_fmt = PyQt5.QtGui.QTextCharFormat()
-        bold_fmt.setFontWeight(PyQt5.QtGui.QFont.Bold)
-        norm_fmt = PyQt5.QtGui.QTextCharFormat()
-        if len(indices) > 1:
-            cursor.insertText('Selected templates:\n', bold_fmt)
-            for idx in indices:
-                tpl = self.listing_model.children[idx.row()]
-                cursor.insertText(tpl.name + '-' + tpl.evr + '\n', norm_fmt)
-        else:
-            idx = indices[0]
-            tpl = self.listing_model.children[idx.row()]
-            cursor.insertText('Name: ', bold_fmt)
-            cursor.insertText(tpl.name + '\n', norm_fmt)
-            cursor.insertText('Description:\n', bold_fmt)
-            cursor.insertText(tpl.description + '\n', norm_fmt)
+        self.template_info.setText(item.description)
 
-    def refresh(self, refresh=True):
-        self.progressBar.show()
-        async def coro():
-            ok, stderr = await self.listing_model.refresh(refresh)
-            self.infobox.clear()
-            if not ok:
-                cursor = PyQt5.QtGui.QTextCursor(self.infobox.document())
-                fmt = PyQt5.QtGui.QTextCharFormat()
-                fmt.setFontWeight(PyQt5.QtGui.QFont.Bold)
-                cursor.insertText('Failed to fetch template list:\n', fmt)
-                fmt.setFontWeight(PyQt5.QtGui.QFont.Normal)
-                cursor.insertText(stderr, fmt)
-            self.progressBar.hide()
-        asyncio.create_task(coro())
+        self.install_button.setVisible(item.get_installable())
+        self.reinstall_button.setVisible(item.get_reinstallable())
+        self.uninstall_button.setVisible(item.get_uninstallable())
+        self.upgrade_button.setVisible(item.get_upgradable())
 
-    def do_install(self):
-        actions = self.listing_model.get_actions()
-        confirm = TemplateInstallConfirmDialog(actions)
+    def _do_action(self, command: typing.List[str], operation_name: str,
+                   question: str, enable_warn: bool = False, window_title:
+                   typing.Optional[str] = None):
+        """
+        :param command: a list of strings representing the operation to perform
+        :operation name: what should be on the confirmation button
+        :param question: what should we ask the user in confirmation dialog?
+        :param enable_warn: should the confirm dialog warn about discarding
+        local changes?
+        """
+        confirm = TemplateInstallConfirmDialog(question, operation_name,
+                                               self.qubes_palette,
+                                               enable_warn)
         if confirm.exec_():
-            progress = TemplateInstallProgressDialog(actions)
+            progress = TemplateInstallProgressDialog(command,
+                                                     self.qubes_palette,
+                                                     window_title)
             progress.install()
             progress.exec_()
-        self.refresh()
+            self.refresh()
+
+    def do_uninstall(self):
+        item = self._get_selected_item()
+        command = BASE_CMD + ['remove', '--'] + [item.name]
+        question = (self.tr("Are you sure you want to remove template <b>{"
+                    "}</b>?")).format(item.name)
+        self._do_action(command, self.tr("Uninstall ") + item.name,
+                        question, True,
+                        self.tr("Uninstalling template..."))
+
+    def do_install(self):
+        item = self._get_selected_item()
+        command = BASE_CMD + ['install', '--'] + [item.full_name]
+        question = (self.tr("Are you sure you want to install template <b>{"
+                    "}</b>?")).format(item.name)
+        self._do_action(command, self.tr("Install ") + item.name,
+                        question, False)
+
+    def do_reinstall(self):
+        item = self._get_selected_item()
+        command = BASE_CMD + ['reinstall', '--'] + [item.full_name]
+        question = (self.tr("Are you sure you want to reinstall template <b>{"
+                    "}</b>?")).format(item.name)
+        self._do_action(command, self.tr("Reinstall ") + item.name ,
+                        question,True)
+
+    def do_upgrade(self):
+        item = self._get_selected_item()
+        command = BASE_CMD + ['upgrade', '--'] + [item.full_name]
+        question = (self.tr("Are you sure you want to reinstall and upgrade "
+                            "template <b>{"
+                    "}</b>?")).format(item.name)
+        self._do_action(command, self.tr("Reinstall and upgrade ") + item.name,
+                        question, True)
+
+    def refresh(self, refresh=True):
+        self.label_loading.setVisible(True)
+        self.info_frame.setVisible(False)
+        self.template_tree.setVisible(False)
+
+        # deselect whatever is selected
+        self.template_tree.selectionModel().clearSelection()
+
+        async def coro():
+            ok, stderr = await self.template_model.refresh(refresh)
+            if not ok:
+                PyQt5.QtWidgets.QMessageBox.warning(
+                    self,
+                    self.tr('Failed to fetch template list!'),
+                    self.tr('Failed to fetch template list: \n') + stderr
+                )
+            self.label_loading.setVisible(False)
+            self.info_frame.setVisible(True)
+            self.template_tree.setVisible(True)
+            self.template_tree.expandAll()
+            self.template_tree.resizeColumnToContents(0)
+            self.template_tree.resizeColumnToContents(1)
+
+        asyncio.create_task(coro())
+
 
 def main():
     utils.run_asynchronous(QvmTemplateWindow)
+
 
 if __name__ == '__main__':
     main()
