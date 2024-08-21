@@ -50,11 +50,15 @@ class CloneVMTest(unittest.TestCase):
         self.mock_progress = self.patcher_progress.start()
         self.addCleanup(self.patcher_progress.stop)
 
-        # mock the progress dialog to speed testing up
+        # mock the message dialog to not hang on success
         self.patcher_warning = unittest.mock.patch(
             'PyQt5.QtWidgets.QMessageBox.warning')
         self.mock_warning = self.patcher_warning.start()
         self.addCleanup(self.patcher_warning.stop)
+        self.patcher_information = unittest.mock.patch(
+            'PyQt5.QtWidgets.QMessageBox.information')
+        self.mock_information = self.patcher_information.start()
+        self.addCleanup(self.patcher_information.stop)
 
         self.dialog = clone_vm.CloneVMDlg(self.qtapp, self.qapp)
 
@@ -229,11 +233,15 @@ class CloneVMTestSrcVM(unittest.TestCase):
         self.mock_progress = self.patcher_progress.start()
         self.addCleanup(self.patcher_progress.stop)
 
-        # mock the progress dialog to speed testing up
+        # mock the message dialog to not hang on success
         self.patcher_warning = unittest.mock.patch(
             'PyQt5.QtWidgets.QMessageBox.warning')
         self.mock_warning = self.patcher_warning.start()
         self.addCleanup(self.patcher_warning.stop)
+        self.patcher_information = unittest.mock.patch(
+            'PyQt5.QtWidgets.QMessageBox.information')
+        self.mock_information = self.patcher_information.start()
+        self.addCleanup(self.patcher_information.stop)
 
         self.src_vm = next(
             domain for domain in self.qapp.domains
