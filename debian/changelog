@@ -1,3 +1,9 @@
+qubes-manager (4.3.4-1) unstable; urgency=medium
+
+  * tests: mock QMessageBox.information too
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sat, 24 Aug 2024 02:43:12 +0200
+
 qubes-manager (4.3.3-1) unstable; urgency=medium
 
   [ Simon Gaiser ]
