@@ -29,7 +29,7 @@ import subprocess
 import sys
 import traceback
 from qubesadmin.tools import QubesArgumentParser
-from qubesadmin import devices
+from qubesadmin import device_protocol
 from qubesadmin import utils as admin_utils
 from qubesadmin.tools import qvm_start
 import qubesadmin.exc
@@ -1272,8 +1272,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     options = {}
                     if dev.port_id in self.new_strict_reset_list:
                         options['no-strict-reset'] = True
-                    ass = devices.DeviceAssignment(
-                        devices.Port(
+                    ass = device_protocol.DeviceAssignment(
+                        device_protocol.Port(
                             self.vm.app.domains['dom0'], dev.port_id, 'pci'),
                         mode='required',
                         options=options)
