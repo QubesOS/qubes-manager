@@ -1,3 +1,33 @@
+qubes-manager (4.2.9-1) unstable; urgency=medium
+
+  [ Ali Mirjamali ]
+  * Visually indicate unsupported Templates & StandaloneVMs in Qube
+    Manager
+
+  [ Marek Marczykowski-Górecki ]
+  * Remove useless return
+
+  [ Ali Mirjamali ]
+  * "Boot qubes from CD-ROM" shouldnt show the same qube as source
+  * Disable "Disposable template" checkbox if not applicable
+
+  [ Marek Marczykowski-Górecki ]
+  * ci: ensure pip is installed
+
+  [ Santiago Piccinini ]
+  * Fix crash on VM settings for a VM with temporary unlocked FW
+
+  [ Simon Gaiser ]
+  * clone_vm: Don't use warning MessageBox on success
+
+  [ Ali Mirjamali ]
+  * Improve qubemanager Toolbar on smaller screens
+
+  [ Marek Marczykowski-Górecki ]
+  * tests: mock QMessageBox.information too
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 02 Sep 2024 13:42:53 +0200
+
 qubes-manager (4.2.8-1) unstable; urgency=medium
 
   [ Marta Marczykowska-Górecka ]
