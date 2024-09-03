@@ -9,7 +9,6 @@ SOURCES = \
           ui/newappvmdlg.ui \
           ui/newfwruledlg.ui \
           ui/qubemanager.ui \
-          ui/releasenotes.ui \
           ui/restoredlg.ui \
           ui/settingsdlg.ui \
           ui/templatemanager.ui \
@@ -27,7 +26,6 @@ SOURCES = \
           qubesmanager/log_dialog.py \
           qubesmanager/multiselectwidget.py \
           qubesmanager/qube_manager.py \
-          qubesmanager/releasenotes.py \
           qubesmanager/resources_rc.py \
           qubesmanager/restore.py \
           qubesmanager/settings.py \
@@ -42,7 +40,6 @@ SOURCES = \
           qubesmanager/ui_newappvmdlg.py \
           qubesmanager/ui_newfwruledlg.py \
           qubesmanager/ui_qubemanager.py \
-          qubesmanager/ui_releasenotes.py \
           qubesmanager/ui_restoredlg.py \
           qubesmanager/ui_settingsdlg.py \
           qubesmanager/ui_templatemanager.py \

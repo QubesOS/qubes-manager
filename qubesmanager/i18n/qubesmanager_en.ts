@@ -1000,14 +1000,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>ReleaseNotesDialog</name>
-    <message>
-        <location filename="../ui_releasenotes.py" line="35"/>
-        <source>Qubes Release Notes</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>RemoveVMThread</name>
     <message>
         <location filename="../common_threads.py" line="53"/>
