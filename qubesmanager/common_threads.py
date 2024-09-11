@@ -72,3 +72,23 @@ class CloneVMThread(QubesThread):
             self.msg_is_success = True
         except exc.QubesException as ex:
             self.msg = (self.tr("Error while cloning qube!"), str(ex))
+
+
+class ChangeTemplatesThread(QtCore.QThread):
+    def __init__(self, progress_dialog, items_to_change, qubes_app):
+        super().__init__()
+        self.dialog = progress_dialog
+        self.items = items_to_change
+        self.qubes_app = qubes_app
+        self.errors = {}
+
+    def run(self):
+        i = 0
+        for vm, row in self.items:
+            i += 1
+            try:
+                setattr(self.qubes_app.domains[vm],
+                        'template', row.new_item.currentText())
+            except Exception as ex:  # pylint: disable=broad-except
+                self.errors[vm] = str(ex)
+            self.dialog.setValue(i)
