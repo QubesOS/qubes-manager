@@ -96,21 +96,21 @@ def translate(string):
 
 
 class SizeSpinBox(QtWidgets.QSpinBox):
-    """A SpinBox subclass with extended handling for sizes in MB and GB"""
+    """A SpinBox subclass with extended handling for sizes in MiB and GiB"""
     # pylint: disable=invalid-name
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.pattern = r'(\d+\.?\d?) ?(GB|MB)'
+        self.pattern = r'(\d+\.?\d?) ?(GiB|MiB)'
         self.regex = re.compile(self.pattern)
         self.validator = QtGui.QRegExpValidator(QtCore.QRegExp(
             self.pattern), self)
 
     def textFromValue(self, v: int) -> str:
         if v > 1024:
-            return '{:.1f} GB'.format(v / 1024)
+            return '{:.1f} GiB'.format(v / 1024)
 
-        return '{} MB'.format(v)
+        return '{} MiB'.format(v)
 
     def validate(self, text: str, pos: int):
         return self.validator.validate(text, pos)
@@ -118,7 +118,7 @@ class SizeSpinBox(QtWidgets.QSpinBox):
     def valueFromText(self, text: str) -> int:
         value, unit = self.regex.fullmatch(text.strip()).groups()
 
-        if unit == 'GB':
+        if unit == 'GiB':
             multiplier = 1024
         else:
             multiplier = 1
