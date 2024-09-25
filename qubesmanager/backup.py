@@ -24,17 +24,21 @@ import signal
 from qubesadmin import exc
 from qubesadmin import utils as admin_utils
 
-from PyQt5 import QtCore, QtWidgets, QtGui, Qt  # pylint: disable=import-error
-from . import ui_backupdlg  # pylint: disable=no-name-in-module
-from . import multiselectwidget
+from PyQt6 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
+from qubesmanager import ui_backupdlg  # pylint: disable=no-name-in-module
+from qubesmanager import multiselectwidget
 
-from . import backup_utils
-from . import utils
+from qubesmanager import backup_utils
+from qubesmanager import utils
 
 import grp
 import pwd
 import os
 import shutil
+
+# this is needed for icons to actually work
+# pylint: disable=unused-import
+from . import resources
 
 # pylint: disable=too-few-public-methods
 class BackupThread(QtCore.QThread):
@@ -81,8 +85,8 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         self.setupUi(self)
 
         self.setWindowFlags(self.windowFlags() |
-                            Qt.Qt.WindowMaximizeButtonHint |
-                            Qt.Qt.WindowMinimizeButtonHint)
+                            QtCore.Qt.WindowType.WindowMaximizeButtonHint |
+                            QtCore.Qt.WindowType.WindowMinimizeButtonHint)
 
         self.progress_status.text = self.tr("Backup in progress...")
         self.dir_line_edit.setReadOnly(False)
@@ -146,10 +150,12 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
 
     def show_hide_password(self):
         if self.show_passwd_button.isChecked():
-            self.passphrase_line_edit.setEchoMode(QtWidgets.QLineEdit.Password)
+            self.passphrase_line_edit.setEchoMode(
+                QtWidgets.QLineEdit.EchoMode.Password)
             self.show_passwd_button.setIcon(QtGui.QIcon(':/eye-off.svg'))
         else:
-            self.passphrase_line_edit.setEchoMode(QtWidgets.QLineEdit.Normal)
+            self.passphrase_line_edit.setEchoMode(
+                QtWidgets.QLineEdit.EchoMode.Normal)
             self.show_passwd_button.setIcon(QtGui.QIcon(':/eye.svg'))
 
     def save_profile_changed(self):
@@ -376,7 +382,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
                 self.save_settings(use_temp=False,
                    save_passphrase=save_passphrase)
 
-            self.button(self.FinishButton).setDisabled(True)
+            self.button(self.WizardButton.FinishButton).setDisabled(True)
             self.showFileDialog.setEnabled(
                 self.appvm_combobox.currentIndex() != 0)
             self.showFileDialog.setChecked(self.showFileDialog.isEnabled()
@@ -399,8 +405,8 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
                 self, self.tr("Backup error"),
                 self.tr("ERROR: {}").format(
                     self.thread.msg))
-            self.button(self.CancelButton).setEnabled(False)
-            self.button(self.FinishButton).setEnabled(True)
+            self.button(self.WizardButton.CancelButton).setEnabled(False)
+            self.button(self.WizardButton.FinishButton).setEnabled(True)
             self.cleanup_temporary_files()
 
         else:
@@ -415,8 +421,8 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
                         "the file selection dialog."))
                 backup_utils.select_path_button_clicked(self, False, True)
 
-            self.button(self.CancelButton).setEnabled(False)
-            self.button(self.FinishButton).setEnabled(True)
+            self.button(self.WizardButton.CancelButton).setEnabled(False)
+            self.button(self.WizardButton.FinishButton).setEnabled(True)
             self.showFileDialog.setEnabled(False)
             self.cleanup_temporary_files()
 
@@ -426,7 +432,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
 
     def reject(self):
         if (self.currentPage() is self.commit_page) and \
-                self.button(self.CancelButton).isEnabled():
+                self.button(self.WizardButton.CancelButton).isEnabled():
             try:
                 self.qubes_app.qubesd_call(
                     'dom0', 'admin.backup.Cancel',

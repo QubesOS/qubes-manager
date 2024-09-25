@@ -8,11 +8,7 @@ Vendor:		Invisible Things Lab
 License:	GPL
 URL:		https://www.qubes-os.org
 Requires:	python%{python3_pkgversion}
-%if 0%{?fedora} >= 34
-Requires:	python%{python3_pkgversion}-qt5
-%else
-Requires:	python%{python3_pkgversion}-PyQt5
-%endif
+Requires:	python%{python3_pkgversion}-pyqt6
 Requires:	python%{python3_pkgversion}-inotify
 Requires:	python%{python3_pkgversion}-qubesadmin >= 4.3.0
 Requires:	python%{python3_pkgversion}-qasync
@@ -21,16 +17,16 @@ Requires:	qubes-artwork
 Requires:	pmount
 Requires:	cryptsetup
 Requires:	wmctrl
-BuildRequires:	python%{python3_pkgversion}-PyQt5-devel
+BuildRequires:	python%{python3_pkgversion}-PyQt6-devel
 BuildRequires:	python%{python3_pkgversion}-devel
 BuildRequires:	python%{python3_pkgversion}-setuptools
 BuildRequires:	make
 %if 0%{?fedora} >= 33 || 0%{?rhel} >= 7
-BuildRequires:  qt5-qtbase-devel
+BuildRequires:  qt6-qtbase-devel
 %else
-BuildRequires:  qt5-devel
+BuildRequires:  qt6-devel
 %endif
-BuildRequires:  qt5-linguist
+BuildRequires:  qt6-linguist
 AutoReq:	0
 
 Source0: %{name}-%{version}.tar.gz
@@ -97,7 +93,7 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/template_manager.py
 %{python3_sitelib}/qubesmanager/qvm_template_gui.py
 
-%{python3_sitelib}/qubesmanager/resources_rc.py
+%{python3_sitelib}/qubesmanager/resources.py
 
 %{python3_sitelib}/qubesmanager/ui_backupdlg.py
 %{python3_sitelib}/qubesmanager/ui_bootfromdevice.py

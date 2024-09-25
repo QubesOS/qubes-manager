@@ -26,8 +26,8 @@ import fcntl
 from math import log
 
 # pylint: disable=import-error
-from PyQt5.QtWidgets import QApplication, QMessageBox
-from PyQt5.QtCore import QCoreApplication
+from PyQt6.QtWidgets import QApplication, QMessageBox
+from PyQt6.QtCore import QCoreApplication
 
 APPVIEWER_LOCK = "/var/run/qubes/appviewer.lock"
 CLIPBOARD_CONTENTS = "/var/run/qubes/qubes-clipboard.bin"

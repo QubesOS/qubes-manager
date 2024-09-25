@@ -1,4 +1,4 @@
 qrc_resources.py
-resources_rc.py
+resources.py
 ui_*.py
 *.py[co]

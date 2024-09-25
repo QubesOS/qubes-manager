@@ -35,22 +35,27 @@ import os
 import typing
 import shlex
 
-import PyQt5  # pylint: disable=import-error
-import PyQt5.QtWidgets  # pylint: disable=import-error
-import PyQt5.QtCore  # pylint: disable=import-error
-import PyQt5.QtGui  # pylint: disable=import-error
+import PyQt6  # pylint: disable=import-error
+import PyQt6.QtWidgets  # pylint: disable=import-error
+import PyQt6.QtCore  # pylint: disable=import-error
+import PyQt6.QtGui  # pylint: disable=import-error
 
 from . import ui_templateinstallconfirmdlg  # pylint: disable=no-name-in-module
 from . import ui_templateinstallprogressdlg  # pylint: disable=no-name-in-module
 from . import ui_qvmtemplate # pylint: disable=no-name-in-module
 from . import utils
 from qui.utils import EOL_DATES, SUFFIXES # pylint: disable=import-error
+
+# this is needed for icons to actually work
+# pylint: disable=unused-import
+from . import resources
+
 BASE_CMD = ['qvm-template', '--yes']
 
 # singleton for "no date"
 ZERO_DATE = datetime.fromtimestamp(0, UTC)
 
-tr = functools.partial(PyQt5.QtCore.QCoreApplication.translate, "Template GUI")
+tr = functools.partial(PyQt6.QtCore.QCoreApplication.translate, "Template GUI")
 
 HELP_TEXT = tr("""
 This tool can be used to manage templates on your system. \
@@ -73,18 +78,6 @@ This tool only displays templates installed from repositories, not any cloned \
 or manually-installed templates.
 """)
 
-
-# Todo:
-# - tests
-# - packaging
-
-# tests:
-# - run with data, see if there are things listed
-# - check button visibility?
-
-# later bullcrap
-# - fix qvm-template
-# - update eol table
 
 class TreeItem(abc.ABC):
     COL_NAMES = [
@@ -255,21 +248,21 @@ class Template(TreeItem):
     def status(self, role):
         # pylint: disable=too-many-return-statements
         if self.obsolete():
-            if role == PyQt5.QtCore.Qt.ToolTipRole:
+            if role == PyQt6.QtCore.Qt.ItemDataRole.ToolTipRole:
                 return tr("This template is obsolete and no longer receives "
                           "updates")
-            if role == PyQt5.QtCore.Qt.DecorationRole:
+            if role == PyQt6.QtCore.Qt.ItemDataRole.DecorationRole:
                 return ":/obsolete.svg"
         if self.template_status == 'extra':
-            if role == PyQt5.QtCore.Qt.ToolTipRole:
+            if role == PyQt6.QtCore.Qt.ItemDataRole.ToolTipRole:
                 return tr("This template is a local template, not installed "
                           "from a repository")
-            if role == PyQt5.QtCore.Qt.DecorationRole:
+            if role == PyQt6.QtCore.Qt.ItemDataRole.DecorationRole:
                 return ':/checkmark-with-plus.svg'
         if self.template_status in ['installed', 'upgradable']:
-            if role == PyQt5.QtCore.Qt.ToolTipRole:
+            if role == PyQt6.QtCore.Qt.ItemDataRole.ToolTipRole:
                 return tr("This template is installed")
-            if role == PyQt5.QtCore.Qt.DecorationRole:
+            if role == PyQt6.QtCore.Qt.ItemDataRole.DecorationRole:
                 return ':/checkmark.svg'
         return None
 
@@ -321,7 +314,7 @@ class DescriptiveItem(TreeItem):
     def __init__(self, name):
         self._name = name
         self._children: typing.List[TreeItem] = []
-        self._parent = PyQt5.QtCore.QModelIndex()
+        self._parent = PyQt6.QtCore.QModelIndex()
 
     @property
     def name(self) -> str:
@@ -340,23 +333,23 @@ class DescriptiveItem(TreeItem):
         return self._parent
 
 
-class TemplateModel(PyQt5.QtCore.QAbstractItemModel):
+class TemplateModel(PyQt6.QtCore.QAbstractItemModel):
     def __init__(self, qubes_app):
         super().__init__()
         self.qubes_app = qubes_app
         self.children = []
 
-    def index(self, row, column, parent=PyQt5.QtCore.QModelIndex()):
+    def index(self, row, column, parent=PyQt6.QtCore.QModelIndex()):
         if not self.hasIndex(row, column, parent):
-            return PyQt5.QtCore.QModelIndex()
+            return PyQt6.QtCore.QModelIndex()
         if not parent.isValid():
             child_item = self.children[row]
         else:
             child_item = parent.internalPointer().children[row]
         return self.createIndex(row, column, child_item)
 
-    def parent(self, child_index: PyQt5.QtCore.QModelIndex):
-        node = PyQt5.QtCore.QModelIndex()
+    def parent(self, child_index: PyQt6.QtCore.QModelIndex):
+        node = PyQt6.QtCore.QModelIndex()
         if child_index.isValid():
             own_object = child_index.internalPointer()
             if own_object is not None:
@@ -369,21 +362,21 @@ class TemplateModel(PyQt5.QtCore.QAbstractItemModel):
                     node = self.createIndex(row, 0, parent)
         return node
 
-    def rowCount(self, parent=PyQt5.QtCore.QModelIndex()):
+    def rowCount(self, parent=PyQt6.QtCore.QModelIndex()):
         if parent.internalPointer():
             return len(parent.internalPointer().children)
         return len(self.children)
 
-    def columnCount(self, _parent=PyQt5.QtCore.QModelIndex()):
+    def columnCount(self, _parent=PyQt6.QtCore.QModelIndex()):
         return len(Template.COL_NAMES)
 
-    def data(self, index, role=PyQt5.QtCore.Qt.DisplayRole):
+    def data(self, index, role=PyQt6.QtCore.Qt.ItemDataRole.DisplayRole):
         # pylint: disable=too-many-return-statements
         if index.isValid():
             data = index.internalPointer()
-            if role == PyQt5.QtCore.Qt.ItemDataRole:
+            if role == PyQt6.QtCore.Qt.ItemDataRole:
                 return data.description
-            if role == PyQt5.QtCore.Qt.DisplayRole:
+            if role == PyQt6.QtCore.Qt.ItemDataRole.DisplayRole:
                 if index.column() == 0:
                     return data.name
                 if index.column() == 1:
@@ -393,7 +386,7 @@ class TemplateModel(PyQt5.QtCore.QAbstractItemModel):
                 if index.column() == 3:
                     return data.repository()
                 return data.name
-            if role == PyQt5.QtCore.Qt.ToolTipRole:
+            if role == PyQt6.QtCore.Qt.ItemDataRole.ToolTipRole:
                 if index.column() == 0:
                     return "Template name"
                 if index.column() == 1:
@@ -402,29 +395,29 @@ class TemplateModel(PyQt5.QtCore.QAbstractItemModel):
                     return "Template version"
                 if index.column() == 3:
                     return "Repository"
-            if role == PyQt5.QtCore.Qt.TextAlignmentRole:
+            if role == PyQt6.QtCore.Qt.ItemDataRole.TextAlignmentRole:
                 if isinstance(data, int):
-                    return PyQt5.QtCore.Qt.AlignRight
-                return PyQt5.QtCore.Qt.AlignLeft
-            if role == PyQt5.QtCore.Qt.DecorationRole:
+                    return PyQt6.QtCore.Qt.AlignmentFlag.AlignRight
+                return PyQt6.QtCore.Qt.AlignmentFlag.AlignLeft
+            if role == PyQt6.QtCore.Qt.ItemDataRole.DecorationRole:
                 if index.column() == 1:
                     icon_name = data.status(role)
                     if icon_name:
-                        return PyQt5.QtGui.QIcon(icon_name)
-            if role == PyQt5.QtCore.Qt.UserRole:
+                        return PyQt6.QtGui.QIcon(icon_name)
+            if role == PyQt6.QtCore.Qt.ItemDataRole.UserRole:
                 return data
         return None
 
     def headerData(self, section, orientation,
-                   role=PyQt5.QtCore.Qt.DisplayRole):
+                   role=PyQt6.QtCore.Qt.ItemDataRole.DisplayRole):
         if section < len(Template.COL_NAMES) \
-                and orientation == PyQt5.QtCore.Qt.Horizontal \
-                and role == PyQt5.QtCore.Qt.DisplayRole:
+                and orientation == PyQt6.QtCore.Qt.Orientation.Horizontal \
+                and role == PyQt6.QtCore.Qt.ItemDataRole.DisplayRole:
             return Template.COL_NAMES[section]
         return None
 
-    def removeRows(self, row, count, _parent=PyQt5.QtCore.QModelIndex()):
-        self.beginRemoveRows(PyQt5.QtCore.QModelIndex(), row, row + count)
+    def removeRows(self, row, count, _parent=PyQt6.QtCore.QModelIndex()):
+        self.beginRemoveRows(PyQt6.QtCore.QModelIndex(), row, row + count)
         del self.children[row:row+count]
         self.endRemoveRows()
         self.dataChanged.emit(*self.row_index(row, row + count))
@@ -451,7 +444,7 @@ class TemplateModel(PyQt5.QtCore.QAbstractItemModel):
             return False, stderr
         # remove old rows
         rows_to_remove = len(self.children)
-        self.beginRemoveRows(PyQt5.QtCore.QModelIndex(), 0,
+        self.beginRemoveRows(PyQt6.QtCore.QModelIndex(), 0,
                              rows_to_remove)
         self.children = []
         self.endRemoveRows()
@@ -512,7 +505,7 @@ class TemplateModel(PyQt5.QtCore.QAbstractItemModel):
 
         # Convert back to list
         tpls = {k.title(): list(v.values()) for k, v in tpls.items()}
-        self.beginInsertRows(PyQt5.QtCore.QModelIndex(), 0, len(tpls) - 1)
+        self.beginInsertRows(PyQt6.QtCore.QModelIndex(), 0, len(tpls) - 1)
         for template_type, template_list in tpls.items():
             if not template_list:
                 continue
@@ -532,10 +525,10 @@ class TemplateModel(PyQt5.QtCore.QAbstractItemModel):
 
 class TemplateInstallConfirmDialog(
         ui_templateinstallconfirmdlg.Ui_TemplateInstallConfirmDlg,
-        PyQt5.QtWidgets.QDialog):
+        PyQt6.QtWidgets.QDialog):
     # pylint: disable=too-few-public-methods
     def __init__(self, question: str, operation_name: str,
-                 palette: PyQt5.QtGui.QPalette, enable_warn: bool = False):
+                 palette: PyQt6.QtGui.QPalette, enable_warn: bool = False):
         super().__init__()
         self.setupUi(self)
 
@@ -544,19 +537,19 @@ class TemplateInstallConfirmDialog(
 
         ok_button = self.button_box.addButton(
             operation_name,
-            PyQt5.QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole)
+            PyQt6.QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole)
         ok_button.setPalette(palette)
 
         self.button_box.addButton(
             "Cancel",
-            PyQt5.QtWidgets.QDialogButtonBox.ButtonRole.RejectRole)
+            PyQt6.QtWidgets.QDialogButtonBox.ButtonRole.RejectRole)
 
 
 class TemplateInstallProgressDialog(
         ui_templateinstallprogressdlg.Ui_TemplateInstallProgressDlg,
-        PyQt5.QtWidgets.QDialog):
+        PyQt6.QtWidgets.QDialog):
     def __init__(self, command: typing.List[str],
-                 palette: PyQt5.QtGui.QPalette,
+                 palette: PyQt6.QtGui.QPalette,
                  window_title: typing.Optional[str] = None):
         """
         :param command: a list of strings containing the command to be used
@@ -571,14 +564,14 @@ class TemplateInstallProgressDialog(
         # currently this button does nothing
         # self.cancel_button = self.button_box.addButton(
         #     "Abort",
-        #     PyQt5.QtWidgets.QDialogButtonBox.ButtonRole.RejectRole)
+        #     PyQt6.QtWidgets.QDialogButtonBox.ButtonRole.RejectRole)
 
     def add_ok_button(self, error: bool = False):
         """Replace the "Cancel" button with OK or "Close" button"""
         # self.button_box.removeButton(self.cancel_button)
-        ok_button: PyQt5.QtWidgets.QPushButton = self.button_box.addButton(
+        ok_button: PyQt6.QtWidgets.QPushButton = self.button_box.addButton(
             "Close" if error else "OK",
-            PyQt5.QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole)
+            PyQt6.QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole)
         if not error:
             ok_button.setPalette(self.qubes_palette)
 
@@ -630,16 +623,16 @@ class TemplateInstallProgressDialog(
 
 class QvmTemplateWindow(
         ui_qvmtemplate.Ui_MainWindow,
-        PyQt5.QtWidgets.QMainWindow):
+        PyQt6.QtWidgets.QMainWindow):
     def __init__(self, qt_app, qubes_app, dispatcher, _parent=None):
         super().__init__()
         self.setupUi(self)
         self.template_tree.header().setSectionResizeMode(
-            PyQt5.QtWidgets.QHeaderView.ResizeToContents)
+            PyQt6.QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
 
         self.qubes_app = qubes_app
-        self.qt_app: PyQt5.QtWidgets.QApplication = qt_app
-        self.qt_app.setWindowIcon(PyQt5.QtGui.QIcon.fromTheme("qubes-manager"))
+        self.qt_app: PyQt6.QtWidgets.QApplication = qt_app
+        self.qt_app.setWindowIcon(PyQt6.QtGui.QIcon.fromTheme("qubes-manager"))
         self.dispatcher = dispatcher
 
         self.template_model = TemplateModel(self.qubes_app)
@@ -675,10 +668,10 @@ class QvmTemplateWindow(
         qubes_style_buttons = [self.upgrade_button, self.install_button,
                                self.reinstall_button, self.uninstall_button]
         palette = self.qt_app.palette()
-        palette.setColor(PyQt5.QtGui.QPalette.Button, PyQt5.QtGui.QColor(
-            "#4180c9"))
-        palette.setColor(PyQt5.QtGui.QPalette.ButtonText, PyQt5.QtGui.QColor(
-            "#ffffff"))
+        palette.setColor(PyQt6.QtGui.QPalette.ColorRole.Button,
+                         PyQt6.QtGui.QColor("#4180c9"))
+        palette.setColor(PyQt6.QtGui.QPalette.ColorRole.ButtonText,
+                         PyQt6.QtGui.QColor("#ffffff"))
 
         for button in qubes_style_buttons:
             button.setPalette(palette)
@@ -722,10 +715,10 @@ class QvmTemplateWindow(
         # and the selection model is single-row
         selected_item = selected_indexes[0]
         item = self.template_model.data(selected_item,
-                                        PyQt5.QtCore.Qt.UserRole)
+                                        PyQt6.QtCore.Qt.ItemDataRole.UserRole)
         return item
 
-    def template_selected(self, _selected: PyQt5.QtCore.QItemSelection):
+    def template_selected(self, _selected: PyQt6.QtCore.QItemSelection):
         item = self._get_selected_item()
         if not item:
             self._show_help()
@@ -750,12 +743,12 @@ class QvmTemplateWindow(
         confirm = TemplateInstallConfirmDialog(question, operation_name,
                                                self.qubes_palette,
                                                enable_warn)
-        if confirm.exec_():
+        if confirm.exec():
             progress = TemplateInstallProgressDialog(command,
                                                      self.qubes_palette,
                                                      window_title)
             progress.install()
-            progress.exec_()
+            progress.exec()
             self.refresh()
 
     def do_uninstall(self):
@@ -803,7 +796,7 @@ class QvmTemplateWindow(
         async def coro():
             ok, stderr = await self.template_model.refresh(refresh)
             if not ok:
-                PyQt5.QtWidgets.QMessageBox.warning(
+                PyQt6.QtWidgets.QMessageBox.warning(
                     self,
                     self.tr('Failed to fetch template list!'),
                     self.tr('Failed to fetch template list: \n') + stderr

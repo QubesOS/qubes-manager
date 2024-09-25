@@ -34,7 +34,7 @@
 /usr/lib/*/dist-packages/qubesmanager/qvm_template_gui.py
 /usr/lib/*/dist-packages/qubesmanager/clone_vm.py
 
-/usr/lib/*/dist-packages/qubesmanager/resources_rc.py
+/usr/lib/*/dist-packages/qubesmanager/resources.py
 
 /usr/lib/*/dist-packages/qubesmanager/ui_backupdlg.py
 /usr/lib/*/dist-packages/qubesmanager/ui_bootfromdevice.py

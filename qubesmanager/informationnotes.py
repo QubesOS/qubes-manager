@@ -20,11 +20,14 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #
-from PyQt5.QtWidgets import QDialog  # pylint: disable=import-error
+from PyQt6.QtWidgets import QDialog  # pylint: disable=import-error
 
 from . import ui_informationnotes  # pylint: disable=no-name-in-module
 import subprocess
 
+# this is needed for icons to actually work
+# pylint: disable=unused-import
+from . import resources
 
 class InformationNotesDialog(ui_informationnotes.Ui_InformationNotesDialog,
                              QDialog):

@@ -23,8 +23,7 @@
    <string>Qube Manager</string>
   </property>
   <property name="windowIcon">
-   <iconset theme="qubes-manager">
-    <normaloff>.</normaloff>.</iconset>
+   <iconset theme="qubes-manager"/>
   </property>
   <property name="locale">
    <locale language="English" country="UnitedStates"/>
@@ -390,7 +389,7 @@ template</string>
       <string>Network</string>
      </property>
      <property name="icon">
-      <iconset>
+      <iconset resource="../resources.qrc">
        <normaloff>:/netvm.png</normaloff>:/netvm.png</iconset>
      </property>
     </widget>
@@ -806,8 +805,7 @@ template</string>
   </action>
   <action name="action_about_qubes">
    <property name="icon">
-    <iconset theme="qubes-manager">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset theme="qubes-manager"/>
    </property>
    <property name="text">
     <string>&amp;Qubes OS</string>
@@ -994,7 +992,7 @@ template</string>
   </action>
   <action name="action_show_logs">
    <property name="icon">
-    <iconset>
+    <iconset resource="../resources.qrc">
      <normaloff>:/log.png</normaloff>:/log.png</iconset>
    </property>
    <property name="text">

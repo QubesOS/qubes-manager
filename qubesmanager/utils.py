@@ -36,7 +36,7 @@ import xdg.BaseDirectory
 import pathlib
 import shutil
 
-from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
+from PyQt6 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
 
 
 # important usage note: which initialize_widget should I use?
@@ -103,8 +103,8 @@ class SizeSpinBox(QtWidgets.QSpinBox):
 
         self.pattern = r'(\d+\.?\d?) ?(GiB|MiB)'
         self.regex = re.compile(self.pattern)
-        self.validator = QtGui.QRegExpValidator(QtCore.QRegExp(
-            self.pattern), self)
+        self.validator = QtGui.QRegularExpressionValidator(
+            QtCore.QRegularExpression(self.pattern), self)
 
     def textFromValue(self, v: int) -> str:
         if v > 1024:
@@ -131,7 +131,7 @@ class QubeManagerToolBar(QtWidgets.QToolBar): # pylint: disable=too-few-public-m
     def __init__(self, parent=None):
         super().__init__(parent)
     def event(self, e):
-        if e.type() == QtCore.QEvent.Leave:
+        if e.type() == QtCore.QEvent.Type.Leave:
             return True
         return super().event(e)
 
@@ -516,7 +516,7 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 
     msg_box = QtWidgets.QMessageBox()
     msg_box.setDetailedText(strace)
-    msg_box.setIcon(QtWidgets.QMessageBox.Critical)
+    msg_box.setIcon(QtWidgets.QMessageBox.Icon.Critical)
     msg_box.setWindowTitle(QtCore.QCoreApplication.translate(
         "ManagerUtils", "Houston, we have a problem..."))
     msg_box.setText(QtCore.QCoreApplication.translate(
@@ -525,7 +525,7 @@ def handle_exception(exc_type, exc_value, exc_traceback):
                         "<b><i>{0}</i></b><br/>at line <b>{1}</b><br/>of file "
                         "{2}.<br/><br/>").format(error, line, filename))
 
-    msg_box.exec_()
+    msg_box.exec()
 
 
 def run_asynchronous(window_class):
@@ -591,7 +591,7 @@ def run_synchronous(window_class):
 
     window.show()
 
-    qt_app.exec_()
+    qt_app.exec()
     qt_app.exit()
 
     return window

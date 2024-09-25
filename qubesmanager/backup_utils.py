@@ -21,11 +21,15 @@
 import re
 import socket
 
-from PyQt5 import QtWidgets  # pylint: disable=import-error
+from PyQt6 import QtWidgets  # pylint: disable=import-error
 
 import subprocess
 from . import utils
 import yaml
+
+# this is needed for icons to actually work
+# pylint: disable=unused-import
+from . import resources
 
 path_re = re.compile(r"[a-zA-Z0-9/:.,_+=() -]*")
 path_max_len = 512

@@ -26,7 +26,7 @@ SOURCES = \
           qubesmanager/log_dialog.py \
           qubesmanager/multiselectwidget.py \
           qubesmanager/qube_manager.py \
-          qubesmanager/resources_rc.py \
+          qubesmanager/resources.py \
           qubesmanager/restore.py \
           qubesmanager/settings.py \
           qubesmanager/template_manager.py \

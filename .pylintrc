@@ -11,7 +11,7 @@ ignore=tests,
     ui_newfwruledlg.py,
     ui_restoredlg.py,
     ui_settingsdlg.py,
-    resources_rc.py
+    resources.py
 extension-pkg-whitelist=PyQt5
 
 [MESSAGES CONTROL]

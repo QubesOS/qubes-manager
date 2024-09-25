@@ -20,11 +20,15 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #
-from PyQt5.QtWidgets import QDialog  # pylint: disable=import-error
-from PyQt5.QtGui import QIcon  # pylint: disable=import-error
+from PyQt6.QtWidgets import QDialog  # pylint: disable=import-error
+from PyQt6.QtGui import QIcon  # pylint: disable=import-error
 from qubesmanager.informationnotes import InformationNotesDialog
 
 from . import ui_about  # pylint: disable=no-name-in-module
+
+# this is needed for icons to actually work
+# pylint: disable=unused-import
+from . import resources
 
 
 # pylint: disable=too-few-public-methods
@@ -58,4 +62,4 @@ class AboutDialog(ui_about.Ui_AboutDialog, QDialog):
 
     def on_information_notes_clicked(self):
         information_notes_dialog = InformationNotesDialog(self)
-        information_notes_dialog.exec_()
+        information_notes_dialog.exec()

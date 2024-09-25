@@ -21,10 +21,13 @@
 import datetime
 import re
 
-from PyQt5 import QtCore, QtGui, QtWidgets  # pylint: disable=import-error
+from PyQt6 import QtCore, QtGui, QtWidgets  # pylint: disable=import-error
 import qubesadmin.firewall
 
 from . import ui_newfwruledlg  # pylint: disable=no-name-in-module
+# this is needed for icons to actually work
+# pylint: disable=unused-import
+from . import resources
 
 
 class FirewallModifiedOutsideError(ValueError):
@@ -39,13 +42,17 @@ class NewFwRuleDlg(QtWidgets.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
         self.set_ok_state(False)
         self.addressComboBox.editTextChanged.connect(
             self.address_editing_finished)
-        self.serviceComboBox.setValidator(QtGui.QRegExpValidator(
-            QtCore.QRegExp("[a-z][a-z0-9-]+|[0-9]+(-[0-9]+)?",
-                           QtCore.Qt.CaseInsensitive), None))
+        self.serviceComboBox.setValidator(QtGui.QRegularExpressionValidator(
+            QtCore.QRegularExpression(
+                "[a-z][a-z0-9-]+|[0-9]+(-[0-9]+)?",
+                QtCore.QRegularExpression.PatternOption.CaseInsensitiveOption),
+            None))
         self.serviceComboBox.setEnabled(False)
-        self.serviceComboBox.setInsertPolicy(QtWidgets.QComboBox.InsertAtBottom)
+        self.serviceComboBox.setInsertPolicy(
+            QtWidgets.QComboBox.InsertPolicy.InsertAtBottom)
         self.populate_combos()
-        self.serviceComboBox.setInsertPolicy(QtWidgets.QComboBox.InsertAtTop)
+        self.serviceComboBox.setInsertPolicy(
+            QtWidgets.QComboBox.InsertPolicy.InsertAtTop)
 
         self.model = None
 
@@ -142,7 +149,8 @@ class NewFwRuleDlg(QtWidgets.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
         self.set_ok_state(True)
 
     def set_ok_state(self, ok_state):
-        ok_button = self.buttonBox.button(QtWidgets.QDialogButtonBox.Ok)
+        ok_button = self.buttonBox.button(
+            QtWidgets.QDialogButtonBox.StandardButton.Ok)
         if ok_button is not None:
             ok_button.setEnabled(ok_state)
 
@@ -190,7 +198,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         self.__children = None  # list of rules in the FW
 
     def sort(self, idx, order):
-        rev = order == QtCore.Qt.AscendingOrder
+        rev = order == QtCore.Qt.SortOrder.AscendingOrder
         self.children.sort(key=lambda x: self.get_column_string(idx, x),
                            reverse=rev)
 
@@ -246,7 +254,6 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
 
         allow_dns = False
         allow_icmp = False
-        common_action = None
 
         reversed_rules = reversed(vm.firewall.rules)
         last_rule = next(reversed_rules, None)
@@ -413,16 +420,17 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         parent_item = index.internalPointer()
         return parent_item is None
 
-    def data(self, index, role=QtCore.Qt.DisplayRole):
-        if index.isValid() and role == QtCore.Qt.DisplayRole:
+    def data(self, index, role=QtCore.Qt.ItemDataRole.DisplayRole):
+        if index.isValid() and role == QtCore.Qt.ItemDataRole.DisplayRole:
             return self.get_column_string(index.column(),
                                           self.children[index.row()])
 
     # pylint: disable=invalid-name
-    def headerData(self, section, orientation, role=QtCore.Qt.DisplayRole):
+    def headerData(self, section, orientation,
+                   role=QtCore.Qt.ItemDataRole.DisplayRole):
         if section < len(self.__column_names) \
-                and orientation == QtCore.Qt.Horizontal \
-                and role == QtCore.Qt.DisplayRole:
+                and orientation == QtCore.Qt.Orientation.Horizontal \
+                and role == QtCore.Qt.ItemDataRole.DisplayRole:
             return self.__column_names[section]
 
     @property

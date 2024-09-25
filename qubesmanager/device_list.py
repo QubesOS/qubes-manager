@@ -18,7 +18,11 @@
 #
 
 from . import ui_devicelist  # pylint: disable=no-name-in-module
-from PyQt5 import QtWidgets  # pylint: disable=import-error
+from PyQt6 import QtWidgets  # pylint: disable=import-error
+
+# this is needed for icons to actually work
+# pylint: disable=unused-import
+from . import resources
 
 
 class PCIDeviceListWindow(ui_devicelist.Ui_Dialog, QtWidgets.QDialog):

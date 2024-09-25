@@ -23,7 +23,7 @@ import logging.handlers
 import unittest
 import unittest.mock
 
-from PyQt5 import QtTest, QtCore
+from PyQt6 import QtTest, QtCore
 from qubesadmin import Qubes
 from qubesmanager.tests import init_qtapp
 from qubesmanager import clone_vm
@@ -46,17 +46,17 @@ class CloneVMTest(unittest.TestCase):
 
         # mock the progress dialog to speed testing up
         self.patcher_progress = unittest.mock.patch(
-            'PyQt5.QtWidgets.QProgressDialog')
+            'PyQt6.QtWidgets.QProgressDialog')
         self.mock_progress = self.patcher_progress.start()
         self.addCleanup(self.patcher_progress.stop)
 
         # mock the message dialog to not hang on success
         self.patcher_warning = unittest.mock.patch(
-            'PyQt5.QtWidgets.QMessageBox.warning')
+            'PyQt6.QtWidgets.QMessageBox.warning')
         self.mock_warning = self.patcher_warning.start()
         self.addCleanup(self.patcher_warning.stop)
         self.patcher_information = unittest.mock.patch(
-            'PyQt5.QtWidgets.QMessageBox.information')
+            'PyQt6.QtWidgets.QMessageBox.information')
         self.mock_information = self.patcher_information.start()
         self.addCleanup(self.patcher_information.stop)
 
@@ -203,15 +203,15 @@ class CloneVMTest(unittest.TestCase):
 
     def __click_ok(self):
         okwidget = self.dialog.buttonBox.button(
-                    self.dialog.buttonBox.Ok)
+                    self.dialog.buttonBox.StandardButton.Ok)
 
-        QtTest.QTest.mouseClick(okwidget, QtCore.Qt.LeftButton)
+        QtTest.QTest.mouseClick(okwidget, QtCore.Qt.MouseButton.LeftButton)
 
     def __click_cancel(self):
         cancelwidget = self.dialog.buttonBox.button(
-            self.dialog.buttonBox.Cancel)
+            self.dialog.buttonBox.StandardButton.Cancel)
 
-        QtTest.QTest.mouseClick(cancelwidget, QtCore.Qt.LeftButton)
+        QtTest.QTest.mouseClick(cancelwidget, QtCore.Qt.MouseButton.LeftButton)
 
 
 class CloneVMTestSrcVM(unittest.TestCase):
@@ -229,17 +229,17 @@ class CloneVMTestSrcVM(unittest.TestCase):
 
         # mock the progress dialog to speed testing up
         self.patcher_progress = unittest.mock.patch(
-            'PyQt5.QtWidgets.QProgressDialog')
+            'PyQt6.QtWidgets.QProgressDialog')
         self.mock_progress = self.patcher_progress.start()
         self.addCleanup(self.patcher_progress.stop)
 
         # mock the message dialog to not hang on success
         self.patcher_warning = unittest.mock.patch(
-            'PyQt5.QtWidgets.QMessageBox.warning')
+            'PyQt6.QtWidgets.QMessageBox.warning')
         self.mock_warning = self.patcher_warning.start()
         self.addCleanup(self.patcher_warning.stop)
         self.patcher_information = unittest.mock.patch(
-            'PyQt5.QtWidgets.QMessageBox.information')
+            'PyQt6.QtWidgets.QMessageBox.information')
         self.mock_information = self.patcher_information.start()
         self.addCleanup(self.patcher_information.stop)
 
@@ -271,9 +271,9 @@ class CloneVMTestSrcVM(unittest.TestCase):
 
     def __click_ok(self):
         okwidget = self.dialog.buttonBox.button(
-                    self.dialog.buttonBox.Ok)
+                    self.dialog.buttonBox.StandardButton.Ok)
 
-        QtTest.QTest.mouseClick(okwidget, QtCore.Qt.LeftButton)
+        QtTest.QTest.mouseClick(okwidget, QtCore.Qt.MouseButton.LeftButton)
 
 
 if __name__ == "__main__":

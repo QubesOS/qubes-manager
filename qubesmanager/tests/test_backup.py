@@ -23,7 +23,7 @@ import logging.handlers
 import unittest
 import unittest.mock
 
-from PyQt5 import QtTest, QtCore, QtWidgets
+from PyQt6 import QtTest, QtCore, QtWidgets
 from qubesadmin import Qubes, events, utils, exc
 from qubesmanager import backup
 from qubesmanager.tests import init_qtapp
@@ -161,7 +161,7 @@ class BackupTest(unittest.TestCase):
         # required to check if next button is correctly enabled
         self.dialog.dir_line_edit.setText("/home")
 
-        next_button = self.dialog.button(self.dialog.NextButton)
+        next_button = self.dialog.button(self.dialog.WizardButton.NextButton)
 
         # check if next remains inactive for various incorrect
         # passphrase/incorrect combinations
@@ -394,7 +394,7 @@ class BackupTest(unittest.TestCase):
         self.assertIn('incorrect_vm', self.dialog.warning_running_label.text())
 
     @unittest.mock.patch('qubesmanager.backup_utils.load_backup_profile')
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.information')
+    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.information')
     def test_22_loading_settings_exc(self, mock_info, mock_load):
 
         mock_load.side_effect = exc.QubesException('Error')
@@ -431,7 +431,7 @@ class BackupTest(unittest.TestCase):
             mock_remove.assert_called_once_with(
                 '/etc/qubes/backup/qubes-manager-backup-tmp.conf')
 
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
+    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
     @unittest.mock.patch('qubesmanager.backup_utils.write_backup_profile')
     @unittest.mock.patch('qubesadmin.Qubes.qubesd_call',
                          return_value=b'backup output')
@@ -456,7 +456,7 @@ class BackupTest(unittest.TestCase):
             mock_remove.assert_called_once_with(
                 '/etc/qubes/backup/qubes-manager-backup-tmp.conf')
 
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
+    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
     @unittest.mock.patch('os.system')
     @unittest.mock.patch('os.remove')
     @unittest.mock.patch('qubesmanager.backup_utils.write_backup_profile')
@@ -496,7 +496,7 @@ class BackupTest(unittest.TestCase):
         self.assertEqual(mock_warning.call_count, 0,
                          "Backup succeeded but received warning")
 
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
+    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
     @unittest.mock.patch('os.system')
     @unittest.mock.patch('os.remove')
     @unittest.mock.patch('qubesmanager.backup_utils.write_backup_profile')
@@ -535,7 +535,7 @@ class BackupTest(unittest.TestCase):
         self.assertEqual(mock_warning.call_count, 0,
                          "Backup succeeded but received warning")
 
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
+    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
     @unittest.mock.patch('os.system')
     @unittest.mock.patch('os.remove')
     @unittest.mock.patch('qubesmanager.backup_utils.write_backup_profile')
@@ -573,7 +573,7 @@ class BackupTest(unittest.TestCase):
                          "Attempted shutdown at failed backup")
         self.assertEqual(mock_warn.call_count, 1)
 
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
+    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
     @unittest.mock.patch('os.system')
     @unittest.mock.patch('os.remove')
     @unittest.mock.patch('qubesmanager.backup_utils.write_backup_profile')
@@ -621,12 +621,14 @@ class BackupTest(unittest.TestCase):
             widget.setCurrentIndex(widget.currentIndex() + 1)
 
     def _click_next(self):
-        next_widget = self.dialog.button(QtWidgets.QWizard.NextButton)
-        QtTest.QTest.mouseClick(next_widget, QtCore.Qt.LeftButton)
+        next_widget = self.dialog.button(
+            QtWidgets.QWizard.WizardButton.NextButton)
+        QtTest.QTest.mouseClick(next_widget, QtCore.Qt.MouseButton.LeftButton)
 
     def _click_cancel(self):
-        cancel_widget = self.dialog.button(QtWidgets.QWizard.CancelButton)
-        QtTest.QTest.mouseClick(cancel_widget, QtCore.Qt.LeftButton)
+        cancel_widget = self.dialog.button(
+            QtWidgets.QWizard.WizardButton.CancelButton)
+        QtTest.QTest.mouseClick(cancel_widget, QtCore.Qt.MouseButton.LeftButton)
 
     def _select_vm(self, name_starts_with):
         for i in range(self.dialog.select_vms_widget.available_list.count()):
