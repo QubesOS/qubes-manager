@@ -83,8 +83,8 @@ class TemplateManagerWindow(
 
         row_count = 0
         for vm in vms_with_templates:
-            row = VMRow(vm, row_count, self.vm_list, column_names,
-                        self.templates)
+            row = VMRow(vm=vm, row_no=row_count, table_widget=self.vm_list,
+                        columns=column_names, templates=self.templates)
             self.rows_in_table[vm.name] = row
             row_count += 1
 
@@ -128,8 +128,8 @@ class TemplateManagerWindow(
 
         row_no = self.vm_list.rowCount()
         self.vm_list.setRowCount(self.vm_list.rowCount() + 1)
-        row = VMRow(vm, row_no, self.vm_list, column_names,
-                    self.templates)
+        row = VMRow(vm=vm, row_no=row_no, table_widget=self.vm_list,
+                    columns=column_names, templates=self.templates)
         self.rows_in_table[vm.name] = row
         self.vm_list.show()
 
@@ -317,7 +317,7 @@ class NewTemplateItem(QtWidgets.QComboBox):
 
 class VMRow:
     # pylint: disable=too-few-public-methods
-    def __init__(self, vm, row_no, table_widget, columns, templates):
+    def __init__(self, *, vm, row_no, table_widget, columns, templates):
         self.vm = vm
         self.table_widget = table_widget
         self.templates = templates

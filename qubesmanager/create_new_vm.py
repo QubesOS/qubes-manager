@@ -39,7 +39,7 @@ from .ui_newappvmdlg import Ui_NewVMDlg  # pylint: disable=import-error
 
 # pylint: disable=too-few-public-methods
 class CreateVMThread(QtCore.QThread):
-    def __init__(self, app, vmclass, name, label, template, properties,
+    def __init__(self, *, app, vmclass, name, label, template, properties,
                  pool):
         QtCore.QThread.__init__(self)
         self.app = app
@@ -181,7 +181,8 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
 
         if self.install_system.isChecked():
             self.boot_dialog = bootfromdevice.VMBootFromDeviceWindow(
-                name, self.qtapp, self.app, self, True)
+                vm=name, qapp=self.qtapp, qubesapp=self.app, parent=self,
+                new_vm=True)
             if not self.boot_dialog.exec_():
                 return
 
@@ -222,7 +223,8 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
             properties['memory'] = self.init_ram.value()
 
         self.thread = CreateVMThread(
-            self.app, vmclass, name, label, template, properties, pool)
+            app=self.app, vmclass=vmclass, name=name, label=label,
+            template=template, properties=properties, pool=pool)
         self.thread.finished.connect(self.create_finished)
         self.thread.start()
 

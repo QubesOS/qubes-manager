@@ -1083,7 +1083,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
     def boot_from_cdrom_button_pressed(self):
         boot_dialog = bootfromdevice.VMBootFromDeviceWindow(
-                self.vm.name, self.qapp, self.qubesapp, self)
+                vm=self.vm.name, qapp=self.qapp, qubesapp=self.qubesapp,
+                parent=self)
         if boot_dialog.exec_():
             self.save_and_apply()
             qvm_start.main(
@@ -1325,7 +1326,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
     def strict_reset_button_pressed(self):
         device_list_window = device_list.PCIDeviceListWindow(
-            self.vm, self.qapp, self.dev_list, self.new_strict_reset_list, self)
+            vm=self.vm, qapp=self.qapp, dev_list=self.dev_list,
+            no_strict_reset_list=self.new_strict_reset_list, parent=self)
         device_list_window.exec()
 
     ######## applications tab
