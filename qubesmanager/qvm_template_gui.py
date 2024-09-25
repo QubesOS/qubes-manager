@@ -703,7 +703,7 @@ class QvmTemplateWindow(
         self.uninstall_button.setVisible(item.get_uninstallable())
         self.upgrade_button.setVisible(item.get_upgradable())
 
-    def _do_action(self, command: typing.List[str], operation_name: str,
+    def _do_action(self, *, command: typing.List[str], operation_name: str,
                    question: str, enable_warn: bool = False, window_title:
                    typing.Optional[str] = None):
         """
@@ -712,6 +712,7 @@ class QvmTemplateWindow(
         :param question: what should we ask the user in confirmation dialog?
         :param enable_warn: should the confirm dialog warn about discarding
         local changes?
+        :param window_title: title of the window
         """
         confirm = TemplateInstallConfirmDialog(question, operation_name,
                                                self.qubes_palette,
@@ -729,25 +730,28 @@ class QvmTemplateWindow(
         command = BASE_CMD + ['remove', '--'] + [item.name]
         question = (self.tr("Are you sure you want to remove template <b>{"
                     "}</b>?")).format(item.name)
-        self._do_action(command, self.tr("Uninstall ") + item.name,
-                        question, True,
-                        self.tr("Uninstalling template..."))
+        self._do_action(command=command,
+                        operation_name=self.tr("Uninstall ") + item.name,
+                        question=question, enable_warn=True,
+                        window_title=self.tr("Uninstalling template..."))
 
     def do_install(self):
         item = self._get_selected_item()
         command = BASE_CMD + ['install', '--'] + [item.full_name]
         question = (self.tr("Are you sure you want to install template <b>{"
                     "}</b>?")).format(item.name)
-        self._do_action(command, self.tr("Install ") + item.name,
-                        question, False)
+        self._do_action(command=command,
+                        operation_name=self.tr("Install ") + item.name,
+                        question=question, enable_warn=False)
 
     def do_reinstall(self):
         item = self._get_selected_item()
         command = BASE_CMD + ['reinstall', '--'] + [item.full_name]
         question = (self.tr("Are you sure you want to reinstall template <b>{"
                     "}</b>?")).format(item.name)
-        self._do_action(command, self.tr("Reinstall ") + item.name ,
-                        question,True)
+        self._do_action(command=command,
+                        operation_name=self.tr("Reinstall ") + item.name ,
+                        question=question, enable_warn=True)
 
     def do_upgrade(self):
         item = self._get_selected_item()
@@ -755,8 +759,10 @@ class QvmTemplateWindow(
         question = (self.tr("Are you sure you want to reinstall and upgrade "
                             "template <b>{"
                     "}</b>?")).format(item.name)
-        self._do_action(command, self.tr("Reinstall and upgrade ") + item.name,
-                        question, True)
+        self._do_action(command=command,
+                        operation_name=self.tr("Reinstall and upgrade ") +
+                        item.name,
+                        question=question, enable_warn=True)
 
     def refresh(self, refresh=True):
         self.label_loading.setVisible(True)
