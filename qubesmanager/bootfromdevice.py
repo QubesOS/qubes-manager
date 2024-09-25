@@ -27,12 +27,12 @@ from qubesadmin import exc
 from qubesadmin.tools import qvm_start
 
 # this is needed for icons to actually work
-# pylint: disable=unused-import
+# pylint: disable=unused-import, no-name-in-module
 from . import resources
 
 class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
                              QtWidgets.QDialog):
-    def __init__(self, vm, qapp, qubesapp=None, parent=None, new_vm=False):
+    def __init__(self, vm, *, qapp, qubesapp=None, parent=None, new_vm=False):
         super().__init__(parent)
 
         self.vm = vm

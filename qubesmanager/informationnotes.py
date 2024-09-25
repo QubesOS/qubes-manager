@@ -26,7 +26,7 @@ from . import ui_informationnotes  # pylint: disable=no-name-in-module
 import subprocess
 
 # this is needed for icons to actually work
-# pylint: disable=unused-import
+# pylint: disable=unused-import, no-name-in-module
 from . import resources
 
 class InformationNotesDialog(ui_informationnotes.Ui_InformationNotesDialog,

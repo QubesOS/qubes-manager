@@ -27,7 +27,7 @@ from qubesmanager.informationnotes import InformationNotesDialog
 from . import ui_about  # pylint: disable=no-name-in-module
 
 # this is needed for icons to actually work
-# pylint: disable=unused-import
+# pylint: disable=unused-import, no-name-in-module
 from . import resources
 
 

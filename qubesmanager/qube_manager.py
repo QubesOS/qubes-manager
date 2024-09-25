@@ -59,7 +59,7 @@ from qubesmanager import common_threads
 from qubesmanager import clone_vm
 
 # this is needed for icons to actually work
-# pylint: disable=unused-import
+# pylint: disable=unused-import, no-name-in-module
 from . import resources
 
 def spawn_in_background(cmd: str | list[str]) -> None:

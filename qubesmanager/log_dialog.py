@@ -28,7 +28,7 @@ from . import ui_logdlg   # pylint: disable=no-name-in-module
 from . import clipboard
 
 # this is needed for icons to actually work
-# pylint: disable=unused-import
+# pylint: disable=unused-import, no-name-in-module
 from . import resources
 
 # Display only this size of log

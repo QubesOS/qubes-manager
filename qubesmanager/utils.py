@@ -197,9 +197,9 @@ def initialize_widget(widget, choices, selected_value=None,
                            widget.currentText() + translate(" (current)"))
 
 
-def initialize_widget_for_property(
-        widget, choices, holder, property_name, allow_default=False,
-        icon_getter=None, add_current_label=True):
+def initialize_widget_for_property(*, widget, choices, holder, property_name,
+                                   allow_default=False, icon_getter=None,
+                                   add_current_label=True):
     """
     populates widget (ListBox or ComboBox) with items, based on a listed
     property. Supports discovering the system default for the given property
@@ -248,7 +248,7 @@ def initialize_widget_for_property(
 
 # TODO: improvement: add optional icon support
 def initialize_widget_with_vms(
-        widget, qubes_app, filter_function=(lambda x: True),
+        *, widget, qubes_app, filter_function=(lambda x: True),
         allow_none=False, holder=None, property_name=None,
         allow_default=False, allow_internal=False):
     """
@@ -292,7 +292,7 @@ def initialize_widget_with_vms(
 
 
 def initialize_widget_with_default(
-        widget, choices, add_none=False, add_qubes_default=False,
+        *, widget, choices, add_none=False, add_qubes_default=False,
         mark_existing_as_default=False, default_value=None):
     """
     populates widget (ListBox or ComboBox) with items. Used when there is no
@@ -352,7 +352,7 @@ def initialize_widget_with_default(
 
 
 def initialize_widget_with_kernels(
-        widget, qubes_app, allow_none=False, holder=None,
+        *, widget, qubes_app, allow_none=False, holder=None,
         property_name=None, allow_default=False):
     """
     populates widget (ListBox or ComboBox) with kernel items, based on a given

@@ -36,7 +36,7 @@ from . import utils
 from .ui_clonevmdlg import Ui_CloneVMDlg  # pylint: disable=import-error
 
 # this is needed for icons to actually work
-# pylint: disable=unused-import
+# pylint: disable=unused-import, no-name-in-module
 from . import resources
 
 

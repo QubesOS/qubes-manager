@@ -2,7 +2,7 @@ from PyQt6 import QtCore, QtWidgets  # pylint: disable=import-error
 from . import ui_multiselectwidget  # pylint: disable=no-name-in-module
 
 # this is needed for icons to actually work
-# pylint: disable=unused-import
+# pylint: disable=unused-import, no-name-in-module
 from . import resources
 
 
