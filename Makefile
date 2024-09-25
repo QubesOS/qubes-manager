@@ -2,7 +2,8 @@ VERSION := $(shell cat version)
 
 PYTHON ?= python3
 
-LRELEASE_QT5 ?= $(if $(wildcard /etc/debian_version),lrelease,lrelease-qt5)
+LRELEASE_QT6 ?= $(if $(wildcard /etc/debian_version),lrelease,lrelease-qt6)
+RCC ?= /usr/lib64/qt6/libexec/rcc
 
 SETUPTOOLS_OPTS =
 SETUPTOOLS_OPTS += $(if $(wildcard /etc/debian_version),--install-layout=deb,)
@@ -11,17 +12,17 @@ export QT_HASH_SEED=0
 export PYTHONHASHSEED=0
 
 qubesmanager/ui_%.py: ui/%.ui
-	pyuic5 --from-imports -o $@ $<
+	pyuic6 -o $@ $<
 	touch --reference=$< $@
 
 ui: $(patsubst ui/%.ui,qubesmanager/ui_%.py,$(wildcard ui/*.ui))
 
 res:
-	pyrcc5 -o qubesmanager/resources_rc.py resources.qrc
-	touch --reference=resources.qrc qubesmanager/resources_rc.py
+	$(RCC) -g python resources.qrc | sed '0,/PySide6/s//PyQt6/' > qubesmanager/resources.py
+	touch --reference=resources.qrc qubesmanager/resources.py
 
 translations:
-	$(LRELEASE_QT5) qubesmanager.pro
+	$(LRELEASE_QT6) qubesmanager.pro
 
 python:
 	$(PYTHON) ./setup.py build
@@ -30,7 +31,7 @@ python_install:
 	$(PYTHON) ./setup.py install -O1 --skip-build --root $(DESTDIR) $(SETUPTOOLS_OPTS)
 
 update_ts: res
-	pylupdate5 qubesmanager.pro
+	pylupdate6 qubesmanager.pro
 
 install:
 	mkdir -p $(DESTDIR)/usr/libexec/qubes-manager/

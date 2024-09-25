@@ -33,17 +33,18 @@ from qubesadmin import utils
 from qubesadmin.tools import qvm_start
 
 # pylint: disable=import-error
-from PyQt5.QtCore import (Qt, QAbstractTableModel, QObject, pyqtSlot, QEvent,
-    QSettings, QRegExp, QSortFilterProxyModel, QSize, QPoint, QTimer)
+from PyQt6.QtCore import (Qt, QAbstractTableModel, QObject, pyqtSlot, QEvent,
+                          QSettings, QRegularExpression, QSortFilterProxyModel,
+                          QSize, QPoint, QTimer)
 
 # pylint: disable=import-error
-from PyQt5.QtWidgets import (QLineEdit, QStyledItemDelegate, QToolTip,
-    QMenu, QInputDialog, QMainWindow, QProgressDialog, QStyleOptionViewItem,
-    QMessageBox, QShortcut)
+from PyQt6.QtWidgets import (QLineEdit, QStyledItemDelegate, QToolTip,
+                             QMenu, QInputDialog, QMainWindow, QProgressDialog,
+                             QStyleOptionViewItem, QMessageBox)
 
 # pylint: disable=import-error
-from PyQt5.QtGui import (QIcon, QPixmap, QRegExpValidator, QFont, QColor,
-                         QKeySequence)
+from PyQt6.QtGui import (QIcon, QPixmap, QRegularExpressionValidator, QFont,
+                         QColor, QShortcut, QKeySequence)
 
 from qubesmanager.about import AboutDialog
 
@@ -57,6 +58,9 @@ from qubesmanager import utils as manager_utils
 from qubesmanager import common_threads
 from qubesmanager import clone_vm
 
+# this is needed for icons to actually work
+# pylint: disable=unused-import
+from . import resources
 
 def spawn_in_background(cmd: str | list[str]) -> None:
     if isinstance(cmd, str):
@@ -120,12 +124,12 @@ class StateIconDelegate(QStyledItemDelegate):
     def sizeHint(self, option, index):
         hint = super().sizeHint(option, index)
         option = QStyleOptionViewItem(option)
-        option.features |= option.HasDecoration
+        option.features |= option.ViewItemFeature.HasDecoration
         widget = option.widget
         style = widget.style()
-        iconRect = style.subElementRect(style.SE_ItemViewItemDecoration,
-            option, widget)
-        width = iconRect.width() * 3 # Nº of possible icons
+        iconRect = style.subElementRect(
+            style.SubElement.SE_ItemViewItemDecoration, option, widget)
+        width = iconRect.width() * 3  # Nº of possible icons
         hint.setWidth(width)
         return hint
 
@@ -137,13 +141,14 @@ class StateIconDelegate(QStyledItemDelegate):
         style = widget.style()
 
         # paint the base item (borders, gradients, selection colors, etc)
-        style.drawControl(style.CE_ItemViewItem, option, qp, widget)
+        style.drawControl(style.ControlElement.CE_ItemViewItem,
+                          option, qp, widget)
 
         # "lie" about the decoration, to get a valid icon rectangle (even if we
         # don't have any "real" icon set for the item)
-        option.features |= option.HasDecoration
-        iconRect = style.subElementRect(style.SE_ItemViewItemDecoration,
-            option, widget)
+        option.features |= option.ViewItemFeature.HasDecoration
+        iconRect = style.subElementRect(
+            style.SubElement.SE_ItemViewItemDecoration, option, widget)
         iconSize = iconRect.size()
         margin = iconRect.left() - option.rect.left()
 
@@ -166,16 +171,16 @@ class StateIconDelegate(QStyledItemDelegate):
         qp.restore()
 
     def helpEvent(self, event, view, option, index):
-        if event.type() != QEvent.ToolTip:
+        if event.type() != QEvent.Type.ToolTip:
             return super().helpEvent(event, view,
                     option, index)
         option = QStyleOptionViewItem(option)
         widget = option.widget
         style = widget.style()
-        option.features |= option.HasDecoration
+        option.features |= option.ViewItemFeature.HasDecoration
 
-        iconRect = style.subElementRect(style.SE_ItemViewItemDecoration,
-            option, widget)
+        iconRect = style.subElementRect(
+            style.SubElement.SE_ItemViewItemDecoration, option, widget)
         iconRect.setTop(option.rect.y())
         iconRect.setHeight(option.rect.height())
 
@@ -419,7 +424,7 @@ class QubesTableModel(QAbstractTableModel):
         col_name = self.columns_indices[col]
         vm = self.qubes_cache.get_vm(row)
 
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             if col in [0, 1]:
                 return None
             if col_name == "Name":
@@ -446,7 +451,7 @@ class QubesTableModel(QAbstractTableModel):
                 return "Yes" if vm.dvm_template else ""
             if col_name == "Virt Mode":
                 return vm.virt_mode
-        if role == Qt.DecorationRole:
+        if role == Qt.ItemDataRole.DecorationRole:
             if col_name == "Type":
                 try:
                     return self.klass_pixmap[vm.klass]
@@ -467,24 +472,25 @@ class QubesTableModel(QAbstractTableModel):
                     icon = QIcon.fromTheme(vm.icon)
                     self.label_pixmap[vm.icon] = icon.pixmap(icon_size)
                     return self.label_pixmap[vm.icon]
-        if role == Qt.CheckStateRole:
+        if role == Qt.ItemDataRole.CheckStateRole:
             if col_name == "Backup":
-                return Qt.Checked if vm.inc_backup else Qt.Unchecked
-        if role == Qt.FontRole:
+                return Qt.CheckState.Checked if vm.inc_backup else (
+                    Qt.CheckState.Unchecked)
+        if role == Qt.ItemDataRole.FontRole:
             if col_name == "Template":
                 if vm.template is None:
                     font = QFont()
                     font.setItalic(True)
                     return font
-        if role == Qt.ForegroundRole:
+        if role == Qt.ItemDataRole.ForegroundRole:
             if col_name == "Template":
                 if vm.template is None:
                     return QColor("gray")
         # Used for get VM Object
-        if role == Qt.UserRole:
+        if role == Qt.ItemDataRole.UserRole:
             return vm
         # Used for sorting
-        if role == Qt.UserRole + 1:
+        if role == Qt.ItemDataRole.UserRole + 1:
             if vm.klass == 'AdminVM':
                 return ""
             if col_name == "Type":
@@ -514,36 +520,37 @@ class QubesTableModel(QAbstractTableModel):
             if col_name == "Backup":
                 # sort True before False, hence the not
                 return not vm.inc_backup
-            return self.data(index, Qt.DisplayRole)
+            return self.data(index, Qt.ItemDataRole.DisplayRole)
 
     # pylint: disable=invalid-name
     def headerData(self, col, orientation, role):
         if col < 2:
             return None
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if (orientation == Qt.Orientation.Horizontal and role ==
+                Qt.ItemDataRole.DisplayRole):
             return self.columns_indices[col]
         return None
 
-    def setData(self, index, value, role=Qt.EditRole):
+    def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
         if not index.isValid():
             return False
 
-        if role == Qt.CheckStateRole:
+        if role == Qt.ItemDataRole.CheckStateRole:
             col_name = self.columns_indices[index.column()]
             if col_name == "Backup":
                 vm = self.qubes_cache.get_vm(index.row())
-                vm.vm.include_in_backups = value == Qt.Checked
-                vm.inc_backup = value == Qt.Checked
+                vm.vm.include_in_backups = value == Qt.CheckState.Checked
+                vm.inc_backup = value == Qt.CheckState.Checked
                 return True
         return False
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.NoItemFlags
+            return Qt.ItemFlag.NoItemFlags
 
         def_flags = QAbstractTableModel.flags(self, index)
         if self.columns_indices[index.column()] == "Backup":
-            return  def_flags | Qt.ItemIsUserCheckable
+            return  def_flags | Qt.ItemFlag.ItemIsUserCheckable
         return def_flags
 
 vm_restart_check_timeout = 1000  # in msec
@@ -587,27 +594,28 @@ class VmShutdownMonitor(QObject):
             if self.timeout_reached():
 
                 msgbox = QMessageBox(self.caller)
-                msgbox.setIcon(QMessageBox.Question)
+                msgbox.setIcon(QMessageBox.Icon.Question)
                 msgbox.setWindowTitle(self.tr("Qube Shutdown"))
                 msgbox.setText(self.tr(
                         "The Qube <b>'{0}'</b> hasn't shutdown within the last "
                         "{1} seconds, do you want to kill it?<br>").format(
                             vm.name, self.shutdown_timeout))
                 kill_button = msgbox.addButton(
-                    self.tr("Kill it!"), QMessageBox.YesRole)
+                    self.tr("Kill it!"), QMessageBox.ButtonRole.YesRole)
                 wait_button = msgbox.addButton(
                     self.tr("Wait another {0} seconds...").format(
                         self.shutdown_timeout),
-                    QMessageBox.NoRole)
-                ignore_button = msgbox.addButton(self.tr("Don't ask again"),
-                                                 QMessageBox.RejectRole)
+                    QMessageBox.ButtonRole.NoRole)
+                ignore_button = msgbox.addButton(
+                    self.tr("Don't ask again"),
+                    QMessageBox.ButtonRole.RejectRole)
                 msgbox.setDefaultButton(wait_button)
                 msgbox.setEscapeButton(ignore_button)
                 msgbox.setWindowFlags(
-                    msgbox.windowFlags() | Qt.CustomizeWindowHint)
+                    msgbox.windowFlags() | Qt.WindowType.CustomizeWindowHint)
                 msgbox.setWindowFlags(
-                    msgbox.windowFlags() & ~Qt.WindowCloseButtonHint)
-                msgbox.exec_()
+                    msgbox.windowFlags() & ~Qt.WindowType.WindowCloseButtonHint)
+                msgbox.exec()
                 msgbox.deleteLater()
 
                 if msgbox.clickedButton() is kill_button:
@@ -680,15 +688,15 @@ class QubesProxyModel(QSortFilterProxyModel):
         if left.data(self.sortRole()) != right.data(self.sortRole()):
             return super().lessThan(left, right)
 
-        left_vm = left.data(Qt.UserRole)
-        right_vm = right.data(Qt.UserRole)
+        left_vm = left.data(Qt.ItemDataRole.UserRole)
+        right_vm = right.data(Qt.ItemDataRole.UserRole)
 
         return left_vm.name.lower() < right_vm.name.lower()
 
     # pylint: disable=too-many-return-statements
     def filterAcceptsRow(self, sourceRow, sourceParent):
         index = self.sourceModel().index(sourceRow, 0, sourceParent)
-        vm = self.sourceModel().data(index, Qt.UserRole)
+        vm = self.sourceModel().data(index, Qt.ItemDataRole.UserRole)
 
         # if hide internal is true, ignore all other filters
         if not self.window.show_internal_action.isChecked() and vm.internal:
@@ -729,8 +737,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.qt_app = qt_app
 
         self.searchbox = SearchBox()
-        self.searchbox.setValidator(QRegExpValidator(
-            QRegExp("[a-zA-Z0-9_-]*", Qt.CaseInsensitive), None))
+        self.searchbox.setValidator(QRegularExpressionValidator(
+            QRegularExpression(
+                "[a-zA-Z0-9_-]*",
+                QRegularExpression.PatternOption.CaseInsensitiveOption),
+            None))
         self.searchbox.textChanged.connect(self.do_search)
         self.searchContainer.insertWidget(1, self.searchbox)
 
@@ -801,10 +812,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         self.proxy = QubesProxyModel(self)
         self.proxy.setSourceModel(self.qubes_model)
-        self.proxy.setSortRole(Qt.UserRole + 1)
-        self.proxy.setSortCaseSensitivity(Qt.CaseInsensitive)
+        self.proxy.setSortRole(Qt.ItemDataRole.UserRole + 1)
+        self.proxy.setSortCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self.proxy.setFilterKeyColumn(2)
-        self.proxy.setFilterCaseSensitivity(Qt.CaseInsensitive)
+        self.proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self.proxy.layoutChanged.connect(self.save_sorting)
         self.proxy.layoutChanged.connect(self.update_template_menu)
         self.proxy.layoutChanged.connect(self.update_network_menu)
@@ -815,7 +826,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         selection_model = self.table.selectionModel()
         selection_model.selectionChanged.connect(self.table_selection_changed)
 
-        self.table.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self.open_context_menu)
 
         try:
@@ -890,9 +901,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             self.tr("Do you want to change '{0}'<br>"
                 "to Template <b>'{1}'</b>?").format(
                 ', '.join(vm.name for vm in selected_vms), template),
-            QMessageBox.Yes | QMessageBox.Cancel)
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel)
 
-        if reply == QMessageBox.Yes:
+        if reply == QMessageBox.StandardButton.Yes:
             errors = []
             for info in selected_vms:
                 try:
@@ -911,9 +922,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             self.tr("Do you want to change '{0}'<br>"
                 "to Network <b>'{1}'</b>?").format(
                 ', '.join(vm.name for vm in selected_vms), netvm_name),
-            QMessageBox.Yes | QMessageBox.Cancel)
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel)
 
-        if reply != QMessageBox.Yes:
+        if reply != QMessageBox.StandardButton.Yes:
             return
 
         if netvm_name:
@@ -930,9 +941,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     self.tr("<br>Can not change netvm to a halted Qube.<br>"
                         "Do you want to start the Qube <b>'{0}'</b>?").format(
                         netvm_name),
-                    QMessageBox.Yes | QMessageBox.Cancel)
+                    QMessageBox.StandardButton.Yes |
+                    QMessageBox.StandardButton.Cancel)
 
-                if reply == QMessageBox.Yes:
+                if reply == QMessageBox.StandardButton.Yes:
                     self.start_vm(netvm, True)
                 else:
                     return
@@ -1008,7 +1020,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 len(self.qubes_app.domains.keys()))
         progress.setWindowTitle(self.tr("Qube Manager"))
         progress.setMinimumDuration(1000)
-        progress.setWindowModality(Qt.WindowModal)
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setCancelButton(None)
 
         row_no = 0
@@ -1051,7 +1063,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.qt_app.setWindowIcon(QIcon.fromTheme("qubes-manager"))
 
     def keyPressEvent(self, event):  # pylint: disable=invalid-name
-        if event.key() == Qt.Key_Escape:
+        if event.key() == Qt.Key.Key_Escape:
             self.searchbox.clear()
         super().keyPressEvent(event)
 
@@ -1175,11 +1187,16 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         # Restore sorting
         sort_column = int(self.manager_settings.value("view/sort_column",
                                  defaultValue=2))
-        order = Qt.SortOrder(self.manager_settings.value("view/sort_order",
-                                 defaultValue=Qt.AscendingOrder))
+
+        order = self.manager_settings.value("view/sort_order",
+                                 defaultValue=Qt.SortOrder.AscendingOrder)
+        if isinstance(order, str):
+            # convoluted in order to maintain backwards compat
+            order = int(order)
+        order = Qt.SortOrder(order)
 
         if not sort_column: # Default sort by name
-            self.table.sortByColumn(2, Qt.AscendingOrder)
+            self.table.sortByColumn(2, Qt.SortOrder.AscendingOrder)
         else:
             self.table.sortByColumn(sort_column, order)
 
@@ -1190,7 +1207,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             self.action_toolbar.setChecked(False)
             self.toolbar.setVisible(False)
         if self.manager_settings.value("view/compactview",
-                                           defaultValue="false") != "false":
+                                       defaultValue="false") != "false":
             self.action_compact_view.setChecked(True)
 
         # Restore show checkboxes
@@ -1231,7 +1248,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         for index in indexes:
             if index.column() != 0:
                 continue
-            vms.append(index.data(Qt.UserRole))
+            vms.append(index.data(Qt.ItemDataRole.UserRole))
 
         return vms
 
@@ -1350,7 +1367,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         with common_threads.busy_cursor():
             create_window = create_new_vm.NewVmDlg(
                     self.qt_app, self.qubes_app, self)
-        create_window.exec_()
+        create_window.exec()
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_removevm_triggered')
@@ -1415,7 +1432,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             with common_threads.busy_cursor():
                 clone_window = clone_vm.CloneVMDlg(
                     self.qt_app, self.qubes_app, src_vm=vm)
-            clone_window.exec_()
+            clone_window.exec()
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_resumevm_triggered')
@@ -1484,9 +1501,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                         "</b>?<br><small>This will shutdown all the running"
                         " applications within this Qube.</small>").format(
                          vm.name),
-                QMessageBox.Yes | QMessageBox.Cancel)
+                QMessageBox.StandardButton.Yes |
+                QMessageBox.StandardButton.Cancel)
 
-            if reply == QMessageBox.Yes:
+            if reply == QMessageBox.StandardButton.Yes:
                 self.shutdown_vm(vm)
 
     def get_connected_vms(self, vm, connected_vms):
@@ -1510,9 +1528,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                         "<br><small>Do you want to shutdown: </small>"
                         "<b>'{1}'</b>?").format(vm.name,
                             ", ".join([x.name for x in connected_vms])),
-                    QMessageBox.Yes | QMessageBox.Cancel)
+                    QMessageBox.StandardButton.Yes |
+                    QMessageBox.StandardButton.Cancel)
 
-                if reply != QMessageBox.Yes:
+                if reply != QMessageBox.StandardButton.Yes:
                     return False
 
                 force = True
@@ -1545,9 +1564,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self.tr("Are you sure you want to restart the Qube <b>'{0}'</b>"
                         "?<br><small>This will shutdown all the running applica"
                         "tions within this Qube.</small>").format(vm.name),
-                QMessageBox.Yes | QMessageBox.Cancel)
+                QMessageBox.StandardButton.Yes |
+                QMessageBox.StandardButton.Cancel)
 
-            if reply == QMessageBox.Yes:
+            if reply == QMessageBox.StandardButton.Yes:
                 # in case the user shut down the VM in the meantime
                 try:
                     if manager_utils.is_running(vm, False):
@@ -1585,10 +1605,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
             reply = QMessageBox.question(
                 self, self.tr("Qube Kill Confirmation"), info,
-                QMessageBox.Yes | QMessageBox.Cancel,
-                QMessageBox.Cancel)
+                QMessageBox.StandardButton.Yes |
+                QMessageBox.StandardButton.Cancel,
+                QMessageBox.StandardButton.Cancel)
 
-            if reply == QMessageBox.Yes:
+            if reply == QMessageBox.StandardButton.Yes:
                 try:
                     vm.kill()
                 except exc.QubesException as ex:
@@ -1714,7 +1735,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         with common_threads.busy_cursor():
             restore_window = restore.RestoreVMsWindow(self.qt_app,
                                                       self.qubes_app, self)
-        restore_window.exec_()
+        restore_window.exec()
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_backup_triggered')
@@ -1731,9 +1752,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
     def set_compactview(self, checked):
         if checked:
-            self.toolbar.setToolButtonStyle(Qt.ToolButtonIconOnly)
+            self.toolbar.setToolButtonStyle(
+                Qt.ToolButtonStyle.ToolButtonIconOnly)
         else:
-            self.toolbar.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+            self.toolbar.setToolButtonStyle(
+                Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
         if self.settings_loaded:
             self.manager_settings.setValue('view/compactview', checked)
 
@@ -1764,7 +1787,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot(name='on_action_about_qubes_triggered')
     def action_about_qubes_triggered(self):
         about = AboutDialog(self)
-        about.exec_()
+        about.exec()
 
     def createPopupMenu(self):  # pylint: disable=invalid-name
         menu = QMenu()
@@ -1773,11 +1796,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         return menu
 
     def open_tools_context_menu(self, widget, point):
-        self.tools_context_menu.exec_(widget.mapToGlobal(point))
+        self.tools_context_menu.exec(widget.mapToGlobal(point))
 
     @pyqtSlot('const QPoint&')
     def open_context_menu(self, point):
-        self.context_menu.exec_(self.table.mapToGlobal(
+        self.context_menu.exec(self.table.mapToGlobal(
             point + QPoint(10, 0)))
 
     def show_log(self):
@@ -1801,7 +1824,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
             if len(logfiles) > 0:
                 log_dlg = log_dialog.LogDialog(self.qt_app, logfiles)
-                log_dlg.exec_()
+                log_dlg.exec()
             else:
                 QMessageBox.warning(
                     self,

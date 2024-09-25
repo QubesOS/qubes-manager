@@ -22,11 +22,15 @@
 
 from qubesadmin import exc
 
-from PyQt5 import QtWidgets, QtGui, QtCore  # pylint: disable=import-error
+from PyQt6 import QtWidgets, QtGui, QtCore  # pylint: disable=import-error
 
 from . import ui_templatemanager  # pylint: disable=no-name-in-module
 from . import utils
 from . import common_threads
+
+# this is needed for icons to actually work
+# pylint: disable=unused-import
+from . import resources
 
 column_names = ['State', 'Qube', 'Current template', 'New template']
 
@@ -52,15 +56,18 @@ class TemplateManagerWindow(
         self.prepare_lists()
         self.initialize_table_events()
 
-        self.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).clicked.connect(
+        self.buttonBox.button(
+            QtWidgets.QDialogButtonBox.StandardButton.Ok).clicked.connect(
             self.apply)
         self.buttonBox.button(
             QtWidgets.QDialogButtonBox.StandardButton.Ok).setText('Apply')
         self.buttonBox.button(
-            QtWidgets.QDialogButtonBox.Cancel).clicked.connect(self.cancel)
+            QtWidgets.QDialogButtonBox.StandardButton.Cancel).clicked.connect(
+            self.cancel)
         self.buttonBox.button(
             QtWidgets.QDialogButtonBox.StandardButton.Cancel).setText('Close')
-        self.buttonBox.button(QtWidgets.QDialogButtonBox.Reset).clicked.connect(
+        self.buttonBox.button(
+            QtWidgets.QDialogButtonBox.StandardButton.Reset).clicked.connect(
             self.reset)
 
         self.change_all_combobox.currentIndexChanged.connect(
@@ -168,7 +175,7 @@ class TemplateManagerWindow(
         if index == column_names.index('New template') or \
                 index == column_names.index('State'):
             self.vm_list.horizontalHeader().setSortIndicator(
-                -1, QtCore.Qt.AscendingOrder)
+                -1, QtCore.Qt.SortOrder.AscendingOrder)
 
     def clear_selection(self):
         for row in self.rows_in_table.values():

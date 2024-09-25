@@ -21,11 +21,14 @@ import functools
 import subprocess
 from . import utils
 from . import ui_bootfromdevice  # pylint: disable=no-name-in-module
-from PyQt5 import QtWidgets, QtGui, Qt  # pylint: disable=import-error
+from PyQt6 import QtWidgets, QtGui, QtCore  # pylint: disable=import-error
 from qubesadmin import tools
 from qubesadmin import exc
 from qubesadmin.tools import qvm_start
 
+# this is needed for icons to actually work
+# pylint: disable=unused-import
+from . import resources
 
 class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
                              QtWidgets.QDialog):
@@ -42,8 +45,8 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
         self.setWindowTitle(
             self.tr("Boot {vm} from device").format(vm=self.vm))
         self.setWindowFlags(self.windowFlags() |
-                            Qt.Qt.WindowMaximizeButtonHint |
-                            Qt.Qt.WindowMinimizeButtonHint)
+                            QtCore.Qt.WindowType.WindowMaximizeButtonHint |
+                            QtCore.Qt.WindowType.WindowMinimizeButtonHint)
 
         self.buttonBox.accepted.connect(self.save_and_apply)
         self.buttonBox.rejected.connect(self.reject)

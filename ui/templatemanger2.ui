@@ -180,8 +180,7 @@
   </action>
   <action name="actionRepository_settings">
    <property name="icon">
-    <iconset theme="qubes-global-config">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset theme="qubes-global-config"/>
    </property>
    <property name="text">
     <string>Repository settings</string>
@@ -204,8 +203,7 @@
   </action>
   <action name="actionHelp">
    <property name="icon">
-    <iconset theme="qubes-question">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset theme="qubes-question"/>
    </property>
    <property name="text">
     <string>Help</string>

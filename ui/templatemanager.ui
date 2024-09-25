@@ -46,11 +46,11 @@
         <property name="cornerButtonEnabled">
          <bool>false</bool>
         </property>
-        <attribute name="horizontalHeaderDefaultSectionSize">
-         <number>20</number>
-        </attribute>
         <attribute name="horizontalHeaderMinimumSectionSize">
          <number>4</number>
+        </attribute>
+        <attribute name="horizontalHeaderDefaultSectionSize">
+         <number>20</number>
         </attribute>
         <attribute name="horizontalHeaderStretchLastSection">
          <bool>true</bool>
