@@ -25,7 +25,7 @@ import os
 import sys
 import subprocess
 
-from PyQt5 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
+from PyQt6 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
 
 import qubesadmin
 import qubesadmin.tools
@@ -145,8 +145,11 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
             self.storage_pool.clear()
             self.storage_pool.addItem("(default)", qubesadmin.DEFAULT)
 
-        self.name.setValidator(QtGui.QRegExpValidator(
-            QtCore.QRegExp("[a-zA-Z0-9_-]*", QtCore.Qt.CaseInsensitive), None))
+        self.name.setValidator(QtGui.QRegularExpressionValidator(
+            QtCore.QRegularExpression(
+                "[a-zA-Z0-9_-]*",
+                QtCore.QRegularExpression.PatternOption.CaseInsensitiveOption),
+            None))
         self.name.selectAll()
         self.name.setFocus()
 
@@ -182,7 +185,7 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
         if self.install_system.isChecked():
             self.boot_dialog = bootfromdevice.VMBootFromDeviceWindow(
                 name, self.qtapp, self.app, self, True)
-            if not self.boot_dialog.exec_():
+            if not self.boot_dialog.exec():
                 return
 
         if name in self.app.domains:
@@ -336,4 +339,4 @@ def main(args=None):
         "appname", 'Create qube'))
 
     dialog = NewVmDlg(qtapp, args.app)
-    dialog.exec_()
+    dialog.exec()

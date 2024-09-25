@@ -21,7 +21,7 @@
 import re
 import socket
 
-from PyQt5 import QtWidgets  # pylint: disable=import-error
+from PyQt6 import QtWidgets  # pylint: disable=import-error
 
 import subprocess
 from . import utils

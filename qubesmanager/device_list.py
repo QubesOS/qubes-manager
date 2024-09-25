@@ -18,7 +18,7 @@
 #
 
 from . import ui_devicelist  # pylint: disable=no-name-in-module
-from PyQt5 import QtWidgets  # pylint: disable=import-error
+from PyQt6 import QtWidgets  # pylint: disable=import-error
 
 
 class PCIDeviceListWindow(ui_devicelist.Ui_Dialog, QtWidgets.QDialog):

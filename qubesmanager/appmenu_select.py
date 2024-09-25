@@ -20,7 +20,7 @@
 #
 
 import subprocess
-from PyQt5 import QtWidgets, QtCore  # pylint: disable=import-error
+from PyQt6 import QtWidgets, QtCore  # pylint: disable=import-error
 from qubesadmin import exc
 
 # TODO description in tooltip

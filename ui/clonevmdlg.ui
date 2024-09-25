@@ -14,8 +14,7 @@
    <string>Clone qube</string>
   </property>
   <property name="windowIcon">
-   <iconset theme="qubes-manager">
-    <normaloff>.</normaloff>.</iconset>
+   <iconset theme="qubes-manager"/>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
    <item row="0" column="0">
