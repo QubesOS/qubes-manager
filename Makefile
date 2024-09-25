@@ -2,14 +2,15 @@ VERSION := $(shell cat version)
 
 PYTHON ?= python3
 
-LRELEASE_QT6 ?= $(if $(wildcard /etc/debian_version),lrelease,lrelease-qt6)
-RCC ?= /usr/lib64/qt6/libexec/rcc
+LRELEASE_QT6 ?= $(if $(wildcard /etc/debian_version),/usr/lib/qt6/bin/lrelease,lrelease-qt6)
+RCC ?= $(if $(wildcard /etc/debian_version),/usr/lib/qt6/libexec/rcc,/usr/lib64/qt6/libexec/rcc)
 
 SETUPTOOLS_OPTS =
 SETUPTOOLS_OPTS += $(if $(wildcard /etc/debian_version),--install-layout=deb,)
 
 export QT_HASH_SEED=0
 export PYTHONHASHSEED=0
+export QT_SELECT=qt6
 
 qubesmanager/ui_%.py: ui/%.ui
 	pyuic6 -o $@ $<
