@@ -1,4 +1,4 @@
-from PyQt5 import QtCore, QtWidgets  # pylint: disable=import-error
+from PyQt6 import QtCore, QtWidgets  # pylint: disable=import-error
 from . import ui_multiselectwidget  # pylint: disable=no-name-in-module
 
 
@@ -17,9 +17,9 @@ class MultiSelectWidget(
         self.remove_selected_button.clicked.connect(self.remove_selected)
         self.remove_all_button.clicked.connect(self.remove_all)
         self.available_list.setSelectionMode(
-            QtWidgets.QAbstractItemView.ExtendedSelection)
+            QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection)
         self.selected_list.setSelectionMode(
-            QtWidgets.QAbstractItemView.ExtendedSelection)
+            QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection)
         self.available_list.itemDoubleClicked.connect(self.add_selected)
         self.selected_list.itemDoubleClicked.connect(self.remove_selected)
 

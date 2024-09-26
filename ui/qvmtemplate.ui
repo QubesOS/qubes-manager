@@ -92,8 +92,7 @@
   </widget>
   <action name="actionRefresh">
    <property name="icon">
-    <iconset theme="view-refresh">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset theme="view-refresh"/>
    </property>
    <property name="text">
     <string>Refresh</string>
@@ -101,8 +100,7 @@
   </action>
   <action name="actionInstall">
    <property name="icon">
-    <iconset theme="go-down">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset theme="go-down"/>
    </property>
    <property name="text">
     <string>Apply</string>

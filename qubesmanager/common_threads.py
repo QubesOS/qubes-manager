@@ -20,7 +20,7 @@
 #
 
 
-from PyQt5 import QtCore, QtWidgets  # pylint: disable=import-error
+from PyQt6 import QtCore, QtWidgets  # pylint: disable=import-error
 from contextlib import contextmanager
 
 from qubesadmin import exc
@@ -29,7 +29,8 @@ from qubesadmin import exc
 @contextmanager
 def busy_cursor():
     try:
-        QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.BusyCursor)
+        QtWidgets.QApplication.setOverrideCursor(
+            QtCore.Qt.CursorShape.BusyCursor)
         yield
     finally:
         QtWidgets.QApplication.restoreOverrideCursor()

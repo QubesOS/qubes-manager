@@ -20,8 +20,8 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #
-from PyQt5.QtWidgets import QDialog  # pylint: disable=import-error
-from PyQt5.QtGui import QIcon  # pylint: disable=import-error
+from PyQt6.QtWidgets import QDialog  # pylint: disable=import-error
+from PyQt6.QtGui import QIcon  # pylint: disable=import-error
 from qubesmanager.releasenotes import ReleaseNotesDialog
 from qubesmanager.informationnotes import InformationNotesDialog
 
@@ -60,8 +60,8 @@ class AboutDialog(ui_about.Ui_AboutDialog, QDialog):
 
     def on_release_notes_clicked(self):
         release_notes_dialog = ReleaseNotesDialog(self)
-        release_notes_dialog.exec_()
+        release_notes_dialog.exec()
 
     def on_information_notes_clicked(self):
         information_notes_dialog = InformationNotesDialog(self)
-        information_notes_dialog.exec_()
+        information_notes_dialog.exec()

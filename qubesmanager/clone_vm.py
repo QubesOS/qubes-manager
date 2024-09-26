@@ -24,7 +24,7 @@ import os
 import sys
 import subprocess
 
-from PyQt5 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
+from PyQt6 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
 
 import qubesadmin
 import qubesadmin.tools
@@ -183,4 +183,4 @@ def main(args=None):
         "appname", 'Clone qube'))
 
     dialog = CloneVMDlg(qtapp, args.app, src_vm=src_vm)
-    dialog.exec_()
+    dialog.exec()

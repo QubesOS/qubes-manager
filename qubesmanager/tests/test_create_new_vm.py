@@ -23,7 +23,7 @@ import logging.handlers
 import unittest
 import unittest.mock
 
-from PyQt5 import QtTest, QtCore
+from PyQt6 import QtTest, QtCore
 from qubesadmin import Qubes
 from qubesmanager.tests import init_qtapp
 from qubesmanager import create_new_vm
@@ -44,7 +44,7 @@ class NewVmTest(unittest.TestCase):
 
         # mock the progress dialog to speed testing up
         self.patcher_progress = unittest.mock.patch(
-            'PyQt5.QtWidgets.QProgressDialog')
+            'PyQt6.QtWidgets.QProgressDialog')
         self.mock_progress = self.patcher_progress.start()
         self.addCleanup(self.patcher_progress.stop)
 

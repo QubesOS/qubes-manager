@@ -43,7 +43,7 @@ from . import clone_vm
 
 from .appmenu_select import AppmenuSelectManager
 from . import firewall
-from PyQt5 import QtCore, QtWidgets, QtGui, Qt  # pylint: disable=import-error
+from PyQt6 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
 
 from . import ui_settingsdlg  # pylint: disable=no-name-in-module
 
@@ -138,6 +138,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         ('services', 5),
         ))
 
+    # pylint: disable=too-many-positional-arguments
     def __init__(self, vm, init_page="basic", qapp=None, qubesapp=None,
                  parent=None):
         super().__init__(parent)
@@ -152,14 +153,15 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.setupUi(self)
         self.setWindowTitle(self.tr("Settings: {vm}").format(vm=self.vm.name))
         self.setWindowFlags(self.windowFlags() |
-                            Qt.Qt.WindowMaximizeButtonHint |
-                            Qt.Qt.WindowMinimizeButtonHint)
+                            QtCore.Qt.WindowType.WindowMaximizeButtonHint |
+                            QtCore.Qt.WindowType.WindowMinimizeButtonHint)
         if init_page in self.tabs_indices:
             idx = self.tabs_indices[init_page]
             assert idx in range(self.tabWidget.count())
             self.tabWidget.setCurrentIndex(idx)
 
-        self.buttonBox.button(QtWidgets.QDialogButtonBox.Apply).clicked.connect(
+        self.buttonBox.button(
+            QtWidgets.QDialogButtonBox.StandardButton.Apply).clicked.connect(
             self.apply)
 
         self.tabWidget.currentChanged.connect(self.current_tab_changed)
@@ -282,8 +284,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         raise RuntimeError(self.tr('No finished thread found'))
 
     def keyPressEvent(self, event):  # pylint: disable=invalid-name
-        if event.key() == QtCore.Qt.Key_Enter \
-                or event.key() == QtCore.Qt.Key_Return:
+        if event.key() == QtCore.Qt.Key.Key_Enter \
+                or event.key() == QtCore.Qt.Key.Key_Return:
             return
         super().keyPressEvent(event)
 
@@ -397,9 +399,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
     def __init_basic_tab__(self):
         self.vmname.setText(self.vm.name)
         self.vmname.setValidator(
-            QtGui.QRegExpValidator(
-                QtCore.QRegExp("[a-zA-Z0-9_-]*",
-                               QtCore.Qt.CaseInsensitive), None))
+            QtGui.QRegularExpressionValidator(
+                QtCore.QRegularExpression(
+                    "[a-zA-Z0-9_-]*",
+                    QtCore.QRegularExpression.
+                    PatternOption.CaseInsensitiveOption), None))
         self.vmname.setEnabled(False)
         self.rename_vm_button.setEnabled(not self.vm.is_running())
         self.delete_vm_button.setEnabled(not self.vm.is_running())
@@ -590,10 +594,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                                 "to a halted Qube.<br>"
                                 "Do you want to start the Qube"
                                 " <b>'{0}'</b>?").format(netvm.name),
-                        QtWidgets.QMessageBox.Yes |
-                        QtWidgets.QMessageBox.Cancel)
+                        QtWidgets.QMessageBox.StandardButton.Yes |
+                        QtWidgets.QMessageBox.StandardButton.Cancel)
 
-                    if reply == QtWidgets.QMessageBox.Yes:
+                    if reply == QtWidgets.QMessageBox.StandardButton.Yes:
                         netvm.start()
                         self.vm.netvm = self.netVM.currentData()
                 else:
@@ -816,7 +820,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         with common_threads.busy_cursor():
             clone_window = clone_vm.CloneVMDlg(
                 self.qapp, self.qubesapp, src_vm=self.vm)
-        clone_window.exec_()
+        clone_window.exec()
 
     ######### advanced tab
 
@@ -1078,7 +1082,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
     def include_in_balancing_changed(self, state):
         if self.dev_list.selected_list.count() > 0:
-            if state == ui_settingsdlg.QtCore.Qt.Checked:
+            if state == ui_settingsdlg.QtCore.Qt.CheckState.Checked:
                 self.dmm_warning_adv.show()
                 self.dmm_warning_dev.show()
             else:
@@ -1090,8 +1094,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
     def boot_from_cdrom_button_pressed(self):
         boot_dialog = bootfromdevice.VMBootFromDeviceWindow(
-                self.vm.name, self.qapp, self.qubesapp, self)
-        if boot_dialog.exec_():
+                vm=self.vm.name, qapp=self.qapp, qubesapp=self.qubesapp,
+                parent=self)
+        if boot_dialog.exec():
             self.save_and_apply()
             qvm_start.main(
                     ['--cdrom', boot_dialog.cdrom_location, self.vm.name])
@@ -1342,7 +1347,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
     def strict_reset_button_pressed(self):
         device_list_window = device_list.PCIDeviceListWindow(
-            self.vm, self.qapp, self.dev_list, self.new_strict_reset_list, self)
+            vm=self.vm, qapp=self.qapp, dev_list=self.dev_list,
+            no_strict_reset_list=self.new_strict_reset_list, parent=self)
         device_list_window.exec()
 
     ######## applications tab
@@ -1382,9 +1388,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     continue
                 service = feature[len(SERVICE_PREFIX):]
                 item = QtWidgets.QListWidgetItem(service)
-                item.setCheckState(ui_settingsdlg.QtCore.Qt.Checked
-                                   if self.vm.features[feature]
-                                   else ui_settingsdlg.QtCore.Qt.Unchecked)
+                item.setCheckState(
+                    ui_settingsdlg.QtCore.Qt.CheckState.Checked
+                    if self.vm.features[feature]
+                    else ui_settingsdlg.QtCore.Qt.CheckState.Unchecked)
                 self.services_list.addItem(item)
                 self.new_srv_dict[service] = self.vm.features[feature]
         except qubesadmin.exc.QubesDaemonAccessError:
@@ -1436,7 +1443,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     self.tr('Service already on the list!'))
                 return
             item = QtWidgets.QListWidgetItem(srv)
-            item.setCheckState(ui_settingsdlg.QtCore.Qt.Checked)
+            item.setCheckState(ui_settingsdlg.QtCore.Qt.CheckState.Checked)
             self.services_list.addItem(item)
             self.new_srv_dict[srv] = True
 
@@ -1460,7 +1467,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             for i in range(self.services_list.count()):
                 item = self.services_list.item(i)
                 self.new_srv_dict[str(item.text())] = \
-                    item.checkState() == ui_settingsdlg.QtCore.Qt.Checked
+                    (item.checkState() ==
+                     ui_settingsdlg.QtCore.Qt.CheckState.Checked)
 
             for service, v in self.new_srv_dict.items():
                 feature = SERVICE_PREFIX + service
@@ -1484,9 +1492,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.fw_model = model
         self.rulesTreeView.setModel(model)
         self.rulesTreeView.header().setSectionResizeMode(
-            QtWidgets.QHeaderView.ResizeToContents)
+            QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
         self.rulesTreeView.header().setSectionResizeMode(
-            0, QtWidgets.QHeaderView.Stretch)
+            0, QtWidgets.QHeaderView.ResizeMode.Stretch)
         self.set_allow(model.allow)
         if model.temp_full_access_expire_time:
             self.temp_full_access.setChecked(True)

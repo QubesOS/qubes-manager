@@ -2,7 +2,7 @@ import asyncio
 import sys
 
 import qasync
-from PyQt5 import QtWidgets
+from PyQt6 import QtWidgets
 
 qtapp = None
 loop = None

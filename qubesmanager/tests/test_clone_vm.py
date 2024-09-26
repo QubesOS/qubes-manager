@@ -23,7 +23,7 @@ import logging.handlers
 import unittest
 import unittest.mock
 
-from PyQt5 import QtTest, QtCore
+from PyQt6 import QtTest, QtCore
 from qubesadmin import Qubes
 from qubesmanager.tests import init_qtapp
 from qubesmanager import clone_vm
@@ -46,13 +46,13 @@ class CloneVMTest(unittest.TestCase):
 
         # mock the progress dialog to speed testing up
         self.patcher_progress = unittest.mock.patch(
-            'PyQt5.QtWidgets.QProgressDialog')
+            'PyQt6.QtWidgets.QProgressDialog')
         self.mock_progress = self.patcher_progress.start()
         self.addCleanup(self.patcher_progress.stop)
 
         # mock the message dialog to not hang on success
         self.patcher_warning = unittest.mock.patch(
-            'PyQt5.QtWidgets.QMessageBox.warning')
+            'PyQt6.QtWidgets.QMessageBox.warning')
         self.mock_warning = self.patcher_warning.start()
         self.addCleanup(self.patcher_warning.stop)
         self.patcher_information = unittest.mock.patch(
@@ -229,13 +229,13 @@ class CloneVMTestSrcVM(unittest.TestCase):
 
         # mock the progress dialog to speed testing up
         self.patcher_progress = unittest.mock.patch(
-            'PyQt5.QtWidgets.QProgressDialog')
+            'PyQt6.QtWidgets.QProgressDialog')
         self.mock_progress = self.patcher_progress.start()
         self.addCleanup(self.patcher_progress.stop)
 
         # mock the message dialog to not hang on success
         self.patcher_warning = unittest.mock.patch(
-            'PyQt5.QtWidgets.QMessageBox.warning')
+            'PyQt6.QtWidgets.QMessageBox.warning')
         self.mock_warning = self.patcher_warning.start()
         self.addCleanup(self.patcher_warning.stop)
         self.patcher_information = unittest.mock.patch(

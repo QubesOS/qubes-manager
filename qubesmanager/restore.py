@@ -20,8 +20,8 @@
 #
 #
 
-from PyQt5 import QtCore, QtWidgets, QtGui, Qt  # pylint: disable=import-error
 import argparse
+from PyQt6 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
 import os
 import os.path
 import logging
@@ -88,8 +88,8 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
         self.qt_app = qt_app
         self.qubes_app = qubes_app
         self.setWindowFlags(self.windowFlags() |
-                            Qt.Qt.WindowMaximizeButtonHint |
-                            Qt.Qt.WindowMinimizeButtonHint)
+                            QtCore.Qt.WindowType.WindowMaximizeButtonHint |
+                            QtCore.Qt.WindowType.WindowMinimizeButtonHint)
 
         self.vms_to_restore = None
         self.func_output = []
@@ -132,10 +132,12 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
 
     def show_hide_password(self):
         if self.passwd_show_button.isChecked():
-            self.passphrase_line_edit.setEchoMode(QtWidgets.QLineEdit.Password)
+            self.passphrase_line_edit.setEchoMode(
+                QtWidgets.QLineEdit.EchoMode.Password)
             self.passwd_show_button.setIcon(QtGui.QIcon(':/eye-off.svg'))
         else:
-            self.passphrase_line_edit.setEchoMode(QtWidgets.QLineEdit.Normal)
+            self.passphrase_line_edit.setEchoMode(
+                QtWidgets.QLineEdit.EchoMode.Normal)
             self.passwd_show_button.setIcon(QtGui.QIcon(':/eye.svg'))
 
     def setup_application(self):
@@ -227,7 +229,7 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
             self.confirm_page.completeChanged.emit()
 
         elif self.currentPage() is self.commit_page:
-            self.button(self.FinishButton).setDisabled(True)
+            self.button(self.WizardButton.FinishButton).setDisabled(True)
             self.showFileDialog.setEnabled(True)
             self.showFileDialog.setChecked(self.showFileDialog.isEnabled()
                                            and str(self.dir_line_edit.text())
@@ -264,8 +266,8 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
                             "the file selection dialog.")))
             backup_utils.select_path_button_clicked(self, False, True)
 
-        self.button(self.FinishButton).setEnabled(True)
-        self.button(self.CancelButton).setEnabled(False)
+        self.button(self.WizardButton.FinishButton).setEnabled(True)
+        self.button(self.WizardButton.CancelButton).setEnabled(False)
         self.showFileDialog.setEnabled(False)
 
     def update_log(self):
@@ -295,7 +297,7 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
             self.backup_restore.canceled = True
             self.append_output('<font color="red">{0}</font>'.format(
                 self.tr("Aborting the operation...")))
-            self.button(self.CancelButton).setDisabled(True)
+            self.button(self.WizardButton.CancelButton).setDisabled(True)
         else:
             self.done(0)
 
