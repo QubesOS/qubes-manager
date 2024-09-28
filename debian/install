@@ -23,7 +23,6 @@
 /usr/lib/*/dist-packages/qubesmanager/settings.py
 /usr/lib/*/dist-packages/qubesmanager/log_dialog.py
 /usr/lib/*/dist-packages/qubesmanager/about.py
-/usr/lib/*/dist-packages/qubesmanager/releasenotes.py
 /usr/lib/*/dist-packages/qubesmanager/informationnotes.py
 /usr/lib/*/dist-packages/qubesmanager/create_new_vm.py
 /usr/lib/*/dist-packages/qubesmanager/common_threads.py
@@ -46,7 +45,6 @@
 /usr/lib/*/dist-packages/qubesmanager/ui_settingsdlg.py
 /usr/lib/*/dist-packages/qubesmanager/ui_logdlg.py
 /usr/lib/*/dist-packages/qubesmanager/ui_about.py
-/usr/lib/*/dist-packages/qubesmanager/ui_releasenotes.py
 /usr/lib/*/dist-packages/qubesmanager/ui_informationnotes.py
 /usr/lib/*/dist-packages/qubesmanager/ui_qubemanager.py
 /usr/lib/*/dist-packages/qubesmanager/ui_devicelist.py

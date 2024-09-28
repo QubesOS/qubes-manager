@@ -75,13 +75,6 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="releaseNotes">
-       <property name="text">
-        <string>Release notes</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QPushButton" name="informationNotes">
        <property name="text">
         <string>Version information</string>

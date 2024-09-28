@@ -86,7 +86,6 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/settings.py
 %{python3_sitelib}/qubesmanager/log_dialog.py
 %{python3_sitelib}/qubesmanager/about.py
-%{python3_sitelib}/qubesmanager/releasenotes.py
 %{python3_sitelib}/qubesmanager/informationnotes.py
 %{python3_sitelib}/qubesmanager/create_new_vm.py
 %{python3_sitelib}/qubesmanager/clone_vm.py
@@ -109,7 +108,6 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/ui_settingsdlg.py
 %{python3_sitelib}/qubesmanager/ui_logdlg.py
 %{python3_sitelib}/qubesmanager/ui_about.py
-%{python3_sitelib}/qubesmanager/ui_releasenotes.py
 %{python3_sitelib}/qubesmanager/ui_informationnotes.py
 %{python3_sitelib}/qubesmanager/ui_qubemanager.py
 %{python3_sitelib}/qubesmanager/ui_devicelist.py

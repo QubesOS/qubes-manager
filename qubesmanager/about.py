@@ -22,7 +22,6 @@
 #
 from PyQt5.QtWidgets import QDialog  # pylint: disable=import-error
 from PyQt5.QtGui import QIcon  # pylint: disable=import-error
-from qubesmanager.releasenotes import ReleaseNotesDialog
 from qubesmanager.informationnotes import InformationNotesDialog
 
 from . import ui_about  # pylint: disable=no-name-in-module
@@ -55,12 +54,7 @@ class AboutDialog(ui_about.Ui_AboutDialog, QDialog):
                 self.release.setText('unknown')
 
         self.ok.clicked.connect(self.accept)
-        self.releaseNotes.clicked.connect(self.on_release_notes_clicked)
         self.informationNotes.clicked.connect(self.on_information_notes_clicked)
-
-    def on_release_notes_clicked(self):
-        release_notes_dialog = ReleaseNotesDialog(self)
-        release_notes_dialog.exec_()
 
     def on_information_notes_clicked(self):
         information_notes_dialog = InformationNotesDialog(self)
