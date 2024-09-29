@@ -873,7 +873,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui_newappvmdlg.py" line="139"/>
-        <source> MB</source>
+        <source> MiB</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1460,7 +1460,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../ui_settingsdlg.py" line="915"/>
-        <source> MB</source>
+        <source> MiB</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
