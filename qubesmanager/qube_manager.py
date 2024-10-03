@@ -693,6 +693,13 @@ class QubesProxyModel(QSortFilterProxyModel):
         # if hide internal is true, ignore all other filters
         if not self.window.show_internal_action.isChecked() and vm.internal:
             return False
+
+        if self.window.show_user.isChecked() \
+                and vm.klass in ['AppVM', 'StandaloneVM'] \
+                and not getattr(vm.vm, 'template_for_dispvms', False) \
+                and not vm.vm.features.get('servicevm', False):
+            return super().filterAcceptsRow(sourceRow, sourceParent)
+
         if self.window.show_all.isChecked():
             return super().filterAcceptsRow(sourceRow, sourceParent)
 
@@ -777,6 +784,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.show_network.stateChanged.connect(self.invalidate)
         self.show_templates.stateChanged.connect(self.invalidate)
         self.show_standalone.stateChanged.connect(self.invalidate)
+        self.show_user.stateChanged.connect(self.invalidate)
         self.show_all.stateChanged.connect(self.invalidate)
 
         # Create view menu
@@ -989,7 +997,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self.show_standalone.isChecked())
         self.manager_settings.setValue('show/internal',
                 self.show_internal_action.isChecked())
-        self.manager_settings.setValue('show/all', self.show_all.isChecked())
+        self.manager_settings.setValue('show/user',
+                self.show_user.isChecked())
+        self.manager_settings.setValue('show/all',
+                self.show_all.isChecked())
 
     def save_sorting(self):
         self.manager_settings.setValue('view/sort_column',
@@ -1204,6 +1215,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             'show/templates', "true") == "true")
         self.show_standalone.setChecked(self.manager_settings.value(
             'show/standalone', "true") == "true")
+        self.show_user.setChecked(self.manager_settings.value(
+            'show/user', "true") == "true")
         self.show_all.setChecked(self.manager_settings.value(
             'show/all', "true") == "true")
 
