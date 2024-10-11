@@ -138,7 +138,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         ('services', 5),
         ))
 
-    def __init__(self, vm, init_page="basic", qapp=None, qubesapp=None,
+    def __init__(self, vm, init_page="basic", qapp=None, qubesapp=None, *,
                  parent=None):
         super().__init__(parent)
 
@@ -1342,7 +1342,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
     def strict_reset_button_pressed(self):
         device_list_window = device_list.PCIDeviceListWindow(
-            self.vm, self.qapp, self.dev_list, self.new_strict_reset_list, self)
+            self.vm, self.qapp,
+            dev_list=self.dev_list,
+            no_strict_reset_list=self.new_strict_reset_list,
+            parent=self)
         device_list_window.exec()
 
     ######## applications tab

@@ -316,7 +316,7 @@ class NewTemplateItem(QtWidgets.QComboBox):
 
 
 class VMRow:
-    # pylint: disable=too-few-public-methods
+    # pylint: disable=too-few-public-methods,too-many-positional-arguments
     def __init__(self, vm, row_no, table_widget, columns, templates):
         self.vm = vm
         self.table_widget = table_widget

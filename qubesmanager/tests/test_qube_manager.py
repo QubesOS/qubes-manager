@@ -177,7 +177,7 @@ class QubeManagerTest(unittest.TestCase):
             ip_item = self._get_table_item(row, "IP Address")
             if hasattr(vm, 'ip'):
                 ip_value = getattr(vm, 'ip')
-                ip_value = "" if ip_value is None else ip_value
+                ip_value = "n/a" if not ip_value else ip_value
             else:
                 ip_value = "n/a"
 
@@ -304,7 +304,7 @@ class QubeManagerTest(unittest.TestCase):
         QtTest.QTest.mouseClick(widget,
                                 QtCore.Qt.LeftButton)
         mock_window.assert_called_once_with(
-            selected_vm, "basic", self.qtapp, self.qapp, self.dialog)
+            selected_vm, "basic", self.qtapp, self.qapp, parent=self.dialog)
 
     def test_201_vm_open_settings_admin(self):
         self._select_admin_vm()
@@ -325,7 +325,7 @@ class QubeManagerTest(unittest.TestCase):
         QtTest.QTest.mouseClick(widget,
                                 QtCore.Qt.LeftButton)
         mock_window.assert_called_once_with(
-            selected_vm, "firewall", self.qtapp, self.qapp, self.dialog)
+            selected_vm, "firewall", self.qtapp, self.qapp, parent=self.dialog)
 
     @unittest.mock.patch('qubesmanager.settings.VMSettingsWindow')
     def test_203_vm_open_apps(self, mock_window):
@@ -336,7 +336,8 @@ class QubeManagerTest(unittest.TestCase):
         QtTest.QTest.mouseClick(widget,
                                 QtCore.Qt.LeftButton)
         mock_window.assert_called_once_with(
-            selected_vm, "applications", self.qtapp, self.qapp, self.dialog)
+            selected_vm, "applications", self.qtapp, self.qapp,
+            parent=self.dialog)
 
     @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
     def test_204_vm_keyboard(self, mock_message):
@@ -1028,7 +1029,7 @@ class QubeManagerTest(unittest.TestCase):
             self.dialog.action_settings.trigger()
             mock_settings.assert_called_once_with(
                 self.qapp.domains["test-vm"], "basic",
-                self.qtapp, self.qapp, self.dialog)
+                self.qtapp, self.qapp, parent=self.dialog)
 
     def test_401_event_domain_removed(self):
         initial_vms = self._create_set_of_current_vms()
@@ -1151,6 +1152,8 @@ class QubeManagerTest(unittest.TestCase):
         vm_row = self._find_vm_row(target_vm_name)
 
         old_netvm = self._get_table_item(vm_row, "NetVM")
+        # in case of "default (...)" take "default"
+        old_newvm = old_netvm.split(' ')[0]
         new_netvm = None
         for vm in self.qapp.domains:
             if getattr(vm, "provides_network", False) and vm.name != old_netvm:
