@@ -1152,6 +1152,8 @@ class QubeManagerTest(unittest.TestCase):
         vm_row = self._find_vm_row(target_vm_name)
 
         old_netvm = self._get_table_item(vm_row, "NetVM")
+        # in case of "default (...)" take "default"
+        old_newvm = old_netvm.split(' ')[0]
         new_netvm = None
         for vm in self.qapp.domains:
             if getattr(vm, "provides_network", False) and vm.name != old_netvm:
