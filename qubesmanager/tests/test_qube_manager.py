@@ -177,7 +177,7 @@ class QubeManagerTest(unittest.TestCase):
             ip_item = self._get_table_item(row, "IP Address")
             if hasattr(vm, 'ip'):
                 ip_value = getattr(vm, 'ip')
-                ip_value = "" if ip_value is None else ip_value
+                ip_value = "n/a" if not ip_value else ip_value
             else:
                 ip_value = "n/a"
 
