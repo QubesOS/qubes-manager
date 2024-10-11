@@ -1603,7 +1603,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         try:
             with common_threads.busy_cursor():
                 settings_window = settings.VMSettingsWindow(
-                    vm, tab, self.qt_app, self.qubes_app, self)
+                    vm, tab, self.qt_app, self.qubes_app,
+                    parent=self)
             settings_window.show()
             self.settings_windows[vm.name] = settings_window
         except exc.QubesException as ex:

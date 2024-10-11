@@ -304,7 +304,7 @@ class QubeManagerTest(unittest.TestCase):
         QtTest.QTest.mouseClick(widget,
                                 QtCore.Qt.LeftButton)
         mock_window.assert_called_once_with(
-            selected_vm, "basic", self.qtapp, self.qapp, self.dialog)
+            selected_vm, "basic", self.qtapp, self.qapp, parent=self.dialog)
 
     def test_201_vm_open_settings_admin(self):
         self._select_admin_vm()
@@ -325,7 +325,7 @@ class QubeManagerTest(unittest.TestCase):
         QtTest.QTest.mouseClick(widget,
                                 QtCore.Qt.LeftButton)
         mock_window.assert_called_once_with(
-            selected_vm, "firewall", self.qtapp, self.qapp, self.dialog)
+            selected_vm, "firewall", self.qtapp, self.qapp, parent=self.dialog)
 
     @unittest.mock.patch('qubesmanager.settings.VMSettingsWindow')
     def test_203_vm_open_apps(self, mock_window):
@@ -336,7 +336,8 @@ class QubeManagerTest(unittest.TestCase):
         QtTest.QTest.mouseClick(widget,
                                 QtCore.Qt.LeftButton)
         mock_window.assert_called_once_with(
-            selected_vm, "applications", self.qtapp, self.qapp, self.dialog)
+            selected_vm, "applications", self.qtapp, self.qapp,
+            parent=self.dialog)
 
     @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
     def test_204_vm_keyboard(self, mock_message):
@@ -1028,7 +1029,7 @@ class QubeManagerTest(unittest.TestCase):
             self.dialog.action_settings.trigger()
             mock_settings.assert_called_once_with(
                 self.qapp.domains["test-vm"], "basic",
-                self.qtapp, self.qapp, self.dialog)
+                self.qtapp, self.qapp, parent=self.dialog)
 
     def test_401_event_domain_removed(self):
         initial_vms = self._create_set_of_current_vms()
