@@ -26,6 +26,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore  # pylint: disable=import-error
 
 from . import ui_templatemanager  # pylint: disable=no-name-in-module
 from . import utils
+from . import common_threads
 
 column_names = ['State', 'Qube', 'Current template', 'New template']
 
@@ -45,6 +46,8 @@ class TemplateManagerWindow(
         self.rows_in_table = {}
         self.templates = []
         self.timers = []
+        self.dialog = None
+        self.thread = None
 
         self.prepare_lists()
         self.initialize_table_events()
@@ -52,7 +55,11 @@ class TemplateManagerWindow(
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Ok).clicked.connect(
             self.apply)
         self.buttonBox.button(
+            QtWidgets.QDialogButtonBox.StandardButton.Ok).setText('Apply')
+        self.buttonBox.button(
             QtWidgets.QDialogButtonBox.Cancel).clicked.connect(self.cancel)
+        self.buttonBox.button(
+            QtWidgets.QDialogButtonBox.StandardButton.Cancel).setText('Close')
         self.buttonBox.button(QtWidgets.QDialogButtonBox.Reset).clicked.connect(
             self.reset)
 
@@ -179,9 +186,12 @@ class TemplateManagerWindow(
                     row.new_item.findText(selected_template))
 
         self.change_all_combobox.setCurrentIndex(0)
+        self.clear_selection()
 
     def table_double_click(self, row, column):
         template_column = column_names.index('Current template')
+        current_state = self.vm_list.cellWidget(
+            row, column_names.index('State')).isChecked()
 
         if column != template_column:
             return
@@ -194,15 +204,12 @@ class TemplateManagerWindow(
                 checkbox = self.vm_list.cellWidget(
                     row_number, column_names.index('State'))
                 if checkbox:
-                    if row_number == row:
-                        # this is because double click registers as a
-                        # single click and a double click
-                        checkbox.setChecked(False)
-                    else:
-                        checkbox.setChecked(True)
+                    checkbox.setChecked(not current_state)
 
     def table_click(self, row, column):
         if column == column_names.index('New template'):
+            return
+        if column == column_names.index('Current template'):
             return
 
         checkbox = self.vm_list.cellWidget(row, column_names.index('State'))
@@ -222,14 +229,28 @@ class TemplateManagerWindow(
         self.close()
 
     def apply(self):
-        errors = {}
-        for vm, row in self.rows_in_table.items():
-            if row.new_item and row.new_item.changed:
-                try:
-                    setattr(self.qubes_app.domains[vm],
-                            'template', row.new_item.currentText())
-                except Exception as ex:  # pylint: disable=broad-except
-                    errors[vm] = str(ex)
+        items_to_change = [
+            (vm, row) for vm, row in self.rows_in_table.items()
+            if row.new_item and row.new_item.changed]
+
+        # show a "in progress" dialog
+        self.dialog = QtWidgets.QProgressDialog(
+            "Changing templates...", None, 0, len(items_to_change), self)
+        self.dialog.setCancelButton(None)
+        self.dialog.setModal(True)
+        self.dialog.show()
+
+        self.thread = common_threads.ChangeTemplatesThread(self.dialog,
+                                                           items_to_change,
+                                                           self.qubes_app)
+        self.thread.finished.connect(self.finish_changes)
+        self.thread.start()
+
+    def finish_changes(self):
+        self.dialog.hide()
+
+        errors = self.thread.errors
+
         if errors:
             error_messages = [vm + ": " + error for vm, error in errors.items()]
             QtWidgets.QMessageBox.warning(
@@ -238,7 +259,14 @@ class TemplateManagerWindow(
                 self.tr(
                     "Errors encountered on template change in the following "
                     "qubes: <br> {}.").format("<br> ".join(error_messages)))
-        self.close()
+
+        for vm, row in self.rows_in_table.items():
+            if row.new_item and row.new_item.changed:
+                vm_object = self.qubes_app.domains[vm]
+
+                if vm_object.template.name == row.new_item.currentText():
+                    row.new_item.reset_start_value()
+                    row.current_item.reset_template_name()
 
 
 class VMNameItem(QtWidgets.QTableWidgetItem):
@@ -288,6 +316,9 @@ class CurrentTemplateItem(QtWidgets.QTableWidgetItem):
             return self.vm.name < other.vm.name
         return self.text() < other.text()
 
+    def reset_template_name(self):
+        self.setText(self.vm.template.name)
+
 
 class NewTemplateItem(QtWidgets.QComboBox):
     def __init__(self, vm, templates, table_widget):
@@ -313,6 +344,11 @@ class NewTemplateItem(QtWidgets.QComboBox):
 
     def reset_choice(self):
         self.setCurrentIndex(self.findText(self.start_value))
+
+    def reset_start_value(self):
+        self.start_value = self.currentText()
+        self.changed = False
+        self.setStyleSheet('font-weight: normal')
 
 
 class VMRow:
