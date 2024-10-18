@@ -24,7 +24,7 @@ import os
 import sys
 import subprocess
 
-from PyQt5 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
+from PyQt6 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
 
 import qubesadmin
 import qubesadmin.tools
@@ -34,6 +34,10 @@ from . import common_threads
 from . import utils
 
 from .ui_clonevmdlg import Ui_CloneVMDlg  # pylint: disable=import-error
+
+# this is needed for icons to actually work
+# pylint: disable=unused-import
+from . import resources
 
 
 class CloneVMDlg(QtWidgets.QDialog, Ui_CloneVMDlg):
@@ -73,8 +77,11 @@ class CloneVMDlg(QtWidgets.QDialog, Ui_CloneVMDlg):
 
         self.set_clone_name()
 
-        self.name.setValidator(QtGui.QRegExpValidator(
-            QtCore.QRegExp("[a-zA-Z0-9_-]*", QtCore.Qt.CaseInsensitive), None))
+        self.name.setValidator(QtGui.QRegularExpressionValidator(
+            QtCore.QRegularExpression(
+                "[a-zA-Z0-9_-]*",
+                QtCore.QRegularExpression.PatternOption.CaseInsensitiveOption),
+            None))
         self.name.selectAll()
         self.name.setFocus()
 
@@ -183,4 +190,4 @@ def main(args=None):
         "appname", 'Clone qube'))
 
     dialog = CloneVMDlg(qtapp, args.app, src_vm=src_vm)
-    dialog.exec_()
+    dialog.exec()

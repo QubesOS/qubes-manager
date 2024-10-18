@@ -23,7 +23,7 @@ import logging.handlers
 import unittest
 import unittest.mock
 
-from PyQt5 import QtTest, QtCore
+from PyQt6 import QtTest, QtCore
 from qubesadmin import Qubes
 import qubesmanager.settings as vm_settings
 from qubesmanager.tests import init_qtapp
@@ -35,7 +35,7 @@ class VMSettingsTest(unittest.TestCase):
         self.qtapp, self.loop = init_qtapp()
 
         self.mock_qprogress = unittest.mock.patch(
-            'PyQt5.QtWidgets.QProgressDialog')
+            'PyQt6.QtWidgets.QProgressDialog')
         self.mock_qprogress.start()
 
         self.addCleanup(self.mock_qprogress.stop)
@@ -295,8 +295,8 @@ class VMSettingsTest(unittest.TestCase):
 
         # TODO are dependencies correctly processed
 
-    @unittest.mock.patch('PyQt5.QtWidgets.QProgressDialog')
-    @unittest.mock.patch('PyQt5.QtWidgets.QInputDialog.getText')
+    @unittest.mock.patch('PyQt6.QtWidgets.QProgressDialog')
+    @unittest.mock.patch('PyQt6.QtWidgets.QInputDialog.getText')
     @unittest.mock.patch('qubesmanager.settings.RenameVMThread')
     def test_11_rename_vm(self, mock_thread, mock_input, _):
         self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
@@ -325,9 +325,9 @@ class VMSettingsTest(unittest.TestCase):
                                            src_vm=self.vm)
 
 
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
-    @unittest.mock.patch('PyQt5.QtWidgets.QProgressDialog')
-    @unittest.mock.patch('PyQt5.QtWidgets.QInputDialog.getText')
+    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
+    @unittest.mock.patch('PyQt6.QtWidgets.QProgressDialog')
+    @unittest.mock.patch('PyQt6.QtWidgets.QInputDialog.getText')
     @unittest.mock.patch('qubesmanager.common_threads.RemoveVMThread')
     def test_13_remove_vm(self, mock_thread, mock_input, _, mock_warning):
         self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
@@ -522,7 +522,7 @@ class VMSettingsTest(unittest.TestCase):
         mock_bootwindow.return_value.cdrom_location = 'CDROM_LOCATION'
 
         self.dialog.boot_from_device_button.click()
-        mock_bootwindow.return_value.exec_.assert_called_once_with()
+        mock_bootwindow.return_value.exec.assert_called_once_with()
         mock_qvm_start.main.assert_called_once_with(
                 ['--cdrom', 'CDROM_LOCATION', 'test-vm'])
 
@@ -554,15 +554,15 @@ class VMSettingsTest(unittest.TestCase):
 
     def _click_ok(self):
         okwidget = self.dialog.buttonBox.button(
-                    self.dialog.buttonBox.Ok)
+                    self.dialog.buttonBox.StandardButton.Ok)
 
-        QtTest.QTest.mouseClick(okwidget, QtCore.Qt.LeftButton)
+        QtTest.QTest.mouseClick(okwidget, QtCore.Qt.MouseButton.LeftButton)
 
     def _click_cancel(self):
         cancelwidget = self.dialog.buttonBox.button(
             self.dialog.buttonBox.Cancel)
 
-        QtTest.QTest.mouseClick(cancelwidget, QtCore.Qt.LeftButton)
+        QtTest.QTest.mouseClick(cancelwidget, QtCore.Qt.MouseButton.LeftButton)
 
     def _set_noncurrent(self, widget):
         if widget.count() < 2:

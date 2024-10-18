@@ -30,9 +30,9 @@ import subprocess
 import datetime
 import time
 
-from PyQt5 import QtTest, QtCore, QtWidgets
-from PyQt5.QtCore import (Qt, QSize)
-from PyQt5.QtGui import (QIcon)
+from PyQt6 import QtTest, QtCore, QtWidgets
+from PyQt6.QtCore import (Qt, QSize)
+from PyQt6.QtGui import (QIcon)
 
 from qubesadmin import Qubes, events, exc
 import qubesmanager.qube_manager as qube_manager
@@ -78,7 +78,7 @@ class QubeManagerTest(unittest.TestCase):
         self.qtapp, self.loop = init_qtapp()
 
         self.mock_qprogress = unittest.mock.patch(
-            'PyQt5.QtWidgets.QProgressDialog')
+            'PyQt6.QtWidgets.QProgressDialog')
         self.mock_qprogress.start()
 
         self.addCleanup(self.mock_qprogress.stop)
@@ -188,7 +188,9 @@ class QubeManagerTest(unittest.TestCase):
         for row in range(self.dialog.table.model().rowCount()):
             vm = self._get_table_vm(row)
 
-            incl_backups_item = self._get_table_item(row, "Backup", Qt.CheckStateRole) == Qt.Checked
+            incl_backups_item = self._get_table_item(
+                row, "Backup",
+                Qt.ItemDataRole.CheckStateRole) == Qt.CheckState.Checked
             incl_backups_value = getattr(vm, 'include_in_backups', False)
 
             self.assertEqual(
@@ -243,7 +245,8 @@ class QubeManagerTest(unittest.TestCase):
             icon = QIcon.fromTheme(getattr(vm, 'icon', 'appvm-black'))
             icon = icon.pixmap(icon_size)
 
-            label_pixmap = self._get_table_item(row, "Label", Qt.DecorationRole)
+            label_pixmap = self._get_table_item(
+                row, "Label", Qt.ItemDataRole.DecorationRole)
 
             self.assertEqual(label_pixmap.toImage(), icon.toImage())
 
@@ -268,9 +271,9 @@ class QubeManagerTest(unittest.TestCase):
         mock_settings.side_effect = (
             lambda x, *args, **kwargs: settings_result_dict.get(x))
 
-        with unittest.mock.patch('PyQt5.QtCore.QSettings.value',
+        with unittest.mock.patch('PyQt6.QtCore.QSettings.value',
                                  mock_settings),\
-                unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')\
+                unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.warning')\
                 as mock_warning:
             self.dialog = qube_manager.VmManagerWindow(
                 self.qtapp, self.qapp, self.dispatcher)
@@ -278,11 +281,11 @@ class QubeManagerTest(unittest.TestCase):
 
     def test_100_sorting(self):
         col = self.dialog.qubes_model.columns_indices.index("Template")
-        self.dialog.table.sortByColumn(col, QtCore.Qt.AscendingOrder)
+        self.dialog.table.sortByColumn(col, QtCore.Qt.SortOrder.AscendingOrder)
         self.__check_sorting("Template")
 
         col = self.dialog.qubes_model.columns_indices.index("Name")
-        self.dialog.table.sortByColumn(col, QtCore.Qt.AscendingOrder)
+        self.dialog.table.sortByColumn(col, QtCore.Qt.SortOrder.AscendingOrder)
         self.__check_sorting("Name")
 
     @unittest.mock.patch('qubesmanager.qube_manager.QSettings.setValue')
@@ -302,7 +305,7 @@ class QubeManagerTest(unittest.TestCase):
         widget = self.dialog.toolbar.widgetForAction(
             self.dialog.action_settings)
         QtTest.QTest.mouseClick(widget,
-                                QtCore.Qt.LeftButton)
+                                QtCore.Qt.MouseButton.LeftButton)
         mock_window.assert_called_once_with(
             selected_vm, "basic", self.qtapp, self.qapp, self.dialog)
 
@@ -323,7 +326,7 @@ class QubeManagerTest(unittest.TestCase):
         widget = self.dialog.toolbar.widgetForAction(
             self.dialog.action_editfwrules)
         QtTest.QTest.mouseClick(widget,
-                                QtCore.Qt.LeftButton)
+                                QtCore.Qt.MouseButton.LeftButton)
         mock_window.assert_called_once_with(
             selected_vm, "firewall", self.qtapp, self.qapp, self.dialog)
 
@@ -334,11 +337,11 @@ class QubeManagerTest(unittest.TestCase):
         widget = self.dialog.toolbar.widgetForAction(
             self.dialog.action_appmenus)
         QtTest.QTest.mouseClick(widget,
-                                QtCore.Qt.LeftButton)
+                                QtCore.Qt.MouseButton.LeftButton)
         mock_window.assert_called_once_with(
             selected_vm, "applications", self.qtapp, self.qapp, self.dialog)
 
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
+    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
     def test_204_vm_keyboard(self, mock_message):
         selected_vm = self._select_non_admin_vm(running=True)
         self.assertIsNotNone(selected_vm, "No valid non-admin VM found")
@@ -348,12 +351,12 @@ class QubeManagerTest(unittest.TestCase):
             self.dialog.action_set_keyboard_layout)
         with unittest.mock.patch.object(selected_vm, 'run') as mock_run:
             QtTest.QTest.mouseClick(widget,
-                                    QtCore.Qt.LeftButton)
+                                    QtCore.Qt.MouseButton.LeftButton)
             mock_run.assert_called_once_with("qubes-change-keyboard-layout")
         self.assertEqual(mock_message.call_count, 0,
                          "VM does not support new layout change")
 
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
+    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
     def test_205_vm_keyboard_not_running(self, mock_message):
         selected_vm = self._select_non_admin_vm(running=False)
         self.assertIsNotNone(selected_vm, "No valid non-admin VM found")
@@ -361,7 +364,7 @@ class QubeManagerTest(unittest.TestCase):
             self.dialog.action_set_keyboard_layout)
         with unittest.mock.patch.object(selected_vm, 'run') as mock_run:
             QtTest.QTest.mouseClick(widget,
-                                    QtCore.Qt.LeftButton)
+                                    QtCore.Qt.MouseButton.LeftButton)
             self.assertEqual(mock_run.call_count, 0,
                              "Keyboard change called on a halted VM")
 
@@ -379,11 +382,11 @@ class QubeManagerTest(unittest.TestCase):
         with unittest.mock.patch('qubesmanager.qube_manager.UpdateVMsThread') \
                 as mock_update:
             QtTest.QTest.mouseClick(widget,
-                                    QtCore.Qt.LeftButton)
+                                    QtCore.Qt.MouseButton.LeftButton)
             mock_update.assert_called_once_with([selected_vm.name])
             mock_update().start.assert_called_once_with()
 
-    @unittest.mock.patch("PyQt5.QtWidgets.QInputDialog.getText",
+    @unittest.mock.patch("PyQt6.QtWidgets.QInputDialog.getText",
                          return_value=("command to run", True))
     def test_209_run_command_in_vm(self, _):
         selected_vm = self._select_non_admin_vm()
@@ -404,7 +407,7 @@ class QubeManagerTest(unittest.TestCase):
         self.assertFalse(self.dialog.action_run_command_in_vm.isEnabled(),
                          "Should not be able to run commands for dom0")
 
-    @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox.warning")
+    @unittest.mock.patch("PyQt6.QtWidgets.QMessageBox.warning")
     def test_211_pausevm(self, mock_warn):
         selected_vm = self._select_non_admin_vm(running=True)
 
@@ -442,9 +445,9 @@ class QubeManagerTest(unittest.TestCase):
         self._select_non_admin_vm(running=True)
         self.assertFalse(self.dialog.action_resumevm.isEnabled())
 
-    @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox.question",
-                         return_value=QtWidgets.QMessageBox.Yes)
-    @unittest.mock.patch('PyQt5.QtCore.QTimer.singleShot')
+    @unittest.mock.patch("PyQt6.QtWidgets.QMessageBox.question",
+                         return_value=QtWidgets.QMessageBox.StandardButton.Yes)
+    @unittest.mock.patch('PyQt6.QtCore.QTimer.singleShot')
     @unittest.mock.patch('qubesmanager.qube_manager.VmShutdownMonitor')
     def test_214_shutdownvm(self, mock_monitor, mock_timer, _):
         selected_vm = self._select_non_admin_vm(running=True)
@@ -492,8 +495,8 @@ class QubeManagerTest(unittest.TestCase):
 
         mock_msgbox().show.assert_called_with()
 
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
-    @unittest.mock.patch("PyQt5.QtWidgets.QInputDialog.getText")
+    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
+    @unittest.mock.patch("PyQt6.QtWidgets.QInputDialog.getText")
     @unittest.mock.patch('qubesadmin.utils.vm_dependencies')
     def test_219_remove_vm_no_depencies(
             self, mock_dependencies, mock_input, mock_warning):
@@ -527,10 +530,10 @@ class QubeManagerTest(unittest.TestCase):
         self._select_non_admin_vm(running=False)
         self.assertFalse(self.dialog.action_restartvm.isEnabled())
 
-    @unittest.mock.patch('PyQt5.QtCore.QTimer.singleShot')
+    @unittest.mock.patch('PyQt6.QtCore.QTimer.singleShot')
     @unittest.mock.patch('qubesmanager.qube_manager.VmShutdownMonitor')
-    @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox.question",
-                         return_value=QtWidgets.QMessageBox.Yes)
+    @unittest.mock.patch("PyQt6.QtWidgets.QMessageBox.question",
+                         return_value=QtWidgets.QMessageBox.StandardButton.Yes)
     def test_221_restartvm_running_vm(self, _msgbox, mock_monitor, _qtimer):
         selected_vm = self._select_non_admin_vm(running=True)
 
@@ -545,8 +548,8 @@ class QubeManagerTest(unittest.TestCase):
                  selected_vm, 1000, True, unittest.mock.ANY)
 
     @unittest.mock.patch('qubesmanager.qube_manager.StartVMThread')
-    @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox.question",
-                         return_value=QtWidgets.QMessageBox.Yes)
+    @unittest.mock.patch("PyQt6.QtWidgets.QMessageBox.question",
+                         return_value=QtWidgets.QMessageBox.StandardButton.Yes)
     def test_222_restartvm_shutdown_meantime(self, _, mock_thread):
         selected_vm = self._select_non_admin_vm(running=True)
 
@@ -572,8 +575,8 @@ class QubeManagerTest(unittest.TestCase):
             self.dialog.clear_threads)
         mock_thread().start.assert_called_once_with()
 
-    @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox.question",
-                         return_value=QtWidgets.QMessageBox.Yes)
+    @unittest.mock.patch("PyQt6.QtWidgets.QMessageBox.question",
+                         return_value=QtWidgets.QMessageBox.StandardButton.Yes)
     def test_224_killvm(self, _):
         selected_vm = self._select_non_admin_vm(running=True)
         action = self.dialog.action_killvm
@@ -582,8 +585,8 @@ class QubeManagerTest(unittest.TestCase):
             action.trigger()
             mock_kill.assert_called_once_with()
 
-    @unittest.mock.patch("PyQt5.QtWidgets.QMessageBox.question",
-                         return_value=QtWidgets.QMessageBox.Cancel)
+    @unittest.mock.patch("PyQt6.QtWidgets.QMessageBox.question",
+                         return_value=QtWidgets.QMessageBox.StandardButton.Cancel)
     def test_225_killvm_cancel(self, _):
         selected_vm = self._select_non_admin_vm(running=True)
         action = self.dialog.action_killvm
@@ -661,10 +664,12 @@ class QubeManagerTest(unittest.TestCase):
         # input text
         self.dialog.searchbox.setText("sys")
         # click outside the widget
-        QtTest.QTest.mouseClick(self.dialog.table, QtCore.Qt.LeftButton)
+        QtTest.QTest.mouseClick(self.dialog.table,
+                                QtCore.Qt.MouseButton.LeftButton)
         # click the widget, check if it is correctly activated and the whole
         # text was selected
-        QtTest.QTest.mouseClick(self.dialog.searchbox, QtCore.Qt.LeftButton)
+        QtTest.QTest.mouseClick(self.dialog.searchbox,
+                                QtCore.Qt.MouseButton.LeftButton)
         self.assertTrue(self.dialog.searchbox.hasFocus())
         self.assertEqual(self.dialog.searchbox.selectedText(), "sys")
 
@@ -686,7 +691,7 @@ class QubeManagerTest(unittest.TestCase):
                          "Incorrect number of vms shown for cleared search box")
 
     def test_235_hide_show_toolbars(self):
-        with unittest.mock.patch('PyQt5.QtCore.QSettings.setValue')\
+        with unittest.mock.patch('PyQt6.QtCore.QSettings.setValue')\
                 as mock_setvalue:
             self.dialog.action_menubar.trigger()
             mock_setvalue.assert_called_with('view/menubar_visible', False)
@@ -703,7 +708,7 @@ class QubeManagerTest(unittest.TestCase):
 
         self.assertEqual(self.dialog.searchbox.text(), "text")
 
-        QtTest.QTest.keyPress(self.dialog, QtCore.Qt.Key_Escape)
+        QtTest.QTest.keyPress(self.dialog, QtCore.Qt.Key.Key_Escape)
 
         self.assertEqual(self.dialog.searchbox.text(), "",
                          "Escape failed to clear searchbox")
@@ -714,10 +719,10 @@ class QubeManagerTest(unittest.TestCase):
         self.assertEqual(expected_number, actual_number,
                          "Incorrect number of vms shown for cleared search box")
 
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.question')
+    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.question')
     @listen_for_events
     def test_240_network_menu_single(self, mock_question):
-        mock_question.return_value = QtWidgets.QMessageBox.Yes
+        mock_question.return_value = QtWidgets.QMessageBox.StandardButton.Yes
         target_vm_name = 'work'
 
         self._run_command_and_process_events(
@@ -777,10 +782,10 @@ class QubeManagerTest(unittest.TestCase):
         mock_question.assert_called()
         self.assertTrue(selected_vm.property_is_default('netvm'))
 
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.question')
+    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.question')
     @listen_for_events
     def test_241_network_menu_multiple(self, mock_question):
-        mock_question.return_value = QtWidgets.QMessageBox.Yes
+        mock_question.return_value = QtWidgets.QMessageBox.StandardButton.Yes
         target_vm_names = ['work', 'personal', 'vault']
         work = self.qapp.domains['work']
         personal = self.qapp.domains['personal']
@@ -828,11 +833,11 @@ class QubeManagerTest(unittest.TestCase):
         self.assertEqual(str(vault.netvm), 'sys-net')
         mock_question.reset_mock()
 
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.question')
+    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.question')
     @listen_for_events
     @skip_if_running('work')
     def test_250_template_menu_single(self, mock_question):
-        mock_question.return_value = QtWidgets.QMessageBox.Yes
+        mock_question.return_value = QtWidgets.QMessageBox.StandardButton.Yes
         target_vm_name = 'work'
         selected_vm = self.qapp.domains[target_vm_name]
         current_template = selected_vm.template
@@ -876,11 +881,11 @@ class QubeManagerTest(unittest.TestCase):
         self.assertEqual(str(selected_vm.template), str(new_template))
         mock_question.reset_mock()
 
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.question')
+    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.question')
     @listen_for_events
     @skip_if_running('work', 'personal', 'untrusted')
     def test_251_template_menu_multiple(self, mock_question):
-        mock_question.return_value = QtWidgets.QMessageBox.Yes
+        mock_question.return_value = QtWidgets.QMessageBox.StandardButton.Yes
         target_vm_names = ['work', 'personal', 'untrusted']
         work = self.qapp.domains['work']
         personal = self.qapp.domains['personal']
@@ -946,8 +951,8 @@ class QubeManagerTest(unittest.TestCase):
         self.assertEqual(str(untrusted.template), str(new_template))
 
 
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.information')
-    @unittest.mock.patch('PyQt5.QtWidgets.QMessageBox.warning')
+    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.information')
+    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
     def test_300_clear_threads(self, mock_warning, mock_info):
         mock_thread_finished_ok = unittest.mock.Mock(
             spec=['isFinished', 'msg', 'msg_is_success'],
@@ -1103,14 +1108,16 @@ class QubeManagerTest(unittest.TestCase):
         target_vm_name = "work"
         vm_row = self._find_vm_row(target_vm_name)
 
-        current_label = self._get_table_item(vm_row, "Label", Qt.DecorationRole)
+        current_label = self._get_table_item(vm_row, "Label",
+                                             Qt.ItemDataRole.DecorationRole)
 
         self.addCleanup(
             subprocess.call, ["qvm-prefs", target_vm_name, "label", "blue"])
         self._run_command_and_process_events(
             ["qvm-prefs", target_vm_name, "label", "red"], timeout=20)
 
-        new_label = self._get_table_item(vm_row, "Label", Qt.DecorationRole)
+        new_label = self._get_table_item(vm_row, "Label",
+                                         Qt.ItemDataRole.DecorationRole)
 
         self.assertNotEqual(current_label.toImage(), new_label.toImage(),
                             "Label icon did not change")
@@ -1467,7 +1474,7 @@ class QubeManagerTest(unittest.TestCase):
             if template == 'AdminVM':
                 index = self.dialog.table.model().index(row, 0)
                 self.dialog.table.setCurrentIndex(index)
-                return index.data(Qt.UserRole).vm
+                return index.data(Qt.ItemDataRole.UserRole).vm
         return None
 
     def _select_non_admin_vm(self, running=None):
@@ -1498,7 +1505,8 @@ class QubeManagerTest(unittest.TestCase):
 
     def _select_vms(self, vms: list):
         self.dialog.table.selectionModel().clear()
-        mode = QtCore.QItemSelectionModel.Select | QtCore.QItemSelectionModel.Rows
+        mode = (QtCore.QItemSelectionModel.SelectionFlag.Select |
+                QtCore.QItemSelectionModel.SelectionFlag.Rows)
         for row in range(self.dialog.table.model().rowCount()):
             vm = self._get_table_vm(row)
             if str(vm) in vms:
@@ -1531,13 +1539,14 @@ class QubeManagerTest(unittest.TestCase):
 
     def _get_table_vminfo(self, row):
         model = self.dialog.table.model()
-        return model.index(row, 0).data(Qt.UserRole)
+        return model.index(row, 0).data(Qt.ItemDataRole.UserRole)
 
     def _get_table_vm(self, row):
         model = self.dialog.table.model()
-        return model.index(row, 0).data(Qt.UserRole).vm
+        return model.index(row, 0).data(Qt.ItemDataRole.UserRole).vm
 
-    def _get_table_item(self, row, column_name, role=Qt.DisplayRole):
+    def _get_table_item(self, row, column_name,
+                        role=Qt.ItemDataRole.DisplayRole):
         model = self.dialog.table.model()
         column = self.dialog.qubes_model.columns_indices.index(column_name)
         return model.index(row, column).data(role)
@@ -1619,7 +1628,7 @@ class QubeManagerThreadTest(unittest.TestCase):
 
 class VMShutdownMonitorTest(unittest.TestCase):
     @unittest.mock.patch('qubesmanager.qube_manager.QMessageBox')
-    @unittest.mock.patch('PyQt5.QtCore.QTimer')
+    @unittest.mock.patch('PyQt6.QtCore.QTimer')
     def test_01_vm_shutdown_correct(self, mock_timer, mock_question):
         mock_vm = unittest.mock.Mock()
         mock_vm.is_running.return_value = False
@@ -1634,7 +1643,7 @@ class VMShutdownMonitorTest(unittest.TestCase):
         monitor.restart_vm_if_needed.assert_called_once_with()
 
     @unittest.mock.patch('qubesmanager.qube_manager.QMessageBox')
-    @unittest.mock.patch('PyQt5.QtCore.QTimer.singleShot')
+    @unittest.mock.patch('PyQt6.QtCore.QTimer.singleShot')
     def test_02_vm_not_shutdown_wait(self, mock_timer, mock_question):
         mock_question().clickedButton.return_value = 1
         mock_question().addButton.return_value = 0
@@ -1652,7 +1661,7 @@ class VMShutdownMonitorTest(unittest.TestCase):
         self.assertEqual(mock_timer.call_count, 1)
 
     @unittest.mock.patch('qubesmanager.qube_manager.QMessageBox')
-    @unittest.mock.patch('PyQt5.QtCore.QTimer.singleShot')
+    @unittest.mock.patch('PyQt6.QtCore.QTimer.singleShot')
     def test_03_vm_kill(self, mock_timer, mock_question):
         mock_question().clickedButton.return_value = 1
         mock_question().addButton.return_value = 1
@@ -1673,7 +1682,7 @@ class VMShutdownMonitorTest(unittest.TestCase):
         monitor.restart_vm_if_needed.assert_called_once_with()
 
     @unittest.mock.patch('qubesmanager.qube_manager.QMessageBox')
-    @unittest.mock.patch('PyQt5.QtCore.QTimer.singleShot')
+    @unittest.mock.patch('PyQt6.QtCore.QTimer.singleShot')
     def test_04_check_later(self, mock_timer, mock_question):
         mock_vm = unittest.mock.Mock()
         mock_vm.is_running.return_value = True

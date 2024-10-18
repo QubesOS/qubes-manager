@@ -22,10 +22,14 @@
 import sys
 import os
 from functools import partial
-from PyQt5 import QtWidgets, Qt  # pylint: disable=import-error
+from PyQt6 import QtWidgets, QtCore  # pylint: disable=import-error
 from qubesadmin import Qubes
 from . import ui_logdlg   # pylint: disable=no-name-in-module
 from . import clipboard
+
+# this is needed for icons to actually work
+# pylint: disable=unused-import
+from . import resources
 
 # Display only this size of log
 LOG_DISPLAY_SIZE = 1024*1024
@@ -43,8 +47,8 @@ class LogDialog(ui_logdlg.Ui_LogDialog, QtWidgets.QDialog):
 
         self.setupUi(self)
         self.setWindowFlags(self.windowFlags() |
-                            Qt.Qt.WindowMaximizeButtonHint |
-                            Qt.Qt.WindowMinimizeButtonHint)
+                            QtCore.Qt.WindowType.WindowMaximizeButtonHint |
+                            QtCore.Qt.WindowType.WindowMinimizeButtonHint)
 
         self.copy_to_qubes_clipboard.clicked.connect(
             self.copy_to_clipboard_triggered)
@@ -89,7 +93,7 @@ def main():
     log_window = LogDialog(qubes_app, sys.argv[1:])
     log_window.show()
 
-    qt_app.exec_()
+    qt_app.exec()
     qt_app.exit()
 
 

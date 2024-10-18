@@ -7,9 +7,12 @@ Build-Depends:
   dh-python,
   python3-all,
   python3-setuptools,
-  qtbase5-dev,
-  qttools5-dev-tools,
-  pyqt5-dev-tools
+  qt6-base-dev,
+  qt6-base-dev-tools,
+  qt6-tools-dev-tools,
+  qt6-l10n-tools,
+  pyqt6-dev,
+  pyqt6-dev-tools,
 Standards-Version: 4.3.0
 Homepage: https://www.qubes-os.org/
 #Vcs-Git: git://github.com/QubesOS/qubes-manager.git
@@ -20,7 +23,7 @@ Package: qubes-manager
 Architecture: any
 Depends:
   python3-qubesadmin (>= 4.3.0),
-  python3-pyqt5,
+  python3-pyqt6,
   python3-pyinotify,
   python3-qasync,
   qubes-desktop-linux-common,

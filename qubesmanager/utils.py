@@ -36,7 +36,7 @@ import xdg.BaseDirectory
 import pathlib
 import shutil
 
-from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
+from PyQt6 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
 
 
 # important usage note: which initialize_widget should I use?
@@ -103,8 +103,8 @@ class SizeSpinBox(QtWidgets.QSpinBox):
 
         self.pattern = r'(\d+\.?\d?) ?(GiB|MiB)'
         self.regex = re.compile(self.pattern)
-        self.validator = QtGui.QRegExpValidator(QtCore.QRegExp(
-            self.pattern), self)
+        self.validator = QtGui.QRegularExpressionValidator(
+            QtCore.QRegularExpression(self.pattern), self)
 
     def textFromValue(self, v: int) -> str:
         if v > 1024:
@@ -131,7 +131,7 @@ class QubeManagerToolBar(QtWidgets.QToolBar): # pylint: disable=too-few-public-m
     def __init__(self, parent=None):
         super().__init__(parent)
     def event(self, e):
-        if e.type() == QtCore.QEvent.Leave:
+        if e.type() == QtCore.QEvent.Type.Leave:
             return True
         return super().event(e)
 
@@ -197,9 +197,9 @@ def initialize_widget(widget, choices, selected_value=None,
                            widget.currentText() + translate(" (current)"))
 
 
-def initialize_widget_for_property(
-        widget, choices, holder, property_name, allow_default=False,
-        icon_getter=None, add_current_label=True):
+def initialize_widget_for_property(*, widget, choices, holder, property_name,
+                                   allow_default=False, icon_getter=None,
+                                   add_current_label=True):
     """
     populates widget (ListBox or ComboBox) with items, based on a listed
     property. Supports discovering the system default for the given property
@@ -248,7 +248,7 @@ def initialize_widget_for_property(
 
 # TODO: improvement: add optional icon support
 def initialize_widget_with_vms(
-        widget, qubes_app, filter_function=(lambda x: True),
+        *, widget, qubes_app, filter_function=(lambda x: True),
         allow_none=False, holder=None, property_name=None,
         allow_default=False, allow_internal=False):
     """
@@ -292,7 +292,7 @@ def initialize_widget_with_vms(
 
 
 def initialize_widget_with_default(
-        widget, choices, add_none=False, add_qubes_default=False,
+        *, widget, choices, add_none=False, add_qubes_default=False,
         mark_existing_as_default=False, default_value=None):
     """
     populates widget (ListBox or ComboBox) with items. Used when there is no
@@ -352,7 +352,7 @@ def initialize_widget_with_default(
 
 
 def initialize_widget_with_kernels(
-        widget, qubes_app, allow_none=False, holder=None,
+        *, widget, qubes_app, allow_none=False, holder=None,
         property_name=None, allow_default=False):
     """
     populates widget (ListBox or ComboBox) with kernel items, based on a given
@@ -516,7 +516,7 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 
     msg_box = QtWidgets.QMessageBox()
     msg_box.setDetailedText(strace)
-    msg_box.setIcon(QtWidgets.QMessageBox.Critical)
+    msg_box.setIcon(QtWidgets.QMessageBox.Icon.Critical)
     msg_box.setWindowTitle(QtCore.QCoreApplication.translate(
         "ManagerUtils", "Houston, we have a problem..."))
     msg_box.setText(QtCore.QCoreApplication.translate(
@@ -525,7 +525,7 @@ def handle_exception(exc_type, exc_value, exc_traceback):
                         "<b><i>{0}</i></b><br/>at line <b>{1}</b><br/>of file "
                         "{2}.<br/><br/>").format(error, line, filename))
 
-    msg_box.exec_()
+    msg_box.exec()
 
 
 def run_asynchronous(window_class):
@@ -591,7 +591,7 @@ def run_synchronous(window_class):
 
     window.show()
 
-    qt_app.exec_()
+    qt_app.exec()
     qt_app.exit()
 
     return window

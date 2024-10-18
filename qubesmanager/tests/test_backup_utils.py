@@ -21,7 +21,7 @@
 #
 import logging.handlers
 import unittest.mock
-from PyQt5 import QtWidgets
+from PyQt6 import QtWidgets
 from qubesadmin import Qubes
 
 from qubesmanager import backup_utils
