@@ -65,9 +65,9 @@ class NewVmTest(unittest.TestCase):
         self.__click_ok()
 
         self.mock_thread.assert_called_once_with(
-            self.qapp, "AppVM", "test-vm",
-            unittest.mock.ANY, self.qapp.default_template,
-            {'provides_network': False}, unittest.mock.ANY)
+            app=self.qapp, vmclass="AppVM", name="test-vm",
+            label=unittest.mock.ANY, template=self.qapp.default_template,
+            properties={'provides_network': False}, pool=unittest.mock.ANY)
         self.mock_thread().start.assert_called_once_with()
 
     def test_03_label(self):
@@ -80,9 +80,10 @@ class NewVmTest(unittest.TestCase):
         self.__click_ok()
 
         self.mock_thread.assert_called_once_with(
-            self.qapp, "AppVM", "test-vm",
-            self.qapp.labels['blue'], self.qapp.default_template,
-            unittest.mock.ANY, unittest.mock.ANY)
+            app=self.qapp, vmclass="AppVM", name="test-vm",
+            label=self.qapp.labels['blue'],
+            template=self.qapp.default_template,
+            properties=unittest.mock.ANY, pool=unittest.mock.ANY)
         self.mock_thread().start.assert_called_once_with()
 
     def test_04_template(self):
@@ -97,9 +98,10 @@ class NewVmTest(unittest.TestCase):
         self.__click_ok()
 
         self.mock_thread.assert_called_once_with(
-            self.qapp, "AppVM", "test-vm",
-            unittest.mock.ANY, template,
-            unittest.mock.ANY, unittest.mock.ANY)
+            app=self.qapp, vmclass="AppVM", name="test-vm",
+            label=unittest.mock.ANY,
+            template=template,
+            properties=unittest.mock.ANY, pool=unittest.mock.ANY)
 
     def test_05_netvm(self):
         netvm = None
@@ -113,9 +115,11 @@ class NewVmTest(unittest.TestCase):
         self.__click_ok()
 
         self.mock_thread.assert_called_once_with(
-            self.qapp, "AppVM", "test-vm",
-            unittest.mock.ANY, unittest.mock.ANY,
-            {'netvm': netvm, 'provides_network': False}, unittest.mock.ANY)
+            app=self.qapp, vmclass="AppVM", name="test-vm",
+            label=unittest.mock.ANY,
+            template=unittest.mock.ANY,
+            properties={'netvm': netvm, 'provides_network': False},
+            pool=unittest.mock.ANY)
 
     def test_06_provides_network(self):
         self.dialog.provides_network.setChecked(True)
@@ -124,9 +128,11 @@ class NewVmTest(unittest.TestCase):
         self.__click_ok()
 
         self.mock_thread.assert_called_once_with(
-            self.qapp, "AppVM", "test-vm",
-            unittest.mock.ANY, unittest.mock.ANY,
-            {'provides_network': True}, unittest.mock.ANY)
+            app=self.qapp, vmclass="AppVM", name="test-vm",
+            label=unittest.mock.ANY,
+            template=unittest.mock.ANY,
+            properties={'provides_network': True},
+            pool=unittest.mock.ANY)
 
     @unittest.mock.patch('subprocess.check_call')
     def test_07_launch_settings(self, mock_call):
@@ -138,9 +144,11 @@ class NewVmTest(unittest.TestCase):
 
         # make sure the thread is not reporting an error
         self.mock_thread.assert_called_once_with(
-            self.qapp, "AppVM", "test-vm",
-            unittest.mock.ANY, unittest.mock.ANY,
-            unittest.mock.ANY, unittest.mock.ANY)
+            app=self.qapp, vmclass="AppVM", name="test-vm",
+            label=unittest.mock.ANY,
+            template=unittest.mock.ANY,
+            properties=unittest.mock.ANY,
+            pool=unittest.mock.ANY)
 
         self.mock_thread().msg = None
         self.dialog.create_finished()
@@ -153,9 +161,11 @@ class NewVmTest(unittest.TestCase):
         self.__click_ok()
 
         self.mock_thread.assert_called_once_with(
-            self.qapp, "AppVM", "test-vm",
-            unittest.mock.ANY, unittest.mock.ANY,
-            unittest.mock.ANY, unittest.mock.ANY)
+            app=self.qapp, vmclass="AppVM", name="test-vm",
+            label=unittest.mock.ANY,
+            template=unittest.mock.ANY,
+            properties=unittest.mock.ANY,
+            pool=unittest.mock.ANY)
 
         # make sure the thread is not reporting an error
         self.mock_thread().start.assert_called_once_with()
@@ -177,9 +187,11 @@ class NewVmTest(unittest.TestCase):
 
         self.__click_ok()
         self.mock_thread.assert_called_once_with(
-            self.qapp, "StandaloneVM", "test-vm",
-            unittest.mock.ANY, unittest.mock.ANY,
-            unittest.mock.ANY, unittest.mock.ANY)
+            app=self.qapp, vmclass="StandaloneVM", name="test-vm",
+            label=unittest.mock.ANY,
+            template=unittest.mock.ANY,
+            properties=unittest.mock.ANY,
+            pool=unittest.mock.ANY)
 
     @unittest.mock.patch('qubesmanager.bootfromdevice.VMBootFromDeviceWindow')
     @unittest.mock.patch('qubesadmin.tools.qvm_start')
@@ -197,9 +209,11 @@ class NewVmTest(unittest.TestCase):
 
         self.__click_ok()
         self.mock_thread.assert_called_once_with(
-            self.qapp, "StandaloneVM", "test-vm",
-            unittest.mock.ANY, None,
-            unittest.mock.ANY, unittest.mock.ANY)
+            app=self.qapp, vmclass="StandaloneVM", name="test-vm",
+            label=unittest.mock.ANY,
+            template=None,
+            properties=unittest.mock.ANY,
+            pool=unittest.mock.ANY)
 
         self.mock_thread().msg = None
         self.dialog.create_finished()
@@ -224,9 +238,11 @@ class NewVmTest(unittest.TestCase):
 
         self.__click_ok()
         self.mock_thread.assert_called_once_with(
-            self.qapp, "StandaloneVM", "test-vm",
-            unittest.mock.ANY, None,
-            unittest.mock.ANY, unittest.mock.ANY)
+            app=self.qapp, vmclass="StandaloneVM", name="test-vm",
+            label=unittest.mock.ANY,
+            template=None,
+            properties=unittest.mock.ANY,
+            pool=unittest.mock.ANY)
 
         self.mock_thread().msg = None
         self.dialog.create_finished()

@@ -486,9 +486,9 @@ class BackupTest(unittest.TestCase):
         self.dialog.backup_finished()
 
         self.assertFalse(self.dialog.button(
-            self.dialog.CancelButton).isEnabled())
+            QtWidgets.QWizard.WizardButton.CancelButton).isEnabled())
         self.assertTrue(self.dialog.button(
-            self.dialog.FinishButton).isEnabled())
+            QtWidgets.QWizard.WizardButton.FinishButton).isEnabled())
         mock_remove.assert_called_once_with(
             '/etc/qubes/backup/qubes-manager-backup-tmp.conf')
         self.assertEqual(mock_system.call_count, 0,
@@ -526,9 +526,9 @@ class BackupTest(unittest.TestCase):
         self.dialog.backup_finished()
 
         self.assertFalse(self.dialog.button(
-            self.dialog.CancelButton).isEnabled())
+            QtWidgets.QWizard.WizardButton.CancelButton).isEnabled())
         self.assertTrue(self.dialog.button(
-            self.dialog.FinishButton).isEnabled())
+            QtWidgets.QWizard.WizardButton.FinishButton).isEnabled())
         mock_remove.assert_called_once_with(
             '/etc/qubes/backup/qubes-manager-backup-tmp.conf')
         mock_system.assert_called_once_with('systemctl poweroff')
@@ -564,9 +564,9 @@ class BackupTest(unittest.TestCase):
         self.dialog.backup_finished()
 
         self.assertFalse(self.dialog.button(
-            self.dialog.CancelButton).isEnabled())
+            QtWidgets.QWizard.WizardButton.CancelButton).isEnabled())
         self.assertTrue(self.dialog.button(
-            self.dialog.FinishButton).isEnabled())
+            QtWidgets.QWizard.WizardButton.FinishButton).isEnabled())
         mock_remove.assert_called_once_with(
             '/etc/qubes/backup/qubes-manager-backup-tmp.conf')
         self.assertEqual(mock_system.call_count, 0,
@@ -596,9 +596,9 @@ class BackupTest(unittest.TestCase):
 
         # see if backup is correctly in progress
         self.assertTrue(self.dialog.button(
-            self.dialog.CancelButton).isEnabled())
+            QtWidgets.QWizard.WizardButton.CancelButton).isEnabled())
         self.assertFalse(self.dialog.button(
-            self.dialog.FinishButton).isEnabled())
+            QtWidgets.QWizard.WizardButton.FinishButton).isEnabled())
         self.assertEqual(self.dialog.progress_bar.value(), 0,
                          "Progress bar does not start at 0")
 
