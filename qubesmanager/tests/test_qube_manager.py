@@ -177,7 +177,7 @@ class QubeManagerTest(unittest.TestCase):
             ip_item = self._get_table_item(row, "IP")
             if hasattr(vm, 'ip'):
                 ip_value = getattr(vm, 'ip')
-                ip_value = "" if ip_value is None else ip_value
+                ip_value = "n/a" if not ip_value else ip_value
             else:
                 ip_value = "n/a"
 
@@ -562,9 +562,8 @@ class QubeManagerTest(unittest.TestCase):
             mock_thread().start.assert_called_once_with()
 
     @unittest.mock.patch('qubesmanager.qube_manager.UpdateVMsThread')
-    def test_223_updatevm_running(self, mock_thread):
-        selected_vm = self._select_non_admin_vm(running=True)
-
+    def test_223_updatevm_template(self, mock_thread):
+        selected_vm = self._select_templatevm()
         self.dialog.action_updatevm.trigger()
 
         mock_thread.assert_called_once_with([selected_vm.name])
@@ -999,7 +998,8 @@ class QubeManagerTest(unittest.TestCase):
         self.addCleanup(subprocess.call, ["qvm-remove", "-f", "test-vm"])
 
         self._run_command_and_process_events(
-            ["qvm-create", "--label", "red", "test-vm"])
+            ["qvm-create", "--label", "red", "test-vm"], timeout=10,
+            additional_timeout=5)
 
         # a single row was added to the table
         self.assertEqual(self.dialog.table.model().rowCount(), number_of_vms+1)
@@ -1151,6 +1151,8 @@ class QubeManagerTest(unittest.TestCase):
         vm_row = self._find_vm_row(target_vm_name)
 
         old_netvm = self._get_table_item(vm_row, "NetVM")
+        # in case of "default (...)" take "default"
+        old_newvm = old_netvm.split(' ')[0]
         new_netvm = None
         for vm in self.qapp.domains:
             if getattr(vm, "provides_network", False) and vm.name != old_netvm:
@@ -1427,33 +1429,29 @@ class QubeManagerTest(unittest.TestCase):
         """
         asyncio.set_event_loop(self.loop)
 
-        future1 = asyncio.ensure_future(self.dispatcher.listen_for_events())
-        self.loop.run_until_complete(asyncio.sleep(0))
+        async def do_tasks():
+            coro = asyncio.create_subprocess_exec(*command,
+                                                     stdout=subprocess.DEVNULL,
+                                                     stderr=subprocess.DEVNULL)
 
-        future2 = asyncio.create_subprocess_exec(*command,
-                                                 stdout=subprocess.DEVNULL,
-                                                 stderr=subprocess.DEVNULL)
+            tasks = {asyncio.create_task(self.dispatcher.listen_for_events()),
+                     asyncio.create_task(coro)}
 
-        future2 = self.loop.run_until_complete(future2).wait()
+            if additional_timeout:
+                (done, pending) = await asyncio.wait(
+                    tasks,
+                    timeout=timeout,
+                    return_when=asyncio.FIRST_COMPLETED)
+                (done, pending) = await asyncio.wait(
+                    pending, timeout=additional_timeout)
+            else:
+                (done, pending) = await asyncio.wait(tasks, timeout=timeout)
 
-        if additional_timeout:
-            (done, pending) = self.loop.run_until_complete(
-                asyncio.wait({future1,
-                              asyncio.create_task(future2)}, timeout=timeout,
-                             return_when=asyncio.FIRST_COMPLETED))
-            (done, pending) = self.loop.run_until_complete(
-                asyncio.wait(pending, timeout=additional_timeout))
-        else:
-            (done, pending) = self.loop.run_until_complete(
-                asyncio.wait({future1,
-                              asyncio.create_task(future2)}, timeout=timeout))
+            for task in pending:
+                with contextlib.suppress(asyncio.CancelledError):
+                    task.cancel()
 
-        for task in pending:
-            with contextlib.suppress(asyncio.CancelledError):
-                task.cancel()
-
-        self.loop.call_soon(self.loop.stop)
-        self.loop.run_forever()
+        self.loop.run_until_complete(do_tasks())
 
     def _create_set_of_current_vms(self):
         result = set()

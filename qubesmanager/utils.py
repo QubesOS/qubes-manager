@@ -29,11 +29,11 @@ import traceback
 import asyncio
 from contextlib import suppress
 import sys
-import qasync
 from qubesadmin import events
 from qubesadmin import exc
 
 from PyQt5 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
+import qasync
 
 
 # important usage note: which initialize_widget should I use?
@@ -526,18 +526,21 @@ def run_asynchronous(window_class):
 
     loop = qasync.QEventLoop(qt_app)
     asyncio.set_event_loop(loop)
-    dispatcher = events.EventsDispatcher(qubes_app)
 
-    window = window_class(qt_app, qubes_app, dispatcher)
+    async def setup():
+        dispatcher = events.EventsDispatcher(qubes_app)
 
-    if hasattr(window, "setup_application"):
-        window.setup_application()
+        window = window_class(qt_app, qubes_app, dispatcher)
 
-    window.show()
+        if hasattr(window, "setup_application"):
+            window.setup_application()
+
+        window.show()
+
+        await dispatcher.listen_for_events()
 
     try:
-        loop.run_until_complete(
-            asyncio.ensure_future(dispatcher.listen_for_events()))
+        loop.run_until_complete(asyncio.ensure_future(setup()))
     except asyncio.CancelledError:
         pass
     except Exception:  # pylint: disable=broad-except

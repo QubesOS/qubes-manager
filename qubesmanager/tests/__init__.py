@@ -1,8 +1,8 @@
 import asyncio
 import sys
 
-import qasync
 from PyQt5 import QtWidgets
+import qasync
 
 qtapp = None
 loop = None
