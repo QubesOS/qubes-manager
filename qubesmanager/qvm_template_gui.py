@@ -155,7 +155,7 @@ class Template(TreeItem):
                                                   entry['version'],
                                                   entry['release'])
         self.repository_name: str = entry['reponame']
-        self.size: int = int(entry['size']) // 1000000
+        self.size: int = int(entry['size']) // 1048576
         self.license = entry['license']
         # install_size
         self._description = entry['description']
@@ -193,10 +193,10 @@ class Template(TreeItem):
                        "NOT RECEIVE SECURITY UPDATES</b><br>")
 
         text += '<br>'
-        if self.size > 1000:
-            size_txt = str(self.size / 1000) + " GB"
+        if self.size > 1024:
+            size_txt = str(self.size / 1024) + " GiB"
         else:
-            size_txt = str(self.size) + " MB"
+            size_txt = str(self.size) + " MiB"
         text += tr("<b>Download size:</b> ") + size_txt + "<br>"
         text += tr("<b>Build time:</b> ") + self.build_time.strftime(
             "%Y-%m-%d %H:%M") + "<br>"
