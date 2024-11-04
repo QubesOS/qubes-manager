@@ -1,3 +1,23 @@
+qubes-manager (4.3.5-1) unstable; urgency=medium
+
+  [ Ali Mirjamali ]
+  * Unify qubes-os XDG config directory
+  * Enable debugging for qubes-restore
+  * Use GiB & MiB for private & system storage sizes
+  * Show no IP for non-networked qubes
+  * Add Ctrl+Q=exit, Ctrl+N=New qube, Home & End keys
+  * Remove stale, incomplete QubeManager release notes
+
+  [ Marta Marczykowska-Górecka ]
+  * Fixes to Template Switcher
+  * Improve Template Manager UI
+  * Update qt to PyQt6
+  * Use more keyword-only arguments to appease pylint
+  * Add qt6 to debian build dir
+  * Fix tests and async use
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 04 Nov 2024 19:16:26 +0100
+
 qubes-manager (4.3.4-1) unstable; urgency=medium
 
   * tests: mock QMessageBox.information too
