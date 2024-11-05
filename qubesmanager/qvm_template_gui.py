@@ -164,6 +164,8 @@ class Template(TreeItem):
         self.system_eol_date = None
         self.newest_available_version = entry.get('upgraded_version',
                                                   self.version_release)
+        self.newest_version_repo = entry.get('upgraded_repo',
+                                             self.repository_name)
 
     @property
     def description(self) -> str:
@@ -183,8 +185,11 @@ class Template(TreeItem):
         if self.installed:
             text += tr("<b>Template upgrade available: </b>")
             if self.template_status == 'upgradable':
-                text += tr("yes, newest available version: " +
-                           self.newest_available_version + "<br>")
+                text += tr("yes, newest available version: ") + \
+                           self.newest_available_version
+                if self.repository_name != self.newest_version_repo:
+                    text += " (" + self.newest_version_repo + ")"
+                text += "<br>"
             else:
                 text += tr("no <br>")
 
@@ -475,6 +480,7 @@ class TemplateModel(PyQt6.QtCore.QAbstractItemModel):
                 tpls['installed'][k]['status'] = 'upgradable'
                 tpls['installed'][k]['upgraded_version'] = (
                         '%s:%s-%s' % (v['epoch'], v['version'], v['release']))
+                tpls['installed'][k]['upgraded_repo'] = v['reponame']
 
         # create available list
         tpls['available'] = {
