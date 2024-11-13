@@ -876,6 +876,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         dispatcher.add_handler('domain-feature-delete:updates-available',
                                self.on_domain_updates_available)
 
+        self.installEventFilter(self)
+
         # It needs to store threads until they finish
         self.threads_list = []
         self.progress = None
@@ -885,6 +887,15 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.size_on_disk_timer.timeout.connect(self.update_running_size)
         self.size_on_disk_timer.setInterval(1000 * 60 * 5)  # every 5 mins
         self.size_on_disk_timer.start()
+
+    def eventFilter(self, _object, event):
+        ''' refresh disk usage every 60s if focused & every 5m in background '''
+        if event.type() == QEvent.Type.WindowActivate:
+            self.update_running_size()
+            self.size_on_disk_timer.setInterval(1000 * 60)
+        elif event.type() == QEvent.Type.WindowDeactivate:
+            self.size_on_disk_timer.setInterval(1000 * 60 * 5)
+        return False
 
     def scroll_to_top(self):
         self.table.selectRow(0)
