@@ -26,6 +26,7 @@ Depends:
   python3-pyqt6,
   python3-pyinotify,
   python3-qasync,
+  python3-xdg,
   qubes-desktop-linux-common,
   qubes-artwork,
   pmount,
