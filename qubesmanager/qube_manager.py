@@ -106,7 +106,8 @@ class StateIconDelegate(QStyledItemDelegate):
                 "update" : QIcon(":/update-recommended.png"),
                 "outdated" : QIcon(":/outdated.png"),
                 "to-be-outdated" : QIcon(":/to-be-outdated.png"),
-                "eol": QIcon(':/warning.png')
+                "eol": QIcon(':/warning.png'),
+                "skipped": QIcon(':/warning.png')
                 }
         self.outdatedTooltips = {
                 "update" : self.tr("Updates pending!"),
@@ -118,7 +119,10 @@ class StateIconDelegate(QStyledItemDelegate):
                     "current session can be picked up by this qube."),
                 "eol": self.tr(
                     "This qube is based on a distribution that is no longer "
-                    "supported\nInstall new template with Template Manager")
+                    "supported\nInstall new template with Template Manager"),
+                "skipped": self.tr(
+                    "This qube is skipped from updates!\n"
+                    "This is an advanced feature. Use at your own risk")
                 }
 
     def sizeHint(self, option, index):
@@ -250,6 +254,9 @@ class VmInfo():
 
             if self.vm.klass in {'TemplateVM', 'StandaloneVM'}:
                 if manager_utils.get_feature(
+                        self.vm, 'skip-update', False):
+                    self.state['outdated'] = 'skipped'
+                elif manager_utils.get_feature(
                         self.vm, 'updates-available', False):
                     self.state['outdated'] = 'update'
                 elif manager_utils.get_feature(
@@ -1114,10 +1121,13 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             return
 
         try:
-            if info.vm.klass in {'TemplateVM', 'StandaloneVM'} and \
-                    manager_utils.get_feature(
+            if info.vm.klass in {'TemplateVM', 'StandaloneVM'}:
+                if manager_utils.get_feature(
+                        info.vm, 'skip-update', False):
+                    info.state['outdated'] = 'skipped'
+                elif manager_utils.get_feature(
                         info.vm, 'updates-available', False):
-                info.state['outdated'] = 'update'
+                    info.state['outdated'] = 'update'
         except exc.QubesDaemonAccessError:
             return
 
