@@ -317,6 +317,19 @@ template</string>
        </widget>
       </item>
       <item>
+       <widget class="QCheckBox" name="show_user">
+        <property name="text">
+         <string>User qubes</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <property name="toolTip">
+         <string>Show AppVMs and Standalone VMs, hide disposable and service VMs</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QCheckBox" name="show_all">
         <property name="text">
          <string>All</string>
