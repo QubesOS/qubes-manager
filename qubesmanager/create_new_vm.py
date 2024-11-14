@@ -261,8 +261,20 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
         self.done(0)
 
     def type_change(self):
-        template = self.template_vm.currentData()
         klass = self.vm_type.currentData()
+
+        if klass == 'TemplateVM':
+            self.template_vm.setCurrentText('(none)')
+            self.template_vm.setEnabled(False)
+            self.netvm.setCurrentText('(none)')
+        else:
+            self.template_vm.setCurrentText('{} (default)'.format(
+                str(self.app.default_template)))
+            self.template_vm.setEnabled(True)
+            self.netvm.setCurrentText('default ({})'.format(
+                str(getattr(self.app, 'default_netvm', None))))
+
+        template = self.template_vm.currentData()
 
         if klass in ['TemplateVM', 'StandaloneVM'] and template is None:
             self.install_system.setEnabled(True)
