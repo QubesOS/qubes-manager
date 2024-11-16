@@ -1207,7 +1207,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             dom0_devs = \
                 list(self.vm.app.domains['dom0'].
                      devices['pci'].get_exposed_devices())
-            attached_devs = list(
+            attached = list(
                 self.vm.devices['pci'].get_assigned_devices(required_only=True))
         except qubesadmin.exc.QubesException:
             # no permission to access devices
@@ -1225,14 +1225,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 self.dev = dev
 
         for dev in dom0_devs:
-            if dev in attached_devs:
+            if any(attached_dev.matches(dev) for attached_dev in attached):
                 self.dev_list.selected_list.addItem(DevListWidgetItem(dev))
             else:
                 self.dev_list.available_list.addItem(DevListWidgetItem(dev))
-        for dev in attached_devs:
-            if dev not in dom0_devs:
+        for ass in attached:
+            if not any(ass.matches(dev) for dev in dom0_devs):
                 self.dev_list.selected_list.addItem(
-                    DevListWidgetItem(dev, unknown=True))
+                    DevListWidgetItem(ass.device, unknown=True))
 
         if self.dev_list.selected_list.count() > 0\
                 and self.include_in_balancing.isChecked():
