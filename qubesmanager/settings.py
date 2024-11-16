@@ -1268,7 +1268,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                         for i in range(self.dev_list.selected_list.count())]
 
             for dev in new_devs:
-                if dev not in old_devs:
+                old_assignments = [old for old in old_devs
+                                   if old.matches(dev)]
+                if not old_assignments:
                     options = {}
                     if dev.port_id in self.new_strict_reset_list:
                         options['no-strict-reset'] = True
@@ -1282,18 +1284,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     self.vm.devices['pci'].assign(ass)
                 elif (dev.port_id in self.current_strict_reset_list) != \
                         (dev.port_id in self.new_strict_reset_list):
-                    current_assignment = None
-                    for assignment in self.vm.devices[
-                            'pci'].get_assigned_devices(required_only=True):
-                        if assignment.port_id == dev.port_id:
-                            current_assignment = assignment
-                            break
-                    if current_assignment is None:
-                        # it would be very weird if this happened
-                        msg.append(self.tr("Error re-assigning device ") +
-                                   dev.port_id)
-                        continue
-
+                    current_assignment = old_assignments[0]
                     self.vm.devices['pci'].unassign(current_assignment)
 
                     current_assignment.options['no-strict-reset'] = \
