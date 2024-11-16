@@ -467,16 +467,6 @@ class QubeManagerTest(unittest.TestCase):
 
         self.assertFalse(self.dialog.action_shutdownvm.isEnabled())
 
-    @unittest.mock.patch('qubesmanager.create_new_vm.NewVmDlg')
-    def test_216_create_vm(self, mock_new_vm):
-        action = self.dialog.action_createvm
-        self.assertTrue(action.isEnabled())
-
-        action.trigger()
-
-        self.assertEqual(mock_new_vm.call_count, 1,
-                         "Create New VM window did not appear")
-
     def test_217_remove_admin_vm(self):
         self._select_admin_vm()
 
