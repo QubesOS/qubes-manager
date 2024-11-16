@@ -1272,11 +1272,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     options = {}
                     if dev.port_id in self.new_strict_reset_list:
                         options['no-strict-reset'] = True
-                    ass = device_protocol.DeviceAssignment(
-                        device_protocol.Port(
-                            self.vm.app.domains['dom0'], dev.port_id, 'pci'),
+                    ass = device_protocol.DeviceAssignment.new(
+                        backend_domain=self.vm.app.domains['dom0'],
+                        port_id=dev.port_id,
+                        devclass='pci',
                         mode='required',
-                        options=options)
+                        options=options,
+                    )
                     self.vm.devices['pci'].assign(ass)
                 elif (dev.port_id in self.current_strict_reset_list) != \
                         (dev.port_id in self.new_strict_reset_list):
