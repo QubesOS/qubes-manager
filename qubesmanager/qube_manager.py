@@ -36,7 +36,7 @@ from qubesadmin.tools import qvm_start
 # pylint: disable=import-error
 from PyQt6.QtCore import (Qt, QAbstractTableModel, QObject, pyqtSlot, QEvent,
                           QSettings, QRegularExpression, QSortFilterProxyModel,
-                          QSize, QPoint, QTimer)
+                          QSize, QProcess, QPoint, QTimer)
 
 # pylint: disable=import-error
 from PyQt6.QtWidgets import (QLineEdit, QStyledItemDelegate, QToolTip,
@@ -53,7 +53,6 @@ from qubesmanager import ui_qubemanager  # pylint: disable=no-name-in-module
 from qubesmanager import settings
 from qubesmanager import restore
 from qubesmanager import backup
-from qubesmanager import create_new_vm
 from qubesmanager import log_dialog
 from qubesmanager import utils as manager_utils
 from qubesmanager import common_threads
@@ -904,6 +903,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.size_on_disk_timer.setInterval(1000 * 60 * 5)  # every 5 mins
         self.size_on_disk_timer.start()
 
+        self.new_qube = QProcess()
+
     def eventFilter(self, _object, event):
         ''' refresh disk usage every 60s if focused & every 5m in background '''
         if event.type() == QEvent.Type.WindowActivate:
@@ -1399,10 +1400,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_createvm_triggered')
     def action_createvm_triggered(self):
-        with common_threads.busy_cursor():
-            create_window = create_new_vm.NewVmDlg(
-                    self.qt_app, self.qubes_app, self)
-        create_window.exec()
+        if self.new_qube.state() == QProcess.ProcessState.Running:
+            return
+        self.new_qube.start("/usr/bin/qubes-new-qube")
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_removevm_triggered')
@@ -1672,6 +1672,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     "\nError: {}".format(str(ex))))
 
     def closeEvent(self, _):
+        if self.new_qube.state() == QProcess.ProcessState.Running:
+            self.new_qube.terminate()
         self.save_showing()
 
     # noinspection PyArgumentList

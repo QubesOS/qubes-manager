@@ -1,5 +1,4 @@
 /usr/bin/qubes-vm-settings
-/usr/bin/qubes-vm-create
 /usr/bin/qubes-vm-boot-from-device
 /usr/bin/qubes-backup
 /usr/bin/qubes-backup-restore
@@ -24,7 +23,6 @@
 /usr/lib/*/dist-packages/qubesmanager/log_dialog.py
 /usr/lib/*/dist-packages/qubesmanager/about.py
 /usr/lib/*/dist-packages/qubesmanager/informationnotes.py
-/usr/lib/*/dist-packages/qubesmanager/create_new_vm.py
 /usr/lib/*/dist-packages/qubesmanager/common_threads.py
 /usr/lib/*/dist-packages/qubesmanager/qube_manager.py
 /usr/lib/*/dist-packages/qubesmanager/utils.py
@@ -39,7 +37,6 @@
 /usr/lib/*/dist-packages/qubesmanager/ui_backupdlg.py
 /usr/lib/*/dist-packages/qubesmanager/ui_bootfromdevice.py
 /usr/lib/*/dist-packages/qubesmanager/ui_multiselectwidget.py
-/usr/lib/*/dist-packages/qubesmanager/ui_newappvmdlg.py
 /usr/lib/*/dist-packages/qubesmanager/ui_newfwruledlg.py
 /usr/lib/*/dist-packages/qubesmanager/ui_restoredlg.py
 /usr/lib/*/dist-packages/qubesmanager/ui_settingsdlg.py
@@ -67,7 +64,6 @@
 
 /usr/lib/*/dist-packages/qubesmanager-*.egg-info/*
 
-/usr/share/applications/qubes-vm-create.desktop
 /usr/share/applications/qubes-backup.desktop
 /usr/share/applications/qubes-backup-restore.desktop
 /usr/share/applications/qubes-qube-manager.desktop

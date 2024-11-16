@@ -58,7 +58,6 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 /usr/bin/qubes-vm-settings
-/usr/bin/qubes-vm-create
 /usr/bin/qubes-vm-clone
 /usr/bin/qubes-vm-boot-from-device
 /usr/bin/qubes-backup
@@ -84,7 +83,6 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/log_dialog.py
 %{python3_sitelib}/qubesmanager/about.py
 %{python3_sitelib}/qubesmanager/informationnotes.py
-%{python3_sitelib}/qubesmanager/create_new_vm.py
 %{python3_sitelib}/qubesmanager/clone_vm.py
 %{python3_sitelib}/qubesmanager/common_threads.py
 %{python3_sitelib}/qubesmanager/qube_manager.py
@@ -99,7 +97,6 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/ui_backupdlg.py
 %{python3_sitelib}/qubesmanager/ui_bootfromdevice.py
 %{python3_sitelib}/qubesmanager/ui_multiselectwidget.py
-%{python3_sitelib}/qubesmanager/ui_newappvmdlg.py
 %{python3_sitelib}/qubesmanager/ui_newfwruledlg.py
 %{python3_sitelib}/qubesmanager/ui_restoredlg.py
 %{python3_sitelib}/qubesmanager/ui_settingsdlg.py
@@ -128,7 +125,6 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{python3_sitelib}/qubesmanager-*.egg-info
 %{python3_sitelib}/qubesmanager-*.egg-info/*
 
-/usr/share/applications/qubes-vm-create.desktop
 /usr/share/applications/qubes-backup.desktop
 /usr/share/applications/qubes-backup-restore.desktop
 /usr/share/applications/qubes-qube-manager.desktop

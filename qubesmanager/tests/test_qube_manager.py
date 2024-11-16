@@ -470,13 +470,6 @@ def test_209_shutdownvm(mock_monitor, mock_timer, _mock_question,
         mock_timer.assert_called_once_with(mock.ANY, mock.ANY)
 
 
-@mock.patch('qubesmanager.create_new_vm.NewVmDlg')
-def test_210_create_vm(mock_new_vm, qubes_manager):
-    assert qubes_manager.action_createvm.isEnabled()
-    qubes_manager.action_createvm.trigger()
-    assert mock_new_vm.call_count == 1
-
-
 def test_211_remove_adminvm(qubes_manager):
     _select_vm(qubes_manager, 'dom0')
 
