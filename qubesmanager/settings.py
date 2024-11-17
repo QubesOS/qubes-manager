@@ -29,7 +29,7 @@ import subprocess
 import sys
 import traceback
 from qubesadmin.tools import QubesArgumentParser
-from qubesadmin import devices
+from qubesadmin import device_protocol
 from qubesadmin import utils as admin_utils
 from qubesadmin.tools import qvm_start
 import qubesadmin.exc
@@ -1217,7 +1217,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             dom0_devs = \
                 list(self.vm.app.domains['dom0'].
                      devices['pci'].get_exposed_devices())
-            attached_devs = list(
+            attached = list(
                 self.vm.devices['pci'].get_assigned_devices(required_only=True))
         except qubesadmin.exc.QubesException:
             # no permission to access devices
@@ -1228,21 +1228,21 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         class DevListWidgetItem(QtWidgets.QListWidgetItem):
             def __init__(self, dev, unknown=False, parent=None):
                 super().__init__(parent)
-                name = dev.ident.replace('_', ":") + ' ' + dev.description
+                name = dev.port_id.replace('_', ":") + ' ' + dev.description
                 if unknown:
                     name += ' (unknown)'
                 self.setText(name)
                 self.dev = dev
 
         for dev in dom0_devs:
-            if dev in attached_devs:
+            if any(attached_dev.matches(dev) for attached_dev in attached):
                 self.dev_list.selected_list.addItem(DevListWidgetItem(dev))
             else:
                 self.dev_list.available_list.addItem(DevListWidgetItem(dev))
-        for dev in attached_devs:
-            if dev not in dom0_devs:
+        for ass in attached:
+            if not any(ass.matches(dev) for dev in dom0_devs):
                 self.dev_list.selected_list.addItem(
-                    DevListWidgetItem(dev, unknown=True))
+                    DevListWidgetItem(ass.device, unknown=True))
 
         if self.dev_list.selected_list.count() > 0\
                 and self.include_in_balancing.isChecked():
@@ -1278,34 +1278,27 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                         for i in range(self.dev_list.selected_list.count())]
 
             for dev in new_devs:
-                if dev not in old_devs:
+                old_assignments = [old for old in old_devs
+                                   if old.matches(dev)]
+                if not old_assignments:
                     options = {}
-                    if dev.ident in self.new_strict_reset_list:
+                    if dev.port_id in self.new_strict_reset_list:
                         options['no-strict-reset'] = True
-                    ass = devices.DeviceAssignment(
-                        self.vm.app.domains['dom0'],
-                        dev.ident, devclass='pci',
-                        attach_automatically=True, required=True,
-                        options=options)
+                    ass = device_protocol.DeviceAssignment.new(
+                        backend_domain=self.vm.app.domains['dom0'],
+                        port_id=dev.port_id,
+                        devclass='pci',
+                        mode='required',
+                        options=options,
+                    )
                     self.vm.devices['pci'].assign(ass)
-                elif (dev.ident in self.current_strict_reset_list) != \
-                        (dev.ident in self.new_strict_reset_list):
-                    current_assignment = None
-                    for assignment in self.vm.devices[
-                            'pci'].get_assigned_devices(required_only=True):
-                        if assignment.ident == dev.ident:
-                            current_assignment = assignment
-                            break
-                    if current_assignment is None:
-                        # it would be very weird if this happened
-                        msg.append(self.tr("Error re-assigning device ") +
-                                   dev.ident)
-                        continue
-
+                elif (dev.port_id in self.current_strict_reset_list) != \
+                        (dev.port_id in self.new_strict_reset_list):
+                    current_assignment = old_assignments[0]
                     self.vm.devices['pci'].unassign(current_assignment)
 
                     current_assignment.options['no-strict-reset'] = \
-                        dev.ident in self.new_strict_reset_list
+                        dev.port_id in self.new_strict_reset_list
 
                     self.vm.devices['pci'].assign(current_assignment)
 
@@ -1347,7 +1340,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 required_only=True):
             if assignment.options.get('no-strict-reset', False):
                 self.current_strict_reset_list.append(
-                    assignment.ident.replace('_', ':'))
+                    assignment.port_id.replace('_', ':'))
         self.new_strict_reset_list = self.current_strict_reset_list.copy()
 
     def strict_reset_button_pressed(self):
