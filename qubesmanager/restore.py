@@ -21,9 +21,11 @@
 #
 
 import argparse
+import importlib.metadata
 from PyQt6 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
 import os
 import os.path
+import sys
 import logging
 import logging.handlers
 
@@ -43,12 +45,19 @@ from . import resources
 
 # pylint: disable=too-few-public-methods
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser( \
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
             '--log', action='store', default='INFO',
             choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
             help='Provide logging level. Values: DEBUG, INFO, '
             'INFO (default), ERROR, CRITICAL')
+    _metadata_ = importlib.metadata.metadata('qubesmanager')
+    parser.version = '{} ({}) {}'.format(os.path.basename(sys.argv[0]), \
+        _metadata_['summary'], _metadata_['version'])
+    parser.version += '\nCopyright (C) {}'.format(_metadata_['author'])
+    parser.version += '\nLicense: {}'.format(_metadata_['license'])
+    parser.add_argument('--version', action='version')
     args = parser.parse_args()
     return args
 
@@ -85,7 +94,7 @@ class RestoreThread(QtCore.QThread):
 
 class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
     def __init__(self, qt_app, qubes_app, parent=None):
-        cliargs = parse_args()
+        self.cliargs = parse_args()
         super().__init__(parent)
 
         self.qt_app = qt_app
@@ -104,7 +113,7 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
         handler = logging.handlers.QueueHandler(self.feedback_queue)
         logger = logging.getLogger('qubesadmin.backup')
         logger.addHandler(handler)
-        logger.setLevel(cliargs.log)
+        logger.setLevel(self.cliargs.log)
 
         self.backup_restore = None
         self.target_appvm = None

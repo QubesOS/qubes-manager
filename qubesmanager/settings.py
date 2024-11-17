@@ -22,10 +22,13 @@
 #
 #
 
+import argparse
 import collections
 import functools
+import importlib.metadata
 import re
 import subprocess
+import os
 import sys
 import traceback
 from qubesadmin.tools import QubesArgumentParser
@@ -1551,7 +1554,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.fw_model.remove_child(i)
 
 
-parser = QubesArgumentParser(vmname_nargs=1)
+parser = QubesArgumentParser(vmname_nargs=1,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+_metadata_ = importlib.metadata.metadata('qubesmanager')
+parser.version = '{} ({}) {}'.format(os.path.basename(sys.argv[0]), \
+    _metadata_['summary'], _metadata_['version'])
+parser.version += '\nCopyright (C) {}'.format(_metadata_['author'])
+parser.version += '\nLicense: {}'.format(_metadata_['license'])
 
 parser.add_argument('--tab', metavar='TAB',
                     action='store',

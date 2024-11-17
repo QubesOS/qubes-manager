@@ -20,6 +20,8 @@
 #
 #
 
+import argparse
+import importlib.metadata
 import os
 import sys
 import subprocess
@@ -163,7 +165,13 @@ class CloneVMDlg(QtWidgets.QDialog, Ui_CloneVMDlg):
                                        str(self.name.text())])
 
 
-parser = qubesadmin.tools.QubesArgumentParser(vmname_nargs='?')
+parser = qubesadmin.tools.QubesArgumentParser(vmname_nargs='?', \
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+_metadata_ = importlib.metadata.metadata('qubesmanager')
+parser.version = '{} ({}) {}'.format(os.path.basename(sys.argv[0]), \
+    _metadata_['summary'], _metadata_['version'])
+parser.version += '\nCopyright (C) {}'.format(_metadata_['author'])
+parser.version += '\nLicense: {}'.format(_metadata_['license'])
 
 
 def main(args=None):

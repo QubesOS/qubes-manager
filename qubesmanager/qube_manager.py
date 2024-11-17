@@ -21,8 +21,12 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 #
+
+import argparse
+import importlib.metadata
 import shlex
 import subprocess
+import sys
 import threading
 from datetime import datetime, timedelta
 from functools import partial
@@ -61,6 +65,19 @@ from qubesmanager import clone_vm
 # this is needed for icons to actually work
 # pylint: disable=unused-import, no-name-in-module
 from . import resources
+
+def parse_args():
+    parser = argparse.ArgumentParser( \
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    _metadata_ = importlib.metadata.metadata('qubesmanager')
+    parser.version = '{} ({}) {}'.format(path.basename(sys.argv[0]), \
+        _metadata_['summary'], _metadata_['version'])
+    parser.version += '\nCopyright (C) {}'.format(_metadata_['author'])
+    parser.version += '\nLicense: {}'.format(_metadata_['license'])
+    parser.add_argument('--version', action='version')
+    args = parser.parse_args()
+    return args
+
 
 def spawn_in_background(cmd: str | list[str]) -> None:
     if isinstance(cmd, str):
@@ -742,6 +759,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
     def __init__(self, qt_app, qubes_app, dispatcher, _parent=None):
         # pylint: disable=too-many-statements
+        self.cliargs = parse_args()
         super().__init__()
         self.setupUi(self)
 

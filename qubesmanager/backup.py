@@ -20,7 +20,10 @@
 #
 #
 
+import argparse
+import importlib.metadata
 import signal
+import sys
 from qubesadmin import exc
 from qubesadmin import utils as admin_utils
 
@@ -41,6 +44,19 @@ import shutil
 from . import resources
 
 # pylint: disable=too-few-public-methods
+def parse_args():
+    parser = argparse.ArgumentParser( \
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    _metadata_ = importlib.metadata.metadata('qubesmanager')
+    parser.version = '{} ({}) {}'.format(os.path.basename(sys.argv[0]), \
+        _metadata_['summary'], _metadata_['version'])
+    parser.version += '\nCopyright (C) {}'.format(_metadata_['author'])
+    parser.version += '\nLicense: {}'.format(_metadata_['license'])
+    parser.add_argument('--version', action='version')
+    args = parser.parse_args()
+    return args
+
+
 class BackupThread(QtCore.QThread):
     def __init__(self, vm):
         QtCore.QThread.__init__(self)
@@ -74,6 +90,7 @@ class BackupThread(QtCore.QThread):
 
 class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
     def __init__(self, qt_app, qubes_app, dispatcher, parent=None):
+        self.cliargs = parse_args()
         super().__init__(parent)
 
         self.qt_app = qt_app
