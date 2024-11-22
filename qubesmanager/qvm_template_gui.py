@@ -23,15 +23,18 @@
 # pylint: disable=invalid-name
 
 import abc
+import argparse
 import asyncio
 import collections
 import functools
+import importlib.metadata
 import subprocess
 import threading
 from datetime import datetime
 from datetime import UTC
 import json
 import os
+import sys
 import typing
 import shlex
 
@@ -77,6 +80,19 @@ Template Switcher tool.
 This tool only displays templates installed from repositories, not any cloned \
 or manually-installed templates.
 """)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser( \
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    _metadata_ = importlib.metadata.metadata('qubesmanager')
+    parser.version = '{} ({}) {}'.format(os.path.basename(sys.argv[0]), \
+        _metadata_['summary'], _metadata_['version'])
+    parser.version += '\nCopyright (C) {}'.format(_metadata_['author'])
+    parser.version += '\nLicense: {}'.format(_metadata_['license'])
+    parser.add_argument('--version', action='version')
+    args = parser.parse_args()
+    return args
 
 
 class TreeItem(abc.ABC):
@@ -631,6 +647,7 @@ class QvmTemplateWindow(
         ui_qvmtemplate.Ui_MainWindow,
         PyQt6.QtWidgets.QMainWindow):
     def __init__(self, qt_app, qubes_app, dispatcher, _parent=None):
+        self.cliargs = parse_args()
         super().__init__()
         self.setupUi(self)
         self.template_tree.header().setSectionResizeMode(

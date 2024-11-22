@@ -21,6 +21,8 @@
 #
 #
 
+import argparse
+import importlib.metadata
 import os
 import sys
 import subprocess
@@ -334,7 +336,13 @@ class NewVmDlg(QtWidgets.QDialog, Ui_NewVMDlg):
             self.install_system.setChecked(False)
 
 
-parser = qubesadmin.tools.QubesArgumentParser()
+parser = qubesadmin.tools.QubesArgumentParser( \
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+_metadata_ = importlib.metadata.metadata('qubesmanager')
+parser.version = '{} ({}) {}'.format(os.path.basename(sys.argv[0]), \
+    _metadata_['summary'], _metadata_['version'])
+parser.version += '\nCopyright (C) {}'.format(_metadata_['author'])
+parser.version += '\nLicense: {}'.format(_metadata_['license'])
 
 
 def main(args=None):

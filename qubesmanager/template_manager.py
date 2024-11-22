@@ -20,6 +20,11 @@
 #
 #
 
+import argparse
+import importlib.metadata
+import sys
+import os
+
 from qubesadmin import exc
 
 from PyQt6 import QtWidgets, QtGui, QtCore  # pylint: disable=import-error
@@ -35,11 +40,25 @@ from . import resources
 column_names = ['State', 'Qube', 'Current template', 'New template']
 
 
+def parse_args():
+    parser = argparse.ArgumentParser( \
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    _metadata_ = importlib.metadata.metadata('qubesmanager')
+    parser.version = '{} ({}) {}'.format(os.path.basename(sys.argv[0]), \
+        _metadata_['summary'], _metadata_['version'])
+    parser.version += '\nCopyright (C) {}'.format(_metadata_['author'])
+    parser.version += '\nLicense: {}'.format(_metadata_['license'])
+    parser.add_argument('--version', action='version')
+    args = parser.parse_args()
+    return args
+
+
 class TemplateManagerWindow(
         ui_templatemanager.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def __init__(self, qt_app, qubes_app, dispatcher, parent=None):
         # pylint: disable=unused-argument
+        self.cliargs = parse_args()
         super().__init__(parent)
         self.setupUi(self)
 

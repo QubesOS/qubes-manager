@@ -17,8 +17,12 @@
 #
 #
 
+import argparse
 import functools
+import importlib.metadata
+import os.path
 import subprocess
+import sys
 from . import utils
 from . import ui_bootfromdevice  # pylint: disable=no-name-in-module
 from PyQt6 import QtWidgets, QtGui, QtCore  # pylint: disable=import-error
@@ -169,7 +173,13 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
             self.pathText.setText(new_path)
 
 
-parser = tools.QubesArgumentParser(vmname_nargs=1)
+parser = tools.QubesArgumentParser(vmname_nargs=1, \
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+_metadata_ = importlib.metadata.metadata('qubesmanager')
+parser.version = '{} ({}) {}'.format(os.path.basename(sys.argv[0]), \
+    _metadata_['summary'], _metadata_['version'])
+parser.version += '\nCopyright (C) {}'.format(_metadata_['author'])
+parser.version += '\nLicense: {}'.format(_metadata_['license'])
 
 
 def main(args=None):
