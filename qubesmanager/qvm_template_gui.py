@@ -710,7 +710,8 @@ class QvmTemplateWindow(
         """
         Run global config in foreground (blocking)
         """
-        subprocess.call('qubes-global-config')
+        subprocess.call(
+            ['qubes-global-config', '-o', 'updates#template_repositories'])
         self.refresh()
 
     def _get_selected_item(self) -> typing.Optional[TreeItem]:
