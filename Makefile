@@ -40,7 +40,6 @@ install:
 	cp qubesmanager/qvm_about.sh $(DESTDIR)/usr/libexec/qubes-manager/
 
 	mkdir -p $(DESTDIR)/usr/share/applications
-	cp qubes-vm-create.desktop $(DESTDIR)/usr/share/applications/
 	cp qubes-backup.desktop $(DESTDIR)/usr/share/applications/
 	cp qubes-backup-restore.desktop $(DESTDIR)/usr/share/applications/
 	cp qubes-qube-manager.desktop $(DESTDIR)/usr/share/applications/
