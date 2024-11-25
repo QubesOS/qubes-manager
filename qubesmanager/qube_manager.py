@@ -1055,6 +1055,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         row_no = 0
         for vm in self.qubes_app.domains:
+            if vm.klass == "RemoteVM":
+                continue
             progress.setValue(row_no)
             self.qubes_cache.add_vm(vm)
             row_no += 1
@@ -1083,6 +1085,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         action.triggered.connect(partial(self.change_network, 'default'))
 
         for vm in self.qubes_app.domains:
+            if vm.klass == "RemoteVM":
+                continue
             if vm.qid != 0 and vm.provides_network:
                 action = self.network_menu.addAction(vm.name)
                 action.setData(vm.name)
@@ -1145,6 +1149,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
     def update_running_size(self, *_args):
         for vm in self.qubes_app.domains:
+            if vm.klass == "RemoteVM":
+                continue
             if vm.is_running():
                 self.qubes_cache.get_vm(qid=vm.qid).update(
                     update_size_on_disk=True, event='disk_size')
@@ -1152,6 +1158,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     def on_domain_added(self, _submitter, _event, vm, **_kwargs):
         try:
             domain = self.qubes_app.domains[vm]
+            if domain.klass == "RemoteVM":
+                return
             self.qubes_cache.add_vm(domain)
             self.proxy.invalidate()
             if domain.klass == 'TemplateVM':
