@@ -709,6 +709,21 @@ class QubesProxyModel(QSortFilterProxyModel):
         if not self.window.show_internal_action.isChecked() and vm.internal:
             return False
 
+        if not self.window.show_unavailable_pool_action.isChecked():
+            pools = {}
+            app = self.window.qubes_app
+            persistent_volumes = (volume
+                for volume in app.domains[vm.name].volumes.values()
+                if volume.source is None and not volume.ephemeral
+            )
+            for volume in persistent_volumes:
+                if not volume.pool in pools:
+                    pools[volume.pool] = set((
+                        volume.vid for volume in app.pools[volume.pool].volumes
+                    ))
+                if not volume.vid in pools[volume.pool]:
+                    return False
+
         if self.window.show_user.isChecked() \
                 and vm.klass in ['AppVM', 'StandaloneVM'] \
                 and not getattr(vm.vm, 'template_for_dispvms', False) \
@@ -817,6 +832,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             self.tr('Show internal qubes'))
         self.show_internal_action.setCheckable(True)
         self.show_internal_action.toggled.connect(self.invalidate)
+
+        self.show_unavailable_pool_action = self.menu_view.addAction(
+            self.tr('Show qubes stored on unavailable storage pools'))
+        self.show_unavailable_pool_action.setCheckable(True)
+        self.show_unavailable_pool_action.toggled.connect(self.invalidate)
 
         self.menu_view.addSeparator()
         self.menu_view.addAction(self.action_toolbar)
@@ -1027,6 +1047,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self.show_standalone.isChecked())
         self.manager_settings.setValue('show/internal',
                 self.show_internal_action.isChecked())
+        self.manager_settings.setValue('show/unavailable_pool',
+                self.show_unavailable_pool_action.isChecked())
         self.manager_settings.setValue('show/user',
                 self.show_user.isChecked())
         self.manager_settings.setValue('show/all',
@@ -1260,6 +1282,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         self.show_internal_action.setChecked(self.manager_settings.value(
             'show/internal', "false") == "true")
+        self.show_unavailable_pool_action.setChecked(
+            self.manager_settings.value(
+                'show/unavailable_pool', "true") == "true")
         # load last window size
         self.resize(self.manager_settings.value("window_size",
                                                 QSize(1100, 600)))
