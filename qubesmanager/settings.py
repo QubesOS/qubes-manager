@@ -372,8 +372,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         return ret
 
     def check_network_availability(self):
-        netvm = getattr(self.vm, 'netvm', None)
-        provides_network = getattr(self.vm, 'provides_network', False)
+        # this should attempt to use whatever is currently selected, not VM
+        # settings
+        if self.netVM.currentData() == qubesadmin.DEFAULT:
+            netvm = self.vm.property_get_default('netvm')
+        else:
+            netvm = self.netVM.currentData()
+        provides_network = self.provides_network_checkbox.isChecked()
 
         self.no_netvm_label.setVisible(netvm is None and not provides_network)
 
@@ -478,6 +483,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         self.netVM.currentIndexChanged.connect(self.check_warn_dispvmnetvm)
         self.netVM.currentIndexChanged.connect(self.check_warn_templatenetvm)
+        self.netVM.currentIndexChanged.connect(self.check_network_availability)
 
         try:
             self.include_in_backups.setChecked(self.vm.include_in_backups)
