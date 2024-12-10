@@ -164,6 +164,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         QtCore.QAbstractItemModel.__init__(self, parent)
 
         self.current_row = None
+        self.current_dialog = None
 
         self.__column_names = {0: "Address", 1: "Port/Service", 2: "Protocol", }
         self.__services = []
@@ -388,8 +389,10 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
 
     def run_rule_dialog(self, dialog, row=None):
         self.current_row = row
+        # fighting the garbage collector
+        self.current_dialog = dialog
         dialog.model = self
-        dialog.exec()
+        dialog.open()
 
     def index(self, row, column, parent=QtCore.QModelIndex()):
         if not self.hasIndex(row, column, parent):
