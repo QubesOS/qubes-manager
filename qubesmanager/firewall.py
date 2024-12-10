@@ -172,6 +172,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         QtCore.QAbstractItemModel.__init__(self, parent)
 
         self.current_row = None
+        self.current_dialog = None
 
         self.__column_names = {0: "Address", 1: "Port/Service", 2: "Protocol", }
         self.__services = []
@@ -347,7 +348,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         self.temp_full_access_expire_time = conf['expire']
 
         for rule in conf["rules"]:
-            self.append_child(rule)
+            self.append_child(rule, fw_changed = False)
 
     def get_vm_name(self):
         return self.__vm.name
@@ -395,8 +396,10 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
 
     def run_rule_dialog(self, dialog, row=None):
         self.current_row = row
+        # fighting the garbage collector
+        self.current_dialog = dialog
         dialog.model = self
-        dialog.exec()
+        dialog.open()
 
     def index(self, row, column, parent=QtCore.QModelIndex()):
         if not self.hasIndex(row, column, parent):
@@ -437,14 +440,17 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
     def children(self):
         return self.__children
 
-    def append_child(self, child):
+    def append_child(self, child, fw_changed: bool = True):
+        """Append a new FW rule; if fw_changed is not True, it will not be
+        treated as a FW change (to avoid re-saving FW that is actually
+        unchanged)."""
         row = len(self)
         self.beginInsertRows(QtCore.QModelIndex(), row, row)
         self.children.append(child)
         self.endInsertRows()
         index = self.createIndex(row, 0, child)
         self.dataChanged.emit(index, index)
-        self.fw_changed = True
+        self.fw_changed = fw_changed
 
     def remove_child(self, i):
         if i >= len(self):
