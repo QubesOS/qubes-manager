@@ -19,596 +19,1586 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-import logging.handlers
-import unittest
-import unittest.mock
+import datetime
+from functools import wraps
+from typing import Tuple
+from unittest import mock
+import pytest
 
-from PyQt6 import QtTest, QtCore
-from qubesadmin import Qubes
+from PyQt6 import QtCore, QtWidgets
 import qubesmanager.settings as vm_settings
-from qubesmanager.tests import init_qtapp
-
-
-class VMSettingsTest(unittest.TestCase):
-    def setUp(self):
-        super(VMSettingsTest, self).setUp()
-        self.qtapp, self.loop = init_qtapp()
-
-        self.mock_qprogress = unittest.mock.patch(
-            'PyQt6.QtWidgets.QProgressDialog')
-        self.mock_qprogress.start()
-
-        self.addCleanup(self.mock_qprogress.stop)
-
-        self.qapp = Qubes()
-
-        if "test-vm" in self.qapp.domains:
-            del self.qapp.domains["test-vm"]
-
-    def tearDown(self):
-        if "test-vm" in self.qapp.domains:
-            del self.qapp.domains["test-vm"]
-        super(VMSettingsTest, self).tearDown()
-
-    def test_00_load_correct_tab(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "red")
-
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
-        self.assertTrue(
-            self.dialog.tabWidget.currentWidget() is self.dialog.basic_tab)
-        self.dialog.deleteLater()
-        self.qtapp.processEvents()
-
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
-        self.assertTrue(
-            self.dialog.tabWidget.currentWidget() is self.dialog.advanced_tab)
-        self.dialog.deleteLater()
-        self.qtapp.processEvents()
-
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="firewall")
-        self.assertTrue(
-            self.dialog.tabWidget.currentWidget() is self.dialog.firewall_tab)
-        self.dialog.deleteLater()
-        self.qtapp.processEvents()
-
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="devices")
-        self.assertTrue(
-            self.dialog.tabWidget.currentWidget() is self.dialog.devices_tab)
-        self.dialog.deleteLater()
-        self.qtapp.processEvents()
-
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp,
-            init_page="applications")
-        self.assertTrue(
-            self.dialog.tabWidget.currentWidget() is self.dialog.apps_tab)
-        self.dialog.deleteLater()
-        self.qtapp.processEvents()
-
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="services")
-        self.assertTrue(
-            self.dialog.tabWidget.currentWidget() is self.dialog.services_tab)
-        self.dialog.deleteLater()
-        self.qtapp.processEvents()
-
-    def test_01_basic_tab_default(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
-        # set the vm to have a default template and netvm
-
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
-
-        self.assertEqual(self.dialog.vmname.text(), "test-vm",
-                         "Name displayed incorrectly")
-
-        self.assertTrue("blue" in self.dialog.vmlabel.currentText(),
-                        "Incorrect label displayed")
-
-        displayed_template = self.dialog.template_name.currentText()
-        correct_template = self.vm.template.name
-
-        self.assertTrue("current" in displayed_template,
-                        "Template incorrectly not shown as current")
-        self.assertTrue(correct_template in displayed_template,
-                        "Template not displayed correctly")
-
-        displayed_netvm = self.dialog.netVM.currentText()
-        correct_netvm = self.vm.netvm.name
-        self.assertTrue("current" in displayed_netvm,
-                        "NetVM incorrectly not shown as current")
-        self.assertTrue(correct_netvm in displayed_netvm,
-                        "NetVM not displayed correctly")
-
-        self.assertEqual(self.dialog.include_in_backups.isChecked(),
-                         self.vm.include_in_backups,
-                         "Incorrect 'include in backups' state")
-
-        self.assertEqual(self.dialog.autostart_vm.isChecked(),
-                         self.vm.autostart,
-                         "Incorrect 'autostart' state")
-
-        self.assertEqual(self.dialog.type_label.text(),
-                         self.vm.klass,
-                         "Incorrect class displayed")
-
-        self.assertEqual(self.dialog.ip_label.text(),
-                         self.vm.ip,
-                         "Incorrect IP Address displayed")
-        self.assertEqual(self.dialog.netmask_label.text(),
-                         self.vm.visible_netmask,
-                         "Incorrect netmask displayed")
-        self.assertEqual(self.dialog.gateway_label.text(),
-                         self.vm.visible_gateway,
-                         "Incorrect gateway displayed")
-
-        self.assertEqual(self.dialog.max_priv_storage.value(),
-                         self.vm.volumes['private'].size // 1024 ** 2,
-                         "Incorrect max private storage size")
-        self.assertEqual(self.dialog.root_resize.value(),
-                         self.vm.volumes['root'].size // 1024 ** 2,
-                         "Incorrect max private root size")
-
-    def test_02_basic_tab_nones(self):
-        self.vm = self.qapp.add_new_vm("StandaloneVM", "test-vm", "blue")
-        # set the vm to have a default template and netvm
-        self.vm.netvm = None
-
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
-
-        self.assertEqual("", self.dialog.template_name.currentText(),
-                         "No template incorrectly displayed")
-
-        displayed_netvm = self.dialog.netVM.currentText()
-        self.assertTrue("current" in displayed_netvm,
-                        "None NetVM incorrectly not shown as current")
-        self.assertTrue("none" in displayed_netvm,
-                        "None NetVM not displayed correctly")
-
-        self.assertEqual(self.dialog.type_label.text(), "StandaloneVM",
-                         "Type displayed incorrectly for standaloneVM")
-
-        self.assertEqual(self.dialog.ip_label.text(),
-                         "---",
-                         "Incorrect IP Address displayed")
-        self.assertEqual(self.dialog.netmask_label.text(),
-                         "---",
-                         "Incorrect netmask displayed")
-        self.assertEqual(self.dialog.gateway_label.text(),
-                         "---",
-                         "Incorrect gateway displayed")
-
-    def test_03_change_label(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
-        self.dialog.show()
-
-        new_label = self._set_noncurrent(self.dialog.vmlabel)
-        self._click_ok()
-
-        self.assertEqual(str(self.vm.label), new_label,
-                         "Label is not set correctly")
-
-    def test_04_change_template(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
-
-        new_template = self._set_noncurrent(self.dialog.template_name)
-        self._click_ok()
-
-        self.assertEqual(self.vm.template.name, new_template,
-                         "Template is not set correctly")
-
-    def test_05_change_networking(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
-
-        new_netvm = self._set_noncurrent(self.dialog.netVM)
-        self._click_ok()
-
-        self.assertEqual(self.vm.netvm.name, new_netvm,
-                         "NetVM is not set correctly")
-
-    def test_06_change_networking_none(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
-
-        self._set_none(self.dialog.netVM)
-        self._click_ok()
-
-        self.assertIsNone(self.vm.netvm,
-                          "None netVM is not set correctly")
-
-    def test_07_change_networking_to_default(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
-
-        for vm in self.qapp.domains:
-            if getattr(vm, 'provides_network', False)\
-                    and vm != self.qapp.default_netvm:
-                self.vm.netvm = vm
-                break
-
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
-
-        new_netvm = self._set_default(self.dialog.netVM)
-        self._click_ok()
-
-        self.assertTrue(self.vm.netvm.name in new_netvm,
-                        "NetVM is not set correctly")
-        self.assertTrue(self.vm.property_is_default('netvm'))
-
-    def test_08_basic_checkboxes_true(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
-        self.dialog.show()
-
-        self.dialog.include_in_backups.setChecked(True)
-        self.dialog.autostart_vm.setChecked(True)
-
-        self._click_ok()
-
-        self.assertTrue(self.vm.include_in_backups,
-                        "Include in backups not set to true")
-        self.assertTrue(self.vm.autostart,
-                        "Autostart not set to true")
-
-    def test_09_basic_checkboxes_false(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
-        self.dialog.show()
-
-        self.dialog.include_in_backups.setChecked(False)
-        self.dialog.autostart_vm.setChecked(False)
-
-        self._click_ok()
-
-        self.assertFalse(self.vm.include_in_backups,
-                         "Include in backups not set to false")
-        self.assertFalse(self.vm.autostart,
-                         "Autostart not set to false")
-
-    def test_10_increase_private_storage(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
-
-        current_storage = self.vm.volumes['private'].size // 1024**2
-        new_storage = current_storage + 512
-
-        self.dialog.max_priv_storage.setValue(new_storage)
-        self._click_ok()
-
-        self.assertEqual(self.vm.volumes['private'].size // 1024**2,
-                         new_storage)
-
-        # TODO are dependencies correctly processed
-
-    @unittest.mock.patch('PyQt6.QtWidgets.QProgressDialog')
-    @unittest.mock.patch('PyQt6.QtWidgets.QInputDialog.getText')
-    @unittest.mock.patch('qubesmanager.settings.RenameVMThread')
-    def test_11_rename_vm(self, mock_thread, mock_input, _):
-        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
-
-        self.assertTrue(self.dialog.rename_vm_button.isEnabled())
-
-        mock_input.return_value = ("test-vm2", True)
-        self.dialog.rename_vm_button.click()
-
-        mock_thread.assert_called_with(self.vm, "test-vm2", unittest.mock.ANY)
+from qubesadmin.tests.mock_app import MockQube, MockDevice
+
+PAGES = ["basic", "advanced", "firewall", "devices", "applications", "services"]
+
+# just vms
+TEST_VMS = ["test-red", "test-blue", "sys-net",
+            "test-standalone", "test-old", "test-vm-set"]
+
+# with a template
+ALL_TEST_VMS = TEST_VMS + ["fedora-35"]
+
+FULL_TEST = []
+
+for p in PAGES:
+    for vmname in ALL_TEST_VMS:
+        FULL_TEST.append({"page": p, "vm": vmname})
+
+
+def mock_subprocess_complex(command):
+    vm_name = command[-1]
+    if command[1] == '--get-available':
+        if vm_name == 'test-vm-set':
+            return (b'test.desktop|Test App|\n'
+                    b'test2.desktop|Test2 App| test2\n'
+                    b'test3.desktop|Test3 App|\n'
+                    b'myvm.desktop|My VM app|\n')
+        elif vm_name == 'fedora-36':
+            return b'tpl.desktop|Template App|\n'
+        else:
+            return (b'test.desktop|Test App|\n'
+                    b'test2.desktop|Test2 App| test2\n'
+                    b'test3.desktop|Test3 App|\n')
+    elif command[1] == '--get-whitelist':
+        if vm_name == 'test-vm-set':
+            return b'test.desktop\nmissing.desktop'
+        else:
+            return b''
+    return b''
+
+
+@pytest.fixture
+def settings_fixture(request, qapp, test_qubes_app) -> Tuple[
+        vm_settings.VMSettingsWindow, str, str]:
+    # add a frankenqube with worst possible settings
+    fw_rules = [
+        {"action": "accept", "dsthost": "qubes-os.org"},
+        {"action": "accept", "specialtarget":"dns"},
+        {"action": "accept", "proto": "icmp"},
+        {"action": "drop"}
+    ]
+
+    test_qubes_app._qubes['test-vm-set'] = MockQube(
+        name="test-vm-set", qapp=test_qubes_app, label="green",
+        template='fedora-36', include_in_backups=False, autostart=True,
+        kernel='1.1', virt_mode='hvm', provides_network=True,
+        usage=0.5, template_for_dispvms=True, features={
+            'gui-allow-fullscreen': '1', 'gui-allow-utf8-titles': '1',
+            'supported-service.qubes-u2f-proxy': '1',
+            'service.qubes-u2f-proxy': '1', 'supported-service.clocksync': '1'},
+        firewall_rules=fw_rules
+    )
+
+    # and add a qube that has a connected pci device
+    test_qubes_app._qubes['test-pci-dev'] = MockQube(
+        name="test-pci-dev", qapp=test_qubes_app, label="green",
+        virt_mode='hvm'
+    )
+    test_qubes_app._devices.append(
+        MockDevice(test_qubes_app, 'pci', 'USB Controller', '00:03.2',
+                   'dom0', attached='test-pci-dev'))
+
+    test_qubes_app.update_vm_calls()
+
+    if isinstance(request.param, dict):
+        vm = test_qubes_app.domains[request.param['vm']]
+        page = request.param['page']
+    else:
+        vm = test_qubes_app.domains[request.param]
+        page = 'basic'
+    with mock.patch('subprocess.check_output') as mock_subprocess:
+        mock_subprocess.side_effect = mock_subprocess_complex
+        vms = vm_settings.VMSettingsWindow(vm, page, qapp,
+                                           test_qubes_app)
+
+        yield vms, page, vm.name
+# TODO: found a bug: firewall warning does not update
+
+
+def check_errors(test_function):
+    @wraps(test_function)
+    def wrapper(*args, **kwargs):
+        with mock.patch('PyQt6.QtWidgets.QMessageBox.warning') as mock_warning:
+            result = test_function(*args, **kwargs)
+            if mock_warning.call_count > 0:
+                err = mock_warning.mock_calls[0][1][2]
+                assert False, err
+            assert mock_warning.call_count == 0
+        return result
+    return wrapper
+
+
+def _select_item(combobox: QtWidgets.QComboBox, text: str,
+                 match_strict: bool = False):
+    """
+    select a given item in the combobox; if match_strict is True, will only
+    match exact matches, otherwise, will match any item that contains
+    provided string.
+    """
+    for i in range(combobox.count()):
+        item_text = str(combobox.itemData(i,
+                                         QtCore.Qt.ItemDataRole.DisplayRole))
+        if (match_strict and item_text == text) or (not match_strict and text
+                                                    in item_text):
+            combobox.setCurrentIndex(i)
+            return
+    assert False, "Failed to find " + text
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", FULL_TEST, indirect=True)
+def test_000_load_and_open_tab(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+
+    assert settings_window.vmname.text() == vm_name
+    assert settings_window.tabWidget.currentIndex() == PAGES.index(page)
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", FULL_TEST, indirect=True)
+def test_001_apply_changes_nothing(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+
+    settings_window.accept()
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ALL_TEST_VMS, indirect=True)
+def test_002_data(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    # check if contents are reasonable
+
+    # basic tab
+    if hasattr(vm, 'template'):
+        assert str(vm.template) in settings_window.template_name.currentText()
+    else:
+        assert settings_window.template_name.currentText() == ""
+
+    if hasattr(vm, "netvm"):
+        if vm.property_is_default("netvm"):
+            assert "default" in settings_window.netVM.currentText()
+        if vm.netvm:
+            assert str(vm.netvm) in settings_window.netVM.currentText()
+        else:
+            assert "none" in settings_window.netVM.currentText().lower()
+    else:
+        assert not settings_window.netVM.isEnabled()
+
+    assert str(vm.label) in settings_window.vmlabel.currentText()
+
+    assert (settings_window.include_in_backups.isChecked() ==
+            getattr(vm, "include_in_backups", False))
+
+    assert (settings_window.autostart_vm.isChecked() ==
+            getattr(vm, "autostart", False))
+
+    # advanced tab
+
+    assert settings_window.run_in_debug_mode.isChecked() == vm.debug
+    assert (settings_window.provides_network_checkbox.isChecked() ==
+            getattr(vm, "provides_network", False))
+    assert settings_window.dvm_template_checkbox.isChecked() == \
+        getattr(vm, 'template_for_dispvms', False)
+
+    if hasattr(vm, 'default_dispvm'):
+        if vm.property_is_default('default_dispvm'):
+            assert 'default' in settings_window.default_dispvm.currentText()
+        if vm.default_dispvm:
+            assert (str(vm.default_dispvm) in
+                    settings_window.default_dispvm.currentText())
+        else:
+            assert ("none" in
+                    settings_window.default_dispvm.currentText().lower())
+
+    else:
+        assert not settings_window.default_dispvm.isEnabled()
+
+    if hasattr(vm, 'kernel'):
+        assert vm.kernel in settings_window.kernel.currentText()
+
+    if hasattr(vm, 'virt_mode'):
+        assert vm.virt_mode.upper() in settings_window.virt_mode.currentText()
+
+
+# BASIC TAB
+# changing label
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ALL_TEST_VMS, indirect=True)
+def test_100_change_label(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    change_needed = str(vm.label) != 'red'
+
+    if vm.is_running():
+        assert not settings_window.vmlabel.isEnabled()
+        return
+
+    assert settings_window.vmlabel.isEnabled()
+
+    # always change to red, because one of the test vms (test-red)
+    # is red, while others are green
+    _select_item(settings_window.vmlabel, "red")
+
+    expected_call = (vm_name, 'admin.vm.property.Set', 'label', b'red')
+    assert expected_call not in settings_window.qubesapp.expected_calls
+
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    if change_needed:
+        assert expected_call in settings_window.qubesapp.actual_calls, \
+            "Label not changed"
+    else:
+        assert expected_call not in settings_window.qubesapp.actual_calls, \
+            "Unnecessary label change"
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ALL_TEST_VMS, indirect=True)
+def test_101_change_template(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    if vm.is_running() or not hasattr(vm, "template"):
+        assert not settings_window.template_name.isEnabled()
+        return
+
+    change_needed = str(vm.template) != 'fedora-35'
+
+    assert settings_window.template_name.isEnabled()
+
+    # one of the vms (test-old) already has this template
+    _select_item(settings_window.template_name, "fedora-35")
+
+    expected_call = (vm_name, 'admin.vm.property.Set', 'template', b'fedora-35')
+    assert expected_call not in settings_window.qubesapp.expected_calls
+
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    if change_needed:
+        assert expected_call in settings_window.qubesapp.actual_calls, \
+            "Template not changed"
+    else:
+        assert expected_call not in settings_window.qubesapp.actual_calls, \
+            "Unnecessary template change"
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", TEST_VMS, indirect=True)
+def test_102_change_netvm(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    change_needed = str(vm.netvm) != 'sys-net'
+
+    assert settings_window.netVM.isEnabled()
+
+    _select_item(settings_window.netVM, "sys-net")
+
+    expected_call = (vm_name, 'admin.vm.property.Set', 'netvm', b'sys-net')
+    assert expected_call not in settings_window.qubesapp.expected_calls
+
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    if change_needed:
+        assert expected_call in settings_window.qubesapp.actual_calls, \
+            "NetVM not changed"
+    else:
+        assert expected_call not in settings_window.qubesapp.actual_calls, \
+            "Unnecessary NetVM change"
+
+
+@mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
+@pytest.mark.parametrize("settings_fixture", ["fedora-35"], indirect=True)
+def test_103_change_netvm_tpl(mock_warning, settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    assert settings_window.netVM.isEnabled()
+
+    _select_item(settings_window.netVM, "sys-net")
+
+    expected_call = (vm_name, 'admin.vm.property.Set', 'netvm', b'sys-net')
+    assert expected_call not in settings_window.qubesapp.expected_calls
+
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    assert mock_warning.call_count == 1, ("Didn't warn for changing netvm "
+                                          "on a template")
+
+    assert expected_call in settings_window.qubesapp.actual_calls, \
+        "NetVM not changed"
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", TEST_VMS, indirect=True)
+def test_104_change_netvm_default(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    change_needed = not vm.property_is_default("netvm")
+
+    assert settings_window.netVM.isEnabled()
+
+    _select_item(settings_window.netVM, "default")
+
+    expected_call = (vm_name, 'admin.vm.property.Reset', 'netvm', None)
+    assert expected_call not in settings_window.qubesapp.expected_calls
+
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    # when asking to change netvm of a running vm to halted vm, complaints will
+    # ensue
+    with mock.patch('PyQt6.QtWidgets.QMessageBox.question') as mock_question:
+        mock_question.return_value = QtWidgets.QMessageBox.StandardButton.No
+        settings_window.accept()
+        if change_needed:
+            return
+
+    if change_needed:
+        assert expected_call in settings_window.qubesapp.actual_calls, \
+            "NetVM not changed"
+    else:
+        assert expected_call not in settings_window.qubesapp.actual_calls, \
+            "Unnecessary NetVM change"
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", TEST_VMS, indirect=True)
+def test_105_incl_in_backups(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    assert settings_window.include_in_backups.isEnabled()
+    assert (settings_window.include_in_backups.isChecked() ==
+            vm.include_in_backups)
+
+    expected_call = (vm_name, 'admin.vm.property.Set', 'include_in_backups',
+                     str(not vm.include_in_backups).encode())
+    assert expected_call not in settings_window.qubesapp.expected_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.include_in_backups.setChecked(
+        not settings_window.include_in_backups.isChecked())
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls, \
+        "Include in backups not changed"
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", TEST_VMS, indirect=True)
+def test_106_autostart(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    assert settings_window.autostart_vm.isEnabled()
+    assert (settings_window.autostart_vm.isChecked() ==
+            vm.autostart)
+
+    expected_call = (vm_name, 'admin.vm.property.Set', 'autostart',
+                     str(not vm.autostart).encode())
+    assert expected_call not in settings_window.qubesapp.expected_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.autostart_vm.setChecked(
+        not settings_window.autostart_vm.isChecked())
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls, \
+        "Autostart not changed"
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ALL_TEST_VMS, indirect=True)
+def test_107_misc_info(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    if vm.netvm:
+        assert settings_window.ip_label.text() == vm.ip
+        assert settings_window.netmask_label.text() == vm.visible_netmask
+        assert settings_window.gateway_label.text() == vm.visible_gateway
+        assert settings_window.dns_label.text() == vm.dns.replace(' ', ', ')
+    else:
+        assert not settings_window.networking_groupbox.isEnabled()
+
+    assert settings_window.type_label.text() == vm.klass
+    assert settings_window.rpm_label.text() == "Yes" if vm.installed_by_rpm \
+        else "No"
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", TEST_VMS, indirect=True)
+def test_108_disk_space(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    if vm.klass in ['TemplateVM', 'StandaloneVM']:
+        assert settings_window.root_resize.isEnabled()
+    else:
+        assert not settings_window.root_resize.isEnabled()
+
+    assert settings_window.max_priv_storage.isEnabled()
+
+    # try to increase one of them
+    if vm.klass in ['TemplateVM', 'StandaloneVM']:
+        expected_value = settings_window.root_resize.value() + 10
+        expected_volume = 'root'
+        settings_window.root_resize.setValue(expected_value)
+    else:
+        expected_value = settings_window.max_priv_storage.value() + 10
+        expected_volume = 'private'
+        settings_window.max_priv_storage.setValue(expected_value)
+
+    expected_call = (vm.name, 'admin.vm.volume.Resize', expected_volume,
+                     str(expected_value * 1024**2).encode())
+
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    assert expected_call not in settings_window.qubesapp.actual_calls
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
+# the following tests don't use check_errors fixture, because we want to
+# check for errors
+@mock.patch('PyQt6.QtWidgets.QInputDialog.getText')
+@mock.patch('qubesmanager.settings.RenameVMThread')
+@mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
+@pytest.mark.parametrize("settings_fixture", ['fedora-36', 'test-vm-set',
+                                              'test-blue'],
+                         indirect=True)
+def test_109_renamevm(mock_warning, mock_thread, mock_input, settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    if vm.is_running():
+        assert not settings_window.rename_vm_button.isEnabled()
+        assert mock_warning.call_count == 0
+        return
+    else:
+        assert settings_window.rename_vm_button.isEnabled()
+
+    mock_input.return_value = ("renamed-vm", True)
+    settings_window.rename_vm_button.click()
+
+    if vm.name == 'fedora-36':
+        assert mock_warning.call_count == 1
+        assert mock_thread.call_count == 0
+        return
+    elif vm.name == 'test-vm-set':
+        mock_thread.assert_called_with(vm, "renamed-vm", mock.ANY)
         mock_thread().start.assert_called_with()
+        assert mock_warning.call_count == 0
 
-    @unittest.mock.patch('qubesmanager.clone_vm.CloneVMDlg')
-    def test_12_clone_vm(self, mock_clone):
-        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
-
-        self.assertTrue(self.dialog.clone_vm_button.isEnabled())
-
-        self.dialog.clone_vm_button.click()
-
-        mock_clone.assert_called_once_with(self.qtapp, self.qapp,
-                                           src_vm=self.vm)
+    assert mock_warning.call_count == 0
 
 
-    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
-    @unittest.mock.patch('PyQt6.QtWidgets.QProgressDialog')
-    @unittest.mock.patch('PyQt6.QtWidgets.QInputDialog.getText')
-    @unittest.mock.patch('qubesmanager.common_threads.RemoveVMThread')
-    def test_13_remove_vm(self, mock_thread, mock_input, _, mock_warning):
-        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="basic")
+@mock.patch('PyQt6.QtWidgets.QInputDialog.getText')
+@mock.patch('qubesmanager.common_threads.RemoveVMThread')
+@mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
+@pytest.mark.parametrize("settings_fixture", ['fedora-36', 'test-vm-set',
+                                              'test-blue'],
+                         indirect=True)
+def test_110_deletevm(mock_warning, mock_thread, mock_input, settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
 
-        self.assertTrue(self.dialog.delete_vm_button.isEnabled())
+    if vm.is_running():
+        assert not settings_window.delete_vm_button.isEnabled()
+        assert mock_warning.call_count == 0
+        return
+    else:
+        assert settings_window.delete_vm_button.isEnabled()
 
-        # try with a wrong name
-        mock_input.return_value = ("test-vm2", True)
-        self.dialog.delete_vm_button.click()
-        self.assertEqual(mock_warning.call_count, 1)
+    mock_input.return_value = (vm.name, True)
+    settings_window.delete_vm_button.click()
 
-        # and now correct one
-        mock_input.return_value = ("test-vm", True)
-        self.dialog.delete_vm_button.click()
-
-        mock_thread.assert_called_with(self.vm)
+    if vm.name == 'fedora-36':
+        assert mock_warning.call_count == 1
+        assert mock_thread.call_count == 0
+        return
+    elif vm.name == 'test-vm-set':
+        mock_thread.assert_called_with(vm)
         mock_thread().start.assert_called_with()
+        assert mock_warning.call_count == 0
 
-# Advanced Tab
-    def test_20_advanced_loads(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
-
-        self.assertEqual(self.dialog.init_mem.value(), self.vm.memory,
-                         "Incorrect initial memory")
-        # default maxmem
-        self.assertEqual(self.dialog.max_mem_size.value(),
-                         self.vm.property_get_default('maxmem'),
-                         "Maxmem incorrectly displayed for default value")
-        self.assertEqual(self.dialog.vcpus.value(), self.vm.vcpus,
-                         "Incorrect number of VCPUs")
-        self.assertTrue(self.dialog.include_in_balancing.isChecked(),
-                        "Include in memory balancing incorrectly not checked")
-
-        # debug mode
-        self.assertEqual(self.dialog.run_in_debug_mode.isChecked(),
-                         self.vm.debug,
-                         "Incorrect 'run in debug mode' state")
+    assert mock_warning.call_count == 0
 
-        # kernel
-        self.assertTrue(self.vm.kernel in self.dialog.kernel.currentText(),
-                        "Kernel displayed incorrectly")
 
-        # default dispvm
-        self.assertTrue(
-            str(self.vm.default_dispvm) in
-            self.dialog.default_dispvm.currentText(),
-            "Default dispVM incorrectly displayed")
-        self.assertEqual(self.vm.template_for_dispvms,
-                         self.dialog.dvm_template_checkbox.isChecked(),
-                         "Incorrectly shown to be template for dispvms")
+@mock.patch('PyQt6.QtWidgets.QInputDialog.getText')
+@mock.patch('qubesmanager.common_threads.RemoveVMThread')
+@mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
+@pytest.mark.parametrize("settings_fixture", ['test-vm-set'],
+                         indirect=True)
+def test_111_deletevm_wrong_name(mock_warning, mock_thread, mock_input,
+                                 settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
 
-        # virtmode
-        self.assertTrue("default" in self.dialog.virt_mode.currentText())
-        self.assertTrue("PVH" in self.dialog.virt_mode.currentText())
+    assert settings_window.delete_vm_button.isEnabled()
 
-    def test_21_nondefaultmaxmem(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
-        self.vm.maxmem = 3500
+    mock_input.return_value = (vm.name + 'pomidorek', True)
+    settings_window.delete_vm_button.click()
 
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
+    assert mock_thread.call_count == 0
+    assert mock_warning.call_count == 1
 
-        self.assertEqual(self.dialog.max_mem_size.value(), 3500)
+    mock_input.return_value = (vm.name, False)
+    settings_window.delete_vm_button.click()
 
-        self.dialog.include_in_balancing.setChecked(False)
-        self._click_ok()
+    assert mock_thread.call_count == 0
+    assert mock_warning.call_count == 1  # no warning, the user cancelled out
 
-        self.assertEqual(self.vm.maxmem, 0)
 
-        self.dialog.deleteLater()
-        self.qtapp.processEvents()
+@mock.patch('qubesmanager.clone_vm.CloneVMDlg')
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ['fedora-36', 'test-vm-set',
+                                              'test-blue'],
+                         indirect=True)
+def test_112_clonevm(mock_clone, settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
 
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
-        self.assertFalse(self.dialog.include_in_balancing.isChecked())
+    assert settings_window.clone_vm_button.isEnabled()
 
-        self.dialog.include_in_balancing.setChecked(True)
-        self.assertEqual(self.dialog.max_mem_size.value(), 3500)
-        self._click_ok()
+    settings_window.clone_vm_button.click()
 
-        self.assertEqual(self.vm.maxmem, 3500)
+    mock_clone.assert_called_with(mock.ANY, mock.ANY, src_vm=vm)
 
-    def test_22_initmem(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
-        self.vm.memory = 500
 
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
+# ADVANCED TAB
 
-        self.assertEqual(self.dialog.init_mem.value(), 500,
-                         "Incorrect initial memory")
-        self.dialog.init_mem.setValue(600)
-        self._click_ok()
+@check_errors
+@pytest.mark.parametrize("settings_fixture", TEST_VMS, indirect=True)
+def test_200_init_memory(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
 
-        self.assertEqual(self.vm.memory, 600, "Setting initial memory failed")
+    assert settings_window.init_mem.value() == vm.memory
+    assert settings_window.max_mem_size.value() == vm.maxmem
 
-    def test_23_vcpus(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
-        self.vm.vcpus = 1
+    expected_value = vm.memory + 100
 
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
-        self.assertEqual(self.dialog.vcpus.value(), 1,
-                         "Incorrect number of VCPUs")
+    settings_window.init_mem.setValue(expected_value)
 
-        self.dialog.vcpus.setValue(2)
-        self._click_ok()
+    expected_call = (vm.name, 'admin.vm.property.Set', 'memory',
+                     str(expected_value).encode())
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
 
-        self.assertEqual(self.vm.vcpus, 2,
-                         "Incorrect number of VCPUs")
+    settings_window.accept()
 
-    def test_24_kernel(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
-        self.dialog.show()
+    assert expected_call in settings_window.qubesapp.actual_calls
 
-        new_kernel = self._set_noncurrent(self.dialog.kernel)
-        self._click_ok()
 
-        self.assertEqual(self.vm.kernel, new_kernel)
+@check_errors
+@pytest.mark.parametrize("settings_fixture", TEST_VMS, indirect=True)
+def test_201_max_memory(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
 
-        self.dialog.deleteLater()
-        self.qtapp.processEvents()
+    assert settings_window.init_mem.value() == vm.memory
+    assert settings_window.max_mem_size.value() == vm.maxmem
 
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
-        self.dialog.show()
-        self._set_default(self.dialog.kernel)
+    expected_max = vm.maxmem + 100
+    expected_init = vm.memory + 100
 
-        self._click_ok()
-        self.assertTrue(self.vm.property_is_default('kernel'))
+    settings_window.init_mem.setValue(expected_init)
+    settings_window.max_mem_size.setValue(expected_max)
 
-    def test_25_virtmode_change(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
+    assert not settings_window.warn_too_much_mem_label.isVisible()
 
-        modes = ["HVM", "PVH", "PV"]
+    expected_calls = [
+        (vm.name, 'admin.vm.property.Set', 'memory',
+         str(expected_init).encode()),
+        (vm.name, 'admin.vm.property.Set', 'maxmem',
+         str(expected_max).encode()),
+        (vm.name, 'admin.vm.feature.Set', 'qubesmanager.maxmem_value',
+         str(expected_max - 100).encode())
+    ]
+    for call in expected_calls:
+        assert call not in settings_window.qubesapp.actual_calls
+        settings_window.qubesapp.expected_calls[call] = b'0\x00'
 
-        for mode in modes:
-            self.dialog = vm_settings.VMSettingsWindow(
-                self.vm, qapp=self.qtapp, qubesapp=self.qapp,
-                init_page="advanced")
+    settings_window.accept()
 
-            self._set_value(self.dialog.virt_mode, mode)
-            self._click_ok()
+    for call in expected_calls:
+        assert call in settings_window.qubesapp.actual_calls
 
-            self.assertEqual(self.vm.virt_mode.upper(), mode)
 
-            self.dialog.deleteLater()
-            self.qtapp.processEvents()
+@check_errors
+@pytest.mark.parametrize("settings_fixture", TEST_VMS, indirect=True)
+def test_202_vcpus(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
 
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
-        self._set_default(self.dialog.virt_mode)
-        self._click_ok()
+    assert settings_window.vcpus.value() == vm.vcpus
 
-        self.assertTrue(self.vm.property_is_default('virt_mode'))
+    expected_value = settings_window.vcpus.value() + 1
+    settings_window.vcpus.setValue(expected_value)
 
-    def test_26_default_dispvm(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
+    expected_call = (vm.name, 'admin.vm.property.Set', 'vcpus',
+                     str(expected_value).encode())
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
 
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
+    settings_window.accept()
 
-        new_dvm = self._set_noncurrent(self.dialog.default_dispvm)
-        self._click_ok()
+    assert expected_call in settings_window.qubesapp.actual_calls
 
-        self.assertEqual(self.vm.default_dispvm.name, new_dvm)
 
-        self.dialog.deleteLater()
-        self.qtapp.processEvents()
+@check_errors
+@pytest.mark.parametrize("settings_fixture", TEST_VMS, indirect=True)
+def test_203_mem_balancing(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
 
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
-        self._set_default(self.dialog.default_dispvm)
-        self._click_ok()
+    assert settings_window.include_in_balancing.isChecked()
 
-        self.assertTrue(self.vm.property_is_default('default_dispvm'))
+    settings_window.include_in_balancing.setChecked(False)
 
-    @unittest.mock.patch('qubesmanager.bootfromdevice.VMBootFromDeviceWindow')
-    @unittest.mock.patch('qubesmanager.settings.qvm_start')
-    def test_27_boot_cdrom(self, mock_qvm_start, mock_bootwindow):
-        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
+    expected_call = (vm.name, 'admin.vm.feature.Set',
+                     'qubesmanager.maxmem_value', str(vm.maxmem).encode())
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
 
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
+    expected_calls = [
+        (vm.name, 'admin.vm.feature.Set', 'qubesmanager.maxmem_value',
+         str(vm.maxmem).encode()),
+        (vm.name, 'admin.vm.property.Set', 'maxmem', b'0')
+    ]
+    for call in expected_calls:
+        assert call not in settings_window.qubesapp.actual_calls
+        settings_window.qubesapp.expected_calls[call] = b'0\x00'
 
-        mock_bootwindow.return_value.cdrom_location = 'CDROM_LOCATION'
+    settings_window.accept()
 
-        self.dialog.boot_from_device_button.click()
-        mock_bootwindow.return_value.exec.assert_called_once_with()
-        mock_qvm_start.main.assert_called_once_with(
-                ['--cdrom', 'CDROM_LOCATION', 'test-vm'])
+    for call in expected_calls:
+        assert call in settings_window.qubesapp.actual_calls
 
-    def test_28_advanced_debug_false(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
-        self.dialog.show()
 
-        self.dialog.run_in_debug_mode.setChecked(False)
+@check_errors
+@pytest.mark.parametrize("settings_fixture", TEST_VMS, indirect=True)
+def test_204_debug_mode(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
 
-        self._click_ok()
+    assert settings_window.run_in_debug_mode.isChecked() == vm.debug
 
-        self.assertFalse(self.vm.debug,
-                         "Debug mode not set to false")
+    settings_window.run_in_debug_mode.setChecked(not vm.debug)
 
-    def test_28_advanced_debug_true(self):
-        self.vm = self.qapp.add_new_vm("AppVM", "test-vm", "blue")
-        self.dialog = vm_settings.VMSettingsWindow(
-            self.vm, qapp=self.qtapp, qubesapp=self.qapp, init_page="advanced")
-        self.dialog.show()
+    expected_call = (vm.name, 'admin.vm.property.Set', 'debug',
+                     str(not vm.debug).encode())
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
 
-        self.dialog.run_in_debug_mode.setChecked(True)
+    settings_window.accept()
 
-        self._click_ok()
+    assert expected_call in settings_window.qubesapp.actual_calls
 
-        self.assertTrue(self.vm.debug,
-                        "Debug mode not set to true")
 
-    def _click_ok(self):
-        okwidget = self.dialog.buttonBox.button(
-                    self.dialog.buttonBox.StandardButton.Ok)
+@check_errors
+@pytest.mark.parametrize("settings_fixture", TEST_VMS, indirect=True)
+def test_205_povides_network(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
 
-        QtTest.QTest.mouseClick(okwidget, QtCore.Qt.MouseButton.LeftButton)
+    assert (settings_window.provides_network_checkbox.isChecked() ==
+            vm.provides_network)
 
-    def _click_cancel(self):
-        cancelwidget = self.dialog.buttonBox.button(
-            self.dialog.buttonBox.Cancel)
+    settings_window.provides_network_checkbox.setChecked(
+        not vm.provides_network)
 
-        QtTest.QTest.mouseClick(cancelwidget, QtCore.Qt.MouseButton.LeftButton)
+    expected_call = (vm.name, 'admin.vm.property.Set', 'provides_network',
+                     str(not vm.provides_network).encode())
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
 
-    def _set_noncurrent(self, widget):
-        if widget.count() < 2:
-            self.skipTest("not enough choices for " + widget.objectName())
+    settings_window.accept()
 
-        widget.setCurrentIndex(0)
-        while widget.currentText().endswith("(current)") \
-                or widget.currentText().startswith("(none)"):
-            widget.setCurrentIndex(widget.currentIndex() + 1)
+    assert expected_call in settings_window.qubesapp.actual_calls
 
-        return widget.currentText()
 
-    def _set_default(self, widget):
-        if widget.count() < 2:
-            self.skipTest("not enough choices for " + widget.objectName())
+@check_errors
+@pytest.mark.parametrize("settings_fixture", TEST_VMS, indirect=True)
+def test_206_dispvmtempl(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
 
-        widget.setCurrentIndex(0)
-        while "default " not in widget.currentText():
-            widget.setCurrentIndex(widget.currentIndex() + 1)
+    assert settings_window.dvm_template_checkbox.isEnabled()
 
-        return widget.currentText()
+    assert (settings_window.dvm_template_checkbox.isChecked() ==
+            vm.template_for_dispvms)
 
-    def _set_none(self, widget):
-        if widget.count() < 2:
-            self.skipTest("not enough choices for " + widget.objectName())
+    settings_window.dvm_template_checkbox.setChecked(
+        not vm.template_for_dispvms)
 
-        widget.setCurrentIndex(0)
-        while "none" not in widget.currentText():
-            widget.setCurrentIndex(widget.currentIndex() + 1)
+    expected_calls = [
+        (vm.name, 'admin.vm.property.Set', 'template_for_dispvms',
+         str(not vm.template_for_dispvms).encode())
+    ]
+    if vm.template_for_dispvms:
+        # remove existis menus
+        expected_calls.append((vm.name, 'admin.vm.feature.Remove',
+                               'appmenus-dispvm', None))
+    else:
+        expected_calls.append((vm.name, 'admin.vm.feature.Set',
+                               'appmenus-dispvm', b'1'))
 
-        return widget.currentText()
+    for call in expected_calls:
+        assert call not in settings_window.qubesapp.actual_calls
+        settings_window.qubesapp.expected_calls[call] = b'0\x00'
 
-    def _set_value(self, widget, value):
-        if widget.count() < 2:
-            self.skipTest("not enough choices for " + widget.objectName())
+    settings_window.accept()
 
-        widget.setCurrentIndex(0)
-        while value != widget.currentText():
-            widget.setCurrentIndex(widget.currentIndex() + 1)
+    for call in expected_calls:
+        assert call in settings_window.qubesapp.actual_calls
 
-        return widget.currentText()
 
+@check_errors
+@pytest.mark.parametrize("settings_fixture", TEST_VMS, indirect=True)
+def test_207_def_dispvm(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
 
-if __name__ == "__main__":
-    ha_syslog = logging.handlers.SysLogHandler('/dev/log')
-    ha_syslog.setFormatter(
-        logging.Formatter('%(name)s[%(process)d]: %(message)s'))
-    logging.root.addHandler(ha_syslog)
-    unittest.main()
+    _select_item(settings_window.default_dispvm, 'test-vm-set')
+
+    expected_call = (vm.name, 'admin.vm.property.Set', 'default_dispvm',
+                     b'test-vm-set')
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", TEST_VMS, indirect=True)
+def test_208_fullscreen(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    assert "current" in settings_window.allow_fullscreen.currentText()
+
+    if 'gui-allow-fullscreen' not in vm.features:
+        assert "default" in settings_window.allow_fullscreen.currentText()
+    if vm.features.get('gui-allow-fullscreen', None) == '1':
+        assert 'allow' in settings_window.allow_fullscreen.currentText()
+
+    _select_item(settings_window.allow_fullscreen, "disallow")
+
+    expected_call = (vm.name, 'admin.vm.feature.Set', 'gui-allow-fullscreen',
+                     b'')
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", TEST_VMS, indirect=True)
+def test_209_utf8_titles(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    assert "current" in settings_window.allow_utf8.currentText()
+
+    if 'gui-allow-utf8-titles' not in vm.features:
+        assert "default" in settings_window.allow_utf8.currentText()
+    if vm.features.get('gui-allow-utf8-titles', None) == '1':
+        assert 'allow' in settings_window.allow_utf8.currentText()
+
+    _select_item(settings_window.allow_utf8, "disallow")
+
+    expected_call = (vm.name, 'admin.vm.feature.Set', 'gui-allow-utf8-titles',
+                     b'')
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", TEST_VMS, indirect=True)
+def test_210_kernel(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    assert vm.kernel in settings_window.kernel.currentText()
+
+    _select_item(settings_window.kernel, "misc")
+
+    if not vm.property_is_default('kernel'):
+        _select_item(settings_window.kernel, "default")
+        expected_call = (vm.name, 'admin.vm.property.Reset', 'kernel', None)
+    else:
+        _select_item(settings_window.kernel, "misc")
+        expected_call = (vm.name, 'admin.vm.property.Set', 'kernel',
+                         b'misc')
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", TEST_VMS, indirect=True)
+def test_211_virtmode(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    assert str(vm.virt_mode).upper() in settings_window.virt_mode.currentText()
+
+    if vm.virt_mode == 'pvh':
+        _select_item(settings_window.virt_mode, 'HVM')
+        expected_call = (vm.name, 'admin.vm.property.Set', 'virt_mode', b'hvm')
+    else:
+        _select_item(settings_window.virt_mode, 'PV', match_strict=True)
+        expected_call = (vm.name, 'admin.vm.property.Set', 'virt_mode', b'pv')
+
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
+@mock.patch('qubesadmin.tools.qvm_start.main')
+@mock.patch('qubesmanager.bootfromdevice.VMBootFromDeviceWindow')
+@check_errors
+@pytest.mark.parametrize("settings_fixture", TEST_VMS, indirect=True)
+def test_212_boot_from_device(mock_boot, mock_start, settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    assert settings_window.boot_from_device_button.isEnabled()
+
+    settings_window.boot_from_device_button.click()
+
+    mock_boot.assert_called_with(
+        vm=vm.name, qapp=settings_window.qapp,
+        qubesapp=settings_window.qubesapp, parent=settings_window)
+
+    mock_start.assert_called_with(['--cdrom', mock.ANY, vm.name])
+
+
+# FIREWALL TAB
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ["test-blue"], indirect=True)
+def test_300_firewall_start_limiting(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+
+    assert settings_window.firewall_tab.isEnabled()
+
+    assert settings_window.policy_deny_radio_button.isEnabled()
+    assert settings_window.policy_allow_radio_button.isEnabled()
+    assert settings_window.policy_allow_radio_button.isChecked()
+
+    settings_window.policy_deny_radio_button.setChecked(True)
+
+    expected_call = (
+        'test-blue', 'admin.vm.firewall.Set', None,
+        b'action=accept specialtarget=dns\naction=accept '
+        b'proto=icmp\naction=drop\n')
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ["test-vm-set"], indirect=True)
+def test_301_firewall_unlimit(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    assert settings_window.firewall_tab.isEnabled()
+
+    assert settings_window.policy_deny_radio_button.isEnabled()
+    assert settings_window.policy_allow_radio_button.isEnabled()
+    assert settings_window.policy_deny_radio_button.isChecked()
+
+    settings_window.policy_allow_radio_button.setChecked(True)
+
+    expected_call = (
+        'test-vm-set', 'admin.vm.firewall.Set', None,
+        b'action=accept dsthost=qubes-os.org\naction=accept\n')
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ["test-vm-set"], indirect=True)
+def test_302_firewall_remove_rule(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+
+    assert settings_window.firewall_tab.isEnabled()
+
+    assert settings_window.policy_deny_radio_button.isEnabled()
+    assert settings_window.policy_allow_radio_button.isEnabled()
+    assert settings_window.policy_deny_radio_button.isChecked()
+
+    settings_window.rulesTreeView.setCurrentIndex(
+        settings_window.fw_model.index(0, 0))
+    settings_window.delete_rule_button.click()
+
+    expected_call = (
+        'test-vm-set', 'admin.vm.firewall.Set', None,
+        b'action=accept specialtarget=dns\naction=accept '
+        b'proto=icmp\naction=drop\n')
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ["test-vm-set"], indirect=True)
+def test_303_firewall_add_rule(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+
+    assert settings_window.firewall_tab.isEnabled()
+
+    assert settings_window.policy_deny_radio_button.isEnabled()
+    assert settings_window.policy_allow_radio_button.isEnabled()
+    assert settings_window.policy_deny_radio_button.isChecked()
+
+    settings_window.new_rule_button.click()
+    settings_window.fw_model.current_dialog.addressComboBox.setCurrentText(
+        "test_stuff")
+    settings_window.fw_model.current_dialog.buttonBox.button(
+            QtWidgets.QDialogButtonBox.StandardButton.Ok).click()
+
+    expected_call = (
+        'test-vm-set', 'admin.vm.firewall.Set', None,
+        b'action=accept dsthost=qubes-os.org\n'
+        b'action=accept dsthost=test_stuff\n'
+        b'action=accept specialtarget=dns\n'
+        b'action=accept proto=icmp\n'
+        b'action=drop\n')
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ["test-vm-set"], indirect=True)
+def test_304_firewall_add_rule_complex(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+
+    assert settings_window.firewall_tab.isEnabled()
+
+    assert settings_window.policy_deny_radio_button.isEnabled()
+    assert settings_window.policy_allow_radio_button.isEnabled()
+    assert settings_window.policy_deny_radio_button.isChecked()
+
+    settings_window.new_rule_button.click()
+    settings_window.fw_model.current_dialog.addressComboBox.setCurrentText(
+        "test_stuff")
+    settings_window.fw_model.current_dialog.udp_radio.setChecked(True)
+    _select_item(settings_window.fw_model.current_dialog.serviceComboBox,
+                 "http")
+    settings_window.fw_model.current_dialog.buttonBox.button(
+            QtWidgets.QDialogButtonBox.StandardButton.Ok).click()
+
+    expected_call = (
+        'test-vm-set', 'admin.vm.firewall.Set', None,
+        b'action=accept dsthost=qubes-os.org\n'
+        b'action=accept proto=udp dsthost=test_stuff dstports=80-80\n'
+        b'action=accept specialtarget=dns\n'
+        b'action=accept proto=icmp\n'
+        b'action=drop\n')
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ["test-vm-set"], indirect=True)
+def test_305_firewall_edit_rule(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+
+    assert settings_window.firewall_tab.isEnabled()
+
+    assert settings_window.policy_deny_radio_button.isEnabled()
+    assert settings_window.policy_allow_radio_button.isEnabled()
+    assert settings_window.policy_deny_radio_button.isChecked()
+
+    settings_window.rulesTreeView.setCurrentIndex(
+        settings_window.fw_model.index(0, 0))
+    settings_window.edit_rule_button.click()
+
+    settings_window.fw_model.current_dialog.tcp_radio.setChecked(True)
+    _select_item(settings_window.fw_model.current_dialog.serviceComboBox,
+                 "printer")
+    settings_window.fw_model.current_dialog.buttonBox.button(
+            QtWidgets.QDialogButtonBox.StandardButton.Ok).click()
+
+    expected_call = (
+        'test-vm-set', 'admin.vm.firewall.Set', None,
+        b'action=accept proto=tcp dsthost=qubes-os.org dstports=515-515\n'
+        b'action=accept specialtarget=dns\naction=accept '
+        b'proto=icmp\naction=drop\n')
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ["test-vm-set"], indirect=True)
+def test_306_firewall_unlimit(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+
+    assert settings_window.firewall_tab.isEnabled()
+
+    assert settings_window.policy_deny_radio_button.isEnabled()
+    assert settings_window.policy_allow_radio_button.isEnabled()
+    assert settings_window.policy_deny_radio_button.isChecked()
+
+    settings_window.temp_full_access.setChecked(True)
+
+    # add 5 minutes to now
+    expiration_date = str((int(datetime.datetime.now().strftime(
+        "%s")) + 5 * 60)).encode()
+
+    expected_call = (
+        'test-vm-set', 'admin.vm.firewall.Set', None,
+        b'action=accept dsthost=qubes-os.org\n'
+        b'action=accept expire=' + expiration_date + b'\n'
+        b'action=accept specialtarget=dns\naction=accept '
+        b'proto=icmp\naction=drop\n')
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@mock.patch('subprocess.check_output')
+def test_307_open_with_limit(mock_subprocess, qapp, test_qubes_app):
+    # this test is supposed to check if the settings open even when there is
+    # an unlimited FW access set
+    mock_subprocess.result = []
+
+    # add 2 minutes to now
+    expiration_date = str((int(datetime.datetime.now().strftime(
+        "%s")) + 2 * 60))
+
+    fw_rules = [
+        {"action": "accept", "expire": expiration_date},
+        {"action": "accept", "specialtarget": "dns"},
+        {"action": "accept", "proto": "icmp"},
+        {"action": "drop"}
+    ]
+
+    test_qubes_app._qubes['test-vm-fw'] = MockQube(
+        name="test-vm-fw", qapp=test_qubes_app, label="green",
+        firewall_rules=fw_rules
+    )
+    test_qubes_app.update_vm_calls()
+
+    settings_window = vm_settings.VMSettingsWindow(
+        'test-vm-fw', 'basic', qapp, test_qubes_app)
+
+    assert settings_window.policy_deny_radio_button.isEnabled()
+    assert settings_window.policy_allow_radio_button.isEnabled()
+    assert settings_window.policy_deny_radio_button.isChecked()
+
+    assert settings_window.temp_full_access.isChecked()
+    assert settings_window.tempFullAccessWidget.isEnabled()
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture",
+                         [{'vm': 'vault', 'page': 'firewall'}],
+                         indirect=True)
+def test_308_firewall_none(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+
+    assert settings_window.no_netvm_label.isVisibleTo(settings_window)
+
+    _select_item(settings_window.netVM, 'sys-net')
+
+    assert not settings_window.no_netvm_label.isVisibleTo(settings_window)
+
+    _select_item(settings_window.netVM, 'none')
+
+    assert settings_window.no_netvm_label.isVisibleTo(settings_window)
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture",
+                         [{'vm': 'vault', 'page': 'firewall'}],
+                         indirect=True)
+def test_309_firewall_warn(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+
+    assert not settings_window.sysnet_warning_label.isVisibleTo(settings_window)
+
+    settings_window.tabWidget.setCurrentIndex(settings_window.tabs_indices[
+                                                  'advanced'])
+
+    settings_window.provides_network_checkbox.setChecked(True)
+
+    settings_window.tabWidget.setCurrentIndex(settings_window.tabs_indices[
+                                                  'firewall'])
+
+    assert settings_window.sysnet_warning_label.isVisibleTo(settings_window)
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ['test-blue'], indirect=True)
+def test_310_stupid_netvm(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+
+    assert not settings_window.netvm_no_firewall_label.isVisibleTo(
+        settings_window)
+
+    _select_item(settings_window.netVM, 'test-vm-set')
+
+    settings_window.tabWidget.setCurrentIndex(settings_window.tabs_indices[
+                                                  'firewall'])
+
+    assert settings_window.netvm_no_firewall_label.isVisibleTo(settings_window)
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ['test-vm-set'],
+                         indirect=True)
+def test_400_services(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+
+    enabled_services = [settings_window.services_list.item(i).text() for i in
+                        range(settings_window.services_list.count())]
+    available_services = []
+
+    for i in range(settings_window.service_line_edit.count()):
+        item_text = str(settings_window.service_line_edit.itemData(i,
+                                         QtCore.Qt.ItemDataRole.DisplayRole))
+        available_services.append(item_text)
+
+    assert enabled_services == ['qubes-u2f-proxy']
+    assert sorted(available_services) == sorted(
+        ['', 'qubes-u2f-proxy', 'clocksync', '(custom...)'])
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ['test-vm-set'],
+                         indirect=True)
+def test_401_services_remove(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    for i in range(settings_window.services_list.count()):
+        item_text = settings_window.services_list.item(i).text()
+        if item_text == 'qubes-u2f-proxy':
+            settings_window.services_list.setCurrentRow(i)
+            break
+    else:
+        assert False, "Failed to find service"
+
+    settings_window.remove_srv_button.click()
+
+    expected_call = (vm.name, 'admin.vm.feature.Remove',
+                     'service.qubes-u2f-proxy', None)
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ['test-vm-set'],
+                         indirect=True)
+def test_402_services_add(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    for i in range(settings_window.service_line_edit.count()):
+        item_text = str(settings_window.service_line_edit.itemData(i,
+                                         QtCore.Qt.ItemDataRole.DisplayRole))
+        if item_text == 'clocksync':
+            settings_window.service_line_edit.setCurrentIndex(i)
+
+    settings_window.add_srv_button.click()
+
+    expected_call = (vm.name, 'admin.vm.feature.Set',
+                     'service.clocksync', b'1')
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ['test-vm-set'],
+                         indirect=True)
+def test_403_services_add_custom(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    for i in range(settings_window.service_line_edit.count()):
+        item_text = str(settings_window.service_line_edit.itemData(i,
+                                         QtCore.Qt.ItemDataRole.DisplayRole))
+        if 'custom' in item_text:
+            settings_window.service_line_edit.setCurrentIndex(i)
+
+    with mock.patch('PyQt6.QtWidgets.QInputDialog.getText',
+                    return_value=('shutdown-idle', True)):
+        settings_window.add_srv_button.click()
+
+    expected_call = (vm.name, 'admin.vm.feature.Set',
+                     'service.shutdown-idle', b'1')
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ['test-vm-set'],
+                         indirect=True)
+def test_404_services_disable(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    for i in range(settings_window.services_list.count()):
+        item = settings_window.services_list.item(i)
+        if item.text() == 'qubes-u2f-proxy':
+            item.setCheckState(QtCore.Qt.CheckState.Unchecked)
+            break
+    else:
+        assert False, "Failed to find service"
+
+    expected_call = (vm.name, 'admin.vm.feature.Set',
+                     'service.qubes-u2f-proxy', b'')
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ['test-red'], indirect=True)
+def test_500_applications_list(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+
+    available = []
+    selected = []
+    for i in range(settings_window.app_list.available_list.count()):
+        available.append(
+            settings_window.app_list.available_list.item(i).text())
+
+    for i in range(settings_window.app_list.selected_list.count()):
+        selected.append(
+            settings_window.app_list.selected_list.item(i).text())
+
+    assert not selected
+    assert available == ['Test App', 'Test2 App', 'Test3 App']
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ['test-vm-set'], indirect=True)
+def test_501_applications_list_existing(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+
+    available = []
+    selected = []
+    for i in range(settings_window.app_list.available_list.count()):
+        available.append(
+            settings_window.app_list.available_list.item(i).text())
+
+    for i in range(settings_window.app_list.selected_list.count()):
+        selected.append(
+            settings_window.app_list.selected_list.item(i).text())
+
+    # some apps are present, some are missing
+    assert available == ['My VM app', 'Test2 App', 'Test3 App']
+    assert selected == ['Application missing in template! (missing.desktop)',
+                        'Test App']
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ['test-red',
+                                              'test-vm-set'], indirect=True)
+def test_502_application_add(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    for i in range(settings_window.app_list.available_list.count()):
+        item = settings_window.app_list.available_list.item(i)
+        if item.text() == 'Test3 App':
+            item.setSelected(True)
+            break
+    else:
+        assert False, "Failed to find application"
+
+    settings_window.app_list.add_selected_button.click()
+
+    if vm.name == 'test-vm-set':
+        expected_call = (
+            vm.name, 'admin.vm.feature.Set', 'menu-items',
+            b'missing.desktop test.desktop test3.desktop')
+    else:
+        expected_call = (
+            vm.name, 'admin.vm.feature.Set', 'menu-items',
+            b'test3.desktop')
+
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ['test-vm-set'], indirect=True)
+def test_503_application_remove(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    for i in range(settings_window.app_list.selected_list.count()):
+        item = settings_window.app_list.selected_list.item(i)
+        if item.text() == 'Test App':
+            item.setSelected(True)
+            break
+    else:
+        assert False, "Failed to find application"
+
+    settings_window.app_list.remove_selected_button.click()
+
+    expected_call = (
+        vm.name, 'admin.vm.feature.Set', 'menu-items',
+        b'missing.desktop')
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ['test-vm-set'], indirect=True)
+def test_504_application_remove_missing(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    for i in range(settings_window.app_list.selected_list.count()):
+        item = settings_window.app_list.selected_list.item(i)
+        if "missing" in item.text():
+            item.setSelected(True)
+            break
+    else:
+        assert False, "Failed to find application"
+
+    settings_window.app_list.remove_selected_button.click()
+
+    expected_call = (
+        vm.name, 'admin.vm.feature.Set', 'menu-items',
+        b'test.desktop')
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ['test-red',
+                                              'test-vm-set'], indirect=True)
+def test_505_application_add_all(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    settings_window.app_list.add_all_button.click()
+
+    if vm.name == 'test-vm-set':
+        expected_call = (
+            vm.name, 'admin.vm.feature.Set', 'menu-items',
+            b'missing.desktop myvm.desktop test.desktop '
+            b'test2.desktop test3.desktop')
+    else:
+        expected_call = (
+            vm.name, 'admin.vm.feature.Set', 'menu-items',
+            b'test.desktop test2.desktop test3.desktop')
+
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ['test-red',
+                                              'test-vm-set'], indirect=True)
+def test_506_application_remove_all(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    settings_window.app_list.remove_all_button.click()
+
+    expected_call = (
+        vm.name, 'admin.vm.feature.Set', 'menu-items', b'')
+
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    if vm.name == 'test-vm-set':
+        assert expected_call in settings_window.qubesapp.actual_calls
+    else:
+        # that VM had no apps to begin with
+        assert expected_call not in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ['test-vm-set'], indirect=True)
+def test_600_devices(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+
+    available_items = []
+    for i in range(settings_window.dev_list.available_list.count()):
+        item = settings_window.dev_list.available_list.item(i)
+        available_items.append(item.text())
+
+    assert len(available_items) == 4
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ['test-vm-set'], indirect=True)
+def test_601_device_add(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    for i in range(settings_window.dev_list.available_list.count()):
+        item = settings_window.dev_list.available_list.item(i)
+        if 'USB' in item.text():
+            item.setSelected(True)
+            break
+    else:
+        assert False, "Failed to find item"
+
+    settings_window.dev_list.add_selected_button.click()
+
+    expected_call = (
+        vm.name, 'admin.vm.device.pci.Assign', 'dom0+00_03.2:*',
+        b"device_id='*' port_id='00_03.2' devclass='pci' "
+        b"backend_domain='dom0' mode='required' "
+        b"frontend_domain='test-vm-set'")
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    # assert expected_call in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ['test-pci-dev'], indirect=True)
+def test_602_device_remove(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    available_items = []
+    for i in range(settings_window.dev_list.available_list.count()):
+        item = settings_window.dev_list.available_list.item(i)
+        available_items.append(item.text())
+
+    assert len(available_items) == 4
+
+    selected_items = []
+    for i in range(settings_window.dev_list.selected_list.count()):
+        item = settings_window.dev_list.selected_list.item(i)
+        selected_items.append(item.text())
+        item.setSelected(True)
+
+    assert len(selected_items) == 1
+
+    settings_window.dev_list.remove_selected_button.click()
+
+    expected_call = (vm.name, 'admin.vm.device.pci.Unassign', 'dom0+00:03.2',
+                     None)
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ['test-pci-dev'],
+                         indirect=True)
+def test_603_virtmode_limitation(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    available_virtmodes = []
+
+    for i in range(settings_window.virt_mode.count()):
+        item_text = str(settings_window.virt_mode.itemData(
+            i, QtCore.Qt.ItemDataRole.DisplayRole))
+        available_virtmodes.append(item_text)
+
+    assert len(available_virtmodes) == 3 # HVM, PV, default
+    assert 'PVH' not in available_virtmodes
+    assert 'HVM (current)' in available_virtmodes
+    assert 'PV' in available_virtmodes
