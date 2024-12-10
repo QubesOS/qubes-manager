@@ -28,6 +28,7 @@ import re
 import subprocess
 import sys
 import traceback
+import datetime
 from qubesadmin.tools import QubesArgumentParser
 from qubesadmin import device_protocol
 from qubesadmin import utils as admin_utils
@@ -1465,7 +1466,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 item = self.services_list.item(i)
                 self.new_srv_dict[str(item.text())] = \
                     (item.checkState() ==
-                     ui_settingsdlg.QtCore.Qt.CheckState.Checked)
+                     QtCore.Qt.CheckState.Checked)
 
             for service, v in self.new_srv_dict.items():
                 feature = SERVICE_PREFIX + service
@@ -1496,7 +1497,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         if model.temp_full_access_expire_time:
             self.temp_full_access.setChecked(True)
             expire_time = model.temp_full_access_expire_time - \
-                          firewall.datetime.datetime.now().timestamp()
+                datetime.datetime.now().timestamp()
             self.temp_full_access_time.setValue(int(expire_time / 60))
 
     def disable_all_fw_conf(self):
