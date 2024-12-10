@@ -1445,8 +1445,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
             for service, v in self.new_srv_dict.items():
                 feature = SERVICE_PREFIX + service
-                if v != self.vm.features.get(feature, object()):
-                    self.vm.features[feature] = v
+                val = '1' if v else ''
+                if val != self.vm.features.get(feature, object()):
+                    self.vm.features[feature] = val
 
             for feature in self.vm.features:
                 if not feature.startswith(SERVICE_PREFIX) or \
