@@ -58,10 +58,10 @@
 
 /usr/lib/*/dist-packages/qubesmanager/tests/__pycache__
 /usr/lib/*/dist-packages/qubesmanager/tests/__init__.py
+/usr/lib/*/dist-packages/qubesmanager/tests/conftest.py
 /usr/lib/*/dist-packages/qubesmanager/tests/test_backup.py
 /usr/lib/*/dist-packages/qubesmanager/tests/test_backup_utils.py
 /usr/lib/*/dist-packages/qubesmanager/tests/test_qube_manager.py
-/usr/lib/*/dist-packages/qubesmanager/tests/test_create_new_vm.py
 /usr/lib/*/dist-packages/qubesmanager/tests/test_vm_settings.py
 /usr/lib/*/dist-packages/qubesmanager/tests/test_clone_vm.py
 
