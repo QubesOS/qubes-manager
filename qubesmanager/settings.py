@@ -1538,7 +1538,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.policy_deny_radio_button.isChecked())
 
     def new_rule_button_pressed(self):
-        dialog = firewall.NewFwRuleDlg()
+        dialog = firewall.NewFwRuleDlg(parent=self)
         self.fw_model.run_rule_dialog(dialog)
 
     def edit_rule_button_pressed(self):
@@ -1546,7 +1546,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         selected = self.rulesTreeView.selectedIndexes()
 
         if selected:
-            dialog = firewall.NewFwRuleDlg()
+            dialog = firewall.NewFwRuleDlg(parent=self)
             dialog.set_ok_state(True)
             row = self.rulesTreeView.selectedIndexes().pop().row()
             self.fw_model.populate_edit_dialog(dialog, row)
