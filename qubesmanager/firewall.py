@@ -348,7 +348,7 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         self.temp_full_access_expire_time = conf['expire']
 
         for rule in conf["rules"]:
-            self.append_child(rule)
+            self.append_child(rule, fw_changed = False)
 
     def get_vm_name(self):
         return self.__vm.name
@@ -440,14 +440,17 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
     def children(self):
         return self.__children
 
-    def append_child(self, child):
+    def append_child(self, child, fw_changed: bool = True):
+        """Append a new FW rule; if fw_changed is not True, it will not be
+        treated as a FW change (to avoid re-saving FW that is actually
+        unchanged)."""
         row = len(self)
         self.beginInsertRows(QtCore.QModelIndex(), row, row)
         self.children.append(child)
         self.endInsertRows()
         index = self.createIndex(row, 0, child)
         self.dataChanged.emit(index, index)
-        self.fw_changed = True
+        self.fw_changed = fw_changed
 
     def remove_child(self, i):
         if i >= len(self):
