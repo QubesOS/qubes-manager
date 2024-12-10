@@ -144,11 +144,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         ))
 
     # pylint: disable=too-many-positional-arguments
-    def __init__(self, vm, init_page="basic", qapp=None, qubesapp=None,
+    def __init__(self, vm_name, init_page="basic", qapp=None, qubesapp=None,
                  parent=None):
         super().__init__(parent)
 
-        self.vm = vm
+        self.vm = qubesapp.domains[vm_name]
         self.qapp = qapp
         self.qubesapp = qubesapp
         self.threads_list = []
@@ -195,7 +195,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         if self.tabWidget.isTabEnabled(self.tabs_indices['firewall']):
             model = firewall.QubesFirewallRulesModel()
             try:
-                model.set_vm(vm)
+                model.set_vm(self.vm)
                 self.set_fw_model(model)
                 self.firewall_modified_outside_label.setVisible(False)
             except firewall.FirewallModifiedOutsideError:
@@ -569,7 +569,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
     def __apply_basic_tab__(self):
         msg = []
-
         # vm label changed
         try:
             if utils.did_widget_selection_change(self.vmlabel):
@@ -1572,7 +1571,8 @@ def main(args=None):
               "and qvm-features to change properties of an AdminVM")
         return 1
 
-    utils.run_synchronous(functools.partial(VMSettingsWindow, vm, args.tab))
+    utils.run_synchronous(functools.partial(VMSettingsWindow, vm.name,
+                                            args.tab))
 
 
 if __name__ == "__main__":
