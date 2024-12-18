@@ -1,8 +1,6 @@
-#!/usr/bin/python3
-#
 # The Qubes OS Project, https://www.qubes-os.org/
 #
-# Copyright (C) 2016 Marta Marczykowska-Górecka
+# Copyright (C) 2024 Marta Marczykowska-Górecka
 #                                       <marmarta@invisiblethingslab.com>
 #
 # This program is free software; you can redistribute it and/or modify

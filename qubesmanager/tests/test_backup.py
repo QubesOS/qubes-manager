@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-#
 # The Qubes OS Project, https://www.qubes-os.org/
 #
 # Copyright (C) 2016 Marta Marczykowska-Górecka
