@@ -1,8 +1,6 @@
-#!/usr/bin/python3
-#
 # The Qubes OS Project, https://www.qubes-os.org/
 #
-# Copyright (C) 2016 Marta Marczykowska-Górecka
+# Copyright (C) 2024 Marta Marczykowska-Górecka
 #                                       <marmarta@invisiblethingslab.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -19,6 +17,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
+
 import datetime
 from functools import wraps
 from typing import Tuple
