@@ -64,7 +64,8 @@ class CloneVMThread(QubesThread):
 
     def run(self):
         try:
-            self.vm.app.clone_vm(self.vm, self.dst_name, pool=self.pool)
+            self.vm.app.clone_vm(self.vm, self.dst_name, pool=self.pool,
+                                 pools={})
             if self.label:
                 result_vm = self.vm.app.domains[self.dst_name]
                 result_vm.label = self.label
