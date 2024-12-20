@@ -1,8 +1,6 @@
-#!/usr/bin/python3
-#
 # The Qubes OS Project, https://www.qubes-os.org/
 #
-# Copyright (C) 2020 Marta Marczykowska-Górecka
+# Copyright (C) 2024 Marta Marczykowska-Górecka
 #                                       <marmarta@invisiblethingslab.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -19,266 +17,194 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-import logging.handlers
-import unittest
-import unittest.mock
 
-from PyQt6 import QtTest, QtCore
-from qubesadmin import Qubes
-from qubesmanager.tests import init_qtapp
+from unittest import mock
+import pytest
+
 from qubesmanager import clone_vm
 
-# TODO: test when you do give a src vm
+# empty entry means the cloneVM dialog was called without specifying source VM
+TEST_VMS = ["test-blue", "test-red", ""]
 
 
-class CloneVMTest(unittest.TestCase):
-    def setUp(self):
-        super(CloneVMTest, self).setUp()
-        self.qtapp, self.loop = init_qtapp()
+@pytest.fixture
+def clone_window(request, qapp, test_qubes_app):
+    if request.param:
+        vm = test_qubes_app.domains[request.param]
+    else:
+        vm = None
+    qm = clone_vm.CloneVMDlg(qapp, test_qubes_app, src_vm=vm)
+    return vm, qm
 
-        self.qapp = Qubes()
-
-        # mock up the Create VM Thread to avoid changing system state
-        self.patcher_thread = unittest.mock.patch(
-            'qubesmanager.common_threads.CloneVMThread')
-        self.mock_thread = self.patcher_thread.start()
-        self.addCleanup(self.patcher_thread.stop)
-
-        # mock the progress dialog to speed testing up
-        self.patcher_progress = unittest.mock.patch(
-            'PyQt6.QtWidgets.QProgressDialog')
-        self.mock_progress = self.patcher_progress.start()
-        self.addCleanup(self.patcher_progress.stop)
-
-        # mock the message dialog to not hang on success
-        self.patcher_warning = unittest.mock.patch(
-            'PyQt6.QtWidgets.QMessageBox.warning')
-        self.mock_warning = self.patcher_warning.start()
-        self.addCleanup(self.patcher_warning.stop)
-        self.patcher_information = unittest.mock.patch(
-            'PyQt6.QtWidgets.QMessageBox.information')
-        self.mock_information = self.patcher_information.start()
-        self.addCleanup(self.patcher_information.stop)
-
-        self.dialog = clone_vm.CloneVMDlg(self.qtapp, self.qapp)
-
-    def test_00_window_loads(self):
-        self.assertGreater(self.dialog.src_vm.count(), 0,
-                           "No source vms shown")
-
-        self.assertGreater(self.dialog.label.count(), 0, "No labels listed")
-
-        self.assertGreater(self.dialog.storage_pool.count(), 0,
-                           "No pools listed")
-
-        self.assertTrue(self.dialog.src_vm.isEnabled(),
-                        "source vm dialog not active")
-
-    def test_01_cancel_works(self):
-        self.__click_cancel()
-        self.assertEqual(self.mock_thread.call_count, 0,
-                         "Attempted to create VM on cancel")
-
-    def test_02_name_correctly_updates(self):
-        src_name = self.dialog.src_vm.currentText()
-        target_name = self.dialog.name.text()
-
-        self.assertTrue(target_name.startswith(src_name),
-                        "target name does not contain source name")
-        self.assertTrue('clone' in target_name,
-                        "target name does not contain >clone<")
-
-        self.dialog.src_vm.setCurrentIndex(self.dialog.src_vm.currentIndex()+1)
-
-        src_name = self.dialog.src_vm.currentText()
-        target_name = self.dialog.name.text()
-
-        self.assertTrue(target_name.startswith(src_name),
-                        "target name does not contain source name")
-        self.assertTrue('clone' in target_name,
-                        "target name does not contain >clone<")
-
-    def test_03_label_correctly_updates(self):
-        src_label = self.dialog.src_vm.currentData().label.name
-        target_label = self.dialog.label.currentText()
-
-        self.assertEqual(src_label, target_label, "incorrect start label")
-
-        while self.dialog.src_vm.currentData().label.name == src_label:
-            self.dialog.src_vm.setCurrentIndex(
-                self.dialog.src_vm.currentIndex() + 1)
-
-        src_label = self.dialog.src_vm.currentData().label.name
-        target_label = self.dialog.label.currentText()
-
-        self.assertEqual(src_label, target_label,
-                         "label did not change correctly")
-
-    def test_04_clone_first_vm(self):
-        self.dialog.name.setText("clone-test")
-        src_vm = self.qapp.domains[self.dialog.src_vm.currentText()]
-        self.__click_ok()
-
-        self.mock_thread.assert_called_once_with(
-            src_vm, "clone-test", pool=None, label=src_vm.label)
-        self.mock_thread().start.assert_called_once_with()
-
-    def test_05_clone_other_vm(self):
-        self.dialog.src_vm.setCurrentIndex(self.dialog.src_vm.currentIndex()+1)
-        src_vm = self.qapp.domains[self.dialog.src_vm.currentText()]
-
-        dst_name = self.dialog.name.text()
-
-        self.__click_ok()
-
-        self.mock_thread.assert_called_once_with(
-            src_vm, dst_name, pool=None, label=src_vm.label)
-        self.mock_thread().start.assert_called_once_with()
-
-    def test_06_clone_label(self):
-        src_vm = self.qapp.domains[self.dialog.src_vm.currentText()]
-
-        dst_name = self.dialog.name.text()
-
-        while self.dialog.label.currentText() != 'blue':
-            self.dialog.label.setCurrentIndex(
-                self.dialog.label.currentIndex()+1)
-
-        self.__click_ok()
-
-        self.mock_thread.assert_called_once_with(
-            src_vm, dst_name, pool=None, label=self.qapp.labels['blue'])
-        self.mock_thread().start.assert_called_once_with()
-
-    @unittest.mock.patch('subprocess.check_call')
-    def test_07_launch_settings(self, mock_call):
-        self.dialog.launch_settings.setChecked(True)
-
-        self.dialog.name.setText("clone-test")
-
-        self.__click_ok()
-
-        self.mock_thread.assert_called_once_with(
-            unittest.mock.ANY, "clone-test", pool=None,
-            label=unittest.mock.ANY)
-
-        self.mock_thread().msg = ("Success", "Success")
-        self.dialog.clone_finished()
-
-        mock_call.assert_called_once_with(['qubes-vm-settings', "clone-test"])
-
-    def test_08_progress_hides(self):
-        self.dialog.name.setText("clone-test")
-
-        self.__click_ok()
-
-        self.mock_thread.assert_called_once_with(
-            unittest.mock.ANY, "clone-test", pool=None,
-            label=unittest.mock.ANY)
-
-        # make sure the thread is not reporting an error
-        self.mock_thread().start.assert_called_once_with()
-        self.mock_thread().msg = ("Success", "Success")
-
-        self.mock_progress().show.assert_called_once_with()
-
-        self.dialog.clone_finished()
-
-        self.mock_progress().hide.assert_called_once_with()
-
-    def test_09_pool_nondefault(self):
-        while 'default' in self.dialog.storage_pool.currentText():
-            self.dialog.storage_pool.setCurrentIndex(
-                self.dialog.storage_pool.currentIndex()+1)
-
-        selected_pool = self.dialog.storage_pool.currentText()
-
-        self.__click_ok()
-
-        self.mock_thread.assert_called_once_with(
-            unittest.mock.ANY, unittest.mock.ANY,
-            pool=selected_pool,
-            label=unittest.mock.ANY)
-        self.mock_thread().start.assert_called_once_with()
-
-    def __click_ok(self):
-        okwidget = self.dialog.buttonBox.button(
-                    self.dialog.buttonBox.StandardButton.Ok)
-
-        QtTest.QTest.mouseClick(okwidget, QtCore.Qt.MouseButton.LeftButton)
-
-    def __click_cancel(self):
-        cancelwidget = self.dialog.buttonBox.button(
-            self.dialog.buttonBox.StandardButton.Cancel)
-
-        QtTest.QTest.mouseClick(cancelwidget, QtCore.Qt.MouseButton.LeftButton)
-
-
-class CloneVMTestSrcVM(unittest.TestCase):
-    def setUp(self):
-        super(CloneVMTestSrcVM, self).setUp()
-        self.qtapp, self.loop = init_qtapp()
-
-        self.qapp = Qubes()
-
-        # mock up the Create VM Thread to avoid changing system state
-        self.patcher_thread = unittest.mock.patch(
-            'qubesmanager.common_threads.CloneVMThread')
-        self.mock_thread = self.patcher_thread.start()
-        self.addCleanup(self.patcher_thread.stop)
-
-        # mock the progress dialog to speed testing up
-        self.patcher_progress = unittest.mock.patch(
-            'PyQt6.QtWidgets.QProgressDialog')
-        self.mock_progress = self.patcher_progress.start()
-        self.addCleanup(self.patcher_progress.stop)
-
-        # mock the message dialog to not hang on success
-        self.patcher_warning = unittest.mock.patch(
-            'PyQt6.QtWidgets.QMessageBox.warning')
-        self.mock_warning = self.patcher_warning.start()
-        self.addCleanup(self.patcher_warning.stop)
-        self.patcher_information = unittest.mock.patch(
-            'PyQt6.QtWidgets.QMessageBox.information')
-        self.mock_information = self.patcher_information.start()
-        self.addCleanup(self.patcher_information.stop)
-
-        self.src_vm = next(
-            domain for domain in self.qapp.domains
-             if domain.klass != 'AdminVM')
-
-        self.dialog = clone_vm.CloneVMDlg(self.qtapp, self.qapp,
-                                          src_vm=self.src_vm)
-
-    def test_00_window_loads(self):
-        self.assertEqual(self.dialog.src_vm.currentText(), self.src_vm.name)
-        self.assertEqual(self.dialog.src_vm.currentData(), self.src_vm)
-
-        self.assertFalse(self.dialog.src_vm.isEnabled(),
-                         "source vm dialog active")
-
-        self.assertEqual(self.dialog.label.currentText(),
-                         self.src_vm.label.name)
-
-    def test_01_simple_clone(self):
-        self.dialog.name.setText("clone-test")
-
-        self.__click_ok()
-
-        self.mock_thread.assert_called_once_with(
-            self.src_vm, "clone-test", pool=None, label=self.src_vm.label)
-        self.mock_thread().start.assert_called_once_with()
-
-    def __click_ok(self):
-        okwidget = self.dialog.buttonBox.button(
-                    self.dialog.buttonBox.StandardButton.Ok)
-
-        QtTest.QTest.mouseClick(okwidget, QtCore.Qt.MouseButton.LeftButton)
-
-
-if __name__ == "__main__":
-    ha_syslog = logging.handlers.SysLogHandler('/dev/log')
-    ha_syslog.setFormatter(
-        logging.Formatter('%(name)s[%(process)d]: %(message)s'))
-    logging.root.addHandler(ha_syslog)
-    unittest.main()
+
+@pytest.mark.parametrize("clone_window", TEST_VMS, indirect=True)
+def test_00_clone_loads(clone_window):
+    vm, clone_dlg = clone_window
+    assert clone_dlg.src_vm.count() > 0, "No source vms shown"
+    assert clone_dlg.label.count() > 0, "No labels shown"
+    assert clone_dlg.storage_pool.count() > 0, "No storage pools listed"
+    if not vm:
+        assert clone_dlg.src_vm.isEnabled(), "Source VM dialog active"
+    else:
+        assert not clone_dlg.src_vm.isEnabled(), "Source VM dialog not active"
+
+
+@pytest.mark.parametrize("clone_window", TEST_VMS, indirect=True)
+def test_01_cancel(clone_window):
+    vm, clone_dlg = clone_window
+
+    with (mock.patch('qubesmanager.common_threads.CloneVMThread') as
+          mock_clone_thread):
+        clone_dlg.buttonBox.button(
+            clone_dlg.buttonBox.StandardButton.Cancel).click()
+
+        assert mock_clone_thread.call_count == 0, ("Cancel caused a clone to "
+                                                   "happen")
+
+
+@pytest.mark.parametrize("clone_window", TEST_VMS, indirect=True)
+def test_02_name_correctly_updates(clone_window):
+    vm, clone_dlg = clone_window
+
+    src_name = clone_dlg.src_vm.currentText()
+    target_name = clone_dlg.name.text()
+
+    if vm:
+        assert src_name == vm.name, "Wrong VM preselected"
+    assert src_name in target_name
+    assert "clone" in target_name
+
+    if vm:
+        assert not clone_dlg.src_vm.isEnabled()
+        return
+
+    # select a different VM
+    clone_dlg.src_vm.setCurrentIndex(clone_dlg.src_vm.currentIndex() + 1)
+
+    src_name_2 = clone_dlg.src_vm.currentText()
+    target_name_2 = clone_dlg.name.text()
+
+    assert src_name != src_name_2
+    assert src_name_2 in target_name_2
+    assert "clone" in target_name_2
+
+
+@pytest.mark.parametrize("clone_window", TEST_VMS, indirect=True)
+def test_03_label_correctly_updates(clone_window):
+    vm, clone_dlg = clone_window
+
+    if vm:
+        assert str(vm.label) in clone_dlg.label.currentText()
+        return
+
+    src_vm_1 = clone_dlg.app.domains[clone_dlg.src_vm.currentText()]
+    assert str(src_vm_1.label) in clone_dlg.label.currentText()
+
+    for i in range(clone_dlg.src_vm.count()):
+        clone_dlg.src_vm.setCurrentIndex(i)
+        selected_vm = clone_dlg.app.domains[clone_dlg.src_vm.currentText()]
+        assert str(selected_vm.label) in clone_dlg.label.currentText()
+
+
+@mock.patch('qubesmanager.common_threads.CloneVMThread')
+@mock.patch('PyQt6.QtWidgets.QProgressDialog')
+@mock.patch('PyQt6.QtWidgets.QMessageBox.information')
+@pytest.mark.parametrize("clone_window", TEST_VMS, indirect=True)
+def test_04_simple_clone(_mock_info, _mock_progress, mock_clone, clone_window):
+    # info and progress are mocked to make sure no random windows slow down
+    # the test / success does not hang the test
+    vm, clone_dlg = clone_window
+    clone_dlg.name.setText('clone-test')
+    src_vm = clone_dlg.app.domains[clone_dlg.src_vm.currentText()]
+
+    if vm:
+        assert vm.name == src_vm.name
+
+    clone_dlg.buttonBox.button(
+        clone_dlg.buttonBox.StandardButton.Ok).click()
+
+    assert mock_clone.call_count == 1
+    mock_clone.assert_called_once_with(
+        src_vm, "clone-test", pool=None, label=src_vm.label)
+    mock_clone().start.assert_called_once_with()
+
+
+@mock.patch('qubesmanager.common_threads.CloneVMThread')
+@mock.patch('PyQt6.QtWidgets.QProgressDialog')
+@mock.patch('PyQt6.QtWidgets.QMessageBox.information')
+@pytest.mark.parametrize("clone_window", [""], indirect=True)
+def test_05_simple_clone_2(_mock_info, _mock_progress, mock_clone,
+                           clone_window):
+    # info and progress are mocked to make sure no random windows slow down
+    # the test / success does not hang the test
+    vm, clone_dlg = clone_window
+
+    for i in range(clone_dlg.src_vm.count()):
+        if clone_dlg.src_vm.itemText(i) == 'test-standalone':
+            clone_dlg.src_vm.setCurrentIndex(i)
+            break
+    clone_dlg.name.setText('clone-test')
+    src_vm = clone_dlg.app.domains['test-standalone']
+    clone_dlg.buttonBox.button(
+        clone_dlg.buttonBox.StandardButton.Ok).click()
+
+    assert mock_clone.call_count == 1
+    mock_clone.assert_called_once_with(
+        src_vm, "clone-test", pool=None, label=src_vm.label)
+    mock_clone().start.assert_called_once_with()
+
+
+@mock.patch('qubesmanager.common_threads.CloneVMThread')
+@mock.patch('PyQt6.QtWidgets.QProgressDialog')
+@mock.patch('PyQt6.QtWidgets.QMessageBox.information')
+@pytest.mark.parametrize("clone_window", [""], indirect=True)
+def test_06_complex_clone(_mock_info, _mock_progress, mock_clone,
+                           clone_window):
+    # info and progress are mocked to make sure no random windows slow down
+    # the test / success does not hang the test
+    _, clone_dlg = clone_window
+
+    for i in range(clone_dlg.src_vm.count()):
+        if clone_dlg.src_vm.itemText(i) == 'test-standalone':
+            clone_dlg.src_vm.setCurrentIndex(i)
+            break
+    clone_dlg.name.setText('clone-test')
+    src_vm = clone_dlg.app.domains['test-standalone']
+
+    for i in range(clone_dlg.label.count()):
+        if clone_dlg.label.itemText(i) == 'orange':
+            clone_dlg.label.setCurrentIndex(i)
+            break
+
+    for i in range(clone_dlg.storage_pool.count()):
+        if clone_dlg.storage_pool.itemText(i) == 'vm-pool':
+            clone_dlg.storage_pool.setCurrentIndex(i)
+            break
+
+    clone_dlg.buttonBox.button(
+        clone_dlg.buttonBox.StandardButton.Ok).click()
+
+    assert mock_clone.call_count == 1
+    mock_clone.assert_called_once_with(
+        src_vm, "clone-test", label=clone_dlg.app.labels[
+            "orange"], pool='vm-pool')
+    mock_clone().start.assert_called_once_with()
+
+
+@mock.patch('qubesmanager.common_threads.CloneVMThread')
+@mock.patch('PyQt6.QtWidgets.QProgressDialog')
+@mock.patch('PyQt6.QtWidgets.QMessageBox.information')
+@mock.patch('subprocess.check_call')
+@pytest.mark.parametrize("clone_window", TEST_VMS, indirect=True)
+def test_07_launch_settings(mock_subprocess, _mock_info, _mock_progress,
+                         _mock_clone, clone_window):
+    # info and progress are mocked to make sure no random windows slow down
+    # the test / success does not hang the test
+    vm, clone_dlg = clone_window
+    clone_dlg.name.setText('clone-test')
+    clone_dlg.launch_settings.setChecked(True)
+
+    clone_dlg.buttonBox.button(
+        clone_dlg.buttonBox.StandardButton.Ok).click()
+
+    mock_subprocess(['qubes-vm-settings', "clone-test"])

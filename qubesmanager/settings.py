@@ -1,26 +1,27 @@
 #!/usr/bin/python3
 #
-# The Qubes OS Project, http://www.qubes-os.org
+# The Qubes OS Project, https://www.qubes-os.org/
 #
 # Copyright (C) 2012  Agnieszka Kostrzewa <agnieszka.kostrzewa@gmail.com>
 # Copyright (C) 2012  Marek Marczykowski-Górecki
 #                       <marmarek@invisiblethingslab.com>
 # Copyright (C) 2017  Wojtek Porczyk <woju@invisiblethingslab.com>
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# You should have received a copy of the GNU Lesser General Public License along
-# with this program; if not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-#
+
 
 import collections
 import functools
@@ -28,6 +29,7 @@ import re
 import subprocess
 import sys
 import traceback
+import datetime
 from qubesadmin.tools import QubesArgumentParser
 from qubesadmin import device_protocol
 from qubesadmin import utils as admin_utils
@@ -144,11 +146,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         ))
 
     # pylint: disable=too-many-positional-arguments
-    def __init__(self, vm, init_page="basic", qapp=None, qubesapp=None,
+    def __init__(self, vm_name, init_page="basic", qapp=None, qubesapp=None,
                  parent=None):
         super().__init__(parent)
 
-        self.vm = vm
+        self.vm = qubesapp.domains[vm_name]
         self.qapp = qapp
         self.qubesapp = qubesapp
         self.threads_list = []
@@ -195,7 +197,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         if self.tabWidget.isTabEnabled(self.tabs_indices['firewall']):
             model = firewall.QubesFirewallRulesModel()
             try:
-                model.set_vm(vm)
+                model.set_vm(self.vm)
                 self.set_fw_model(model)
                 self.firewall_modified_outside_label.setVisible(False)
             except firewall.FirewallModifiedOutsideError:
@@ -371,8 +373,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         return ret
 
     def check_network_availability(self):
-        netvm = getattr(self.vm, 'netvm', None)
-        provides_network = getattr(self.vm, 'provides_network', False)
+        # this should attempt to use whatever is currently selected, not VM
+        # settings
+        if self.netVM.currentData() == qubesadmin.DEFAULT:
+            netvm = self.vm.property_get_default('netvm')
+        else:
+            netvm = self.netVM.currentData()
+        provides_network = self.provides_network_checkbox.isChecked()
 
         self.no_netvm_label.setVisible(netvm is None and not provides_network)
 
@@ -477,6 +484,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         self.netVM.currentIndexChanged.connect(self.check_warn_dispvmnetvm)
         self.netVM.currentIndexChanged.connect(self.check_warn_templatenetvm)
+        self.netVM.currentIndexChanged.connect(self.check_network_availability)
 
         try:
             self.include_in_backups.setChecked(self.vm.include_in_backups)
@@ -569,7 +577,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
     def __apply_basic_tab__(self):
         msg = []
-
         # vm label changed
         try:
             if utils.did_widget_selection_change(self.vmlabel):
@@ -1466,12 +1473,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 item = self.services_list.item(i)
                 self.new_srv_dict[str(item.text())] = \
                     (item.checkState() ==
-                     ui_settingsdlg.QtCore.Qt.CheckState.Checked)
+                     QtCore.Qt.CheckState.Checked)
 
             for service, v in self.new_srv_dict.items():
                 feature = SERVICE_PREFIX + service
-                if v != self.vm.features.get(feature, object()):
-                    self.vm.features[feature] = v
+                val = '1' if v else ''
+                if val != self.vm.features.get(feature, object()):
+                    self.vm.features[feature] = val
 
             for feature in self.vm.features:
                 if not feature.startswith(SERVICE_PREFIX) or \
@@ -1497,7 +1505,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         if model.temp_full_access_expire_time:
             self.temp_full_access.setChecked(True)
             expire_time = model.temp_full_access_expire_time - \
-                          firewall.datetime.datetime.now().timestamp()
+                datetime.datetime.now().timestamp()
             self.temp_full_access_time.setValue(int(expire_time / 60))
 
     def disable_all_fw_conf(self):
@@ -1531,7 +1539,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.policy_deny_radio_button.isChecked())
 
     def new_rule_button_pressed(self):
-        dialog = firewall.NewFwRuleDlg()
+        dialog = firewall.NewFwRuleDlg(parent=self)
         self.fw_model.run_rule_dialog(dialog)
 
     def edit_rule_button_pressed(self):
@@ -1539,7 +1547,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         selected = self.rulesTreeView.selectedIndexes()
 
         if selected:
-            dialog = firewall.NewFwRuleDlg()
+            dialog = firewall.NewFwRuleDlg(parent=self)
             dialog.set_ok_state(True)
             row = self.rulesTreeView.selectedIndexes().pop().row()
             self.fw_model.populate_edit_dialog(dialog, row)
@@ -1572,7 +1580,8 @@ def main(args=None):
               "and qvm-features to change properties of an AdminVM")
         return 1
 
-    utils.run_synchronous(functools.partial(VMSettingsWindow, vm, args.tab))
+    utils.run_synchronous(functools.partial(VMSettingsWindow, vm.name,
+                                            args.tab))
 
 
 if __name__ == "__main__":
