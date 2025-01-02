@@ -28,6 +28,7 @@ checks:tests:
     - make ui
     - make res
     - PYTHONPATH=~/core-admin-client:~/manager:. xvfb-run ./run-tests.sh
+    - coverage report
   after_script:
     - "PATH=$PATH:$HOME/.local/bin"
     - ci/codecov-wrapper
