@@ -18,20 +18,15 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-import asyncio
-import sys
+import pytest
+from qubesadmin.tests.mock_app import MockQubesComplete
 
-from PyQt6 import QtWidgets
-import qasync
 
-qtapp = None
-loop = None
+@pytest.fixture
+def test_qubes_app():
+    test_qapp = MockQubesComplete()
+    test_qapp._qubes['sys-usb'].features[
+        'supported-feature.keyboard-layout'] = '1'
+    test_qapp.update_vm_calls()
 
-def init_qtapp():
-    global qtapp, loop
-    if qtapp is None:
-        qtapp = QtWidgets.QApplication(sys.argv)
-        loop = qasync.QEventLoop(qtapp)
-        asyncio.set_event_loop(loop)
-    qtapp.processEvents()
-    return qtapp, loop
+    return test_qapp

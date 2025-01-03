@@ -1,8 +1,6 @@
-#!/usr/bin/python3
-#
 # The Qubes OS Project, https://www.qubes-os.org/
 #
-# Copyright (C) 2016 Marta Marczykowska-Górecka
+# Copyright (C) 2024 Marta Marczykowska-Górecka
 #                                       <marmarta@invisiblethingslab.com>
 #
 # This program is free software; you can redistribute it and/or modify
@@ -19,1686 +17,1598 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-import asyncio
+
 import contextlib
-import functools
-import logging.handlers
-import unittest
-import unittest.mock
-
 import subprocess
-import datetime
 import time
+from datetime import datetime
 
-from PyQt6 import QtTest, QtCore, QtWidgets
-from PyQt6.QtCore import (Qt, QSize)
-from PyQt6.QtGui import (QIcon)
+from PyQt6.QtCore import Qt, QSettings, QItemSelectionModel
+from PyQt6.QtGui import QPixmap, QIcon
+from PyQt6.QtWidgets import QMessageBox
 
-from qubesadmin import Qubes, events, exc
-import qubesmanager.qube_manager as qube_manager
-from qubesmanager.tests import init_qtapp
+from unittest import mock
+
+import pytest
+
+from qubesadmin import exc
+from .. import qube_manager
+from qubesadmin.tests.mock_app import (MockDispatcher, MockAsyncDispatcher,
+                                       MockEvent, MockQube)
+
+import asyncio
+
+FEDORA_OLD = 'fedora-35'
+FEDORA_LATEST = 'fedora-36'
+
+@pytest.fixture
+def qubes_manager(qapp, test_qubes_app):
+    dispatcher = MockAsyncDispatcher(test_qubes_app)
+    qm = qube_manager.VmManagerWindow(qapp, test_qubes_app, dispatcher)
+    return qm
 
 
-icon_size = qube_manager.icon_size
-
-
-def listen_for_events(func):
-    """Wrapper for a test that needs events listener to be registered all the time.
-    Note the test still needs to yield to the event loop to actually handle events.
+def _select_vm(dialog: qube_manager.VmManagerWindow, vm_name, *additonal_vms):
     """
-    @functools.wraps(func)
-    def wrapper(self, *args, **kwargs):
-        events_listener = \
-            asyncio.ensure_future(self.dispatcher.listen_for_events())
-        # let it connect (run until first yield/await)
-        self.loop.run_until_complete(asyncio.sleep(0))
-        try:
-            return func(self, *args, **kwargs)
-        finally:
-            events_listener.cancel()
-            self.loop.call_soon(self.loop.stop)
-            self.loop.run_forever()
-    return wrapper
+    Select any number of vms provided, raise error if unsucessful.
+    """
+    dialog.table.selectionModel().clear()
+    mode = (QItemSelectionModel.SelectionFlag.Select |
+            QItemSelectionModel.SelectionFlag.Rows)
+
+    vms_to_select = {vm_name}
+    for vm in additonal_vms:
+        vms_to_select.add(vm)
+
+    for row in range(dialog.table.model().rowCount()):
+        idx = dialog.table.model().index(
+            row, dialog.qubes_model.columns_indices.index("Name"))
+        current_name = dialog.table.model().data(
+            idx, Qt.ItemDataRole.DisplayRole)
+
+        if current_name in vms_to_select:
+            dialog.table.selectionModel().select(idx, mode)
+            vms_to_select.remove(current_name)
+
+    if vms_to_select:
+        raise ValueError
 
 
-def skip_if_running(*vmnames):
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(self, *args, **kwargs):
-            if any(self.qapp.domains[name].is_running() for name in vmnames):
-                self.skipTest('Any of {} VM is running'.format(vmnames))
-            return func(self, *args, **kwargs)
-        return wrapper
-    return decorator
+def _count_visible_rows(table):
+    """Count how many rows are visible (not filtered out)"""
+    result = 0
+    for i in range(table.model().rowCount()):
+        if not table.isRowHidden(i):
+            result += 1
+    return result
 
 
-class QubeManagerTest(unittest.TestCase):
-    def setUp(self):
-        super(QubeManagerTest, self).setUp()
-        self.qtapp, self.loop = init_qtapp()
+def _get_current_vms(qm):
+    """Get a set of names of currently visible vms"""
+    model = qm.table.model()
+    col_indices = qm.qubes_model.columns_indices
+    result = []
+    for row in range(model.rowCount()):
+        # name
+        index_name = model.index(row, col_indices.index("Name"))
+        vm_name = model.data(index_name, Qt.ItemDataRole.DisplayRole)
+        result.append(vm_name)
+    return sorted(result)
 
-        self.mock_qprogress = unittest.mock.patch(
-            'PyQt6.QtWidgets.QProgressDialog')
-        self.mock_qprogress.start()
 
-        self.addCleanup(self.mock_qprogress.stop)
+def _get_column_value(qm, column_name, vm_name,
+                      role = Qt.ItemDataRole.DisplayRole):
+    model = qm.table.model()
+    col_indices = qm.qubes_model.columns_indices
+    for row in range(model.rowCount()):
+        # name
+        index_name = model.index(row, col_indices.index("Name"))
+        name = model.data(index_name, Qt.ItemDataRole.DisplayRole)
+        if name == vm_name:
+            idx = model.index(row, col_indices.index(column_name))
+            val = model.data(idx, role)
+            return val
+    else:
+        raise KeyError(vm_name)
 
-        self.qapp = Qubes()
-        self.dispatcher = events.EventsDispatcher(self.qapp)
 
-        self.dialog = qube_manager.VmManagerWindow(
-            self.qtapp, self.qapp, self.dispatcher)
+def _check_sorting(qm, column_name):
+    """
+    Check if model is sorted in ascending order on the provided column
+    """
+    last_text = None
+    last_vm = None
 
-    def test_000_window_loads(self):
-        self.assertTrue(self.dialog.table is not None, "Window did not load")
+    model = qm.table.model()
+    column = qm.qubes_model.columns_indices.index(column_name)
+    name_column = qm.qubes_model.columns_indices.index("Name")
 
-    def test_001_correct_vms_listed(self):
-        vms_in_table = []
+    for row in range(model.rowCount()):
+        vm_name = model.index(row,
+                              name_column).data(Qt.ItemDataRole.DisplayRole)
+        column_data = model.index(row, column).data(Qt.ItemDataRole.DisplayRole)
 
-        for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vm(row)
-            self.assertIsNotNone(vm)
-            vms_in_table.append(vm.name)
-
-            # check that name is listed correctly
-            name_item = self._get_table_item(row, "Name")
-            self.assertEqual(name_item, vm.name,
-                             "Incorrect VM name for {}".format(vm.name))
-
-        actual_vms = [vm.name for vm in self.qapp.domains
-                      if not vm.features.get('internal', False)]
-
-        self.assertEqual(len(vms_in_table), len(actual_vms),
-                         "Incorrect number of VMs loaded")
-        self.assertListEqual(sorted(vms_in_table), sorted(actual_vms),
-                             "Incorrect VMs loaded")
-
-    def test_002_correct_template_listed(self):
-        for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vm(row)
-            # check that template is listed correctly
-            template_item = self._get_table_item(row, "Template")
-            if getattr(vm, "template", None):
-                self.assertEqual(vm.template,
-                                 template_item,
-                                 "Incorrect template for {}".format(vm.name))
+        if row == 0:
+            assert vm_name == 'dom0'
+        elif last_text is None:
+            last_text = column_data
+            last_vm = vm_name
+        else:
+            if last_text == column_data:
+                assert vm_name.lower() > last_vm.lower()
             else:
-                self.assertEqual(vm.klass, template_item,
-                                 "Incorrect class for {}".format(vm.name))
-
-    def test_003_correct_netvm_listed(self):
-        for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vm(row)
-
-            # check that netvm is listed correctly
-            netvm_item = self._get_table_item(row, "NetVM")
-            netvm_value = getattr(vm, "netvm", None)
-
-            if not netvm_value:
-                netvm_value = "n/a"
-
-            if netvm_value and hasattr(vm, "netvm") \
-                    and vm.property_is_default("netvm"):
-                netvm_value = "default ({})".format(netvm_value)
-
-            self.assertEqual(netvm_value,
-                             netvm_item,
-                             "Incorrect netvm for {}".format(vm.name))
-
-    def test_004_correct_disk_usage_listed(self):
-        for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vm(row)
-
-            size_item = self._get_table_item(row, "Disk Usage")
-            if vm.klass == 'AdminVM':
-                size_value = "n/a"
-            else:
-                size_value = round(vm.get_disk_utilization() / (1024 * 1024), 2)
-                size_value = str(size_value) + " MiB"
-
-            self.assertEqual(size_value,
-                             size_item,
-                             "Incorrect size for {}".format(vm.name))
-
-    def test_005_correct_internal_listed(self):
-        for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vm(row)
+                assert column_data.lower() > last_text.lower()
+            last_text = column_data
+            last_vm = vm_name
+
+
+def _is_icon(icon, icon_name: str = 'on'):
+    """This is a helper method, returning True if provided icon is the same
+    as QIcon for the on.png file, False if it is empty icon, and ValueError
+    if some other item was found"""
+    ref_icon = QIcon(f":/{icon_name}.png").pixmap(64).toImage()
+    off_icon = QIcon().pixmap(64).toImage()
+    my_icon = icon.pixmap(64).toImage()
+
+    if my_icon == ref_icon:
+        return True
+    if my_icon == off_icon:
+        return False
+    raise ValueError
+
+
+def test_000_window_loads(qapp, test_qubes_app):
+    dispatcher = MockDispatcher(test_qubes_app)
+
+    with mock.patch('PyQt6.QtWidgets.QMessageBox.warning') as mock_warning:
+        qm = qube_manager.VmManagerWindow(qapp, test_qubes_app, dispatcher)
+        assert mock_warning.call_count == 0
+        assert qm.table is not None
+        assert qm.table.model().rowCount() > 0
+
+
+def test_001_model_correctness(qapp, test_qubes_app):
+    dispatcher = MockDispatcher(test_qubes_app)
+    qm = qube_manager.VmManagerWindow(qapp, test_qubes_app, dispatcher)
+
+    model = qm.qubes_model
+
+    domains = list(test_qubes_app.domains)
+
+    # number of domains
+    assert model.rowCount(None) == len(domains)
+
+    # domain data
+    for row in range(model.rowCount(None)):
+        # name
+        index_name = model.index(row, model.columns_indices.index("Name"))
+        vm_name = model.data(index_name, Qt.ItemDataRole.DisplayRole)
+        assert vm_name in domains
+
+        vm_object = test_qubes_app.domains[vm_name]
+
+        # label
+        index_label = model.index(row, model.columns_indices.index("Label"))
+        text = model.data(index_label, Qt.ItemDataRole.DisplayRole)
+        assert text is None
+        vm_label_pixmap = model.data(index_label,
+                                     Qt.ItemDataRole.DecorationRole)
+        assert isinstance(vm_label_pixmap, QPixmap)
+        assert vm_label_pixmap == model.label_pixmap[vm_object.icon]
+
+        # template
+        index_template = model.index(row, model.columns_indices.index(
+            "Template"))
+        template_data = model.data(index_template, Qt.ItemDataRole.DisplayRole)
+        if hasattr(vm_object, 'template'):
+            assert vm_object.template == template_data
+        else:
+            assert vm_object.klass == template_data
+
+        # netvm
+        index_netvm = model.index(row, model.columns_indices.index(
+            "NetVM"))
+        netvm_data = model.data(index_netvm, Qt.ItemDataRole.DisplayRole)
+        if getattr(vm_object, 'netvm', None):
+            assert str(vm_object.netvm) in netvm_data
+            if vm_object.property_is_default('netvm'):
+                assert 'default' in netvm_data.lower()
+        else:
+            assert 'n/a' in netvm_data
+
+        # internal
+        index_internal = model.index(row, model.columns_indices.index(
+            "Internal"))
+        internal_data = model.data(index_internal, Qt.ItemDataRole.DisplayRole)
+        if getattr(vm_object, 'internal', False):
+            assert internal_data == "Yes"
+
+        # disk usage
+        du_index = model.index(row, model.columns_indices.index(
+            "Disk Usage"))
+        du_data = model.data(du_index, Qt.ItemDataRole.DisplayRole)
+
+        if vm_object.klass == 'AdminVM':
+            assert du_data == 'n/a'
+        else:
+            expected_size = round(
+                vm_object.get_disk_utilization() / (1024 * 1024), 2)
+            assert str(expected_size) in du_data
+
+        # ip
+        ip_index = model.index(row, model.columns_indices.index(
+            "IP Address"))
+        ip_data = model.data(ip_index, Qt.ItemDataRole.DisplayRole)
 
-            internal_item = self._get_table_item(row, "Internal")
-            internal_value = "Yes" if vm.features.get('internal', False) else ""
-
-            self.assertEqual(internal_item, internal_value,
-                             "Incorrect internal value for {}".format(vm.name))
-
-    def test_006_correct_ip_listed(self):
-        for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vm(row)
-
-            ip_item = self._get_table_item(row, "IP Address")
-            if hasattr(vm, 'ip'):
-                ip_value = getattr(vm, 'ip')
-                ip_value = "n/a" if not ip_value else ip_value
-            else:
-                ip_value = "n/a"
-
-            self.assertEqual(ip_value, ip_item,
-                             "Incorrect ip value for {}".format(vm.name))
-
-    def test_007_incl_in_backups_listed(self):
-        for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vm(row)
-
-            incl_backups_item = self._get_table_item(
-                row, "Backup",
-                Qt.ItemDataRole.CheckStateRole) == Qt.CheckState.Checked
-            incl_backups_value = getattr(vm, 'include_in_backups', False)
-
-            self.assertEqual(
-                incl_backups_value, incl_backups_item,
-                "Incorrect include in backups value for {}".format(vm.name))
-
-    def test_008_last_backup_listed(self):
-        for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vm(row)
-
-            last_backup_item = self._get_table_item(row, "Last backup")
-            last_backup_value = getattr(vm, 'backup_timestamp', None)
-
-            if last_backup_value:
-                last_backup_value = str(
-                    datetime.datetime.fromtimestamp(last_backup_value))
-
-            self.assertEqual(
-                last_backup_value, last_backup_item,
-                "Incorrect last backup value for {}".format(vm.name))
-
-    def test_009_def_dispvm_listed(self):
-        for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vm(row)
-
-            def_dispvm_item = self._get_table_item(row, "Default DispVM")
-            if vm.property_is_default("default_dispvm"):
-                def_dispvm_value = "default ({})".format(
-                    vm.property_get_default("default_dispvm"))
-            else:
-                def_dispvm_value = getattr(vm, "default_dispvm", None)
-
-            self.assertEqual(
-                def_dispvm_value, def_dispvm_item,
-                "Incorrect default dispvm value for {}".format(vm.name))
-
-    def test_010_is_dvm_template_listed(self):
-        for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vm(row)
-
-            is_dvm_template_item = self._get_table_item(row, "Is DVM Template")
-            is_dvm_template_value = "Yes" if \
-                getattr(vm, "template_for_dispvms", False) else ""
-
-            self.assertEqual(
-                is_dvm_template_value, is_dvm_template_item,
-                "Incorrect is DVM template value for {}".format(vm.name))
-
-    def test_011_is_label_correct(self):
-        for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vm(row)
-            icon = QIcon.fromTheme(getattr(vm, 'icon', 'appvm-black'))
-            icon = icon.pixmap(icon_size)
-
-            label_pixmap = self._get_table_item(
-                row, "Label", Qt.ItemDataRole.DecorationRole)
-
-            self.assertEqual(label_pixmap.toImage(), icon.toImage())
-
-    def test_012_is_state_correct(self):
-        for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vm(row)
-
-            displayed_power_state = self._get_table_item(row, "State")['power']
-
-            self.assertEqual(
-                displayed_power_state, vm.get_power_state(),
-                "Wrong power state displayed for {}".format(vm.name))
-
-    def test_013_incorrect_settings_file(self):
-        mock_settings = unittest.mock.MagicMock(spec=QtCore.QSettings)
-
-        settings_result_dict = {"view/sort_column": "Cthulhu",
-                                "view/sort_order": "Fhtagn",
-                                "view/menubar_visible": "R'lyeh"
-                                }
-
-        mock_settings.side_effect = (
-            lambda x, *args, **kwargs: settings_result_dict.get(x))
-
-        with unittest.mock.patch('PyQt6.QtCore.QSettings.value',
-                                 mock_settings),\
-                unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.warning')\
-                as mock_warning:
-            self.dialog = qube_manager.VmManagerWindow(
-                self.qtapp, self.qapp, self.dispatcher)
-            self.assertEqual(mock_warning.call_count, 1)
-
-    def test_100_sorting(self):
-        col = self.dialog.qubes_model.columns_indices.index("Template")
-        self.dialog.table.sortByColumn(col, QtCore.Qt.SortOrder.AscendingOrder)
-        self.__check_sorting("Template")
-
-        col = self.dialog.qubes_model.columns_indices.index("Name")
-        self.dialog.table.sortByColumn(col, QtCore.Qt.SortOrder.AscendingOrder)
-        self.__check_sorting("Name")
-
-    @unittest.mock.patch('qubesmanager.qube_manager.QSettings.setValue')
-    def test_101_hide_column(self, mock_settings):
-        model = self.dialog.qubes_model
-        action_no = model.columns_indices.index('Is DVM Template')
-        self.dialog.menu_view.actions()[action_no].trigger()
-        mock_settings.assert_called_with('columns/Is DVM Template', True)
-
-        self.dialog.menu_view.actions()[action_no].trigger()
-        mock_settings.assert_called_with('columns/Is DVM Template', False)
-
-    @unittest.mock.patch('qubesmanager.settings.VMSettingsWindow')
-    def test_200_vm_open_settings(self, mock_window):
-        selected_vm = self._select_non_admin_vm()
-        self.assertIsNotNone(selected_vm, "No valid non-admin VM found")
-        widget = self.dialog.toolbar.widgetForAction(
-            self.dialog.action_settings)
-        QtTest.QTest.mouseClick(widget,
-                                QtCore.Qt.MouseButton.LeftButton)
-        mock_window.assert_called_once_with(
-            selected_vm, "basic", self.qtapp, self.qapp, self.dialog)
-
-    def test_201_vm_open_settings_admin(self):
-        self._select_admin_vm()
-
-        self.assertFalse(self.dialog.action_settings.isEnabled(),
-                         "Settings not disabled for admin VM")
-        self.assertFalse(self.dialog.action_editfwrules.isEnabled(),
-                         "Editfw not disabled for admin VM")
-        self.assertFalse(self.dialog.action_appmenus.isEnabled(),
-                         "Appmenus not disabled for admin VM")
-
-    @unittest.mock.patch('qubesmanager.settings.VMSettingsWindow')
-    def test_202_vm_open_firewall(self, mock_window):
-        selected_vm = self._select_non_admin_vm()
-        self.assertIsNotNone(selected_vm, "No valid non-admin VM found")
-        widget = self.dialog.toolbar.widgetForAction(
-            self.dialog.action_editfwrules)
-        QtTest.QTest.mouseClick(widget,
-                                QtCore.Qt.MouseButton.LeftButton)
-        mock_window.assert_called_once_with(
-            selected_vm, "firewall", self.qtapp, self.qapp, self.dialog)
-
-    @unittest.mock.patch('qubesmanager.settings.VMSettingsWindow')
-    def test_203_vm_open_apps(self, mock_window):
-        selected_vm = self._select_non_admin_vm()
-        self.assertIsNotNone(selected_vm, "No valid non-admin VM found")
-        widget = self.dialog.toolbar.widgetForAction(
-            self.dialog.action_appmenus)
-        QtTest.QTest.mouseClick(widget,
-                                QtCore.Qt.MouseButton.LeftButton)
-        mock_window.assert_called_once_with(
-            selected_vm, "applications", self.qtapp, self.qapp, self.dialog)
-
-    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
-    def test_204_vm_keyboard(self, mock_message):
-        selected_vm = self._select_non_admin_vm(running=True)
-        self.assertIsNotNone(selected_vm, "No valid non-admin VM found")
-        if 'supported-feature.keyboard-layout' not in selected_vm.features:
-            self.skipTest("VM {!s} does not support new layout change".format(selected_vm))
-        widget = self.dialog.toolbar.widgetForAction(
-            self.dialog.action_set_keyboard_layout)
-        with unittest.mock.patch.object(selected_vm, 'run') as mock_run:
-            QtTest.QTest.mouseClick(widget,
-                                    QtCore.Qt.MouseButton.LeftButton)
-            mock_run.assert_called_once_with("qubes-change-keyboard-layout")
-        self.assertEqual(mock_message.call_count, 0,
-                         "VM does not support new layout change")
-
-    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
-    def test_205_vm_keyboard_not_running(self, mock_message):
-        selected_vm = self._select_non_admin_vm(running=False)
-        self.assertIsNotNone(selected_vm, "No valid non-admin VM found")
-        widget = self.dialog.toolbar.widgetForAction(
-            self.dialog.action_set_keyboard_layout)
-        with unittest.mock.patch.object(selected_vm, 'run') as mock_run:
-            QtTest.QTest.mouseClick(widget,
-                                    QtCore.Qt.MouseButton.LeftButton)
-            self.assertEqual(mock_run.call_count, 0,
-                             "Keyboard change called on a halted VM")
-
-    def test_206_dom0_keyboard(self):
-        self._select_admin_vm()
-        self.assertFalse(self.dialog.action_set_keyboard_layout.isEnabled())
-
-    def test_208_update_vm_admin(self):
-        selected_vm = self._select_admin_vm()
-        self.assertIsNotNone(selected_vm, "No valid admin VM found")
-
-        widget = self.dialog.toolbar.widgetForAction(
-            self.dialog.action_updatevm)
-
-        with unittest.mock.patch('qubesmanager.qube_manager.UpdateVMsThread') \
-                as mock_update:
-            QtTest.QTest.mouseClick(widget,
-                                    QtCore.Qt.MouseButton.LeftButton)
-            mock_update.assert_called_once_with([selected_vm.name])
-            mock_update().start.assert_called_once_with()
-
-    @unittest.mock.patch("PyQt6.QtWidgets.QInputDialog.getText",
-                         return_value=("command to run", True))
-    def test_209_run_command_in_vm(self, _):
-        selected_vm = self._select_non_admin_vm()
-
-        self.assertIsNotNone(selected_vm, "No valid non-admin VM found")
-
-        with unittest.mock.patch('qubesmanager.qube_manager.RunCommandThread') \
-                as mock_thread:
-            self.dialog.action_run_command_in_vm.trigger()
-            mock_thread.assert_called_once_with(selected_vm, "command to run")
-            mock_thread().finished.connect.assert_called_once_with(
-                self.dialog.clear_threads)
-            mock_thread().start.assert_called_once_with()
-
-    def test_210_run_command_in_adminvm(self):
-        self._select_admin_vm()
-
-        self.assertFalse(self.dialog.action_run_command_in_vm.isEnabled(),
-                         "Should not be able to run commands for dom0")
-
-    @unittest.mock.patch("PyQt6.QtWidgets.QMessageBox.warning")
-    def test_211_pausevm(self, mock_warn):
-        selected_vm = self._select_non_admin_vm(running=True)
-
-        self.assertTrue(self.dialog.action_pausevm.isEnabled(),
-                        "Pause not enabled for a running VM")
-
-        with unittest.mock.patch.object(selected_vm, 'pause') as mock_pause:
-            self.dialog.action_pausevm.trigger()
-            mock_pause.assert_called_once_with()
-
-            mock_pause.side_effect = exc.QubesException('Error')
-            self.dialog.action_pausevm.trigger()
-            self.assertEqual(mock_warn.call_count, 1)
-
-    def test_212_resumevm(self):
-        selected_vm = self._select_non_admin_vm(running=False)
-
-        with unittest.mock.patch.object(selected_vm, 'get_power_state')\
-                as mock_state, \
-                unittest.mock.patch.object(selected_vm, 'unpause')\
-                as mock_unpause:
-            mock_state.return_value = 'Paused'
-            self.dialog.action_resumevm.trigger()
-            mock_unpause.assert_called_once_with()
-
-        with unittest.mock.patch('qubesmanager.qube_manager.StartVMThread') \
-                as mock_thread:
-            self.dialog.action_resumevm.trigger()
-            mock_thread.assert_called_once_with(selected_vm)
-            mock_thread().finished.connect.assert_called_once_with(
-                self.dialog.clear_threads)
-            mock_thread().start.assert_called_once_with()
-
-    def test_213_resume_running_vm(self):
-        self._select_non_admin_vm(running=True)
-        self.assertFalse(self.dialog.action_resumevm.isEnabled())
-
-    @unittest.mock.patch("PyQt6.QtWidgets.QMessageBox.question",
-                         return_value=QtWidgets.QMessageBox.StandardButton.Yes)
-    @unittest.mock.patch('PyQt6.QtCore.QTimer.singleShot')
-    @unittest.mock.patch('qubesmanager.qube_manager.VmShutdownMonitor')
-    def test_214_shutdownvm(self, mock_monitor, mock_timer, _):
-        selected_vm = self._select_non_admin_vm(running=True)
-
-        with unittest.mock.patch.object(selected_vm, 'shutdown')\
-                as mock_shutdown:
-            self.dialog.action_shutdownvm.trigger()
-            mock_shutdown.assert_called_once_with(force=False)
-            mock_monitor.assert_called_once_with(
-                selected_vm, unittest.mock.ANY, unittest.mock.ANY,
-                unittest.mock.ANY)
-            mock_timer.assert_called_once_with(unittest.mock.ANY,
-                                               unittest.mock.ANY)
-
-    def test_215_shutdown_halted_vm(self):
-        self._select_non_admin_vm(running=False)
-
-        self.assertFalse(self.dialog.action_shutdownvm.isEnabled())
-
-    @unittest.mock.patch('qubesmanager.create_new_vm.NewVmDlg')
-    def test_216_create_vm(self, mock_new_vm):
-        action = self.dialog.action_createvm
-        self.assertTrue(action.isEnabled())
-
-        action.trigger()
-
-        self.assertEqual(mock_new_vm.call_count, 1,
-                         "Create New VM window did not appear")
-
-    def test_217_remove_admin_vm(self):
-        self._select_admin_vm()
-
-        self.assertFalse(self.dialog.action_removevm.isEnabled())
-
-    @unittest.mock.patch("qubesmanager.qube_manager.QMessageBox")
-    @unittest.mock.patch('qubesadmin.utils.vm_dependencies')
-    def test_218_remove_vm_dependencies(self, mock_dependencies, mock_msgbox):
-        mock_vm = unittest.mock.Mock(spec=['name'],
-                                     **{'name.return_value': 'test-vm'})
-        mock_dependencies.return_value = [(mock_vm, "test_prop")]
-
-        action = self.dialog.action_removevm
-        self._select_non_admin_vm()
-        action.trigger()
-
-        mock_msgbox().show.assert_called_with()
-
-    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
-    @unittest.mock.patch("PyQt6.QtWidgets.QInputDialog.getText")
-    @unittest.mock.patch('qubesadmin.utils.vm_dependencies')
-    def test_219_remove_vm_no_depencies(
-            self, mock_dependencies, mock_input, mock_warning):
-        action = self.dialog.action_removevm
-        selected_vm = self._select_non_admin_vm(running=False)
-
-        # test with no dependencies
-        mock_dependencies.return_value = None
-
-        with unittest.mock.patch('qubesmanager.common_threads.RemoveVMThread')\
-                as mock_thread:
-            mock_input.return_value = (selected_vm, False)
-            action.trigger()
-            self.assertEqual(mock_thread.call_count, 0,
-                             "VM removed despite user clicking 'cancel")
-
-            mock_input.return_value = ("wrong_name", True)
-            action.trigger()
-            self.assertEqual(mock_warning.call_count, 1)
-            self.assertEqual(mock_thread.call_count, 0,
-                             "VM removed despite user not confirming the name")
-
-            mock_input.return_value = (selected_vm.name, True)
-            action.trigger()
-            mock_thread.assert_called_once_with(selected_vm)
-            mock_thread().finished.connect.assert_called_once_with(
-                self.dialog.clear_threads)
-            mock_thread().start.assert_called_once_with()
-
-    def test_220_restartvm_halted_vm(self):
-        self._select_non_admin_vm(running=False)
-        self.assertFalse(self.dialog.action_restartvm.isEnabled())
-
-    @unittest.mock.patch('PyQt6.QtCore.QTimer.singleShot')
-    @unittest.mock.patch('qubesmanager.qube_manager.VmShutdownMonitor')
-    @unittest.mock.patch("PyQt6.QtWidgets.QMessageBox.question",
-                         return_value=QtWidgets.QMessageBox.StandardButton.Yes)
-    def test_221_restartvm_running_vm(self, _msgbox, mock_monitor, _qtimer):
-        selected_vm = self._select_non_admin_vm(running=True)
-
-        action = self.dialog.action_restartvm
-
-        # currently the VM is running
-        with unittest.mock.patch.object(selected_vm, 'shutdown')\
-                as mock_shutdown:
-            action.trigger()
-            mock_shutdown.assert_called_once_with(force=True)
-            mock_monitor.assert_called_once_with(
-                 selected_vm, 1000, True, unittest.mock.ANY)
-
-    @unittest.mock.patch('qubesmanager.qube_manager.StartVMThread')
-    @unittest.mock.patch("PyQt6.QtWidgets.QMessageBox.question",
-                         return_value=QtWidgets.QMessageBox.StandardButton.Yes)
-    def test_222_restartvm_shutdown_meantime(self, _, mock_thread):
-        selected_vm = self._select_non_admin_vm(running=True)
-
-        action = self.dialog.action_restartvm
-
-        # it was shutdown in the meantime
-        with unittest.mock.patch.object(
-                selected_vm, 'is_running', **{'return_value': False}):
-            action.trigger()
-            mock_thread.assert_called_once_with(selected_vm)
-            mock_thread().finished.connect.assert_called_once_with(
-                self.dialog.clear_threads)
-            mock_thread().start.assert_called_once_with()
-
-    @unittest.mock.patch('qubesmanager.qube_manager.UpdateVMsThread')
-    def test_223_updatevm_template(self, mock_thread):
-        selected_vm = self._select_templatevm()
-        self.dialog.action_updatevm.trigger()
-
-        mock_thread.assert_called_once_with([selected_vm.name])
+        if not hasattr(vm_object, 'ip') or not getattr(vm_object, 'netvm'):
+            assert ip_data == 'n/a'
+        else:
+            assert ip_data == vm_object.ip
+
+        # include in backups
+        bkp_index = model.index(row, model.columns_indices.index(
+            "Backup"))
+        # convert the checkstate to bool
+        bkp_data = (model.data(bkp_index, Qt.ItemDataRole.CheckStateRole)
+                    == Qt.CheckState.Checked)
+
+        assert bkp_data == getattr(vm_object, 'include_in_backups', False)
+
+        # default dispvm
+        index_dispvm = model.index(row, model.columns_indices.index(
+            "Default DispVM"))
+        dispvm_data = model.data(index_dispvm, Qt.ItemDataRole.DisplayRole)
+        if getattr(vm_object, 'default_dispvm', None):
+            assert str(vm_object.default_dispvm) in dispvm_data
+            if vm_object.property_is_default('default_dispvm'):
+                assert 'default' in dispvm_data.lower()
+        else:
+            assert 'n/a' in dispvm_data
+
+        # is dvm template
+        index_dvm_template = model.index(row, model.columns_indices.index(
+            "Is DVM Template"))
+        dvm_template_data = model.data(index_dvm_template,
+                                 Qt.ItemDataRole.DisplayRole)
+
+        assert dvm_template_data == ("Yes"
+                                     if getattr(
+            vm_object, 'template_for_dispvms', False) else "")
+
+
+def test_002_incorrect_settings_file(qapp, test_qubes_app):
+    mock_settings = mock.MagicMock(spec=QSettings)
+    settings_result_dict = {"view/sort_column": "Cthulhu",
+                            "view/sort_order": "Fhtagn",
+                            "view/menubar_visible": "R'lyeh"}
+    mock_settings.side_effect = (
+        lambda x, *args, **kwargs: settings_result_dict.get(x))
+
+    with mock.patch('PyQt6.QtCore.QSettings.value', mock_settings), \
+            mock.patch('PyQt6.QtWidgets.QMessageBox.warning') as mock_warning:
+        dispatcher = MockDispatcher(test_qubes_app)
+        qube_manager.VmManagerWindow(qapp, test_qubes_app, dispatcher)
+        assert mock_warning.call_count == 1
+
+
+def test_003_sorting(qubes_manager):
+    name_column = qubes_manager.qubes_model.columns_indices.index("Name")
+    template_column = qubes_manager.qubes_model.columns_indices.index("Template")
+
+    qubes_manager.table.sortByColumn(template_column, Qt.SortOrder.AscendingOrder)
+    _check_sorting(qubes_manager, "Template")
+
+    qubes_manager.table.sortByColumn(name_column, Qt.SortOrder.AscendingOrder)
+    _check_sorting(qubes_manager, "Name")
+
+
+@mock.patch('qubesmanager.qube_manager.QSettings.setValue')
+def test_004_hide_column(mock_settings, qubes_manager):
+    action_no = qubes_manager.qubes_model.columns_indices.index(
+        'Is DVM Template')
+    qubes_manager.menu_view.actions()[action_no].trigger()
+
+    mock_settings.assert_called_with('columns/Is DVM Template', True)
+
+    qubes_manager.menu_view.actions()[action_no].trigger()
+    mock_settings.assert_called_with('columns/Is DVM Template', False)
+
+
+@mock.patch('qubesmanager.settings.VMSettingsWindow')
+def test_200_vm_open_settings(mock_window, qubes_manager):
+    _select_vm(qubes_manager, 'test-blue')
+
+    qubes_manager.action_settings.trigger()
+
+    mock_window.assert_called_once_with(
+        "test-blue", "basic", mock.ANY, mock.ANY, qubes_manager)
+
+
+@mock.patch('qubesmanager.settings.VMSettingsWindow')
+def test_201_vm_open_firewall(mock_window, qubes_manager):
+    _select_vm(qubes_manager, 'test-blue')
+
+    qubes_manager.action_editfwrules.trigger()
+
+    mock_window.assert_called_once_with(
+        "test-blue", "firewall", mock.ANY, mock.ANY, qubes_manager)
+
+
+@mock.patch('qubesmanager.settings.VMSettingsWindow')
+def test_202_vm_open_apps(mock_window, qubes_manager):
+    _select_vm(qubes_manager, 'test-blue')
+
+    qubes_manager.action_appmenus.trigger()
+
+    mock_window.assert_called_once_with(
+        "test-blue", "applications", mock.ANY, mock.ANY, qubes_manager)
+
+
+@mock.patch('qubesmanager.settings.VMSettingsWindow')
+def test_203_vm_settings_dom0(mock_window, qubes_manager):
+    _select_vm(qubes_manager, 'dom0')
+
+    assert not qubes_manager.action_settings.isEnabled()
+    qubes_manager.action_settings.trigger()
+    # this should fail, the action should be inactive and not happen
+    mock_window.assert_not_called()
+
+    # some other actions should also be disabled
+    assert not qubes_manager.action_editfwrules.isEnabled()
+    assert not qubes_manager.action_appmenus.isEnabled()
+    assert not qubes_manager.action_run_command_in_vm.isEnabled()
+
+
+@mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
+def test_204_vm_keyboard(mock_message, qubes_manager):
+    # should not be enabled on dom0
+    _select_vm(qubes_manager, 'dom0')
+
+    assert not qubes_manager.action_set_keyboard_layout.isEnabled()
+
+    # get a running VM that supports keyboard layout
+    _select_vm(qubes_manager, 'sys-usb')
+
+    assert qubes_manager.action_set_keyboard_layout.isEnabled()
+
+    vm = qubes_manager.qubes_app.domains['sys-usb']
+
+    with mock.patch.object(vm, 'run') as mock_run:
+        qubes_manager.action_set_keyboard_layout.trigger()
+        mock_run.assert_called_once_with("qubes-change-keyboard-layout")
+
+    mock_message.assert_not_called()
+
+
+def test_205_update_vm_admin(qubes_manager):
+    _select_vm(qubes_manager, 'dom0')
+
+    with mock.patch('qubesmanager.qube_manager.UpdateVMsThread') as mock_update:
+        qubes_manager.action_updatevm.trigger()
+        mock_update.assert_called_once_with(['dom0'])
+        mock_update().start.assert_called_once_with()
+
+
+@mock.patch("PyQt6.QtWidgets.QInputDialog.getText",
+            return_value=("command to run", True))
+def test_206_run_command_in_vm(_mock_command, qubes_manager):
+    _select_vm(qubes_manager, 'test-blue')
+
+    with (mock.patch('qubesmanager.qube_manager.RunCommandThread') as
+            mock_thread):
+        qubes_manager.action_run_command_in_vm.trigger()
+        mock_thread.assert_called_once_with('test-blue', "command to run")
         mock_thread().finished.connect.assert_called_once_with(
-            self.dialog.clear_threads)
+            qubes_manager.clear_threads)
         mock_thread().start.assert_called_once_with()
 
-    @unittest.mock.patch("PyQt6.QtWidgets.QMessageBox.question",
-                         return_value=QtWidgets.QMessageBox.StandardButton.Yes)
-    def test_224_killvm(self, _):
-        selected_vm = self._select_non_admin_vm(running=True)
-        action = self.dialog.action_killvm
 
-        with unittest.mock.patch.object(selected_vm, 'kill') as mock_kill:
+@mock.patch("PyQt6.QtWidgets.QMessageBox.warning")
+def test_207_pausevm(mock_warn, qubes_manager):
+    # get a running vm
+    _select_vm(qubes_manager, 'test-blue')
+
+    assert qubes_manager.action_pausevm.isEnabled()
+
+    vm = qubes_manager.qubes_app.domains['test-blue']
+
+    with mock.patch.object(vm, 'pause') as mock_pause:
+        qubes_manager.action_pausevm.trigger()
+        mock_pause.assert_called_once_with()
+        assert mock_warn.call_count == 0
+
+        mock_pause.side_effect = exc.QubesException('Error')
+        qubes_manager.action_pausevm.trigger()
+        assert mock_warn.call_count == 1
+
+
+@mock.patch("PyQt6.QtWidgets.QMessageBox.warning")
+def test_208_resumevm(mock_warn, qubes_manager):
+    # get a normal running vm
+    _select_vm(qubes_manager, 'test-blue')
+
+    assert not qubes_manager.action_resumevm.isEnabled()
+
+    # get a non-running vm
+    _select_vm(qubes_manager, 'test-red')
+
+    vm = qubes_manager.qubes_app.domains['test-red']
+
+    with mock.patch.object(vm, 'get_power_state') as mock_state, \
+            mock.patch.object(vm, 'unpause') as mock_unpause:
+        mock_state.return_value = 'Paused'
+        qubes_manager.action_resumevm.trigger()
+        mock_unpause.assert_called_once_with()
+
+    with mock.patch('qubesmanager.qube_manager.StartVMThread') as mock_thread:
+        qubes_manager.action_resumevm.trigger()
+        mock_thread.assert_called_once_with(vm)
+        mock_thread().finished.connect.assert_called_once_with(
+            qubes_manager.clear_threads)
+        mock_thread().start.assert_called_once_with()
+
+    assert mock_warn.call_count == 0
+
+@mock.patch("PyQt6.QtWidgets.QMessageBox.question",
+            return_value=QMessageBox.StandardButton.Yes)
+@mock.patch('PyQt6.QtCore.QTimer.singleShot')
+@mock.patch('qubesmanager.qube_manager.VmShutdownMonitor')
+def test_209_shutdownvm(mock_monitor, mock_timer, _mock_question,
+                        qubes_manager):
+    # get a non-running vm
+    _select_vm(qubes_manager, 'test-red')
+    assert not qubes_manager.action_shutdownvm.isEnabled()
+
+    _select_vm(qubes_manager, 'test-blue')
+    assert qubes_manager.action_shutdownvm.isEnabled()
+    vm = qubes_manager.qubes_app.domains['test-blue']
+
+    with mock.patch.object(vm, 'shutdown') as mock_shutdown:
+        qubes_manager.action_shutdownvm.trigger()
+        mock_shutdown.assert_called_once_with(force=False)
+        mock_monitor.assert_called_once_with(vm, mock.ANY, mock.ANY, mock.ANY)
+        mock_timer.assert_called_once_with(mock.ANY, mock.ANY)
+
+
+@mock.patch('qubesmanager.create_new_vm.NewVmDlg')
+def test_210_create_vm(mock_new_vm, qubes_manager):
+    assert qubes_manager.action_createvm.isEnabled()
+    qubes_manager.action_createvm.trigger()
+    assert mock_new_vm.call_count == 1
+
+
+def test_211_remove_adminvm(qubes_manager):
+    _select_vm(qubes_manager, 'dom0')
+
+    assert not qubes_manager.action_removevm.isEnabled()
+
+
+@mock.patch("qubesmanager.qube_manager.QMessageBox")
+def test_212_remove_vm_dependencies(mock_msgbox, qubes_manager):
+    # select a vm in use
+    _select_vm(qubes_manager, FEDORA_LATEST)
+
+    qubes_manager.action_removevm.trigger()
+
+    mock_msgbox().show.assert_called_with()
+
+
+@mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
+@mock.patch("PyQt6.QtWidgets.QInputDialog.getText")
+def test_213_remove_vm_no_dependencies(mock_input, mock_warning, qubes_manager):
+    # get a non-running vm
+    _select_vm(qubes_manager, 'test-red')
+
+    with (mock.patch('qubesmanager.common_threads.RemoveVMThread') as
+          mock_thread):
+        # user cancels
+        mock_input.return_value = ('test-red', False)
+        qubes_manager.action_removevm.trigger()
+        assert mock_thread.call_count == 0
+        assert mock_warning.call_count == 0
+
+        mock_input.return_value = ("wrong_name", True)
+        qubes_manager.action_removevm.trigger()
+        assert mock_warning.call_count == 1
+        assert mock_thread.call_count == 0
+
+        mock_input.return_value = ('test-red', True)
+        qubes_manager.action_removevm.trigger()
+        assert mock_warning.call_count == 1
+        mock_thread.assert_called_once_with(
+            qubes_manager.qubes_app.domains['test-red'])
+        mock_thread().finished.connect.assert_called_once_with(
+            qubes_manager.clear_threads)
+        mock_thread().start.assert_called_once_with()
+
+
+@mock.patch('PyQt6.QtCore.QTimer.singleShot')
+@mock.patch('qubesmanager.qube_manager.VmShutdownMonitor')
+@mock.patch("PyQt6.QtWidgets.QMessageBox.question",
+            return_value=QMessageBox.StandardButton.Yes)
+def test_214_restartvm(_msgbox, mock_monitor, _qtimer, qubes_manager):
+    # get a non-running vm
+    _select_vm(qubes_manager, 'test-red')
+
+    assert not qubes_manager.action_restartvm.isEnabled()
+
+    # get a running vm
+    _select_vm(qubes_manager, 'test-blue')
+    assert qubes_manager.action_restartvm.isEnabled()
+    vm = qubes_manager.qubes_app.domains['test-blue']
+
+    with mock.patch.object(vm, 'shutdown') as mock_shutdown:
+        qubes_manager.action_restartvm.trigger()
+        mock_shutdown.assert_called_once_with(force=True)
+        mock_monitor.assert_called_once_with(vm, 1000, True, mock.ANY)
+
+
+@mock.patch('qubesmanager.qube_manager.UpdateVMsThread')
+def test_215_updatevm_template(mock_thread, qapp, test_qubes_app):
+    test_qubes_app._qubes[FEDORA_OLD].properties['updateable'].value\
+        = True
+    test_qubes_app.update_vm_calls()
+
+    dispatcher = MockDispatcher(test_qubes_app)
+    qubes_manager = qube_manager.VmManagerWindow(qapp, test_qubes_app,
+                                                 dispatcher)
+
+    _select_vm(qubes_manager, FEDORA_OLD)
+    assert qubes_manager.action_updatevm.isEnabled()
+
+    qubes_manager.action_updatevm.trigger()
+    mock_thread.assert_called_once_with([FEDORA_OLD])
+    mock_thread().finished.connect.assert_called_once_with(
+        qubes_manager.clear_threads)
+    mock_thread().start.assert_called_once_with()
+
+
+@mock.patch("PyQt6.QtWidgets.QMessageBox.question",
+            return_value=QMessageBox.StandardButton.Yes)
+def test_216_killvm(_mock_question, qubes_manager):
+    # get a non-running vm
+    _select_vm(qubes_manager, 'test-red')
+
+    assert not qubes_manager.action_killvm.isEnabled()
+
+    # get a running vm
+    _select_vm(qubes_manager, 'test-blue')
+    assert qubes_manager.action_killvm.isEnabled()
+
+    vm = qubes_manager.qubes_app.domains['test-blue']
+
+    with mock.patch.object(vm, 'kill') as mock_kill:
+        qubes_manager.action_killvm.trigger()
+        mock_kill.assert_called_once_with()
+
+
+@mock.patch("PyQt6.QtWidgets.QMessageBox.question",
+            return_value=QMessageBox.StandardButton.Cancel)
+def test_217_killvm_cancel(_mock_question, qubes_manager):
+    # get a running vm
+    _select_vm(qubes_manager, 'test-blue')
+    assert qubes_manager.action_killvm.isEnabled()
+
+    vm = qubes_manager.qubes_app.domains['test-blue']
+
+    with mock.patch.object(vm, 'kill') as mock_kill:
+        qubes_manager.action_killvm.trigger()
+        mock_kill.assert_not_called()
+
+
+@mock.patch('subprocess.Popen')
+def test_220_global_config(mock_subprocess, qubes_manager):
+    qubes_manager.action_global_settings.trigger()
+    mock_subprocess.assert_called_once_with(['qubes-global-config'])
+
+    _select_vm(qubes_manager, 'test-blue')
+
+    qubes_manager.action_global_settings.trigger()
+    assert mock_subprocess.call_count == 2
+
+
+@mock.patch('qubesmanager.backup.BackupVMsWindow')
+@mock.patch('qubesmanager.restore.RestoreVMsWindow')
+def test_221_backup_restore(mock_restore, mock_backup, qubes_manager):
+    assert qubes_manager.action_backup.isEnabled()
+    qubes_manager.action_backup.trigger()
+    assert mock_backup.call_count == 1
+    assert mock_restore.call_count == 0
+
+    assert qubes_manager.action_restore.isEnabled()
+    qubes_manager.action_restore.trigger()
+    assert mock_backup.call_count == 1
+    assert mock_restore.call_count == 1
+
+
+@mock.patch('qubesmanager.qube_manager.AboutDialog')
+def test_222_about(mock_about, qubes_manager):
+    assert qubes_manager.action_about_qubes.isEnabled()
+    qubes_manager.action_about_qubes.trigger()
+    assert mock_about.call_count == 1
+
+
+def test_223_exit_action(qubes_manager):
+    qubes_manager.action_exit.isEnabled()
+    with mock.patch.object(qubes_manager, 'close') as mock_close:
+        qubes_manager.action_exit.trigger()
+        mock_close.assert_called_once_with()
+
+
+@mock.patch('subprocess.Popen')
+def test_224_template_manager(mock_subprocess, qubes_manager):
+    assert qubes_manager.action_manage_templates.isEnabled()
+    qubes_manager.action_manage_templates.trigger()
+    mock_subprocess.assert_called_once_with(['qubes-template-manager'])
+
+
+@mock.patch('qubesmanager.clone_vm.CloneVMDlg')
+def test_225_clonevm(mock_clone, qubes_manager):
+    _select_vm(qubes_manager, 'dom0')
+    assert not qubes_manager.action_clonevm.isEnabled()
+
+    _select_vm(qubes_manager, 'test-blue')
+    assert qubes_manager.action_clonevm.isEnabled()
+
+    qubes_manager.action_clonevm.trigger()
+
+    mock_clone.assert_called_once_with(
+        mock.ANY, mock.ANY, src_vm=qubes_manager.qubes_app.domains['test-blue'])
+
+
+def test_230_search_action(qtbot, qubes_manager):
+    qubes_manager.qt_app.setActiveWindow(qubes_manager.searchbox)
+    qubes_manager.action_search.trigger()
+    assert qubes_manager.searchbox.hasFocus()
+
+    # input text
+    qubes_manager.searchbox.setText("sys")
+    # click outside the widget
+    qtbot.mouseClick(qubes_manager.table, Qt.MouseButton.LeftButton)
+    assert not qubes_manager.searchbox.hasFocus()
+    # click the widget, check if it is correctly activated and the whole
+    # text was selected
+    qtbot.mouseClick(qubes_manager.searchbox, Qt.MouseButton.LeftButton)
+    assert qubes_manager.searchbox.hasFocus()
+    assert qubes_manager.searchbox.selectedText() == "sys"
+
+
+def test_235_searchbox(qubes_manager):
+    qubes_manager.searchbox.setText("sys")
+    expected_number = \
+        len([vm for vm in qubes_manager.qubes_app.domains if "sys" in vm.name])
+    actual_number = _count_visible_rows(qubes_manager.table)
+    assert expected_number == actual_number
+
+    # clear search
+    qubes_manager.searchbox.setText("")
+    expected_number = len([vm for vm in qubes_manager.qubes_app.domains
+                           if not vm.features.get('internal', False)])
+    actual_number = _count_visible_rows(qubes_manager.table)
+    assert expected_number == actual_number
+
+
+def test_235_hide_show_toolbars(qubes_manager):
+    with mock.patch('PyQt6.QtCore.QSettings.setValue')\
+                    as mock_setvalue:
+        qubes_manager.action_menubar.trigger()
+        mock_setvalue.assert_called_with('view/menubar_visible', False)
+        qubes_manager.action_toolbar.trigger()
+        mock_setvalue.assert_called_with('view/toolbar_visible', False)
+        assert not qubes_manager.menubar.isVisible()
+        assert not qubes_manager.toolbar.isVisible()
+
+
+def test_236_clear_searchbox(qubes_manager, qtbot):
+    qubes_manager.searchbox.setText("text")
+    assert qubes_manager.searchbox.text() == "text"
+
+    qtbot.keyPress(qubes_manager, Qt.Key.Key_Escape)
+
+    assert qubes_manager.searchbox.text() == ""
+
+    expected_number = len([vm for vm in qubes_manager.qubes_app.domains
+                           if not vm.features.get('internal', False)])
+    actual_number = _count_visible_rows(qubes_manager.table)
+    assert expected_number == actual_number
+
+
+### Test right click menus - template and netvm
+
+
+@pytest.mark.asyncio(loop_scope="module")
+@mock.patch('PyQt6.QtWidgets.QMessageBox.question')
+async def test_300_netvm_menu(mock_question, qubes_manager):
+    mock_question.return_value = QMessageBox.StandardButton.Yes
+
+    # select a template
+    _select_vm(qubes_manager, FEDORA_OLD)
+    assert not qubes_manager.network_menu.isEnabled()
+
+    # select a normal qube
+    _select_vm(qubes_manager, 'test-blue')
+    vm_object = qubes_manager.qubes_app.domains['test-blue']
+
+    assert qubes_manager.network_menu.isEnabled()
+
+    # check if network menu has sensible contents
+    if vm_object.property_is_default('netvm'):
+        current_netvm = 'default ({})'
+    elif vm_object.netvm:
+        current_netvm = '{}'
+    else:
+        current_netvm = 'n/a'
+    current_netvm = current_netvm.format(vm_object.netvm)
+
+    expected_vms = {str(vm) for vm in qubes_manager.qubes_app.domains if
+                    getattr(vm, 'provides_network', False)}
+
+    expected_vms.add('None')
+    expected_vms.add('default ({})'.format(
+        vm_object.property_get_default('netvm')))
+
+    current_vms = set()
+
+    for action in qubes_manager.network_menu.actions():
+        current_vms.add(action.text())
+        if action.text() == current_netvm:
+            assert _is_icon(action.icon(), 'on')
+        else:
+            assert not _is_icon(action.icon(), 'on')
+
+    assert current_vms == expected_vms
+
+    # attempt to change netvm to something
+    change_netvm_call = ('test-blue', 'admin.vm.property.Set',
+                         'netvm', b'sys-net')
+    assert change_netvm_call not in qubes_manager.qubes_app.actual_calls
+    qubes_manager.qubes_app.expected_calls[change_netvm_call] = \
+        b'0\x00'
+
+    assert vm_object.netvm == 'sys-firewall'
+
+    for action in qubes_manager.network_menu.actions():
+        if action.text() == 'sys-net':
             action.trigger()
-            mock_kill.assert_called_once_with()
 
-    @unittest.mock.patch("PyQt6.QtWidgets.QMessageBox.question",
-                         return_value=QtWidgets.QMessageBox.StandardButton.Cancel)
-    def test_225_killvm_cancel(self, _):
-        selected_vm = self._select_non_admin_vm(running=True)
-        action = self.dialog.action_killvm
+    assert change_netvm_call in qubes_manager.qubes_app.actual_calls
 
-        with unittest.mock.patch.object(selected_vm, 'kill') as mock_kill:
+    # simulate firing property-set and new value
+    qubes_manager.qubes_app._qubes['test-blue'].netvm = 'sys-net'
+    qubes_manager.qubes_app.update_vm_calls()
+
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('test-blue',
+                  'property-set:netvm',
+                  [('name', 'netvm'), ('newvalue', 'sys-net')]))
+
+    with contextlib.suppress(asyncio.TimeoutError):
+        await asyncio.wait_for(qubes_manager.dispatcher.listen_for_events(), 1)
+
+    # check current state
+
+    # select a template
+    _select_vm(qubes_manager, FEDORA_OLD)
+    assert not qubes_manager.network_menu.isEnabled()
+
+    # select a normal qube
+    _select_vm(qubes_manager, 'test-blue')
+    vm_object = qubes_manager.qubes_app.domains['test-blue']
+
+    if vm_object.property_is_default('netvm'):
+        current_netvm = 'default ({})'
+    elif vm_object.netvm:
+        current_netvm = '{}'
+    else:
+        current_netvm = 'n/a'
+    current_netvm = current_netvm.format(vm_object.netvm)
+
+    for action in qubes_manager.network_menu.actions():
+        if action.text() == current_netvm:
+            assert _is_icon(action.icon())
+        else:
+            assert not _is_icon(action.icon())
+
+
+@mock.patch('PyQt6.QtWidgets.QMessageBox.question')
+def test_301_netvm_menu_none(mock_question, qubes_manager):
+    mock_question.return_value = QMessageBox.StandardButton.Yes
+
+    # select a normal qube
+    _select_vm(qubes_manager, 'test-blue')
+    vm_object = qubes_manager.qubes_app.domains['test-blue']
+
+    assert qubes_manager.network_menu.isEnabled()
+
+    # attempt to change netvm to none
+    change_netvm_none_call = ('test-blue', 'admin.vm.property.Set',
+                         'netvm', b'')
+    assert change_netvm_none_call not in qubes_manager.qubes_app.actual_calls
+    qubes_manager.qubes_app.expected_calls[change_netvm_none_call] = \
+        b'0\x00'
+
+    assert vm_object.netvm == 'sys-firewall'
+
+    for action in qubes_manager.network_menu.actions():
+        if action.text() == 'None':
+            assert not _is_icon(action.icon())
             action.trigger()
-            self.assertEqual(mock_kill.call_count, 0,
-                             "Ignored Cancel on kill VM")
+            break
+    else:
+        assert False
 
-    @unittest.mock.patch('subprocess.Popen')
-    def test_226_global_settings(self, mock_subprocess):
-        self._select_non_admin_vm()
-        self.dialog.action_global_settings.trigger()
-        mock_subprocess.assert_called_once_with(['qubes-global-config'])
+    assert change_netvm_none_call in qubes_manager.qubes_app.actual_calls
 
-        self._select_admin_vm()
-        self.dialog.action_global_settings.trigger()
-        self.assertEqual(mock_subprocess.call_count, 2,
-                         "Global Settings not opened for the second time")
 
-    @unittest.mock.patch('qubesmanager.backup.BackupVMsWindow')
-    def test_227_backup(self, mock_backup):
-        self.dialog.action_backup.trigger()
-        self.assertTrue(self.dialog.action_backup.isEnabled())
-        self.assertEqual(mock_backup.call_count, 1,
-                         "Backup window does not appear")
+@mock.patch('PyQt6.QtWidgets.QMessageBox.question')
+def test_302_netvm_menu_default(mock_question, qubes_manager):
+    mock_question.return_value = QMessageBox.StandardButton.Yes
 
-    @unittest.mock.patch('qubesmanager.restore.RestoreVMsWindow')
-    def test_228_restore(self, mock_restore):
-        self.dialog.action_restore.trigger()
-        self.assertTrue(self.dialog.action_restore.isEnabled())
-        self.assertEqual(mock_restore.call_count, 1,
-                         "Backup window does not appear")
+    # select a normal qube
+    _select_vm(qubes_manager, 'test-red')
+    vm_object = qubes_manager.qubes_app.domains['test-red']
 
-    @unittest.mock.patch('qubesmanager.qube_manager.AboutDialog')
-    def test_229_about_qubes(self, mock_about):
-        self.assertTrue(self.dialog.action_about_qubes.isEnabled())
-        self.dialog.action_about_qubes.trigger()
+    assert qubes_manager.network_menu.isEnabled()
 
-        self.assertEqual(
-            mock_about.call_count, 1, "About window does not appear")
+    # attempt to change netvm to default
+    change_netvm_default_call = ('test-red', 'admin.vm.property.Reset',
+                         'netvm', None)
+    assert change_netvm_default_call not in qubes_manager.qubes_app.actual_calls
+    qubes_manager.qubes_app.expected_calls[change_netvm_default_call] = \
+        b'0\x00'
 
-    def test_230_exit_action(self):
-        self.assertTrue(self.dialog.action_exit.isEnabled())
-        with unittest.mock.patch.object(self.dialog, 'close') as mock_close:
-            self.dialog.action_exit.trigger()
-            mock_close.assert_called_once_with()
+    assert vm_object.netvm == 'sys-firewall'
 
-    @unittest.mock.patch('subprocess.Popen')
-    def test_231_template_manager(self, mock_subprocess):
-        self.assertTrue(self.dialog.action_manage_templates.isEnabled())
+    for action in qubes_manager.network_menu.actions():
+        if 'default' in action.text().lower():
+            assert not _is_icon(action.icon())
+            action.trigger()
+            break
+    else:
+        assert False
 
-        self.dialog.action_manage_templates.trigger()
-        mock_subprocess.assert_called_once_with(['qubes-template-manager'])
+    assert change_netvm_default_call in qubes_manager.qubes_app.actual_calls
 
-    @unittest.mock.patch('qubesmanager.clone_vm.CloneVMDlg')
-    def test_232_clonevm(self, mock_clone):
-        action = self.dialog.action_clonevm
 
-        self._select_admin_vm()
-        self.assertFalse(action.isEnabled())
+@mock.patch('PyQt6.QtWidgets.QMessageBox.question')
+def test_303_netvm_menu_multiple(mock_question, qubes_manager):
+    mock_question.return_value = QMessageBox.StandardButton.Yes
 
-        selected_vm = self._select_non_admin_vm()
-        self.assertTrue(action.isEnabled())
+    target_vm_names = ['test-red', 'test-standalone', 'vault']
 
-        action.trigger()
-        mock_clone.assert_called_once_with(self.qtapp, self.qapp,
-                                          src_vm=selected_vm)
+    _select_vm(qubes_manager, *target_vm_names)
 
-    def test_233_search_action(self):
-        self.qtapp.setActiveWindow(self.dialog.searchbox)
-        self.dialog.action_search.trigger()
-        self.assertTrue(self.dialog.searchbox.hasFocus())
+    assert qubes_manager.network_menu.isEnabled()
 
-        # input text
-        self.dialog.searchbox.setText("sys")
-        # click outside the widget
-        QtTest.QTest.mouseClick(self.dialog.table,
-                                QtCore.Qt.MouseButton.LeftButton)
-        # click the widget, check if it is correctly activated and the whole
-        # text was selected
-        QtTest.QTest.mouseClick(self.dialog.searchbox,
-                                QtCore.Qt.MouseButton.LeftButton)
-        self.assertTrue(self.dialog.searchbox.hasFocus())
-        self.assertEqual(self.dialog.searchbox.selectedText(), "sys")
-
-    def test_234_searchbox(self):
-        # look for sys
-        self.dialog.searchbox.setText("sys")
-        expected_number = \
-            len([vm for vm in self.qapp.domains if "sys" in vm.name])
-        actual_number = self._count_visible_table_rows()
-        self.assertEqual(expected_number, actual_number,
-                         "Incorrect number of vms shown for 'sys'")
-
-        # clear search
-        self.dialog.searchbox.setText("")
-        expected_number = len([vm for vm in self.qapp.domains
-                               if not vm.features.get('internal', False)])
-        actual_number = self._count_visible_table_rows()
-        self.assertEqual(expected_number, actual_number,
-                         "Incorrect number of vms shown for cleared search box")
-
-    def test_235_hide_show_toolbars(self):
-        with unittest.mock.patch('PyQt6.QtCore.QSettings.setValue')\
-                as mock_setvalue:
-            self.dialog.action_menubar.trigger()
-            mock_setvalue.assert_called_with('view/menubar_visible', False)
-            self.dialog.action_toolbar.trigger()
-            mock_setvalue.assert_called_with('view/toolbar_visible', False)
-
-            self.assertFalse(self.dialog.menubar.isVisible(),
-                             "Menubar not hidden correctly")
-            self.assertFalse(self.dialog.toolbar.isVisible(),
-                             "Toolbar not hidden correctly")
-
-    def test_236_clear_searchbox(self):
-        self.dialog.searchbox.setText("text")
-
-        self.assertEqual(self.dialog.searchbox.text(), "text")
-
-        QtTest.QTest.keyPress(self.dialog, QtCore.Qt.Key.Key_Escape)
-
-        self.assertEqual(self.dialog.searchbox.text(), "",
-                         "Escape failed to clear searchbox")
-
-        expected_number = len([vm for vm in self.qapp.domains
-                               if not vm.features.get('internal', False)])
-        actual_number = self._count_visible_table_rows()
-        self.assertEqual(expected_number, actual_number,
-                         "Incorrect number of vms shown for cleared search box")
-
-    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.question')
-    @listen_for_events
-    def test_240_network_menu_single(self, mock_question):
-        mock_question.return_value = QtWidgets.QMessageBox.StandardButton.Yes
-        target_vm_name = 'work'
-
-        self._run_command_and_process_events(
-            ['qvm-prefs', '-D', target_vm_name, 'netvm'], timeout=20)
-        self._select_vms(['work'])
-        selected_vm = self.qapp.domains[target_vm_name]
-        # reset to default even in case of failure
-        self.addCleanup(functools.partial(delattr, selected_vm, 'netvm'))
-
-        # this is the method to get '==' operator working on icons...
-        on_icon = QIcon(":/on.png").pixmap(64).toImage()
-        off_icon = QIcon().pixmap(64).toImage()
-        for action in self.dialog.network_menu.actions():
-            if action.text().startswith('default '):
-                self.assertEqual(action.icon().pixmap(64).toImage(), on_icon)
-                break
+    for action in qubes_manager.network_menu.actions():
+        if action.text() == 'sys-firewall':
+            assert _is_icon(action.icon(), 'transient')
+        elif action.text() == 'None':
+            assert _is_icon(action.icon(), 'transient')
         else:
-            self.fail('default netvm not found')
+            assert not _is_icon(action.icon())
 
-        # change to specific value
-        for action in self.dialog.network_menu.actions():
-            if action.text() == 'sys-net':
-                self.assertEqual(action.icon().pixmap(64).toImage(), off_icon)
-                action.trigger()
-                break
+    # attempt to change netvm to sys-net
+    calls = []
+    for vm in target_vm_names:
+        call = (vm, 'admin.vm.property.Set', 'netvm', b'sys-net')
+        assert call not in qubes_manager.qubes_app.actual_calls
+        qubes_manager.qubes_app.expected_calls[call] = b'0\x00'
+        calls.append(call)
+
+    # change to specific value
+    for action in qubes_manager.network_menu.actions():
+        if action.text() == 'sys-net':
+            action.trigger()
+            break
+
+    for call in calls:
+        assert call in qubes_manager.qubes_app.actual_calls
+
+
+@pytest.mark.asyncio(loop_scope="module")
+@mock.patch('PyQt6.QtWidgets.QMessageBox.question')
+async def test_310_template_menu(mock_question, qubes_manager):
+    mock_question.return_value = QMessageBox.StandardButton.Yes
+
+    # select a template
+    _select_vm(qubes_manager, FEDORA_OLD)
+    assert not qubes_manager.template_menu.isEnabled()
+
+    # select a normal qube
+    _select_vm(qubes_manager, 'test-red')
+    vm_object = qubes_manager.qubes_app.domains['test-red']
+
+    assert qubes_manager.template_menu.isEnabled()
+
+    # check if template menu has sensible contents
+    vm_template = str(vm_object.template.name)
+
+    expected_templates = {str(vm) for vm in qubes_manager.qubes_app.domains
+                          if vm.klass == 'TemplateVM'}
+
+    current_templates = set()
+
+    for action in qubes_manager.template_menu.actions():
+        current_templates.add(action.text())
+        if action.text() == vm_template:
+            assert _is_icon(action.icon(), 'on')
         else:
-            self.fail('sys-net netvm not found')
-        # process events
-        self.loop.run_until_complete(asyncio.sleep(0))
-        mock_question.assert_called()
-        self.assertEqual(str(selected_vm.netvm), 'sys-net')
-        mock_question.reset_mock()
+            assert not _is_icon(action.icon(), 'on')
 
-        # change to none
-        for action in self.dialog.network_menu.actions():
-            if action.text() == 'None':
-                self.assertEqual(action.icon().pixmap(64).toImage(), off_icon)
-                action.trigger()
-                break
+    assert current_templates == expected_templates
+
+    # attempt to change template to something
+    change_call = ('test-red', 'admin.vm.property.Set',
+                         'template', FEDORA_OLD.encode())
+    assert change_call not in qubes_manager.qubes_app.actual_calls
+    qubes_manager.qubes_app.expected_calls[change_call] = b'0\x00'
+
+    assert vm_object.template == FEDORA_LATEST
+
+    for action in qubes_manager.template_menu.actions():
+        if action.text() == FEDORA_OLD:
+            action.trigger()
+
+    assert change_call in qubes_manager.qubes_app.actual_calls
+
+    # simulate firing property-set and new value
+    qubes_manager.qubes_app._qubes['test-red'].template = FEDORA_OLD
+    qubes_manager.qubes_app.update_vm_calls()
+
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('test-red',
+                  'property-set:template',
+                  [('name', 'template'), ('newvalue', FEDORA_OLD)]))
+
+    with contextlib.suppress(asyncio.TimeoutError):
+        await asyncio.wait_for(qubes_manager.dispatcher.listen_for_events(), 1)
+
+    # check current state
+
+    # select a template
+    _select_vm(qubes_manager, FEDORA_OLD)
+    assert not qubes_manager.template_menu.isEnabled()
+
+    # select a normal qube
+    _select_vm(qubes_manager, 'test-red')
+    vm_object = qubes_manager.qubes_app.domains['test-red']
+
+    vm_template = vm_object.template.name
+
+    for action in qubes_manager.template_menu.actions():
+        if action.text() == vm_template:
+            assert _is_icon(action.icon())
         else:
-            self.fail('"none" netvm not found')
-        # process events
-        self.loop.run_until_complete(asyncio.sleep(0))
-        mock_question.assert_called()
-        self.assertIsNone(selected_vm.netvm)
-        mock_question.reset_mock()
-
-        # then go back to the default
-        for action in self.dialog.network_menu.actions():
-            if action.text().startswith('default '):
-                self.assertEqual(action.icon().pixmap(64).toImage(), off_icon)
-                action.trigger()
-                break
-        # process events
-        self.loop.run_until_complete(asyncio.sleep(0))
-
-        mock_question.assert_called()
-        self.assertTrue(selected_vm.property_is_default('netvm'))
-
-    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.question')
-    @listen_for_events
-    def test_241_network_menu_multiple(self, mock_question):
-        mock_question.return_value = QtWidgets.QMessageBox.StandardButton.Yes
-        target_vm_names = ['work', 'personal', 'vault']
-        work = self.qapp.domains['work']
-        personal = self.qapp.domains['personal']
-        vault = self.qapp.domains['vault']
-        # reset to default even in case of failure
-        self.addCleanup(functools.partial(delattr, work, 'netvm'))
-        self.addCleanup(functools.partial(delattr, personal, 'netvm'))
-        self.addCleanup(functools.partial(setattr, vault, 'netvm', None))
-
-        self._run_command_and_process_events(
-            ['qvm-prefs', '-D', 'work', 'netvm'], timeout=5)
-        self._run_command_and_process_events(
-            ['qvm-prefs', '-D', 'personal', 'netvm'], timeout=5)
-        self._run_command_and_process_events(
-            ['qvm-prefs', 'vault', ''], timeout=5)
-        self._select_vms(target_vm_names)
-
-        # this is the method to get '==' operator working on icons...
-        on_icon = QIcon(":/on.png").pixmap(64).toImage()
-        transient_icon = QIcon(":/transient.png").pixmap(64).toImage()
-        off_icon = QIcon().pixmap(64).toImage()
-        for action in self.dialog.network_menu.actions():
-            if action.text().startswith('default '):
-                # work, personal
-                self.assertEqual(action.icon().pixmap(64).toImage(), transient_icon)
-            elif action.text() == 'None':
-                # vault
-                self.assertEqual(action.icon().pixmap(64).toImage(), transient_icon)
-            else:
-                self.assertEqual(action.icon().pixmap(64).toImage(), off_icon)
-
-        # change to specific value
-        for action in self.dialog.network_menu.actions():
-            if action.text() == 'sys-net':
-                self.assertEqual(action.icon().pixmap(64).toImage(), off_icon)
-                action.trigger()
-                break
-        else:
-            self.fail('sys-net netvm not found')
-        # process events
-        self.loop.run_until_complete(asyncio.sleep(0))
-        mock_question.assert_called()
-        self.assertEqual(str(work.netvm), 'sys-net')
-        self.assertEqual(str(personal.netvm), 'sys-net')
-        self.assertEqual(str(vault.netvm), 'sys-net')
-        mock_question.reset_mock()
-
-    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.question')
-    @listen_for_events
-    @skip_if_running('work')
-    def test_250_template_menu_single(self, mock_question):
-        mock_question.return_value = QtWidgets.QMessageBox.StandardButton.Yes
-        target_vm_name = 'work'
-        selected_vm = self.qapp.domains[target_vm_name]
-        current_template = selected_vm.template
-        new_template = self._select_templatevm(
-            different_than=[str(current_template)])
-
-        self._select_vms(['work'])
-
-        # reset to previous value even in case of failure
-        self.addCleanup(functools.partial(
-            setattr, selected_vm, 'template', str(current_template)))
-
-        # this is the method to get '==' operator working on icons...
-        on_icon = QIcon(":/on.png").pixmap(64).toImage()
-        off_icon = QIcon().pixmap(64).toImage()
-        found = False
-        for action in self.dialog.template_menu.actions():
-            if action.text() == str(current_template):
-                self.assertEqual(action.icon().pixmap(64).toImage(), on_icon)
-                found = True
-            else:
-                self.assertEqual(action.icon().pixmap(64).toImage(), off_icon)
-
-        if not found:
-            self.fail(
-                'current template value ({!s}) not found in the menu'.format(
-                    current_template))
-
-        # change to specific value
-        for action in self.dialog.template_menu.actions():
-            if action.text() == str(new_template):
-                self.assertEqual(action.icon().pixmap(64).toImage(), off_icon)
-                action.trigger()
-                break
-        else:
-            self.fail('template {!s} not found in the menu'.format(new_template))
-        # process events
-        self.loop.run_until_complete(asyncio.sleep(0))
-        mock_question.assert_called()
-        # compare str(), to have better error message on mismatch
-        self.assertEqual(str(selected_vm.template), str(new_template))
-        mock_question.reset_mock()
-
-    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.question')
-    @listen_for_events
-    @skip_if_running('work', 'personal', 'untrusted')
-    def test_251_template_menu_multiple(self, mock_question):
-        mock_question.return_value = QtWidgets.QMessageBox.StandardButton.Yes
-        target_vm_names = ['work', 'personal', 'untrusted']
-        work = self.qapp.domains['work']
-        personal = self.qapp.domains['personal']
-        untrusted = self.qapp.domains['untrusted']
-
-        old_template = work.template
-        new_template = self._select_templatevm(
-            different_than=[str(work.template),
-                            str(personal.template),
-                            str(untrusted.template)])
-        # reset to previous value even in case of failure
-        self.addCleanup(functools.partial(
-            setattr, work, 'template', str(work.template)))
-        self.addCleanup(functools.partial(
-            setattr, personal, 'template', str(personal.template)))
-        self.addCleanup(functools.partial(
-            setattr, untrusted, 'template', str(untrusted.template)))
-
-        # set all to the same value
-        self._run_command_and_process_events(
-            ['qvm-prefs', 'personal', 'template', str(work.template)], timeout=5)
-        self._run_command_and_process_events(
-            ['qvm-prefs', 'untrusted', 'template', str(work.template)], timeout=5)
-
-        self._select_vms(target_vm_names)
-
-        # this is the method to get '==' operator working on icons...
-        on_icon = QIcon(":/on.png").pixmap(64).toImage()
-        transient_icon = QIcon(":/transient.png").pixmap(64).toImage()
-        off_icon = QIcon().pixmap(64).toImage()
-        for action in self.dialog.template_menu.actions():
-            if action.text() == str(old_template):
-                self.assertIn(
-                    action.icon().pixmap(64).toImage(),
-                    (on_icon, transient_icon))
-            else:
-                self.assertEqual(action.icon().pixmap(64).toImage(), off_icon)
-
-        # make one different
-        self._run_command_and_process_events(
-            ['qvm-prefs', 'work', 'template', str(new_template)], timeout=5)
-
-        for action in self.dialog.template_menu.actions():
-            if action.text() == str(old_template):
-                self.assertEqual(action.icon().pixmap(64).toImage(), transient_icon)
-            elif action.text() == str(new_template):
-                self.assertEqual(action.icon().pixmap(64).toImage(), transient_icon)
-            else:
-                self.assertEqual(action.icon().pixmap(64).toImage(), off_icon)
-
-        # change all to the same value
-        for action in self.dialog.template_menu.actions():
-            if action.text() == str(new_template):
-                action.trigger()
-                break
-        else:
-            self.fail('{!s} template not found'.format(new_template))
-        # process events
-        self.loop.run_until_complete(asyncio.sleep(0))
-        mock_question.assert_called()
-        self.assertEqual(str(work.template), str(new_template))
-        self.assertEqual(str(personal.template), str(new_template))
-        self.assertEqual(str(untrusted.template), str(new_template))
-
-
-    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.information')
-    @unittest.mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
-    def test_300_clear_threads(self, mock_warning, mock_info):
-        mock_thread_finished_ok = unittest.mock.Mock(
-            spec=['isFinished', 'msg', 'msg_is_success'],
-            msg=None, msg_is_success=False,
-            **{'isFinished.return_value': True})
-        mock_thread_not_finished = unittest.mock.Mock(
-            spec=['isFinished', 'msg', 'msg_is_success'],
-            msg=None, msg_is_success=False,
-            **{'isFinished.return_value': False})
-        mock_thread_finished_error = unittest.mock.Mock(
-            spec=['isFinished', 'msg', 'msg_is_success'],
-            msg=("Error", "Error"), msg_is_success=False,
-            **{'isFinished.return_value': True})
-        mock_thread_fin_error_success = unittest.mock.Mock(
-            spec=['isFinished', 'msg', 'msg_is_success'],
-            msg=("Done", "Done"), msg_is_success=True,
-            **{'isFinished.return_value': True})
-
-        # single finished thread
-        self.dialog.threads_list = [mock_thread_not_finished,
-                                    mock_thread_finished_ok]
-        self.dialog.clear_threads()
-        self.assertEqual(mock_warning.call_count, 0)
-        self.assertEqual(mock_info.call_count, 0)
-        self.assertEqual(len(self.dialog.threads_list), 1)
-
-        # an error thread and some in-progress ones
-        self.dialog.threads_list = [mock_thread_not_finished,
-                                    mock_thread_not_finished,
-                                    mock_thread_finished_error]
-        self.dialog.clear_threads()
-        self.assertEqual(mock_warning.call_count, 1)
-        self.assertEqual(mock_info.call_count, 0)
-        self.assertEqual(len(self.dialog.threads_list), 2)
-
-        # an error-success thread and some in-progress ones
-        self.dialog.threads_list = [mock_thread_not_finished,
-                                    mock_thread_not_finished,
-                                    mock_thread_fin_error_success,
-                                    mock_thread_finished_error]
-        self.dialog.clear_threads()
-        self.assertEqual(mock_warning.call_count, 1)
-        self.assertEqual(mock_info.call_count, 1)
-        self.assertEqual(len(self.dialog.threads_list), 3)
-
-    def test_400_event_domain_added(self):
-        number_of_vms = self.dialog.table.model().rowCount()
-
-        self.addCleanup(subprocess.call, ["qvm-remove", "-f", "test-vm"])
-
-        self._run_command_and_process_events(
-            ["qvm-create", "--label", "red", "test-vm"], timeout=10,
-            additional_timeout=5)
-
-        # a single row was added to the table
-        self.assertEqual(self.dialog.table.model().rowCount(), number_of_vms+1)
-
-        # table contains the correct vms
-        vms_in_table = self._create_set_of_current_vms()
-
-        vms_in_system = set([vm.name for vm in self.qapp.domains
-                             if not vm.features.get('internal', False)])
-
-        self.assertEqual(vms_in_table, vms_in_system, "Table not updated "
-                                                      "correctly after add")
-
-        # check if sorting works
-        self.__check_sorting("Name")
-
-        # try opening settings for the added vm
-        for row in range(self.dialog.table.model().rowCount()):
-            name = self._get_table_item(row, "Name")
-            if name == "test-vm":
-                index = self.dialog.table.model().index(row, 0)
-                self.dialog.table.setCurrentIndex(index)
-                break
-        with unittest.mock.patch('qubesmanager.settings.VMSettingsWindow')\
-                as mock_settings:
-            self.dialog.action_settings.trigger()
-            mock_settings.assert_called_once_with(
-                self.qapp.domains["test-vm"], "basic",
-                self.qtapp, self.qapp, self.dialog)
-
-    def test_401_event_domain_removed(self):
-        initial_vms = self._create_set_of_current_vms()
-
-        self._run_command_and_process_events(
-            ["qvm-create", "--label", "red", "test-vm"])
-
-        current_vms = self._create_set_of_current_vms()
-        self.assertEqual(len(initial_vms) + 1, len(current_vms))
-
-        self._run_command_and_process_events(
-            ["qvm-remove", "--force", "test-vm"])
-        current_vms = self._create_set_of_current_vms()
-        self.assertEqual(initial_vms, current_vms)
-
-        # check if sorting works
-        self.__check_sorting("Name")
-
-    def test_403_event_dispvm_added(self):
-        initial_vms = self._create_set_of_current_vms()
-
-        dispvm_template = None
-
-        for vm in self.qapp.domains:
-            if getattr(vm, "template_for_dispvms", False):
-                dispvm_template = vm.name
-                break
-        self.assertIsNotNone(dispvm_template,
-                             "Cannot find a template for dispVMs")
-
-        # this requires very long timeout, because it takes time for the
-        # dispvm to vanish
-        self._run_command_and_process_events(
-            ["qvm-run", "--dispvm", dispvm_template, "true"], timeout=60,
-            additional_timeout=60)
-
-        final_vms = self._create_set_of_current_vms()
-
-        self.assertEqual(initial_vms, final_vms,
-                         "Failed handling of a created-and-removed dispvm")
-
-    def test_404_crashing_dispvm(self):
-        initial_vms = self._create_set_of_current_vms()
-
-        dispvm_template = None
-
-        for vm in self.qapp.domains:
-            if getattr(vm, "template_for_dispvms", False):
-                dispvm_template = vm.name
-                break
-
-        self.assertIsNotNone(dispvm_template,
-                             "Cannot find a template for dispVMs")
-
-        current_memory = getattr(self.qapp.domains[dispvm_template], "memory")
-        self.addCleanup(
-            subprocess.call,
-            ["qvm-prefs", dispvm_template, "memory", str(current_memory)])
-        subprocess.check_call(
-            ["qvm-prefs", dispvm_template, "memory", "600000"])
-
-        self._run_command_and_process_events(
-            ["qvm-run", "--dispvm", dispvm_template, "true"], timeout=30,
-            additional_timeout=15)
-
-        final_vms = self._create_set_of_current_vms()
-
-        self.assertEqual(initial_vms, final_vms,
-                         "Failed handling of dispvm that crashed on start")
-
-    def test_405_prop_change_label(self):
-        target_vm_name = "work"
-        vm_row = self._find_vm_row(target_vm_name)
-
-        current_label = self._get_table_item(vm_row, "Label",
-                                             Qt.ItemDataRole.DecorationRole)
-
-        self.addCleanup(
-            subprocess.call, ["qvm-prefs", target_vm_name, "label", "blue"])
-        self._run_command_and_process_events(
-            ["qvm-prefs", target_vm_name, "label", "red"], timeout=20)
-
-        new_label = self._get_table_item(vm_row, "Label",
-                                         Qt.ItemDataRole.DecorationRole)
-
-        self.assertNotEqual(current_label.toImage(), new_label.toImage(),
-                            "Label icon did not change")
-
-        icon = QIcon.fromTheme(self.qapp.domains[target_vm_name].label.icon)
-        icon = icon.pixmap(icon_size)
-
-        self.assertEqual(new_label.toImage(), icon.toImage(), "Incorrect label")
-
-    @skip_if_running('work')
-    def test_406_prop_change_template(self):
-        target_vm_name = "work"
-        vm_row = self._find_vm_row(target_vm_name)
-
-        old_template = self._get_table_item(vm_row, "Template")
-        new_template = None
-        for vm in self.qapp.domains:
-            if vm.klass == 'TemplateVM' and vm.name != old_template:
-                new_template = vm.name
-                break
-
-        self.addCleanup(
-            subprocess.call,
-            ["qvm-prefs", target_vm_name, "template", old_template])
-        self._run_command_and_process_events(
-            ["qvm-prefs", target_vm_name, "template", new_template])
-
-        self.assertNotEqual(old_template,
-                            self._get_table_item(vm_row, "Template"),
-                            "Template did not change")
-        self.assertEqual(
-            self._get_table_item(vm_row, "Template"),
-            self.qapp.domains[target_vm_name].template.name,
-            "Incorrect template")
-
-    def test_407_prop_change_netvm(self):
-        target_vm_name = "work"
-        vm_row = self._find_vm_row(target_vm_name)
-
-        old_netvm = self._get_table_item(vm_row, "NetVM")
-        # in case of "default (...)" take "default"
-        old_newvm = old_netvm.split(' ')[0]
-        new_netvm = None
-        for vm in self.qapp.domains:
-            if getattr(vm, "provides_network", False) and vm.name != old_netvm:
-                new_netvm = vm.name
-                break
-
-        self.addCleanup(
-            subprocess.call, ["qvm-prefs", target_vm_name, "netvm", old_netvm])
-        self._run_command_and_process_events(
-            ["qvm-prefs", target_vm_name, "netvm", new_netvm])
-
-        self.assertNotEqual(old_netvm,
-                            self._get_table_item(vm_row, "NetVM"),
-                            "NetVM did not change")
-        self.assertEqual(
-            self._get_table_item(vm_row, "NetVM"),
-            self.qapp.domains[target_vm_name].netvm.name,
-            "Incorrect NetVM")
-
-    @unittest.expectedFailure
-    def test_408_prop_change_internal(self):
-        target_vm_name = "work"
-        vm_row = self._find_vm_row(target_vm_name)
-
-        self.addCleanup(subprocess.call,
-                        ["qvm-features", "--unset", "work", "interal"])
-        self._run_command_and_process_events(
-            ["qvm-features", "work", "interal", "1"])
-
-        self.assertEqual(
-            self._get_table_item(vm_row, "Internal"),
-            "Yes",
-            "Incorrect value for internal VM")
-
-        self._run_command_and_process_events(
-            ["qvm-features", "--unset", "work", "interal"])
-
-        self.assertEqual(
-            self._get_table_item(vm_row, "Internal"),
-            "",
-            "Incorrect value for non-internal VM")
-
-    def test_409_prop_change_ip(self):
-        target_vm_name = "work"
-        vm_row = self._find_vm_row(target_vm_name)
-
-        old_ip = self._get_table_item(vm_row, "IP Address")
-        new_ip = old_ip.replace(".0.", ".5.")
-
-        self.addCleanup(
-            subprocess.call, ["qvm-prefs", target_vm_name, "ip", old_ip])
-        self._run_command_and_process_events(
-            ["qvm-prefs", target_vm_name, "ip", new_ip])
-
-        self.assertNotEqual(old_ip,
-                            self._get_table_item(vm_row, "IP Address"),
-                            "IP Address did not change")
-        self.assertEqual(
-            self._get_table_item(vm_row, "IP Address"),
-            self.qapp.domains[target_vm_name].ip,
-            "Incorrect IP Address")
-
-    def test_410_prop_change_in_backups(self):
-        target_vm_name = "work"
-        vm_row = self._find_vm_row(target_vm_name)
-
-        old_value = self.qapp.domains[target_vm_name].include_in_backups
-        new_value = not old_value
-
-        self.addCleanup(
-            subprocess.call,
-            ["qvm-prefs", target_vm_name, "include_in_backups", str(old_value)])
-        self._run_command_and_process_events(
-            ["qvm-prefs", target_vm_name, "include_in_backups", str(new_value)])
-
-        self.assertEqual(
-            self._get_table_item(vm_row, "Internal"),
-            "Yes" if new_value else "",
-            "Incorrect value for include_in_backups")
-
-    def test_411_prop_change_last_backup(self):
-        target_vm_name = "work"
-        target_timestamp = "2015-01-01 17:00:00"
-        vm_row = self._find_vm_row(target_vm_name)
-
-        old_value = self._get_table_item(vm_row, "Last backup")
-        new_value = datetime.datetime.strptime(
-            target_timestamp, "%Y-%m-%d %H:%M:%S")
-
-        self.addCleanup(
-            subprocess.call,
-            ["qvm-prefs", '-D', target_vm_name, "backup_timestamp"])
-        self._run_command_and_process_events(
-            ["qvm-prefs", target_vm_name, "backup_timestamp",
-             str(int(new_value.timestamp()))])
-
-        self.assertNotEqual(old_value,
-                            self._get_table_item(vm_row, "Last backup"),
-                            "Last backup date did not change")
-        self.assertEqual(
-            self._get_table_item(vm_row, "Last backup"),
-            target_timestamp,
-            "Incorrect Last backup date")
-
-    def test_412_prop_change_defdispvm(self):
-        target_vm_name = "work"
-        vm_row = self._find_vm_row(target_vm_name)
-
-
-        old_default_dispvm =\
-            self._get_table_item(vm_row, "Default DispVM")
-        new_default_dispvm = None
-        for vm in self.qapp.domains:
-            if getattr(vm, "template_for_dispvms", False) and vm.name !=\
-                    old_default_dispvm:
-                new_default_dispvm = vm.name
-                break
-
-        self.addCleanup(
-           subprocess.call,
-           ["qvm-prefs", target_vm_name, "default_dispvm", old_default_dispvm])
-        self._run_command_and_process_events(
-            ["qvm-prefs", target_vm_name, "default_dispvm", new_default_dispvm])
-
-        self.assertNotEqual(
-            old_default_dispvm,
-            self._get_table_item(vm_row, "Default DispVM"),
-            "Default DispVM did not change")
-
-        self.assertEqual(
-            self._get_table_item(vm_row, "Default DispVM"),
-            self.qapp.domains[target_vm_name].default_dispvm.name,
-            "Incorrect Default DispVM")
-
-    def test_413_prop_change_templ_disp(self):
-        target_vm_name = "work"
-        vm_row = self._find_vm_row(target_vm_name)
-
-        self.addCleanup(
-            subprocess.call,
-            ["qvm-prefs", "--default", target_vm_name, "template_for_dispvms"])
-        self._run_command_and_process_events(
-            ["qvm-prefs", target_vm_name, "template_for_dispvms", "True"])
-
-        self.assertEqual(
-            self._get_table_item(vm_row, "Is DVM Template"),
-            "Yes",
-            "Incorrect value for DVM Template")
-
-        self._run_command_and_process_events(
-            ["qvm-prefs", "--default", target_vm_name, "template_for_dispvms"])
-
-        self.assertEqual(
-            self._get_table_item(vm_row, "Is DVM Template"),
-            "",
-            "Incorrect value for not DVM Template")
-
-    def test_414_vm_state_change(self):
-        target_vm_name = "work"
-        vm_row = self._find_vm_row(target_vm_name)
-
-        self.assertFalse(self.qapp.domains[target_vm_name].is_running())
-
-        self.addCleanup(
-            subprocess.call,
-            ["qvm-shutdown", "--wait", target_vm_name])
-        self._run_command_and_process_events(
-            ["qvm-start", target_vm_name], timeout=60)
-
-        displayed_state = self._get_table_item(vm_row, "State")
-
-        self.assertEqual(displayed_state['power'], 'Running',
-                         "Power state failed to update on start")
-
-        self._run_command_and_process_events(
-            ["qvm-shutdown", "--wait", target_vm_name], timeout=30)
-
-        displayed_state = self._get_table_item(vm_row, "State")
-
-        self.assertEqual(displayed_state['power'], 'Halted',
-                         "Power state failed to update on shutdown")
-
-    def test_415_template_vm_started(self):
-        # check whether changing state of a template_vm causes all other
-        # vms depending on it to check theirs
-        target_vm_name = None
-        for vm in self.qapp.domains:
-            if vm.klass == 'TemplateVM':
-                for vm2 in self.qapp.domains:
-                    if getattr(vm2, 'template', None) == vm.name:
-                        target_vm_name = vm.name
-                        break
-            if target_vm_name:
-                break
-
-        for i in range(self.dialog.table.model().rowCount()):
-            self._get_table_vminfo(i).update = unittest.mock.Mock()
-
-        self.addCleanup(
-            subprocess.call,
-            ["qvm-shutdown", "--wait", target_vm_name])
-        self._run_command_and_process_events(
-            ["qvm-start", target_vm_name], timeout=60)
-
-        # update() is called on every row once at dispatcher startup, so count
-        # any _extra_ calls
-        for i in range(self.dialog.table.model().rowCount()):
-            call_count = self._get_table_vminfo(
-                i).update.call_count
-            if self._get_table_item(i, "Template") == target_vm_name:
-                self.assertGreater(call_count, 1,
-                        "'update' not called for VM '{}'".format(
-                            self._get_table_item(i, "Name")))
-            elif self._get_table_item(i, "Name") == target_vm_name:
-                self.assertGreater(call_count, 1,
-                        "'update' not called for VM '{}'".format(
-                            self._get_table_item(i, "Name")))
-            else:
-                self.assertEqual(call_count, 1,
-                        "Unexpected 'update' call for VM '{}'".format(
-                            self._get_table_item(i, "Name")))
-
-    @unittest.mock.patch('qubesmanager.log_dialog.LogDialog')
-    def test_500_logs(self, mock_log_dialog):
-        self._select_admin_vm()
-
-        self.dialog.action_show_logs.trigger()
-        mock_log_dialog.assert_called_once()
-        dom0_logs = mock_log_dialog.mock_calls[0][1][1]
-        for c in dom0_logs:
-            self.assertIn("hypervisor", c,
-                          "Log for dom0 does not contain 'hypervisor'")
-
-        mock_log_dialog.reset_mock()
-
-        selected_vm = self._select_non_admin_vm(running=True).name
-
-        self.dialog.action_show_logs.trigger()
-        mock_log_dialog.assert_called_once()
-        vm_logs = mock_log_dialog.mock_calls[0][1][1]
-        for c in vm_logs:
-            self.assertIn(
-                selected_vm,
-                c,
-                "Log for {} does not contain its name".format(selected_vm))
-
-        self.assertNotEqual(dom0_logs, vm_logs,
-                            "Same logs found for dom0 and non-adminVM")
-
-    def _find_vm_row(self, vm_name):
-        for row in range(self.dialog.table.model().rowCount()):
-            name = self._get_table_item(row, "Name")
-            if name == vm_name:
-                return row
-        return None
-
-    def _count_visible_table_rows(self):
-        result = 0
-        for i in range(self.dialog.table.model().rowCount()):
-            if not self.dialog.table.isRowHidden(i):
-                result += 1
-        return result
-
-    def _run_command_and_process_events(self, command, timeout=5,
-                                        additional_timeout=None):
-        """
-        helper function to run a given command and process eventsDispatcher
-        events
-        :param command: list of strings, containing the command and all its
-        parameters
-        :param timeout: default 5 seconds
-        :param additional_timeout: default none
-        :return:
-        """
-        asyncio.set_event_loop(self.loop)
-
-        async def do_tasks():
-            coro = asyncio.create_subprocess_exec(*command,
-                                                     stdout=subprocess.DEVNULL,
-                                                     stderr=subprocess.DEVNULL)
-
-            tasks = {asyncio.create_task(self.dispatcher.listen_for_events()),
-                     asyncio.create_task(coro)}
-
-            if additional_timeout:
-                (done, pending) = await asyncio.wait(
-                    tasks,
-                    timeout=timeout,
-                    return_when=asyncio.FIRST_COMPLETED)
-                (done, pending) = await asyncio.wait(
-                    pending, timeout=additional_timeout)
-            else:
-                (done, pending) = await asyncio.wait(tasks, timeout=timeout)
-
-            for task in pending:
-                with contextlib.suppress(asyncio.CancelledError):
-                    task.cancel()
-
-        self.loop.run_until_complete(do_tasks())
-
-    def _create_set_of_current_vms(self):
-        result = set()
-        for i in range(self.dialog.table.model().rowCount()):
-            result.add(self._get_table_item(i, "Name"))
-        return result
-
-    def _select_admin_vm(self):
-        for row in range(self.dialog.table.model().rowCount()):
-            template = self._get_table_item(row, "Template")
-            if template == 'AdminVM':
-                index = self.dialog.table.model().index(row, 0)
-                self.dialog.table.setCurrentIndex(index)
-                return index.data(Qt.ItemDataRole.UserRole).vm
-        return None
-
-    def _select_non_admin_vm(self, running=None):
-        for row in range(self.dialog.table.model().rowCount()):
-            template = self._get_table_item(row, "Template")
-            vm = self._get_table_vm(row)
-            if template != 'AdminVM' and not vm.provides_network and \
-                    (running is None
-                     or (running and vm.is_running())
-                     or (not running and not vm.is_running())):
-                index = self.dialog.table.model().index(row, 0)
-                self.dialog.table.setCurrentIndex(index)
-                return vm
-        return None
-
-    def _select_templatevm(self, running=None, different_than=()):
-        for row in range(self.dialog.table.model().rowCount()):
-            template = self._get_table_item(row, "Template")
-            vm = self._get_table_vm(row)
-            if template == 'TemplateVM' and \
-                    (vm not in different_than) and \
-                    (running is None
-                     or (bool(running) == bool(vm.is_running()))):
-                index = self.dialog.table.model().index(row, 0)
-                self.dialog.table.setCurrentIndex(index)
-                return vm
-        return None
-
-    def _select_vms(self, vms: list):
-        self.dialog.table.selectionModel().clear()
-        mode = (QtCore.QItemSelectionModel.SelectionFlag.Select |
-                QtCore.QItemSelectionModel.SelectionFlag.Rows)
-        for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_vm(row)
-            if str(vm) in vms:
-                index = self.dialog.table.model().index(row, 0)
-                self.dialog.table.selectionModel().select(index, mode)
-
-    def __check_sorting(self, column_name):
-        last_text = None
-        last_vm = None
-        for row in range(self.dialog.table.model().rowCount()):
-            vm = self._get_table_item(row, "Name")
-            text = self._get_table_item(row, column_name)
-
-            if row == 0:
-                self.assertEqual(vm, "dom0", "dom0 is not sorted first")
-            elif last_text is None:
-                last_text = text
-                last_vm = vm
-            else:
-                if last_text == text:
-                    self.assertGreater(
-                        vm.lower(), last_vm.lower(),
-                        "Incorrect sorting for {}".format(column_name))
-                else:
-                    self.assertGreater(
-                        text.lower(), last_text.lower(),
-                        "Incorrect sorting for {}".format(column_name))
-                last_text = text
-                last_vm = vm
-
-    def _get_table_vminfo(self, row):
-        model = self.dialog.table.model()
-        return model.index(row, 0).data(Qt.ItemDataRole.UserRole)
-
-    def _get_table_vm(self, row):
-        model = self.dialog.table.model()
-        return model.index(row, 0).data(Qt.ItemDataRole.UserRole).vm
-
-    def _get_table_item(self, row, column_name,
-                        role=Qt.ItemDataRole.DisplayRole):
-        model = self.dialog.table.model()
-        column = self.dialog.qubes_model.columns_indices.index(column_name)
-        return model.index(row, column).data(role)
-
-
-class QubeManagerThreadTest(unittest.TestCase):
-    def test_01_startvm_thread(self):
-        vm = unittest.mock.Mock(spec=['start'])
-
-        thread = qube_manager.StartVMThread(vm)
-        thread.run()
-
-        vm.start.assert_called_once_with()
-
-    def test_02_startvm_thread_error(self):
-        vm = unittest.mock.Mock(
-            spec=['start'],
-            **{'start.side_effect': exc.QubesException('Error')})
-
-        thread = qube_manager.StartVMThread(vm)
-        thread.run()
-
-        self.assertIsNotNone(thread.msg)
-
-    def test_10_run_command_thread(self):
-        vm = unittest.mock.Mock(spec=['run'])
-
-        thread = qube_manager.RunCommandThread(vm, "test_command")
-        thread.run()
-
-        vm.run.assert_called_once_with("test_command")
-
-    def test_11_run_command_thread_error(self):
-        vm = unittest.mock.Mock(spec=['run'],
-                                **{'run.side_effect': ChildProcessError})
-
-        thread = qube_manager.RunCommandThread(vm, "test_command")
-        thread.run()
-
-        self.assertIsNotNone(thread.msg)
-
-    @unittest.mock.patch('subprocess.check_call')
-    def test_20_update_vm_thread_dom0(self, check_call):
-        vm = unittest.mock.Mock(spec=['klass', 'name'])
-        vm.klass = 'AdminVM'
-        vm.name = 'dom0'
-        thread = qube_manager.UpdateVMsThread([vm.name])
-        thread.run()
-
-        check_call.assert_called_once_with(
-            ["/usr/bin/qubes-update-gui", "--targets", "dom0"])
-
-    @unittest.mock.patch('subprocess.check_call')
-    def test_21_update_vm_thread_running(self, mock_call):
-        vm = unittest.mock.Mock(
-            spec=['klass', 'is_running', 'run_service_for_stdio',
-                  'run_service', 'name'],
-            **{'is_running.return_value': True})
-
-        vm.klass = 'AppVM'
-        vm.name = 'testvm'
-        vm.run_service_for_stdio.return_value = (b'changed=no\n', None)
-
-        thread = qube_manager.UpdateVMsThread([vm.name])
-
-        thread.run()
-
-        mock_call.assert_called_once_with(
-            ["/usr/bin/qubes-update-gui", "--targets", "testvm"])
-
-    @unittest.mock.patch('subprocess.check_call')
-    def test_23_update_vm_thread_error(self, mock_call):
-        mock_call.side_effect = subprocess.SubprocessError
-        thread = qube_manager.UpdateVMsThread(['test'])
-        thread.run()
-
-        self.assertIsNotNone(thread.msg)
-
-
-class VMShutdownMonitorTest(unittest.TestCase):
-    @unittest.mock.patch('qubesmanager.qube_manager.QMessageBox')
-    @unittest.mock.patch('PyQt6.QtCore.QTimer')
-    def test_01_vm_shutdown_correct(self, mock_timer, mock_question):
-        mock_vm = unittest.mock.Mock()
-        mock_vm.is_running.return_value = False
-
-        monitor = qube_manager.VmShutdownMonitor(mock_vm)
-        monitor.restart_vm_if_needed = unittest.mock.Mock()
-
-        monitor.check_if_vm_has_shutdown()
-
-        self.assertEqual(mock_question.call_count, 0)
-        self.assertEqual(mock_timer.call_count, 0)
-        monitor.restart_vm_if_needed.assert_called_once_with()
-
-    @unittest.mock.patch('qubesmanager.qube_manager.QMessageBox')
-    @unittest.mock.patch('PyQt6.QtCore.QTimer.singleShot')
-    def test_02_vm_not_shutdown_wait(self, mock_timer, mock_question):
-        mock_question().clickedButton.return_value = 1
-        mock_question().addButton.return_value = 0
-
-        mock_vm = unittest.mock.Mock()
-        mock_vm.is_running.return_value = True
-        mock_vm.start_time = datetime.datetime.now().timestamp() - 3000
-        mock_vm.shutdown_timeout = 60
-
-        monitor = qube_manager.VmShutdownMonitor(mock_vm)
-        time.sleep(3)
-
-        monitor.check_if_vm_has_shutdown()
-
-        self.assertEqual(mock_timer.call_count, 1)
-
-    @unittest.mock.patch('qubesmanager.qube_manager.QMessageBox')
-    @unittest.mock.patch('PyQt6.QtCore.QTimer.singleShot')
-    def test_03_vm_kill(self, mock_timer, mock_question):
-        mock_question().clickedButton.return_value = 1
-        mock_question().addButton.return_value = 1
-
-        mock_vm = unittest.mock.Mock()
-        mock_vm.is_running.return_value = True
-        mock_vm.start_time = datetime.datetime.now().timestamp() - 3000
-        mock_vm.shutdown_timeout = 1
-
-        monitor = qube_manager.VmShutdownMonitor(mock_vm)
-        time.sleep(3)
-        monitor.restart_vm_if_needed = unittest.mock.Mock()
-
-        monitor.check_if_vm_has_shutdown()
-
-        self.assertEqual(mock_timer.call_count, 0)
-        mock_vm.kill.assert_called_once_with()
-        monitor.restart_vm_if_needed.assert_called_once_with()
-
-    @unittest.mock.patch('qubesmanager.qube_manager.QMessageBox')
-    @unittest.mock.patch('PyQt6.QtCore.QTimer.singleShot')
-    def test_04_check_later(self, mock_timer, mock_question):
-        mock_vm = unittest.mock.Mock()
-        mock_vm.is_running.return_value = True
-        mock_vm.start_time = datetime.datetime.now().timestamp() - 3000
-        mock_vm.shutdown_timeout = 30
-
-        monitor = qube_manager.VmShutdownMonitor(mock_vm)
-        time.sleep(1)
-
-        monitor.check_if_vm_has_shutdown()
-
-        self.assertEqual(mock_question.call_count, 0)
-        self.assertEqual(mock_timer.call_count, 1)
-
-
-if __name__ == "__main__":
-    ha_syslog = logging.handlers.SysLogHandler('/dev/log')
-    ha_syslog.setFormatter(
-        logging.Formatter('%(name)s[%(process)d]: %(message)s'))
-    logging.root.addHandler(ha_syslog)
-    unittest.main()
+            assert not _is_icon(action.icon())
+
+
+@mock.patch('PyQt6.QtWidgets.QMessageBox.question')
+def test_313_template_menu_multiple(mock_question, qubes_manager):
+    mock_question.return_value = QMessageBox.StandardButton.Yes
+
+    target_vm_names = ['test-red', 'test-vm', 'vault']
+
+    _select_vm(qubes_manager, *target_vm_names)
+
+    assert qubes_manager.template_menu.isEnabled()
+
+    # attempt to change netvm to fedora-35
+    calls = []
+    for vm in target_vm_names:
+        call = (vm, 'admin.vm.property.Set', 'template', FEDORA_OLD.encode())
+        assert call not in qubes_manager.qubes_app.actual_calls
+        qubes_manager.qubes_app.expected_calls[call] = b'0\x00'
+        calls.append(call)
+
+    # change to specific value
+    for action in qubes_manager.template_menu.actions():
+        if action.text() == FEDORA_OLD:
+            action.trigger()
+            break
+
+    for call in calls:
+        assert call in qubes_manager.qubes_app.actual_calls
+
+
+@mock.patch('PyQt6.QtWidgets.QMessageBox.information')
+@mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
+def test_320_clear_threads(mock_warning, mock_info, qubes_manager):
+    mock_thread_finished_ok = mock.Mock(
+        spec=['isFinished', 'msg', 'msg_is_success'],
+        msg=None, msg_is_success=False,
+        **{'isFinished.return_value': True})
+    mock_thread_not_finished = mock.Mock(
+        spec=['isFinished', 'msg', 'msg_is_success'],
+        msg=None, msg_is_success=False,
+        **{'isFinished.return_value': False})
+    mock_thread_finished_error = mock.Mock(
+        spec=['isFinished', 'msg', 'msg_is_success'],
+        msg=("Error", "Error"), msg_is_success=False,
+        **{'isFinished.return_value': True})
+    mock_thread_fin_error_success = mock.Mock(
+        spec=['isFinished', 'msg', 'msg_is_success'],
+        msg=("Done", "Done"), msg_is_success=True,
+        **{'isFinished.return_value': True})
+
+    # single finished thread
+    qubes_manager.threads_list = [mock_thread_not_finished,
+                                  mock_thread_finished_ok]
+    qubes_manager.clear_threads()
+    assert mock_warning.call_count == 0
+    assert mock_info.call_count == 0
+    assert len(qubes_manager.threads_list) == 1
+
+    # an error thread and some in-progress ones
+    qubes_manager.threads_list = [mock_thread_not_finished,
+                                  mock_thread_not_finished,
+                                  mock_thread_finished_error]
+    qubes_manager.clear_threads()
+    assert mock_warning.call_count == 1
+    assert mock_info.call_count == 0
+    assert len(qubes_manager.threads_list) == 2
+
+    # an error-success thread and some in-progress ones
+    qubes_manager.threads_list = [mock_thread_not_finished,
+                                  mock_thread_not_finished,
+                                  mock_thread_fin_error_success,
+                                  mock_thread_finished_error]
+    qubes_manager.clear_threads()
+    assert mock_warning.call_count == 1
+    assert mock_info.call_count == 1
+    assert len(qubes_manager.threads_list) == 3
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_400_domain_added(qubes_manager):
+    initial_vms = _get_current_vms(qubes_manager)
+    assert 'test-new' not in initial_vms
+
+    # simulate adding a new qube
+    qubes_manager.qubes_app._qubes['test-new'] = MockQube(
+        'test-new', qubes_manager.qubes_app, label='green',
+        template=FEDORA_OLD)
+    qubes_manager.qubes_app.update_vm_calls()
+
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('',
+                  'domain-add',
+                  [('vm', 'test-new')]))
+
+    with contextlib.suppress(asyncio.TimeoutError):
+        await asyncio.wait_for(qubes_manager.dispatcher.listen_for_events(), 1)
+
+    current_vms = _get_current_vms(qubes_manager)
+    assert 'test-new' in current_vms
+    assert current_vms == sorted(initial_vms + ['test-new'])
+
+    assert (_get_column_value(qubes_manager, "Template", "test-new") ==
+            FEDORA_OLD)
+
+    _check_sorting(qubes_manager, "Name")
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_401_domain_removed(qubes_manager):
+    initial_vms = _get_current_vms(qubes_manager)
+    assert 'test-blue' in initial_vms
+
+    # simulate removing a qube
+    del qubes_manager.qubes_app._qubes['test-blue']
+    qubes_manager.qubes_app.update_vm_calls()
+
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('',
+                  'domain-delete',
+                  [('vm', 'test-blue')]))
+
+    with contextlib.suppress(asyncio.TimeoutError):
+        await asyncio.wait_for(qubes_manager.dispatcher.listen_for_events(), 1)
+
+    current_vms = _get_current_vms(qubes_manager)
+    assert 'test-blue' not in current_vms
+    assert (sorted(current_vms + ['test-blue']) == initial_vms)
+
+    _check_sorting(qubes_manager, "Name")
+
+
+# orderly disp-vm event
+@pytest.mark.asyncio(loop_scope="module")
+async def test_403_dispdomain_added(qubes_manager):
+    initial_vms = _get_current_vms(qubes_manager)
+
+    # simulate adding a new qube
+    qubes_manager.qubes_app._qubes['disp123'] = MockQube(
+        'disp123', qubes_manager.qubes_app, label='red',
+        template='default-dvm', auto_cleanup=True, klass='DispVM', running=True)
+    qubes_manager.qubes_app.update_vm_calls()
+
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('',
+                  'domain-add',
+                  [('vm', 'disp123')]))
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('disp123',
+                  'domain-pre-start',
+                  [('vm', 'disp123')]))
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('disp123',
+                  'domain-start',
+                  [('vm', 'disp123')]))
+
+    with contextlib.suppress(asyncio.TimeoutError):
+        await asyncio.wait_for(qubes_manager.dispatcher.listen_for_events(), 1)
+
+    current_vms = _get_current_vms(qubes_manager)
+
+    assert current_vms == sorted(initial_vms + ['disp123'])
+
+    assert (_get_column_value(qubes_manager, "Template", "disp123") ==
+            'default-dvm')
+
+    _check_sorting(qubes_manager, "Name")
+
+
+# failed disp_vm event
+@pytest.mark.asyncio(loop_scope="module")
+async def test_404_dispdomain_fail(qubes_manager):
+    initial_vms = _get_current_vms(qubes_manager)
+
+    # simulate failure to start-up a dispvm
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('',
+                  'domain-add',
+                  [('vm', 'disp123')]))
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('disp123',
+                  'domain-pre-start'))
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('disp123',
+                  'domain-start'))
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('disp123',
+                  'domain-start-failed'))
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('',
+                  'domain-remove',
+                  [('vm', 'disp123')]))
+
+    with contextlib.suppress(asyncio.TimeoutError):
+        await asyncio.wait_for(qubes_manager.dispatcher.listen_for_events(), 1)
+
+    current_vms = _get_current_vms(qubes_manager)
+
+    assert current_vms == initial_vms
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_410_prop_change_label(qubes_manager):
+    initial_icon = _get_column_value(qubes_manager, "Label", "test-blue",
+                                     Qt.ItemDataRole.DecorationRole)
+
+    qubes_manager.qubes_app._qubes['test-blue'].label = 'black'
+    qubes_manager.qubes_app.update_vm_calls()
+
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('test-blue',
+                  'property-set:label',
+                  [('name', 'label'),
+                   ('newvalue', 'black'), ('oldvalue', 'blue')]))
+
+    with contextlib.suppress(asyncio.TimeoutError):
+        await asyncio.wait_for(qubes_manager.dispatcher.listen_for_events(), 1)
+
+    changed_icon = _get_column_value(qubes_manager, "Label", "test-blue",
+                                     Qt.ItemDataRole.DecorationRole)
+
+    assert changed_icon != initial_icon
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_411_prop_change_tpl(qubes_manager):
+    assert (_get_column_value(qubes_manager, "Template", "test-blue") ==
+            FEDORA_LATEST)
+
+    qubes_manager.qubes_app._qubes['test-blue'].template = FEDORA_OLD
+    qubes_manager.qubes_app.update_vm_calls()
+
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('test-blue',
+                  'property-set:template',
+                  [('name', 'template'),
+                   ('newvalue', FEDORA_OLD), ('oldvalue', FEDORA_LATEST)]))
+
+    with contextlib.suppress(asyncio.TimeoutError):
+        await asyncio.wait_for(qubes_manager.dispatcher.listen_for_events(), 1)
+
+    assert (_get_column_value(qubes_manager, "Template", "test-blue") ==
+            FEDORA_OLD)
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_412_prop_change_netvm(qubes_manager):
+    assert (_get_column_value(qubes_manager, "NetVM", "test-blue") ==
+            'sys-firewall')
+
+    qubes_manager.qubes_app._qubes['test-blue'].set_property_default(
+        'netvm', 'sys-firewall')
+    qubes_manager.qubes_app.update_vm_calls()
+
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('test-blue',
+                  'property-del:netvm',
+                  [('name', 'netvm')]))
+
+    with contextlib.suppress(asyncio.TimeoutError):
+        await asyncio.wait_for(qubes_manager.dispatcher.listen_for_events(), 1)
+
+    assert (_get_column_value(qubes_manager, "NetVM", "test-blue") ==
+            'default (sys-firewall)')
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_413_prop_change_internal(qubes_manager):
+    assert (_get_column_value(qubes_manager, "Internal", "test-blue") ==
+            '')
+
+    qubes_manager.qubes_app._qubes['test-blue'].features['internal'] = '1'
+    qubes_manager.qubes_app.update_vm_calls()
+
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('test-blue',
+                  'domain-feature-set:internal',
+                  [('name', 'internal'),
+                   ('newvalue', '1'), ('oldvalue', '')]))
+
+    with contextlib.suppress(asyncio.TimeoutError):
+        await asyncio.wait_for(qubes_manager.dispatcher.listen_for_events(), 1)
+
+    # as manager by default hides internal qubes, it should be hidden here too
+    assert 'test-blue' not in _get_current_vms(qubes_manager)
+
+    # reset the feature
+    qubes_manager.qubes_app._qubes['test-blue'].features['internal'] = ''
+    qubes_manager.qubes_app.update_vm_calls()
+
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('test-blue',
+                  'domain-feature-delete:internal',
+                  [('name', 'internal')]))
+
+    with contextlib.suppress(asyncio.TimeoutError):
+        await asyncio.wait_for(qubes_manager.dispatcher.listen_for_events(), 1)
+
+    # now unhidden
+    assert 'test-blue' in _get_current_vms(qubes_manager)
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_414_prop_change_ip(qubes_manager):
+    current_ip = _get_column_value(qubes_manager, "IP Address", "test-blue")
+    new_ip = '1.2.3.4'
+
+    qubes_manager.qubes_app._qubes['test-blue'].ip = new_ip
+    qubes_manager.qubes_app.update_vm_calls()
+
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('test-blue',
+                  'property-set:ip',
+                  [('name', 'ip'), ('newvalue', new_ip),
+                   ('oldvalue', current_ip)]))
+
+    with contextlib.suppress(asyncio.TimeoutError):
+        await asyncio.wait_for(qubes_manager.dispatcher.listen_for_events(), 1)
+
+    assert _get_column_value(qubes_manager, "IP Address", 'test-blue') == new_ip
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_415_prop_change_incl_backups(qubes_manager):
+    current_value = _get_column_value(
+        qubes_manager, "Backup", "test-blue",
+        role=Qt.ItemDataRole.CheckStateRole)
+
+    current_bool_value = current_value == Qt.CheckState.Checked
+
+    qubes_manager.qubes_app._qubes['test-blue'].include_in_backups = \
+        not current_bool_value
+    qubes_manager.qubes_app.update_vm_calls()
+
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('test-blue',
+                  'property-set:include_in_backups',
+                  [('name', 'include_in_backups'),
+                   ('newvalue', str(not current_bool_value)),
+                   ('oldvalue', str(current_bool_value))]))
+
+    with contextlib.suppress(asyncio.TimeoutError):
+        await asyncio.wait_for(qubes_manager.dispatcher.listen_for_events(), 1)
+
+    new_value = _get_column_value(qubes_manager, "Backup", 'test-blue')
+    new_bool_value = new_value == Qt.CheckState.Checked
+    assert new_bool_value != current_bool_value
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_416_prop_change_backup_timestamp(qubes_manager):
+    current_value = _get_column_value(
+        qubes_manager, "Last backup", "test-blue")
+
+    assert current_value is None
+
+    qubes_manager.qubes_app._qubes['test-blue'].backup_timestamp = 123
+    qubes_manager.qubes_app.update_vm_calls()
+
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('test-blue',
+                  'property-set:backup_timestamp',
+                  [('name', 'backup_timestamp'),
+                   ('newvalue', '123'),
+                   ('oldvalue', '')]))
+
+    with contextlib.suppress(asyncio.TimeoutError):
+        await asyncio.wait_for(qubes_manager.dispatcher.listen_for_events(), 1)
+
+    new_value = _get_column_value(qubes_manager, "Last backup", 'test-blue')
+
+    assert new_value == datetime.fromtimestamp(123).strftime(
+        '%Y-%m-%d %H:%M:%S')
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_417_prop_change_def_dispvm(qubes_manager):
+    current_value = _get_column_value(
+        qubes_manager, "Default DispVM", "test-blue")
+    assert current_value == 'default-dvm'
+
+    qubes_manager.qubes_app._qubes['new-dvm'] = MockQube(
+            name="new-dvm", qapp=qubes_manager.qubes_app, klass='DispVM',
+            template_for_dispvms='True', template=FEDORA_LATEST,
+            features={'appmenus-dispvm': '1'})
+    qubes_manager.qubes_app._qubes['test-blue'].default_dispvm = 'new-dvm'
+    qubes_manager.qubes_app.update_vm_calls()
+
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('test-blue',
+                  'property-set:default_dispvm',
+                  [('name', 'default_dispvm'),
+                   ('newvalue', 'new-dvm'),
+                   ('oldvalue', 'default-dvm')]))
+
+    with contextlib.suppress(asyncio.TimeoutError):
+        await asyncio.wait_for(qubes_manager.dispatcher.listen_for_events(), 1)
+
+    new_value = _get_column_value(qubes_manager, "Default DispVM", 'test-blue')
+
+    assert new_value == 'new-dvm'
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_418_prop_change_templ_for_disp(qubes_manager):
+    current_value = _get_column_value(
+        qubes_manager, "Is DVM Template", "test-blue")
+    assert current_value == ''
+
+    qubes_manager.qubes_app._qubes['test-blue'].template_for_dispvms = True
+    qubes_manager.qubes_app.update_vm_calls()
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('test-blue',
+                  'property-set:template_for_dispvms',
+                  [('name', 'template_for_dispvms'),
+                   ('newvalue', 'True'), ('oldvalue', 'False')]))
+
+    with contextlib.suppress(asyncio.TimeoutError):
+        await asyncio.wait_for(qubes_manager.dispatcher.listen_for_events(), 1)
+
+    new_value = _get_column_value(qubes_manager, "Is DVM Template", 'test-blue')
+
+    assert new_value == 'Yes'
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_420_vm_state_change(qubes_manager):
+    current_value = _get_column_value(
+        qubes_manager, "State", "test-red")
+    assert current_value['power'] == 'Halted'
+
+    # start a VM
+    qubes_manager.qubes_app._qubes['test-red'].running = True
+    qubes_manager.qubes_app.update_vm_calls()
+
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('test-red',
+                  'domain-pre-start'))
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('test-red',
+                  'domain-start'))
+
+    with contextlib.suppress(asyncio.TimeoutError):
+        await asyncio.wait_for(qubes_manager.dispatcher.listen_for_events(), 1)
+
+    new_value = _get_column_value(
+        qubes_manager, "State", "test-red")
+    assert new_value['power'] == ('Running')
+
+
+@mock.patch('os.path.exists', return_value=True)
+@mock.patch('qubesmanager.log_dialog.LogDialog')
+def test_500_logs(mock_log_dialog, _mock_path, qubes_manager):
+    _select_vm(qubes_manager, 'dom0')
+
+    qubes_manager.action_show_logs.trigger()
+    assert mock_log_dialog.call_count == 1
+
+    dom0_logs = mock_log_dialog.mock_calls[0][1][1]
+    for c in dom0_logs:
+        assert "hypervisor" in c
+
+    mock_log_dialog.reset_mock()
+
+    _select_vm(qubes_manager, 'test-blue')
+
+    qubes_manager.action_show_logs.trigger()
+    assert mock_log_dialog.call_count == 1
+
+    vm_logs = mock_log_dialog.mock_calls[0][1][1]
+    for c in vm_logs:
+        assert "test-blue" in c
+
+    assert dom0_logs != vm_logs
+
+
+# THREAD TESTS
+
+
+def test_601_startvm_thread():
+    vm = mock.Mock(spec=['start'])
+
+    thread = qube_manager.StartVMThread(vm)
+    thread.run()
+
+    vm.start.assert_called_once_with()
+
+
+def test_602_startvm_thread_error():
+    vm = mock.Mock(
+        spec=['start'],
+        **{'start.side_effect': exc.QubesException('Error')})
+
+    thread = qube_manager.StartVMThread(vm)
+    thread.run()
+
+    assert thread.msg is not None
+
+
+def test_610_run_command_thread():
+    vm = mock.Mock(spec=['run'])
+
+    thread = qube_manager.RunCommandThread(vm, "test_command")
+    thread.run()
+
+    vm.run.assert_called_once_with("test_command")
+
+
+def test_611_run_command_thread_error():
+    vm = mock.Mock(spec=['run'],
+                            **{'run.side_effect': ChildProcessError})
+
+    thread = qube_manager.RunCommandThread(vm, "test_command")
+    thread.run()
+
+    assert thread.msg is not None
+
+
+@mock.patch('subprocess.check_call')
+def test_620_update_vm_thread_dom0(check_call):
+    vm = mock.Mock(spec=['klass', 'name'])
+    vm.klass = 'AdminVM'
+    vm.name = 'dom0'
+    thread = qube_manager.UpdateVMsThread([vm.name])
+    thread.run()
+
+    check_call.assert_called_once_with(
+        ["/usr/bin/qubes-update-gui", "--targets", "dom0"])
+
+
+@mock.patch('subprocess.check_call')
+def test_621_update_vm_thread_running(mock_call):
+    vm = mock.Mock(
+        spec=['klass', 'is_running', 'run_service_for_stdio',
+              'run_service', 'name'],
+        **{'is_running.return_value': True})
+
+    vm.klass = 'AppVM'
+    vm.name = 'testvm'
+    vm.run_service_for_stdio.return_value = (b'changed=no\n', None)
+
+    thread = qube_manager.UpdateVMsThread([vm.name])
+
+    thread.run()
+
+    mock_call.assert_called_once_with(
+        ["/usr/bin/qubes-update-gui", "--targets", "testvm"])
+
+
+@mock.patch('subprocess.check_call')
+def test_623_update_vm_thread_error(mock_call):
+    mock_call.side_effect = subprocess.SubprocessError
+    thread = qube_manager.UpdateVMsThread(['test'])
+    thread.run()
+
+    assert thread.msg is not None
+
+
+# SHUTDOWN MONITOR TEST
+
+@mock.patch('qubesmanager.qube_manager.QMessageBox')
+@mock.patch('PyQt6.QtCore.QTimer')
+def test_701_vm_shutdown_correct( mock_timer, mock_question):
+    mock_vm = mock.Mock()
+    mock_vm.is_running.return_value = False
+
+    monitor = qube_manager.VmShutdownMonitor(mock_vm)
+    monitor.restart_vm_if_needed = mock.Mock()
+
+    monitor.check_if_vm_has_shutdown()
+
+    assert mock_question.call_count == 0
+    assert mock_timer.call_count == 0
+    monitor.restart_vm_if_needed.assert_called_once_with()
+
+
+@mock.patch('qubesmanager.qube_manager.QMessageBox')
+@mock.patch('PyQt6.QtCore.QTimer.singleShot')
+def test_702_vm_not_shutdown_wait(mock_timer, mock_question):
+    mock_question().clickedButton.return_value = 1
+    mock_question().addButton.return_value = 0
+
+    mock_vm = mock.Mock()
+    mock_vm.is_running.return_value = True
+    mock_vm.start_time = datetime.now().timestamp() - 3000
+    mock_vm.shutdown_timeout = 60
+
+    monitor = qube_manager.VmShutdownMonitor(mock_vm)
+    time.sleep(3)
+
+    monitor.check_if_vm_has_shutdown()
+
+    assert mock_timer.call_count == 1
+
+
+@mock.patch('qubesmanager.qube_manager.QMessageBox')
+@mock.patch('PyQt6.QtCore.QTimer.singleShot')
+def test_703_vm_kill( mock_timer, mock_question):
+    mock_question().clickedButton.return_value = 1
+    mock_question().addButton.return_value = 1
+
+    mock_vm = mock.Mock()
+    mock_vm.is_running.return_value = True
+    mock_vm.start_time = datetime.now().timestamp() - 3000
+    mock_vm.shutdown_timeout = 1
+
+    monitor = qube_manager.VmShutdownMonitor(mock_vm)
+    time.sleep(3)
+    monitor.restart_vm_if_needed = mock.Mock()
+
+    monitor.check_if_vm_has_shutdown()
+
+    assert mock_timer.call_count == 0
+    mock_vm.kill.assert_called_once_with()
+    monitor.restart_vm_if_needed.assert_called_once_with()
+
+
+@mock.patch('qubesmanager.qube_manager.QMessageBox')
+@mock.patch('PyQt6.QtCore.QTimer.singleShot')
+def test_704_check_later(mock_timer, mock_question):
+    mock_vm = mock.Mock()
+    mock_vm.is_running.return_value = True
+    mock_vm.start_time = datetime.now().timestamp() - 3000
+    mock_vm.shutdown_timeout = 30
+
+    monitor = qube_manager.VmShutdownMonitor(mock_vm)
+    time.sleep(1)
+
+    monitor.check_if_vm_has_shutdown()
+
+    assert mock_question.call_count == 0
+    assert mock_timer.call_count == 1

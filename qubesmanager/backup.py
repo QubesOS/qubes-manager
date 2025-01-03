@@ -1,23 +1,23 @@
 #!/usr/bin/python3
 #
-# The Qubes OS Project, http://www.qubes-os.org
+# The Qubes OS Project, https://www.qubes-os.org/
 #
 # Copyright (C) 2012  Agnieszka Kostrzewa <agnieszka.kostrzewa@gmail.com>
 # Copyright (C) 2012  Marek Marczykowski <marmarek@mimuw.edu.pl>
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# You should have received a copy of the GNU Lesser General Public License along
-# with this program; if not, see <http://www.gnu.org/licenses/>.
-#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
 import signal
@@ -259,9 +259,12 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         def __init__(self, vm):
             self.vm = vm
             if vm.klass == 'AdminVM':
-                local_user = grp.getgrnam('qubes').gr_mem[0]
-                home_dir = pwd.getpwnam(local_user).pw_dir
-                self.size = shutil.disk_usage(home_dir)[1]
+                try:
+                    local_user = grp.getgrnam('qubes').gr_mem[0]
+                    home_dir = pwd.getpwnam(local_user).pw_dir
+                    self.size = shutil.disk_usage(home_dir)[1]
+                except KeyError:
+                    self.size = None
             else:
                 try:
                     self.size = vm.get_disk_utilization()
