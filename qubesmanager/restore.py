@@ -73,7 +73,8 @@ class RestoreThread(QtCore.QThread):
         except Exception as ex:  # pylint: disable=broad-except
             err_msg.append(str(ex))
             err_msg.append(
-                self.tr("Partially restored files left in /var/tmp/restore_*, "
+                self.tr("Partially restored files left in "
+                        "~/QubesIncoming/backup#restore-*, "
                         "investigate them and/or clean them up"))
         if err_msg:
             self.msg = '<br />'.join(err_msg)
