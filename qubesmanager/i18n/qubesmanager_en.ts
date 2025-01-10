@@ -1144,7 +1144,7 @@ p, li { white-space: pre-wrap; }
     <name>RestoreThread</name>
     <message>
         <location filename="../restore.py" line="59"/>
-        <source>Partially restored files left in /var/tmp/restore_*, investigate them and/or clean them up</source>
+        <source>Partially restored files left in ~/QubesIncoming/backup#restore-*, investigate them and/or clean them up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

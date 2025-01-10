@@ -1186,8 +1186,8 @@ p, li { white-space: pre-wrap; }
     <name>RestoreThread</name>
     <message>
         <location filename="../restore.py" line="59"/>
-        <source>Partially restored files left in /var/tmp/restore_*, investigate them and/or clean them up</source>
-        <translation>Los ficheros restaurados parcialmente se dejaron en /var/tmp/restore_*, revíselos y/o elimínelos.</translation>
+        <source>Partially restored files left in ~/QubesIncoming/backup#restore-*, investigate them and/or clean them up</source>
+        <translation>Los ficheros restaurados parcialmente se dejaron en ~/QubesIncoming/backup#restore-*, revíselos y/o elimínelos.</translation>
     </message>
     <message>
         <location filename="../restore.py" line="64"/>
