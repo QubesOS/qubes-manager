@@ -876,6 +876,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                                self.on_domain_updates_available)
         dispatcher.add_handler('domain-feature-delete:updates-available',
                                self.on_domain_updates_available)
+        dispatcher.add_handler('domain-feature-set:skip-update',
+                               self.on_domain_updates_available)
+        dispatcher.add_handler('domain-feature-delete:skip-update',
+                               self.on_domain_updates_available)
 
         self.installEventFilter(self)
 
