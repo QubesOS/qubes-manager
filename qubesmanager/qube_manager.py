@@ -44,7 +44,7 @@ from PyQt6.QtWidgets import (QLineEdit, QStyledItemDelegate, QToolTip,
                              QStyleOptionViewItem, QMessageBox)
 
 # pylint: disable=import-error
-from PyQt6.QtGui import (QIcon, QPixmap, QRegularExpressionValidator, QFont,
+from PyQt6.QtGui import (QIcon, QRegularExpressionValidator, QFont,
                          QColor, QShortcut, QKeySequence)
 
 from qubesmanager.about import AboutDialog
@@ -396,7 +396,6 @@ class QubesTableModel(QAbstractTableModel):
         self.klass_pixmap = {}
         self.label_pixmap = {}
         self.columns_indices = [
-                "Type",
                 "Label",
                 "Name",
                 "State",
@@ -432,8 +431,6 @@ class QubesTableModel(QAbstractTableModel):
         vm = self.qubes_cache.get_vm(row)
 
         if role == Qt.ItemDataRole.DisplayRole:
-            if col in [0, 1]:
-                return None
             if col_name == "Name":
                 return vm.name
             if col_name == "State":
@@ -458,20 +455,8 @@ class QubesTableModel(QAbstractTableModel):
                 return "Yes" if vm.dvm_template else ""
             if col_name == "Virt Mode":
                 return vm.virt_mode
+            return None
         if role == Qt.ItemDataRole.DecorationRole:
-            if col_name == "Type":
-                try:
-                    return self.klass_pixmap[vm.klass]
-                except KeyError:
-                    pixmap = QPixmap()
-                    icon_name = ":/"+vm.klass.lower()+".png"
-                    icon_name = icon_name.replace("adminvm", "dom0")
-                    icon_name = icon_name.replace("dispvm", "appvm")
-                    pixmap.load(icon_name)
-                    self.klass_pixmap[vm.klass] = pixmap.scaled(icon_size)
-                    return self.klass_pixmap[vm.klass]
-                except exc.QubesDaemonAccessError:
-                    return None
             if col_name == "Label":
                 try:
                     return self.label_pixmap[vm.icon]
@@ -500,8 +485,6 @@ class QubesTableModel(QAbstractTableModel):
         if role == Qt.ItemDataRole.UserRole + 1:
             if vm.klass == 'AdminVM':
                 return ""
-            if col_name == "Type":
-                return vm.klass
             if col_name == "Label":
                 vmtype, vmcolor = vm.icon.split("-", 1)
                 try:
@@ -531,7 +514,7 @@ class QubesTableModel(QAbstractTableModel):
 
     # pylint: disable=invalid-name
     def headerData(self, col, orientation, role):
-        if col < 2:
+        if col < 1:
             return None
         if (orientation == Qt.Orientation.Horizontal and role ==
                 Qt.ItemDataRole.DisplayRole):
@@ -829,14 +812,17 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.proxy.setSourceModel(self.qubes_model)
         self.proxy.setSortRole(Qt.ItemDataRole.UserRole + 1)
         self.proxy.setSortCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-        self.proxy.setFilterKeyColumn(2)
+        self.proxy.setFilterKeyColumn(
+            self.qubes_model.columns_indices.index("Name"))
         self.proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self.proxy.layoutChanged.connect(self.save_sorting)
         self.proxy.layoutChanged.connect(self.update_template_menu)
         self.proxy.layoutChanged.connect(self.update_network_menu)
 
         self.table.setModel(self.proxy)
-        self.table.setItemDelegateForColumn(3, StateIconDelegate())
+        self.table.setItemDelegateForColumn(
+            self.qubes_model.columns_indices.index("State"),
+            StateIconDelegate())
         self.table.resizeColumnsToContents()
         selection_model = self.table.selectionModel()
         selection_model.selectionChanged.connect(self.table_selection_changed)
@@ -1034,7 +1020,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
     def save_sorting(self):
         self.manager_settings.setValue('view/sort_column',
-                self.proxy.sortColumn())
+                self.qubes_model.columns_indices[self.proxy.sortColumn()])
         self.manager_settings.setValue('view/sort_order',
                 self.proxy.sortOrder())
 
@@ -1217,8 +1203,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     self.showhide_column(col_no, visible == "true")
 
         # Restore sorting
-        sort_column = int(self.manager_settings.value("view/sort_column",
-                                 defaultValue=2))
+        sort_column: str = self.manager_settings.value("view/sort_column",
+                                                       defaultValue="Name")
+        # Remove this when Qubes 4.3 reaches EOL, this is a conversion from
+        # number-based approach to a name-based approach
+        if sort_column.isnumeric():
+            col_no = int(sort_column)
+            col_no = max(0, col_no - 1) # removal of confusing Type column
+            sort_column = self.qubes_model.columns_indices[col_no]
 
         order = self.manager_settings.value("view/sort_order",
                                  defaultValue=Qt.SortOrder.AscendingOrder)
@@ -1227,10 +1219,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             order = int(order)
         order = Qt.SortOrder(order)
 
-        if not sort_column: # Default sort by name
-            self.table.sortByColumn(2, Qt.SortOrder.AscendingOrder)
-        else:
-            self.table.sortByColumn(sort_column, order)
+        if not sort_column:
+            sort_column = "Name"
+        sort_column_no = self.qubes_model.columns_indices.index(sort_column)
+
+        self.table.sortByColumn(sort_column_no, order)
 
         if self.manager_settings.value("view/menubar_visible") == 'false':
             self.action_menubar.setChecked(False)
