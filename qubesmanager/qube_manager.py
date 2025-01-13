@@ -95,35 +95,34 @@ class StateIconDelegate(QStyledItemDelegate):
     def __init__(self):
         super().__init__()
         self.stateIcons = {
-                "Running" : QIcon(":/on.png"),
-                "Paused" : QIcon(":/paused.png"),
-                "Suspended" : QIcon(":/paused.png"),
-                "Transient" : QIcon(":/transient.png"),
-                "Halting" : QIcon(":/transient.png"),
-                "Dying" : QIcon(":/transient.png"),
-                "Halted" : QIcon(":/off.png")
+                "Running" : QIcon(":/running"),
+                "Paused" : QIcon(":/paused"),
+                "Suspended" : QIcon(":/paused"),
+                "Transient" : QIcon(":/transient"),
+                "Halting" : QIcon(":/transient"),
+                "Dying" : QIcon(":/transient"),
+                "Halted" : QIcon(":/blank")
                 }
         self.outdatedIcons = {
-                "update" : QIcon(":/update-recommended.png"),
-                "outdated" : QIcon(":/outdated.png"),
-                "to-be-outdated" : QIcon(":/to-be-outdated.png"),
-                "eol": QIcon(':/warning.png'),
-                "skipped": QIcon(':/warning.png')
+                "update" : QIcon(":/updateable"),
+                "outdated" : QIcon(":/outdated"),
+                "to-be-outdated" : QIcon(":/outdated"),
+                "eol": QIcon(':/warning'),
+                "skipped": QIcon(':/skipped')
                 }
         self.outdatedTooltips = {
-                "update" : self.tr("Updates pending!"),
+                "update" : self.tr("Updates available"),
                 "outdated" : self.tr(
-                    "The qube must be restarted for its filesystem to reflect"
-                    " the template's recent committed changes."),
+                    "The qube must be restarted for recent changes in "
+                    "template to take effect"),
                 "to-be-outdated" : self.tr(
-                    "The Template must be stopped before changes from its "
-                    "current session can be picked up by this qube."),
+                    "The template must be halted for recent changes to take "
+                    "effect"),
                 "eol": self.tr(
                     "This qube is based on a distribution that is no longer "
                     "supported\nInstall new template with Template Manager"),
                 "skipped": self.tr(
-                    "This qube is skipped from updates!\n"
-                    "This is an advanced feature. Use at your own risk")
+                    "This qube is excluded from updates")
                 }
 
     def sizeHint(self, option, index):
@@ -1370,9 +1369,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             for entry in self.template_menu.actions():
                 if entry.data() == vm.template:
                     if len(vms) == 1:
-                        entry.setIcon(QIcon(":/on.png"))
+                        entry.setIcon(QIcon(":/checked"))
                     else:
-                        entry.setIcon(QIcon(":/transient.png"))
+                        entry.setIcon(QIcon(":/some-checked"))
 
     def update_network_menu(self):
         if not self.network_menu.isEnabled():
@@ -1382,9 +1381,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             entry.setIcon(QIcon())
 
         if len(self.get_selected_vms()) == 1:
-            icon = QIcon(":/on.png")
+            icon = QIcon(":/checked")
         else:
-            icon = QIcon(":/transient.png")
+            icon = QIcon(":/some-checked")
 
         for vm in self.get_selected_vms():
             if vm.netvm == "n/a":

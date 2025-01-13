@@ -152,11 +152,11 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         if self.show_passwd_button.isChecked():
             self.passphrase_line_edit.setEchoMode(
                 QtWidgets.QLineEdit.EchoMode.Password)
-            self.show_passwd_button.setIcon(QtGui.QIcon(':/eye-off.svg'))
+            self.show_passwd_button.setIcon(QtGui.QIcon(':/eye-off'))
         else:
             self.passphrase_line_edit.setEchoMode(
                 QtWidgets.QLineEdit.EchoMode.Normal)
-            self.show_passwd_button.setIcon(QtGui.QIcon(':/eye.svg'))
+            self.show_passwd_button.setIcon(QtGui.QIcon(':/eye'))
 
     def save_profile_changed(self):
         save_profile = self.save_profile_checkbox.isChecked()
