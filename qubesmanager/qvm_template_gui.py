@@ -259,18 +259,18 @@ class Template(TreeItem):
                 return tr("This template is obsolete and no longer receives "
                           "updates")
             if role == PyQt6.QtCore.Qt.ItemDataRole.DecorationRole:
-                return ":/obsolete.svg"
+                return ":/obsolete"
         if self.template_status == 'extra':
             if role == PyQt6.QtCore.Qt.ItemDataRole.ToolTipRole:
                 return tr("This template is a local template, not installed "
                           "from a repository")
             if role == PyQt6.QtCore.Qt.ItemDataRole.DecorationRole:
-                return ':/checkmark-with-plus.svg'
+                return ':/checkmark-with-plus'
         if self.template_status in ['installed', 'upgradable']:
             if role == PyQt6.QtCore.Qt.ItemDataRole.ToolTipRole:
                 return tr("This template is installed")
             if role == PyQt6.QtCore.Qt.ItemDataRole.DecorationRole:
-                return ':/checkmark.svg'
+                return ':/checkmark'
         return None
 
     def version(self):
