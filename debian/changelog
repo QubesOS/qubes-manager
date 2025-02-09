@@ -1,3 +1,33 @@
+qubes-manager (4.3.8-1) unstable; urgency=medium
+
+  [ Marta Marczykowska-Górecka ]
+  * Open global config from template gui at correct location
+
+  [ Rusty Bird ]
+  * Fix cloning from non-default to default pool
+
+  [ Marta Marczykowska-Górecka ]
+  * Fix use of two Qubes() objects in VM settings
+  * Fix weird package references in VM settings
+  * Fix display of NetVM warnings in VM settings
+  * Fix superfluous feature changes in VM settings
+  * Make Firewall edit dialog properly async
+  * Do not save firewall in VM settings if unchanged
+  * Fix manager tests to use mock Admin API
+  * Fix incorrect assumption in backup
+  * Fix license problems in manager
+  * Exclude test-packages from codecov
+  * Remove test-packages, replace them with real qubesadmin
+  * Remove ui files from coverage report
+
+  [ Rusty Bird ]
+  * Update the location of partial restores in error message
+
+  [ Ali Mirjamali ]
+  * Retire old `qubes-vm-create` dialog
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sun, 09 Feb 2025 18:20:03 +0100
+
 qubes-manager (4.3.7-1) unstable; urgency=medium
 
   [ Piotr Bartman-Szwarc ]
