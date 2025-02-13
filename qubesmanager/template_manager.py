@@ -39,6 +39,8 @@ column_names = ['State', 'Qube', 'Current template', 'New template']
 class TemplateManagerWindow(
         ui_templatemanager.Ui_MainWindow, QtWidgets.QMainWindow):
 
+    progress_signal = QtCore.pyqtSignal(int)
+
     def __init__(self, qt_app, qubes_app, dispatcher, parent=None):
         # pylint: disable=unused-argument
         super().__init__(parent)
@@ -247,12 +249,15 @@ class TemplateManagerWindow(
         self.dialog.setCancelButton(None)
         self.dialog.setModal(True)
         self.dialog.show()
-
-        self.thread = common_threads.ChangeTemplatesThread(self.dialog,
+        self.progress_signal.connect(self.on_progress_changed)
+        self.thread = common_threads.ChangeTemplatesThread(self,
                                                            items_to_change,
                                                            self.qubes_app)
         self.thread.finished.connect(self.finish_changes)
         self.thread.start()
+
+    def on_progress_changed(self, value):
+        self.dialog.setValue(value)
 
     def finish_changes(self):
         self.dialog.hide()
