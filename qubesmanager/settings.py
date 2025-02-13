@@ -975,7 +975,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
     def enable_seamless(self):
         try:
             self.vm.run_service_for_stdio("qubes.SetGuiMode", input=b'SEAMLESS')
-        except qubesadmin.exc.QubesException as ex:
+        except (qubesadmin.exc.QubesException,
+                subprocess.CalledProcessError) as ex:
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Failed to set seamless mode"),
@@ -985,7 +986,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         try:
             self.vm.run_service_for_stdio("qubes.SetGuiMode",
                                           input=b'FULLSCREEN')
-        except qubesadmin.exc.QubesException as ex:
+        except (qubesadmin.exc.QubesException,
+                subprocess.CalledProcessError) as ex:
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Failed to set fullscreen mode"),
