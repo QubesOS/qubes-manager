@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="contextMenuPolicy">
-   <enum>Qt::DefaultContextMenu</enum>
+   <enum>Qt::ContextMenuPolicy::DefaultContextMenu</enum>
   </property>
   <property name="windowTitle">
    <string>Qube Manager</string>
@@ -49,7 +49,7 @@
    </property>
    <layout class="QGridLayout" name="gridLayout">
     <property name="sizeConstraint">
-     <enum>QLayout::SetDefaultConstraint</enum>
+     <enum>QLayout::SizeConstraint::SetDefaultConstraint</enum>
     </property>
     <item row="1" column="0">
      <widget class="QTableView" name="table">
@@ -72,7 +72,7 @@
        </size>
       </property>
       <property name="contextMenuPolicy">
-       <enum>Qt::CustomContextMenu</enum>
+       <enum>Qt::ContextMenuPolicy::CustomContextMenu</enum>
       </property>
       <property name="acceptDrops">
        <bool>false</bool>
@@ -81,25 +81,25 @@
        <number>0</number>
       </property>
       <property name="verticalScrollBarPolicy">
-       <enum>Qt::ScrollBarAsNeeded</enum>
+       <enum>Qt::ScrollBarPolicy::ScrollBarAsNeeded</enum>
       </property>
       <property name="horizontalScrollBarPolicy">
-       <enum>Qt::ScrollBarAsNeeded</enum>
+       <enum>Qt::ScrollBarPolicy::ScrollBarAsNeeded</enum>
       </property>
       <property name="alternatingRowColors">
        <bool>true</bool>
       </property>
       <property name="selectionMode">
-       <enum>QAbstractItemView::ExtendedSelection</enum>
+       <enum>QAbstractItemView::SelectionMode::ExtendedSelection</enum>
       </property>
       <property name="selectionBehavior">
-       <enum>QAbstractItemView::SelectRows</enum>
+       <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
       </property>
       <property name="showGrid">
        <bool>false</bool>
       </property>
       <property name="gridStyle">
-       <enum>Qt::NoPen</enum>
+       <enum>Qt::PenStyle::NoPen</enum>
       </property>
       <property name="sortingEnabled">
        <bool>true</bool>
@@ -116,130 +116,6 @@
       <attribute name="verticalHeaderCascadingSectionResizes">
        <bool>false</bool>
       </attribute>
-      <row>
-       <property name="text">
-        <string>Nowy wiersz</string>
-       </property>
-      </row>
-      <row/>
-      <row/>
-      <row/>
-      <row/>
-      <row/>
-      <row/>
-      <row/>
-      <row/>
-      <row/>
-      <column>
-       <property name="text">
-        <string/>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string/>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Name</string>
-       </property>
-       <property name="toolTip">
-        <string>The name of each qube</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>State</string>
-       </property>
-       <property name="toolTip">
-        <string>The running state and update status of each qube</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Template</string>
-       </property>
-       <property name="toolTip">
-        <string>The template on which each qube is based</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Net qube</string>
-       </property>
-       <property name="toolTip">
-        <string>The qube that provides network access to each qube</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Disk
-usage</string>
-       </property>
-       <property name="toolTip">
-        <string>The amount of disk space used by each qube</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Internal</string>
-       </property>
-       <property name="toolTip">
-        <string>Whether each qube is internal to the operation of the system and not intended for normal use by end users</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>IP Address</string>
-       </property>
-       <property name="toolTip">
-        <string>The internal IP address assigned to each qube</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Include
-in backups</string>
-       </property>
-       <property name="toolTip">
-        <string>Whether each qube is included in backups by default</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Last backup</string>
-       </property>
-       <property name="toolTip">
-        <string>Timestamp indicating the last time at which each qube was backed up</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Default disposable
-template</string>
-       </property>
-       <property name="toolTip">
-        <string>The disposable template used by default when launching disposables from each qube</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Disposable
-template</string>
-       </property>
-       <property name="toolTip">
-        <string>Whether each qube is itself a disposable template</string>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>Virtualization mode</string>
-       </property>
-       <property name="toolTip">
-        <string>The hypervisor mode used when running each qube as a virtual machine</string>
-       </property>
-      </column>
       <addaction name="action_scroll_to_top"/>
       <addaction name="action_scroll_to_bottom"/>
      </widget>
@@ -318,14 +194,14 @@ template</string>
       </item>
       <item>
        <widget class="QCheckBox" name="show_user">
+        <property name="toolTip">
+         <string>Show AppVMs and Standalone VMs, hide disposable and service VMs</string>
+        </property>
         <property name="text">
          <string>User qubes</string>
         </property>
         <property name="checked">
          <bool>true</bool>
-        </property>
-        <property name="toolTip">
-         <string>Show AppVMs and Standalone VMs, hide disposable and service VMs</string>
         </property>
        </widget>
       </item>
@@ -342,7 +218,7 @@ template</string>
       <item>
        <spacer name="horizontalSpacer">
         <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+         <enum>Qt::Orientation::Horizontal</enum>
         </property>
         <property name="sizeHint" stdset="0">
          <size>
@@ -362,11 +238,11 @@ template</string>
      <x>0</x>
      <y>0</y>
      <width>1100</width>
-     <height>24</height>
+     <height>22</height>
     </rect>
    </property>
    <property name="contextMenuPolicy">
-    <enum>Qt::CustomContextMenu</enum>
+    <enum>Qt::ContextMenuPolicy::CustomContextMenu</enum>
    </property>
    <widget class="QMenu" name="menu_system">
     <property name="title">
@@ -394,7 +270,7 @@ template</string>
      </property>
      <property name="icon">
       <iconset resource="../resources.qrc">
-       <normaloff>:/templatevm.png</normaloff>:/templatevm.png</iconset>
+       <normaloff>:/templatevm</normaloff>:/templatevm</iconset>
      </property>
     </widget>
     <widget class="QMenu" name="network_menu">
@@ -403,7 +279,7 @@ template</string>
      </property>
      <property name="icon">
       <iconset resource="../resources.qrc">
-       <normaloff>:/netvm.png</normaloff>:/netvm.png</iconset>
+       <normaloff>:/networking</normaloff>:/networking</iconset>
      </property>
     </widget>
     <addaction name="action_createvm"/>
@@ -447,16 +323,16 @@ template</string>
     </sizepolicy>
    </property>
    <property name="contextMenuPolicy">
-    <enum>Qt::CustomContextMenu</enum>
+    <enum>Qt::ContextMenuPolicy::CustomContextMenu</enum>
    </property>
    <property name="windowTitle">
     <string>toolBar</string>
    </property>
    <property name="allowedAreas">
-    <set>Qt::BottomToolBarArea|Qt::TopToolBarArea</set>
+    <set>Qt::ToolBarArea::BottomToolBarArea|Qt::ToolBarArea::TopToolBarArea</set>
    </property>
    <property name="toolButtonStyle">
-    <enum>Qt::ToolButtonTextUnderIcon</enum>
+    <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
    </property>
    <property name="floatable">
     <bool>false</bool>
@@ -489,17 +365,16 @@ template</string>
   </widget>
   <action name="action_createvm">
    <property name="icon">
-    <iconset resource="../resources.qrc">
-     <normaloff>:/createvm.png</normaloff>:/createvm.png</iconset>
+    <iconset theme="qubes-new-qube"/>
    </property>
    <property name="text">
     <string>&amp;New qube</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+N</string>
-   </property>
    <property name="toolTip">
     <string>Create a new qube</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
    </property>
   </action>
   <action name="action_removevm">
@@ -508,7 +383,7 @@ template</string>
    </property>
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/removevm.png</normaloff>:/removevm.png</iconset>
+     <normaloff>:/removevm</normaloff>:/removevm</iconset>
    </property>
    <property name="text">
     <string>&amp;Delete qube</string>
@@ -523,7 +398,7 @@ template</string>
    </property>
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/resumevm.png</normaloff>:/resumevm.png</iconset>
+     <normaloff>:/resumevm</normaloff>:/resumevm</iconset>
    </property>
    <property name="text">
     <string>Start/Resu&amp;me</string>
@@ -538,7 +413,7 @@ template</string>
    </property>
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/pausevm.png</normaloff>:/pausevm.png</iconset>
+     <normaloff>:/pausevm</normaloff>:/pausevm</iconset>
    </property>
    <property name="text">
     <string>Emergency &amp;pause</string>
@@ -553,7 +428,7 @@ template</string>
    </property>
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/shutdownvm.png</normaloff>:/shutdownvm.png</iconset>
+     <normaloff>:/shutdownvm</normaloff>:/shutdownvm</iconset>
    </property>
    <property name="text">
     <string>&amp;Shutdown</string>
@@ -568,7 +443,7 @@ template</string>
    </property>
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/restartvm.png</normaloff>:/restartvm.png</iconset>
+     <normaloff>:/restartvm</normaloff>:/restartvm</iconset>
    </property>
    <property name="text">
     <string>Restar&amp;t </string>
@@ -583,7 +458,7 @@ template</string>
    </property>
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/apps.png</normaloff>:/apps.png</iconset>
+     <normaloff>:/apps</normaloff>:/apps</iconset>
    </property>
    <property name="text">
     <string>App s&amp;hortcuts</string>
@@ -598,7 +473,7 @@ template</string>
    </property>
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/updateable.png</normaloff>:/updateable.png</iconset>
+     <normaloff>:/updateable</normaloff>:/updateable</iconset>
    </property>
    <property name="text">
     <string>&amp;Update</string>
@@ -610,28 +485,13 @@ template</string>
   <action name="action_editfwrules">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/firewall.png</normaloff>:/firewall.png</iconset>
+     <normaloff>:/firewall</normaloff>:/firewall</iconset>
    </property>
    <property name="text">
     <string>Edit &amp;firewall</string>
    </property>
    <property name="toolTip">
     <string>Edit qube firewall rules</string>
-   </property>
-  </action>
-  <action name="action_showgraphs">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="../resources.qrc">
-     <normaloff>:/showcpuload.png</normaloff>:/showcpuload.png</iconset>
-   </property>
-   <property name="text">
-    <string>Show graphs</string>
-   </property>
-   <property name="toolTip">
-    <string>Show graphs</string>
    </property>
   </action>
   <action name="action_options">
@@ -669,7 +529,7 @@ template</string>
   <action name="action_settings">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/settings.png</normaloff>:/settings.png</iconset>
+     <normaloff>:/vm-settings</normaloff>:/vm-settings</iconset>
    </property>
    <property name="text">
     <string>S&amp;ettings</string>
@@ -681,7 +541,7 @@ template</string>
   <action name="action_restore">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/restore.png</normaloff>:/restore.png</iconset>
+     <normaloff>:/restore</normaloff>:/restore</iconset>
    </property>
    <property name="text">
     <string>&amp;Restore</string>
@@ -693,7 +553,7 @@ template</string>
   <action name="action_backup">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/backup.png</normaloff>:/backup.png</iconset>
+     <normaloff>:/backup</normaloff>:/backup</iconset>
    </property>
    <property name="text">
     <string>&amp;Backup</string>
@@ -705,7 +565,7 @@ template</string>
   <action name="action_global_settings">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/global-settings.png</normaloff>:/global-settings.png</iconset>
+     <normaloff>:/global-config</normaloff>:/global-config</iconset>
    </property>
    <property name="text">
     <string>&amp;Global config</string>
@@ -714,7 +574,7 @@ template</string>
   <action name="action_show_network">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/networking.png</normaloff>:/networking.png</iconset>
+     <normaloff>:/networking</normaloff>:/networking</iconset>
    </property>
    <property name="text">
     <string>&amp;Qubes network</string>
@@ -737,7 +597,7 @@ template</string>
   <action name="action_killvm">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/killvm.png</normaloff>:/killvm.png</iconset>
+     <normaloff>:/killvm</normaloff>:/killvm</iconset>
    </property>
    <property name="text">
     <string>&amp;Kill</string>
@@ -749,7 +609,7 @@ template</string>
   <action name="action_set_keyboard_layout">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/kbd-layout.png</normaloff>:/kbd-layout.png</iconset>
+     <normaloff>:/kbd-layout</normaloff>:/kbd-layout</iconset>
    </property>
    <property name="text">
     <string>Keyboard la&amp;yout</string>
@@ -841,7 +701,7 @@ template</string>
   <action name="action_run_command_in_vm">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/run-command.png</normaloff>:/run-command.png</iconset>
+     <normaloff>:/run-command</normaloff>:/run-command</iconset>
    </property>
    <property name="text">
     <string>&amp;Run command in qube</string>
@@ -856,7 +716,7 @@ template</string>
    </property>
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/templatevm.png</normaloff>:/templatevm.png</iconset>
+     <normaloff>:/copy</normaloff>:/copy</iconset>
    </property>
    <property name="text">
     <string>&amp;Clone qube</string>
@@ -882,10 +742,6 @@ template</string>
   <action name="action_startvm_tools_install">
    <property name="enabled">
     <bool>false</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="../resources.qrc">
-     <normaloff>:/resumevm.png</normaloff>:/resumevm.png</iconset>
    </property>
    <property name="text">
     <string>Start qube for Qubes Windows Tools installation</string>
@@ -993,8 +849,8 @@ template</string>
   <action name="action_open_console">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/log.png</normaloff>
-     <normalon>:/log.png</normalon>:/log.png</iconset>
+     <normaloff>:/log</normaloff>
+     <normalon>:/log</normalon>:/log</iconset>
    </property>
    <property name="text">
     <string>Open console in qube</string>
@@ -1006,7 +862,7 @@ template</string>
   <action name="action_show_logs">
    <property name="icon">
     <iconset resource="../resources.qrc">
-     <normaloff>:/log.png</normaloff>:/log.png</iconset>
+     <normaloff>:/log</normaloff>:/log</iconset>
    </property>
    <property name="text">
     <string>Logs</string>
