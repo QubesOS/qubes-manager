@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../resources.qrc">
-    <normaloff>:/root.png</normaloff>:/root.png</iconset>
+    <normaloff>:/vm-settings</normaloff>:/vm-settings</iconset>
   </property>
   <layout class="QGridLayout" name="gridLayout" rowstretch="0" columnstretch="0">
    <item row="0" column="0">
@@ -354,7 +354,7 @@ border-width: 1px;</string>
                <string/>
               </property>
               <property name="pixmap">
-               <pixmap resource="../resources.qrc">:/warning.png</pixmap>
+               <pixmap resource="../resources.qrc">:/warning</pixmap>
               </property>
              </widget>
             </item>
@@ -377,7 +377,7 @@ border-width: 1px;</string>
                <string/>
               </property>
               <property name="pixmap">
-               <pixmap resource="../resources.qrc">:/warning.png</pixmap>
+               <pixmap resource="../resources.qrc">:/warning</pixmap>
               </property>
              </widget>
             </item>
@@ -1137,7 +1137,7 @@ The qube must be running to disable seamless mode. This setting is not persisten
        <widget class="QWidget" name="firewall_tab">
         <attribute name="icon">
          <iconset resource="../resources.qrc">
-          <normaloff>:/firewall.png</normaloff>:/firewall.png</iconset>
+          <normaloff>:/firewall</normaloff>:/firewall</iconset>
         </attribute>
         <attribute name="title">
          <string>Firewall rules</string>
@@ -1423,7 +1423,7 @@ The qube must be running to disable seamless mode. This setting is not persisten
                </property>
                <property name="icon">
                 <iconset resource="../resources.qrc">
-                 <normaloff>:/add.png</normaloff>:/add.png</iconset>
+                 <normaloff>:/add</normaloff>:/add</iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -1440,7 +1440,7 @@ The qube must be running to disable seamless mode. This setting is not persisten
                </property>
                <property name="icon">
                 <iconset resource="../resources.qrc">
-                 <normaloff>:/pencil.png</normaloff>:/pencil.png</iconset>
+                 <normaloff>:/edit</normaloff>:/edit</iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -1460,7 +1460,7 @@ The qube must be running to disable seamless mode. This setting is not persisten
                </property>
                <property name="icon">
                 <iconset resource="../resources.qrc">
-                 <normaloff>:/remove.png</normaloff>:/remove.png</iconset>
+                 <normaloff>:/remove</normaloff>:/remove</iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -1570,7 +1570,7 @@ The qube must be running to disable seamless mode. This setting is not persisten
         </property>
         <attribute name="icon">
          <iconset resource="../resources.qrc">
-          <normaloff>:/storagevm.png</normaloff>:/storagevm.png</iconset>
+          <normaloff>:/storage</normaloff>:/storage</iconset>
         </attribute>
         <attribute name="title">
          <string>Devices</string>
@@ -1637,7 +1637,7 @@ The qube must be running to disable seamless mode. This setting is not persisten
        <widget class="QWidget" name="apps_tab">
         <attribute name="icon">
          <iconset resource="../resources.qrc">
-          <normaloff>:/apps.png</normaloff>:/apps.png</iconset>
+          <normaloff>:/apps</normaloff>:/apps</iconset>
         </attribute>
         <attribute name="title">
          <string>Applications</string>
@@ -1732,7 +1732,7 @@ The qube must be running to disable seamless mode. This setting is not persisten
              </property>
              <property name="icon">
               <iconset resource="../resources.qrc">
-               <normaloff>:/add.png</normaloff>:/add.png</iconset>
+               <normaloff>:/add</normaloff>:/add</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -1751,7 +1751,7 @@ The qube must be running to disable seamless mode. This setting is not persisten
            </property>
            <property name="icon">
             <iconset resource="../resources.qrc">
-             <normaloff>:/remove.png</normaloff>:/remove.png</iconset>
+             <normaloff>:/remove</normaloff>:/remove</iconset>
            </property>
            <property name="iconSize">
             <size>

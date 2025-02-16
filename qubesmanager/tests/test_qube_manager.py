@@ -142,14 +142,13 @@ def _check_sorting(qm, column_name):
             last_vm = vm_name
 
 
-def _is_icon(icon, icon_name: str = 'on'):
+def _is_icon(icon, icon_name: str = 'checked'):
     """This is a helper method, returning True if provided icon is the same
-    as QIcon for the on.png file, False if it is empty icon, and ValueError
+    as QIcon for the checked icon, False if it is empty icon, and ValueError
     if some other item was found"""
-    ref_icon = QIcon(f":/{icon_name}.png").pixmap(64).toImage()
+    ref_icon = QIcon(f":/{icon_name}").pixmap(64).toImage()
     off_icon = QIcon().pixmap(64).toImage()
     my_icon = icon.pixmap(64).toImage()
-
     if my_icon == ref_icon:
         return True
     if my_icon == off_icon:
@@ -745,9 +744,9 @@ async def test_300_netvm_menu(mock_question, qubes_manager):
     for action in qubes_manager.network_menu.actions():
         current_vms.add(action.text())
         if action.text() == current_netvm:
-            assert _is_icon(action.icon(), 'on')
+            assert _is_icon(action.icon(), 'checked')
         else:
-            assert not _is_icon(action.icon(), 'on')
+            assert not _is_icon(action.icon())
 
     assert current_vms == expected_vms
 
@@ -798,7 +797,7 @@ async def test_300_netvm_menu(mock_question, qubes_manager):
 
     for action in qubes_manager.network_menu.actions():
         if action.text() == current_netvm:
-            assert _is_icon(action.icon())
+            assert _is_icon(action.icon(), 'checked')
         else:
             assert not _is_icon(action.icon())
 
@@ -875,9 +874,9 @@ def test_303_netvm_menu_multiple(mock_question, qubes_manager):
 
     for action in qubes_manager.network_menu.actions():
         if action.text() == 'sys-firewall':
-            assert _is_icon(action.icon(), 'transient')
+            assert _is_icon(action.icon(), 'some-checked')
         elif action.text() == 'None':
-            assert _is_icon(action.icon(), 'transient')
+            assert _is_icon(action.icon(), 'some-checked')
         else:
             assert not _is_icon(action.icon())
 
@@ -925,9 +924,9 @@ async def test_310_template_menu(mock_question, qubes_manager):
     for action in qubes_manager.template_menu.actions():
         current_templates.add(action.text())
         if action.text() == vm_template:
-            assert _is_icon(action.icon(), 'on')
+            assert _is_icon(action.icon(), 'checked')
         else:
-            assert not _is_icon(action.icon(), 'on')
+            assert not _is_icon(action.icon(), 'some-checked')
 
     assert current_templates == expected_templates
 
