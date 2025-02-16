@@ -1,3 +1,14 @@
+qubes-manager (4.3.9-1) unstable; urgency=medium
+
+  [ Marta Marczykowska-Górecka ]
+  * Stop CTD on failure to set seamless mode
+  * New and improved icons for Qube Manager
+  * Remove the confusing zero column from Qube Manager
+  * Add missing feature change watch
+  * Fix updating template switcher progress bar
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sun, 16 Feb 2025 21:17:22 +0100
+
 qubes-manager (4.3.8-1) unstable; urgency=medium
 
   [ Marta Marczykowska-Górecka ]
