@@ -1604,3 +1604,55 @@ def test_704_check_later(mock_timer, mock_question):
 
     assert mock_question.call_count == 0
     assert mock_timer.call_count == 1
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_705_prohibit_start_vms(qubes_manager):
+    # Change `prohibit-start` feature for two qubes
+    prohibition = (
+        'test-old',
+        'admin.vm.feature.Set',
+        'prohibit-start',
+        b'Compromised by Gremlins!',
+    )
+    assert prohibition not in qubes_manager.qubes_app.actual_calls
+    qubes_manager.qubes_app.expected_calls[prohibition] = b'0\x00'
+
+    prohibition = (
+        'test-standalone',
+        'admin.vm.feature.Set',
+        'prohibit-start',
+        b'Do not update',
+    )
+    assert prohibition not in qubes_manager.qubes_app.actual_calls
+    qubes_manager.qubes_app.expected_calls[prohibition] = b'0\x00'
+
+    qubes_manager.qubes_app._qubes['test-old'].features[ \
+            'prohibit-start'] = 'Compromised by Gremlins!'
+    qubes_manager.qubes_app._qubes['test-standalone'].features[ \
+            'prohibit-start'] = 'Do not update'
+
+    qubes_manager.qubes_app.update_vm_calls()
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('test-old',
+                  'domain-feature-set',
+                  [('name', 'prohibit-start'),
+                   ('newvalue', 'Compromised by Gremlins!')]))
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('test-standalone',
+                  'domain-feature-set',
+                  [('name', 'prohibit-start'),
+                   ('newvalue', 'Do not update')]))
+
+    with contextlib.suppress(asyncio.TimeoutError):
+        await asyncio.wait_for(qubes_manager.dispatcher.listen_for_events(), 1)
+
+    qubes_manager.qubes_app.domains['test-old'].features[ \
+        'prohibit-start'] = \
+        'Compromised by Gremlins!'
+    _select_vm(qubes_manager, 'test-old')
+
+    qubes_manager.qubes_app.domains['test-standalone'].features[ \
+        'prohibit-start'] = \
+        'Do not update'
+    _select_vm(qubes_manager, 'test-standalone')

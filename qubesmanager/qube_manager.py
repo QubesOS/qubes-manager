@@ -103,6 +103,7 @@ class StateIconDelegate(QStyledItemDelegate):
                 "Halted" : QIcon(":/blank")
                 }
         self.outdatedIcons = {
+                "blocked" : QIcon(":/ban"),
                 "update" : QIcon(":/updateable"),
                 "outdated" : QIcon(":/outdated"),
                 "to-be-outdated" : QIcon(":/outdated"),
@@ -110,6 +111,8 @@ class StateIconDelegate(QStyledItemDelegate):
                 "skipped": QIcon(':/skipped')
                 }
         self.outdatedTooltips = {
+                "blocked" : self.tr(
+                    "The qube is prohibited from being started"),
                 "update" : self.tr("Updates available"),
                 "outdated" : self.tr(
                     "The qube must be restarted for recent changes in "
@@ -239,6 +242,12 @@ class VmInfo():
 
         self.state['outdated'] = ""
         try:
+            if self.vm.klass != "AdminVM" and manager_utils.get_feature(
+                    self.vm, 'prohibit-start', False):
+                # Special case where being outdated, eol & skipped is irrelevant
+                self.state['outdated'] = 'blocked'
+                return
+
             if manager_utils.is_running(self.vm, False):
                 if hasattr(self.vm, 'template') and \
                         manager_utils.is_running(self.vm.template, False):
@@ -253,6 +262,9 @@ class VmInfo():
 
             if self.vm.klass in {'TemplateVM', 'StandaloneVM'}:
                 if manager_utils.get_feature(
+                        self.vm, 'prohibit-start', False):
+                    self.state['outdated'] = 'ban'
+                elif manager_utils.get_feature(
                         self.vm, 'skip-update', False):
                     self.state['outdated'] = 'skipped'
                 elif manager_utils.get_feature(
@@ -264,6 +276,8 @@ class VmInfo():
                     eol = datetime.strptime(eol_string, '%Y-%m-%d')
                     if datetime.now() > eol:
                         self.state['outdated'] = 'eol'
+                else:
+                    self.state['outdated'] = None
         except exc.QubesDaemonAccessError:
             pass
 
@@ -879,6 +893,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                                self.on_domain_updates_available)
         dispatcher.add_handler('domain-feature-delete:skip-update',
                                self.on_domain_updates_available)
+        dispatcher.add_handler('domain-feature-set:prohibit-start',
+                               self.on_domain_updates_available)
+        dispatcher.add_handler('domain-feature-delete:prohibit-start',
+                               self.on_domain_updates_available)
 
         self.installEventFilter(self)
 
@@ -1125,11 +1143,16 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         try:
             if info.vm.klass in {'TemplateVM', 'StandaloneVM'}:
                 if manager_utils.get_feature(
+                        info.vm, 'prohibit-start', False):
+                    info.state['outdated'] = 'blocked'
+                elif manager_utils.get_feature(
                         info.vm, 'skip-update', False):
                     info.state['outdated'] = 'skipped'
                 elif manager_utils.get_feature(
                         info.vm, 'updates-available', False):
                     info.state['outdated'] = 'update'
+                else:
+                    info.state['outdated'] = None
         except exc.QubesDaemonAccessError:
             return
 
@@ -1351,6 +1374,17 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
             if not vm.updateable and vm.klass != 'AdminVM':
                 self.action_updatevm.setEnabled(False)
+
+            if vm.vm.features.get('prohibit-start', False):
+                self.action_open_console.setEnabled(False)
+                self.action_resumevm.setEnabled(False)
+                self.action_startvm_tools_install.setEnabled(False)
+                self.action_pausevm.setEnabled(False)
+                self.action_restartvm.setEnabled(False)
+                self.action_killvm.setEnabled(False)
+                self.action_shutdownvm.setEnabled(False)
+                self.action_updatevm.setEnabled(False)
+                self.action_run_command_in_vm.setEnabled(False)
 
         self.update_template_menu()
         self.update_network_menu()
