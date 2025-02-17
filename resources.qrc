@@ -3,6 +3,7 @@
     <file alias="add">icons/add.svg</file>
     <file alias="apps">icons/apps.svg</file>
     <file alias="backup">icons/backup.svg</file>
+    <file alias="ban">icons/ban.svg</file>
     <file alias="blank">icons/blank.svg</file>
     <file alias="checked">icons/checked.svg</file>
     <file alias="checkmark">icons/checkmark.svg</file>
