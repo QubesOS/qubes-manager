@@ -882,6 +882,63 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     property_name='kernel')
                 self.kernel.currentIndexChanged.connect(self.kernel_changed)
                 self.kernel_opts.setText(getattr(self.vm, 'kernelopts', '-'))
+                # load bootmode information from features
+                if hasattr(self.vm, "template"):
+                    self.appvm_default_bootmode_desc.setVisible(False)
+                    self.appvm_default_bootmode.setVisible(False)
+                else:
+                    self.appvm_default_bootmode_desc.setVisible(True)
+                    self.appvm_default_bootmode.setVisible(True)
+                bootmode_name_key_re = re.compile(
+                    r"boot-mode\.[-a-z_]*\.name$"
+                )
+                bootmode_kernelopts_key_re = re.compile(
+                    r"boot-mode\.[-a-z_]*\.kernelopts$"
+                )
+                self.bootmode_ids = [ 'default' ]
+                self.bootmode_ids.extend([
+                    x.split('.')[1] for x in self.vm.features \
+                        if bootmode_kernelopts_key_re.match(x)
+                ])
+                if hasattr(self.vm, "template"):
+                    self.bootmode_ids.extend([
+                        x.split('.')[1] for x in self.vm.template.features \
+                            if bootmode_kernelopts_key_re.match(x)
+                    ])
+                self.bootmode_names = [
+                    self.vm.features.check_with_template(
+                        f"boot-mode.{x}.name", x
+                    ) for x in self.bootmode_ids
+                ]
+                active_bootmode_id = self.vm.features.check_with_template(
+                    "boot-mode.active", None
+                )
+                if active_bootmode_id not in self.bootmode_ids:
+                    active_bootmode_id = "default"
+                bootmode_widget_data = list(zip(
+                    self.bootmode_names, self.bootmode_ids
+                ))
+                utils.initialize_widget(
+                    widget=self.bootmode,
+                    choices=bootmode_widget_data,
+                    selected_value=active_bootmode_id
+                )
+                appvm_default_bootmode_id = self.vm.features.check_with_template(
+                    "boot-mode.appvm-default", None
+                )
+                if appvm_default_bootmode_id not in self.bootmode_ids:
+                    appvm_default_bootmode_id = "default"
+                utils.initialize_widget(
+                    widget=self.appvm_default_bootmode,
+                    choices=bootmode_widget_data,
+                    selected_value=appvm_default_bootmode_id
+                )
+                self.bootmode_kernel_opts.setText(
+                    self.vm.features.check_with_template(
+                        f"boot-mode.{active_bootmode_id}.kernelopts",
+                        ""
+                    )
+                )
             except qubesadmin.exc.QubesDaemonAccessError:
                 self.kernel_groupbox.setVisible(False)
                 self.kernel.setEnabled(False)
@@ -1027,6 +1084,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             try:
                 if utils.did_widget_selection_change(self.kernel):
                     self.vm.kernel = self.kernel.currentData()
+                if utils.did_widget_selection_change(self.bootmode):
+                    self.vm.features["boot-mode.active"] \
+                        = self.bootmode.currentData()
+                if not hasattr(self.vm, "template"):
+                    if utils.did_widget_selection_change(
+                        self.appvm_default_bootmode):
+                        self.vm.features["boot-mode.appvm-default"] \
+                            = self.appvm_default_bootmode.currentData()
             except qubesadmin.exc.QubesException as ex:
                 msg.append(str(ex))
 
