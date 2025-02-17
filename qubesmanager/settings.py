@@ -143,6 +143,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         ('devices', 3),
         ('applications', 4),
         ('services', 5),
+        ('notes', 6),
         ))
 
     # pylint: disable=too-many-positional-arguments
@@ -263,6 +264,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.warn_template_missing_apps.setVisible(
                 self.app_list_manager.has_missing)
 
+        ####### notes tab
+        self.__init_notes_tab__()
+
     def setup_application(self):
         self.qapp.setApplicationName(self.tr("Qube Settings"))
         self.qapp.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
@@ -344,6 +348,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             ret_tmp = self.__apply_services_tab__()
             if ret_tmp:
                 ret += [self.tr("Sevices tab:")] + ret_tmp
+            ret_tmp = self.__apply_notes_tab__()
+            if ret_tmp:
+                ret += [self.tr("Notes tab:")] + ret_tmp
         except qubesadmin.exc.QubesException as qex:
             ret.append(self.tr('Error while saving changes: ') + str(qex))
         except Exception as ex:  # pylint: disable=broad-except
@@ -1428,6 +1435,16 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         self.service_line_edit.addItem(self.tr('(custom...)'))
         self.service_line_edit.setEditText("")
+
+    def __init_notes_tab__(self):
+        self.notes.setPlainText(self.vm.get_notes())
+
+    def __apply_notes_tab__(self):
+        try:
+            if self.notes.toPlainText() != self.vm.get_notes():
+                self.vm.set_notes(self.notes.toPlainText())
+        except qubesadmin.exc.QubesException as ex:
+            return str(ex)
 
     def __add_service__(self):
         srv = str(self.service_line_edit.currentText()).strip()
