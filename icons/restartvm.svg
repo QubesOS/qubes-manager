@@ -1,47 +1,9 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
-
-<svg
-   width="25"
-   height="25"
-   viewBox="0 0 5.8206635 5.820672"
-   version="1.1"
-   id="svg1"
-   xml:space="preserve"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg"><sodipodi:namedview
-     id="namedview1"
-     pagecolor="#ffffff"
-     bordercolor="#000000"
-     borderopacity="0.25"
-     inkscape:showpageshadow="2"
-     inkscape:pageopacity="0.0"
-     inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#d1d1d1"
-     inkscape:document-units="mm" /><defs
-     id="defs1" /><g
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer"
-     id="layer1"
-     transform="translate(-107.069,-148.45855)"><g
-       id="g3"><g
-         style="fill:none;stroke:currentColor;stroke-width:1.99937;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
-         id="g1"
-         transform="matrix(0.26458333,0,0,0.26458333,106.80432,148.19389)"><circle
-           cx="12"
-           cy="12"
-           r="10"
-           id="circle2"
-           style="stroke-width:1.99937;stroke-dasharray:none" /></g><g
-         style="fill:none;stroke:currentColor;stroke-width:3.94645;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
-         id="g2"
-         transform="matrix(0.13404457,0,0,0.13404457,108.33903,149.7906)"><path
-           d="m 3.8016414,15.777712 c 0.8301161,1.819634 2.2406854,3.243564 3.9251963,4.144901 3.2601683,1.744429 7.5464363,1.531388 10.6368003,-1.558975 C 24.033029,12.694247 20.018701,3 12,3 9.4839519,3.0094651 7.068969,3.9912237 5.26,5.74 L 3,8"
-           id="path1-6"
-           sodipodi:nodetypes="cssccc"
-           style="stroke-width:3.94645;stroke-dasharray:none" /><path
-           d="M 3,3 V 8 H 8"
-           id="path2-9"
-           style="stroke-width:3.94645;stroke-dasharray:none" /></g></g></g></svg>
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#404040" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.125,12.000C7.125,14.692,9.308,16.875,12.000,16.875C14.692,16.875,16.875,14.692,16.875,12.000C16.875,9.308,14.692,7.125,12.000,7.125C10.637,7.130,9.329,7.662,8.349,8.609L7.125,9.833"
+  style="fill: none; stroke-width: 2; stroke: #404040; stroke-opacity: 1;"
+  class="stroke-shape"/>
+<path d="M7.125,7.125L7.125,9.833L9.833,9.833"
+      style="fill: none; stroke-width: 2; stroke: #404040; stroke-opacity: 1;"
+      class="stroke-shape"/>
+</svg>
