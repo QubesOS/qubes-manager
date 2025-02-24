@@ -27,6 +27,7 @@ def test_qubes_app():
     test_qapp = MockQubesComplete()
     test_qapp._qubes['sys-usb'].features[
         'supported-feature.keyboard-layout'] = '1'
+    test_qapp._qubes['sys-usb'].features['prohibit-start'] = None
     test_qapp.update_vm_calls()
 
     return test_qapp
