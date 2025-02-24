@@ -19,6 +19,7 @@
 #
 
 from PyQt6.QtWidgets import QDialog  # pylint: disable=import-error
+from PyQt6.QtGui import QFont  # pylint: disable=import-error
 
 from . import ui_informationnotes  # pylint: disable=no-name-in-module
 import subprocess
@@ -36,4 +37,5 @@ class InformationNotesDialog(ui_informationnotes.Ui_InformationNotesDialog,
         self.setupUi(self)
         details = subprocess.check_output(
             ['/usr/libexec/qubes-manager/qvm_about.sh'])
+        self.informationNotes.setFont(QFont('Monospace', 10))
         self.informationNotes.setText(details.decode())
