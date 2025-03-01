@@ -1604,3 +1604,41 @@ def test_704_check_later(mock_timer, mock_question):
 
     assert mock_question.call_count == 0
     assert mock_timer.call_count == 1
+
+
+@pytest.mark.asyncio(loop_scope="module")
+async def test_705_prohibit_start_vms(qubes_manager):
+    # `prohibit-start` is enabled for `test-standalone` before manager launch
+    # Flip `prohibit-start` feature for two qubes during Manager running
+    # Check the status of `start/resume` menu before and after.
+
+    _select_vm(qubes_manager, 'test-standalone')
+    assert not qubes_manager.action_resumevm.isEnabled()
+    _select_vm(qubes_manager, 'test-red')
+    assert qubes_manager.action_resumevm.isEnabled()
+
+    # Now flip `prohibit-start` feature for two qubes
+    qubes_manager.qubes_app._qubes['test-standalone'].features[ \
+            'prohibit-start'] = ''
+    qubes_manager.qubes_app._qubes['test-red'].features[ \
+            'prohibit-start'] = 'Do not start this qube from now on'
+    qubes_manager.qubes_app.update_vm_calls()
+
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('test-standalone',
+                  'domain-feature-delete:prohibit-start',
+                  [('name', 'prohibit-start')]))
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('test-red',
+                  'domain-feature-set:prohibit-start',
+                  [('name', 'prohibit-start'),
+                   ('newvalue', 'Do not start this qube from now on')]))
+
+    with contextlib.suppress(asyncio.TimeoutError):
+        await asyncio.wait_for(qubes_manager.dispatcher.listen_for_events(), 1)
+
+    # Finally test if their status within Qube Manager is flipped correctly
+    _select_vm(qubes_manager, 'test-standalone')
+    assert qubes_manager.action_resumevm.isEnabled()
+    _select_vm(qubes_manager, 'test-red')
+    assert not qubes_manager.action_resumevm.isEnabled()

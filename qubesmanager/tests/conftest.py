@@ -27,6 +27,8 @@ def test_qubes_app():
     test_qapp = MockQubesComplete()
     test_qapp._qubes['sys-usb'].features[
         'supported-feature.keyboard-layout'] = '1'
+    test_qapp._qubes['test-standalone'].features['prohibit-start'] = \
+        'Control qube which should be start prohibited from Manager launch'
     test_qapp.update_vm_calls()
 
     return test_qapp
