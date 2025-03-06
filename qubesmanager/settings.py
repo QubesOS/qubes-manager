@@ -485,6 +485,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.netVM.currentIndexChanged.connect(self.check_warn_dispvmnetvm)
         self.netVM.currentIndexChanged.connect(self.check_warn_templatenetvm)
         self.netVM.currentIndexChanged.connect(self.check_network_availability)
+        self.netVM.currentIndexChanged.connect(self.check_warn_anonnetvm)
 
         try:
             self.include_in_backups.setChecked(self.vm.include_in_backups)
@@ -744,6 +745,29 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.warn_netvm_dispvm.setVisible(True)
         else:
             self.warn_netvm_dispvm.setVisible(False)
+
+    def check_warn_anonnetvm(self):
+        if 'anon-vm' not in self.vm.tags:
+            return
+
+        current_net_vm = self.netVM.currentData()
+
+        if current_net_vm is None:
+            return
+
+        if current_net_vm == qubesadmin.DEFAULT:
+            current_net_vm = self.vm.property_get_default('netvm')
+
+        if 'anon-gateway' not in current_net_vm.tags:
+            QtWidgets.QMessageBox.warning(
+                self,
+                self.tr("Warning!"),
+                self.tr(
+                    "Anon AppVM must be connected to an anon gateway to "
+                    "ensure your privacy and anonymity. By changing the NetVM "
+                    "to a clear gateway, your IP address will be LEAKED on the "
+                    "Internet. Continue at your own risk.")
+            )
 
     def rename_vm(self):
 
