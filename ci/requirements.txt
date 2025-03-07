@@ -9,3 +9,5 @@ pylint
 sphinx
 PyYAML
 qasync
+Pillow
+numpy

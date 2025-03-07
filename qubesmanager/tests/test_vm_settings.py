@@ -48,16 +48,16 @@ def mock_subprocess_complex(command):
     vm_name = command[-1]
     if command[1] == '--get-available':
         if vm_name == 'test-vm-set':
-            return (b'test.desktop|Test App|\n'
-                    b'test2.desktop|Test2 App| test2\n'
-                    b'test3.desktop|Test3 App|\n'
-                    b'myvm.desktop|My VM app|\n')
+            return (b'test.desktop|Test App||\n'
+                    b'test2.desktop|Test2 App| test2|\n'
+                    b'test3.desktop|Test3 App||\n'
+                    b'myvm.desktop|My VM app||\n')
         elif vm_name == 'fedora-36':
-            return b'tpl.desktop|Template App|\n'
+            return b'tpl.desktop|Template App||\n'
         else:
-            return (b'test.desktop|Test App|\n'
-                    b'test2.desktop|Test2 App| test2\n'
-                    b'test3.desktop|Test3 App|\n')
+            return (b'test.desktop|Test App||\n'
+                    b'test2.desktop|Test2 App| test2|\n'
+                    b'test3.desktop|Test3 App||\n')
     elif command[1] == '--get-whitelist':
         if vm_name == 'test-vm-set':
             return b'test.desktop\nmissing.desktop'

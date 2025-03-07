@@ -4,6 +4,8 @@ checks:pylint:
   - pip3 install --quiet -r ci/requirements.txt
   - git clone https://github.com/QubesOS/qubes-core-admin-client ~/core-admin-client
   - (cd ~/core-admin-client;python3 setup.py egg_info)
+  - git clone https://github.com/QubesOS/qubes-linux-utils ~/linux-utils
+  - (cd ~/linux-utils/imgconverter;sudo python3 setup.py install)
   script:
   - PYTHONPATH=~/core-admin-client python3 -m pylint qubesmanager
   stage: checks
@@ -27,6 +29,8 @@ checks:tests:
     - pip3 install --quiet -r ci/requirements.txt
     - git clone https://github.com/QubesOS/qubes-core-admin-client ~/core-admin-client
     - (cd ~/core-admin-client;python3 setup.py egg_info)
+    - git clone https://github.com/QubesOS/qubes-linux-utils ~/linux-utils
+    - (cd ~/linux-utils/imgconverter;sudo python3 setup.py install)
   script:
     - make ui
     - make res
