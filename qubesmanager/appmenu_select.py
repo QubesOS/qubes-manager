@@ -33,7 +33,7 @@ class AppListWidgetItem(QtWidgets.QListWidgetItem):
         else:
             tooltip += "\n" + additional_description
         self.setToolTip(tooltip)
-        self.ident = ident
+        self.setWhatsThis(ident)
         # Using identity as tooltip which also enables drag-and-drop
         self.setWhatsThis(ident)
 
@@ -69,7 +69,7 @@ class AppmenuSelectManager:
             self.whitelisted = []
 
         currently_selected = [
-            self.app_list.selected_list.item(i).ident
+            self.app_list.selected_list.item(i).whatsThis()
             for i in range(self.app_list.selected_list.count())]
 
         whitelist = set(self.whitelisted + currently_selected)
@@ -97,9 +97,9 @@ class AppmenuSelectManager:
             available_appmenus = []
 
         for app in available_appmenus:
-            if app.ident in whitelist:
+            if app.whatsThis() in whitelist:
                 self.app_list.selected_list.addItem(app)
-                whitelist.remove(app.ident)
+                whitelist.remove(app.whatsThis())
             else:
                 self.app_list.available_list.addItem(app)
 
@@ -113,7 +113,7 @@ class AppmenuSelectManager:
         self.app_list.selected_list.sortItems()
 
     def save_appmenu_select_changes(self):
-        new_whitelisted = [self.app_list.selected_list.item(i).ident
+        new_whitelisted = [self.app_list.selected_list.item(i).whatsThis()
                            for i in range(self.app_list.selected_list.count())]
 
         if set(new_whitelisted) == set(self.whitelisted):

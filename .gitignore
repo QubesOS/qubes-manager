@@ -4,3 +4,4 @@
 rpm/
 pkgs/
 debian/changelog.*
+.coverage
