@@ -100,7 +100,8 @@ class StateIconDelegate(QStyledItemDelegate):
                 "Transient" : QIcon(":/transient"),
                 "Halting" : QIcon(":/transient"),
                 "Dying" : QIcon(":/transient"),
-                "Halted" : QIcon(":/blank")
+                "Halted" : QIcon(":/blank"),
+                "Blocked" : QIcon(":/ban"),
                 }
         self.outdatedIcons = {
                 "update" : QIcon(":/updateable"),
@@ -193,8 +194,17 @@ class StateIconDelegate(QStyledItemDelegate):
             # sometimes it's not enough to use an empty string
             if index != self.lastIndex:
                 QToolTip.showText(QPoint(), ' ')
-            QToolTip.showText(event.globalPos(),
-                index.data()['power'], view)
+            if index.data()['power'] == 'Blocked':
+                QToolTip.showText(event.globalPos(),
+                    self.tr(
+                        "The qube is prohibited from starting\n"
+                        "See `qvm-features` manual for more information"
+                    ),
+                    view
+                )
+            else:
+                QToolTip.showText(event.globalPos(),
+                    index.data()['power'], view)
         else:
             margin = iconRect.left() - option.rect.left()
             left = delta = margin + iconRect.width()
@@ -234,6 +244,14 @@ class VmInfo():
     def update_power_state(self):
         try:
             self.state['power'] = self.vm.get_power_state()
+            if self.state['power'] == "Halted" and \
+                    self.vm.klass != "AdminVM" and \
+                    manager_utils.get_feature(
+                        self.vm,
+                        'prohibit-start',
+                        False
+                    ):
+                self.state['power'] = 'Blocked'
         except exc.QubesDaemonAccessError:
             self.state['power'] = ""
 
@@ -264,6 +282,8 @@ class VmInfo():
                     eol = datetime.strptime(eol_string, '%Y-%m-%d')
                     if datetime.now() > eol:
                         self.state['outdated'] = 'eol'
+                else:
+                    self.state['outdated'] = None
         except exc.QubesDaemonAccessError:
             pass
 
@@ -856,6 +876,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         dispatcher.add_handler('domain-shutdown', self.on_domain_status_changed)
         dispatcher.add_handler('domain-paused', self.on_domain_status_changed)
         dispatcher.add_handler('domain-unpaused', self.on_domain_status_changed)
+        dispatcher.add_handler('domain-feature-set:prohibit-start',
+                               self.on_domain_status_changed)
+        dispatcher.add_handler('domain-feature-delete:prohibit-start',
+                               self.on_domain_status_changed)
 
         dispatcher.add_handler('domain-add', self.on_domain_added)
         dispatcher.add_handler('domain-delete', self.on_domain_removed)
@@ -1130,6 +1154,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 elif manager_utils.get_feature(
                         info.vm, 'updates-available', False):
                     info.state['outdated'] = 'update'
+                else:
+                    info.state['outdated'] = None
+            else:
+                info.state['outdated'] = None
         except exc.QubesDaemonAccessError:
             return
 
@@ -1351,6 +1379,17 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
             if not vm.updateable and vm.klass != 'AdminVM':
                 self.action_updatevm.setEnabled(False)
+
+            if vm.state['power'] == 'Blocked':
+                self.action_open_console.setEnabled(False)
+                self.action_resumevm.setEnabled(False)
+                self.action_startvm_tools_install.setEnabled(False)
+                self.action_pausevm.setEnabled(False)
+                self.action_restartvm.setEnabled(False)
+                self.action_killvm.setEnabled(False)
+                self.action_shutdownvm.setEnabled(False)
+                self.action_updatevm.setEnabled(False)
+                self.action_run_command_in_vm.setEnabled(False)
 
         self.update_template_menu()
         self.update_network_menu()
