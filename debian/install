@@ -61,6 +61,7 @@
 /usr/lib/*/dist-packages/qubesmanager/tests/test_qube_manager.py
 /usr/lib/*/dist-packages/qubesmanager/tests/test_vm_settings.py
 /usr/lib/*/dist-packages/qubesmanager/tests/test_clone_vm.py
+/usr/lib/*/dist-packages/qubesmanager/tests/test_utils.py
 
 /usr/lib/*/dist-packages/qubesmanager-*.egg-info/*
 

@@ -32,6 +32,7 @@ from contextlib import suppress
 import sys
 from qubesadmin import events
 from qubesadmin import exc
+import qubesimgconverter
 import xdg.BaseDirectory
 import pathlib
 import shutil
@@ -599,3 +600,26 @@ def run_synchronous(window_class):
     qt_app.exit()
 
     return window
+
+
+def tint_qimage(source: QtGui.QImage, color: str) -> QtGui.QImage:
+    """Use qubesimgconverter.Image.tint() to tint a PyQt6.QtGui.QImage"""
+    assert isinstance(source, QtGui.QImage)
+    size_bytes = source.width() * source.height() * 4
+    if not size_bytes:
+        # Could not tint empty image
+        return source
+    source = source.convertToFormat(QtGui.QImage.Format.Format_RGBA8888)
+    internal_data = source.constBits()
+    internal_data.setsize(size_bytes)
+    raw_data = bytes(internal_data)
+    tinted_image = qubesimgconverter.Image(
+        raw_data, (source.width(), source.height())
+    ).tint(color)
+    destination = QtGui.QImage(
+        tinted_image.data,
+        tinted_image.width,
+        tinted_image.height,
+        QtGui.QImage.Format.Format_RGBA8888,
+    )
+    return destination

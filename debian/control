@@ -23,6 +23,7 @@ Package: qubes-manager
 Architecture: any
 Depends:
   python3-qubesadmin (>= 4.3.7),
+  python3-qubesimgconverter,
   python3-pyqt6,
   python3-pyinotify,
   python3-qasync,

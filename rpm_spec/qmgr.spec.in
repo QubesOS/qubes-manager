@@ -11,6 +11,7 @@ Requires:	python%{python3_pkgversion}
 Requires:	python%{python3_pkgversion}-pyqt6
 Requires:	python%{python3_pkgversion}-inotify
 Requires:	python%{python3_pkgversion}-qubesadmin >= 4.3.7
+Requires:	python%{python3_pkgversion}-qubesimgconverter
 Requires:	python%{python3_pkgversion}-qasync
 Requires:	python%{python3_pkgversion}-pyxdg
 Requires:	qubes-desktop-linux-common >= 4.1.2
@@ -121,6 +122,7 @@ rm -rf $RPM_BUILD_ROOT
 %{python3_sitelib}/qubesmanager/tests/test_qube_manager.py
 %{python3_sitelib}/qubesmanager/tests/test_vm_settings.py
 %{python3_sitelib}/qubesmanager/tests/test_clone_vm.py
+%{python3_sitelib}/qubesmanager/tests/test_utils.py
 
 %dir %{python3_sitelib}/qubesmanager-*.egg-info
 %{python3_sitelib}/qubesmanager-*.egg-info/*

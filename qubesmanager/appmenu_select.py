@@ -18,12 +18,14 @@
 #
 
 import subprocess
-from PyQt6 import QtWidgets, QtCore  # pylint: disable=import-error
+from PyQt6 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
 from qubesadmin import exc
+from qubesmanager.utils import tint_qimage
+from os import path
 
-# TODO description in tooltip
-# TODO icon
 # pylint: disable=too-few-public-methods
+
+
 class AppListWidgetItem(QtWidgets.QListWidgetItem):
     def __init__(self, name, ident, tooltip=None, parent=None):
         super().__init__(name, parent)
@@ -33,44 +35,54 @@ class AppListWidgetItem(QtWidgets.QListWidgetItem):
         else:
             tooltip += "\n" + additional_description
         self.setToolTip(tooltip)
-        self.ident = ident
+        self.setWhatsThis(ident)
         # Using identity as tooltip which also enables drag-and-drop
         self.setWhatsThis(ident)
 
     @classmethod
     def from_line(cls, line):
-        ident, name, comment = line.split('|', maxsplit=3)
+        ident, name, comment = line.split("|", maxsplit=3)
         return cls(name=name, ident=ident, tooltip=comment)
 
     @classmethod
     def from_ident(cls, ident):
-        name = 'Application missing in template! ({})'.format(ident)
-        comment = 'The listed application was available at some point to ' \
-                  'this qube, but not any more. The most likely cause is ' \
-                  'template change. Install the application in the template ' \
-                  'if you want to restore it.'
+        name = "Application missing in template! ({})".format(ident)
+        comment = (
+            "The listed application was available at some point to "
+            "this qube, but not any more. The most likely cause is "
+            "template change. Install the application in the template "
+            "if you want to restore it."
+        )
         return cls(name=name, ident=ident, tooltip=comment)
 
 
 class AppmenuSelectManager:
     def __init__(self, vm, apps_multiselect):
         self.vm = vm
-        self.app_list = apps_multiselect # this is a multiselect wiget
+        self.app_list = apps_multiselect  # this is a multiselect wiget
         self.whitelisted = None
         self.has_missing = False
         self.fill_apps_list(template=None)
 
     def fill_apps_list(self, template=None):
         try:
-            self.whitelisted = [line for line in subprocess.check_output(
-                    ['qvm-appmenus', '--get-whitelist', self.vm.name]
-                ).decode().strip().split('\n') if line]
+            self.whitelisted = [
+                line
+                for line in subprocess.check_output(
+                    ["qvm-appmenus", "--get-whitelist", self.vm.name]
+                )
+                .decode()
+                .strip()
+                .split("\n")
+                if line
+            ]
         except exc.QubesException:
             self.whitelisted = []
 
         currently_selected = [
-            self.app_list.selected_list.item(i).ident
-            for i in range(self.app_list.selected_list.count())]
+            self.app_list.selected_list.item(i).whatsThis()
+            for i in range(self.app_list.selected_list.count())
+        ]
 
         whitelist = set(self.whitelisted + currently_selected)
 
@@ -81,25 +93,68 @@ class AppmenuSelectManager:
 
         self.app_list.clear()
 
-        command = ['qvm-appmenus', '--get-available',
-                   '--i-understand-format-is-unstable', '--file-field',
-                   'Comment']
+        command = [
+            "qvm-appmenus",
+            "--get-available",
+            "--i-understand-format-is-unstable",
+            "--file-field",
+            "Comment",
+            "--file-field",
+            "Icon",
+        ]
         if template:
-            command.extend(['--template', template.name])
+            command.extend(["--template", template.name])
         command.append(self.vm.name)
 
+        if not hasattr(self.vm, "template"):
+            # TemplateVMs and StandaloneVMs
+            main_template = self.vm.name
+        elif not hasattr(self.vm.template, "template"):
+            # AppVMs
+            main_template = self.vm.template.name
+        else:
+            # DispVMs
+            main_template = self.vm.template.template.name
+
+        template_icons_path = path.join(
+            path.expanduser("~"),
+            ".local",
+            "share",
+            "qubes-appmenus",
+            f"{main_template}",
+            "apps.tempicons",
+        )
+
         try:
-            available_appmenus = [
-                AppListWidgetItem.from_line(line)
-                for line in subprocess.check_output(
-                    command).decode().splitlines()]
+            available_appmenus = []
+            for line in subprocess.check_output(command).decode().splitlines():
+                ident, name, comment, icon_path = line.split("|", maxsplit=4)
+                app_item = AppListWidgetItem.from_line(
+                    "|".join([ident, name, comment])
+                )
+                icon_path = icon_path.replace(
+                    "%VMDIR%/apps.icons", template_icons_path
+                )
+                if path.exists(icon_path):
+                    icon = QtGui.QIcon(icon_path)
+                    qpixmap = icon.pixmap(QtCore.QSize(512, 512))
+                    qimage = QtGui.QImage(qpixmap)
+                    qimage = tint_qimage(qimage, self.vm.label.color)
+                    qpixmap = QtGui.QPixmap(qimage)
+                    icon = QtGui.QIcon(qpixmap)
+                else:
+                    # for .desktop files with  missing icons
+                    icon = QtGui.QIcon.fromTheme(self.vm.icon)
+                app_item.setIcon(icon)
+                available_appmenus.append(app_item)
+
         except exc.QubesException:
             available_appmenus = []
 
         for app in available_appmenus:
-            if app.ident in whitelist:
+            if app.whatsThis() in whitelist:
                 self.app_list.selected_list.addItem(app)
-                whitelist.remove(app.ident)
+                whitelist.remove(app.whatsThis())
             else:
                 self.app_list.available_list.addItem(app)
 
@@ -113,16 +168,21 @@ class AppmenuSelectManager:
         self.app_list.selected_list.sortItems()
 
     def save_appmenu_select_changes(self):
-        new_whitelisted = [self.app_list.selected_list.item(i).ident
-                           for i in range(self.app_list.selected_list.count())]
+        new_whitelisted = [
+            self.app_list.selected_list.item(i).whatsThis()
+            for i in range(self.app_list.selected_list.count())
+        ]
 
         if set(new_whitelisted) == set(self.whitelisted):
             return False
 
         try:
-            self.vm.features['menu-items'] = " ".join(new_whitelisted)
+            self.vm.features["menu-items"] = " ".join(new_whitelisted)
         except exc.QubesException as ex:
-            raise RuntimeError(QtCore.QCoreApplication.translate(
-                "exception", 'Failed to set menu items')) from ex
+            raise RuntimeError(
+                QtCore.QCoreApplication.translate(
+                    "exception", "Failed to set menu items"
+                )
+            ) from ex
 
         return True
