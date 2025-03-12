@@ -1020,6 +1020,18 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.run_in_debug_mode.setVisible(False)
             self.run_in_debug_mode.setEnabled(False)
 
+        rationale = utils.get_feature(self.vm, "prohibit-start", "")
+        if rationale:
+            self.prohibit_start_rationale.setText(rationale)
+        self.prohibit_start_rationale.setVisible(bool(rationale))
+        self.prohibit_start_rationale.textEdited.connect(
+            self.prohibit_start_rationale_edited
+        )
+        self.prohibit_start_checkbox.setChecked(bool(rationale))
+        self.prohibit_start_checkbox.clicked.connect(
+            self.prohibit_start_checked
+        )
+
         utils.initialize_widget(
             widget=self.allow_fullscreen,
             choices=[
@@ -1040,6 +1052,16 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             selected_value=utils.get_boolean_feature(self.vm,
                                                      'gui-allow-utf8-titles'))
         self.allow_utf8_initial = self.allow_utf8.currentIndex()
+
+    def prohibit_start_checked(self, status):
+        self.prohibit_start_rationale.setVisible(bool(status))
+        self.prohibit_start_rationale.setFocus()
+
+    def prohibit_start_rationale_edited(self, text):
+        self.prohibit_start_checkbox.setChecked(bool(text))
+        self.prohibit_start_rationale.setStyleSheet(
+            "" if bool(text) else "#prohibit_start_rationale { color: red;}"
+        )
 
     def enable_seamless(self):
         try:
@@ -1145,6 +1167,17 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     self.vm.debug = self.run_in_debug_mode.isChecked()
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
+
+        rationale = self.vm.features.get("prohibit-start", "")
+        if (self.prohibit_start_checkbox.isChecked() != bool(rationale)) or (
+            bool(rationale)
+            and self.prohibit_start_rationale.text() != rationale
+        ):
+            rationale = self.prohibit_start_rationale.text()
+            if bool(rationale) and self.prohibit_start_checkbox.isChecked():
+                self.vm.features["prohibit-start"] = rationale
+            else:
+                del self.vm.features["prohibit-start"]
 
         if self.allow_fullscreen_initial !=\
                 self.allow_fullscreen.currentIndex():

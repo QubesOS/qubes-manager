@@ -1028,6 +1028,41 @@ def test_215_bootmode_appvm_nondefault(settings_fixture):
         "Boot mode not changed"
 
 
+@check_errors
+@pytest.mark.parametrize("settings_fixture", TEST_VMS, indirect=True)
+def test_213_prohibit_start(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    r = vm.features.get("prohibit-start", "")
+    assert settings_window.prohibit_start_checkbox.isChecked() == bool(r)
+    if r:
+        assert settings_window.prohibit_start_rationale.text() == r
+
+    settings_window.prohibit_start_checkbox.setChecked(not bool(r))
+
+    if bool(r):
+        settings_window.prohibit_start_rationale.setText("")
+        expected_call = (
+            vm.name,
+            "admin.vm.feature.Remove",
+            "prohibit-start",
+            None,
+        )
+    else:
+        settings_window.prohibit_start_rationale.setText("RATIONALE")
+        expected_call = (
+            vm.name,
+            "admin.vm.feature.Set",
+            "prohibit-start",
+            "RATIONALE".encode(),
+        )
+
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b"0\x00"
+    settings_window.accept()
+
+
 # FIREWALL TAB
 
 @check_errors
