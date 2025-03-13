@@ -36,6 +36,7 @@ import qubesimgconverter
 import xdg.BaseDirectory
 import pathlib
 import shutil
+import copy
 
 from PyQt6 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
 import qasync
@@ -223,6 +224,7 @@ def initialize_widget_for_property(*, widget, choices, holder, property_name,
         input
     :return:
     """
+    choices_copy = copy.copy(choices)
     if allow_default:
         try:
             default_property = holder.property_get_default(property_name)
@@ -231,11 +233,11 @@ def initialize_widget_for_property(*, widget, choices, holder, property_name,
         if default_property is None:
             default_property = "none"
         if default_text_provider is None:
-            choices.append(
+            choices_copy.append(
                 (translate("default ({})").format(default_property),
                 qubesadmin.DEFAULT))
         else:
-            choices.append(
+            choices_copy.append(
                 (translate("default ({})").format(
                     default_text_provider(holder, default_property)
                 ), qubesadmin.DEFAULT))
@@ -252,7 +254,7 @@ def initialize_widget_for_property(*, widget, choices, holder, property_name,
         current_value = getattr(holder, property_name)
 
     initialize_widget(widget,
-                      choices,
+                      choices_copy,
                       selected_value=current_value,
                       icon_getter=icon_getter,
                       add_current_label=add_current_label)

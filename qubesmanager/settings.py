@@ -933,19 +933,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     default_text_provider=get_default_bootmode_name
                 )
                 if hasattr(self.vm, "appvm_default_bootmode"):
-                    # We need to recreate the bootmode_widget_data list,
-                    # because utils.initialize_widget_for_property adds a
-                    # default item to the list as a side-effect, and we'd end
-                    # up with duplicate "default" entries if we didn't
-                    # reinitialize it. Modifying
-                    # initialize_widget_for_property to operate on a list deep
-                    # copy breaks the virtualization mode combo box, making
-                    # the default mode appear as
-                    # `<object object at 0xaddress>`.
-                    bootmode_widget_data = list(zip(
-                        self.bootmode_names, self.bootmode_ids
-                    ))
-                    bootmode_widget_data.sort()
                     utils.initialize_widget_for_property(
                         widget=self.appvm_default_bootmode,
                         choices=bootmode_widget_data,
