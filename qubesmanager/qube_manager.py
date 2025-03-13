@@ -283,7 +283,7 @@ class VmInfo():
                     if datetime.now() > eol:
                         self.state['outdated'] = 'eol'
                 else:
-                    self.state['outdated'] = None
+                    self.state['outdated'] = ""
         except exc.QubesDaemonAccessError:
             pass
 
