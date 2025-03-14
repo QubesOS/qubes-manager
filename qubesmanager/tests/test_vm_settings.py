@@ -97,6 +97,35 @@ def settings_fixture(request, qapp, test_qubes_app) -> Tuple[
         MockDevice(test_qubes_app, 'pci', 'USB Controller', '00:03.2',
                    'dom0', attached='test-pci-dev'))
 
+    # add a TemplateVM with some boot modes
+    test_qubes_app._qubes['fedora-36-bootmodes'] = MockQube(
+        name="fedora-36-bootmodes", qapp=test_qubes_app, klass="TemplateVM",
+        netvm="", features={'boot-mode.kernelopts.mode1': 'mode1kern',
+            'boot-mode.name.mode1': 'Mode One',
+            'boot-mode.kernelopts.mode2': 'mode2kern1 mode2kern2',
+            'boot-mode.active': 'mode1', 'boot-mode.appvm-default': 'mode2'}
+    )
+
+    # add an AppVM on top of the bootmode-enabled template
+    test_qubes_app._qubes['test-vm-bootmodes'] = MockQube(
+        name="test-vm-bootmodes", qapp=test_qubes_app,
+        template="fedora-36-bootmodes", features={
+            'boot-mode.kernelopts.mode1': 'mode1kern',
+            'boot-mode.name.mode1': 'Mode One',
+            'boot-mode.kernelopts.mode2': 'mode2kern1 mode2kern2',
+            'boot-mode.active': 'mode1', 'boot-mode.appvm-default': 'mode2'}
+    )
+
+    # add another AppVM with a non-default bootmode set
+    test_qubes_app._qubes['test-vm-bootmodes-nondefault'] = MockQube(
+        name="test-vm-bootmodes-nondefault", qapp=test_qubes_app,
+        template="fedora-36-bootmodes", bootmode="mode2", features={
+            'boot-mode.kernelopts.mode1': 'mode1kern',
+            'boot-mode.name.mode1': 'Mode One',
+            'boot-mode.kernelopts.mode2': 'mode2kern1 mode2kern2',
+            'boot-mode.active': 'mode1', 'boot-mode.appvm-default': 'mode2'}
+    )
+
     test_qubes_app.update_vm_calls()
 
     if isinstance(request.param, dict):
@@ -905,6 +934,98 @@ def test_212_boot_from_device(mock_boot, mock_start, settings_fixture):
         qubesapp=settings_window.qubesapp, parent=settings_window)
 
     mock_start.assert_called_with(['--cdrom', mock.ANY, vm.name])
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ["fedora-36-bootmodes"], indirect=True)
+def test_213_bootmode_template(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+
+    assert "mode1" in settings_window.bootmode_ids
+    assert "mode2" in settings_window.bootmode_ids
+    assert "Mode One" in settings_window.bootmode_names
+    assert "mode2" in settings_window.bootmode_names
+
+    _select_item(settings_window.bootmode, "mode2")
+    assert settings_window.bootmode_kernel_opts.text() == "mode2kern1 mode2kern2"
+    _select_item(settings_window.bootmode, "default")
+    assert settings_window.bootmode_kernel_opts.text() == ""
+    _select_item(settings_window.bootmode, "Mode One")
+    assert settings_window.bootmode_kernel_opts.text() == "mode1kern"
+    with mock.patch('qubesadmin.base.PropertyHolder.property_get_default',
+                    return_value='mode1'):
+        _select_item(settings_window.bootmode, "default")
+        assert settings_window.bootmode_kernel_opts.text() == "mode1kern"
+
+    _select_item(settings_window.bootmode, "mode2")
+    _select_item(settings_window.appvm_default_bootmode, "Mode One")
+
+    expected_call_bm = (vm_name, 'admin.vm.property.Set', 'bootmode', b'mode2')
+    assert expected_call_bm not in settings_window.qubesapp.expected_calls
+
+    settings_window.qubesapp.expected_calls[expected_call_bm] = b'0\x00'
+
+    expected_call_adbm = (vm_name, 'admin.vm.property.Set', \
+        'appvm_default_bootmode', b'mode1')
+    assert expected_call_adbm not in settings_window.qubesapp.expected_calls
+
+    settings_window.qubesapp.expected_calls[expected_call_adbm] = b'0\x00'
+
+    settings_window.accept()
+    assert expected_call_bm in settings_window.qubesapp.actual_calls, \
+        "Boot mode not changed"
+    assert expected_call_adbm in settings_window.qubesapp.actual_calls, \
+        "AppVM default boot mode not changed"
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ["test-vm-bootmodes"], indirect=True)
+def test_214_bootmode_appvm(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+
+    assert "mode1" in settings_window.bootmode_ids
+    assert "mode2" in settings_window.bootmode_ids
+    assert "Mode One" in settings_window.bootmode_names
+    assert "mode2" in settings_window.bootmode_names
+
+    _select_item(settings_window.bootmode, "Mode One")
+    assert settings_window.bootmode_kernel_opts.text() == "mode1kern"
+    _select_item(settings_window.bootmode, "mode2")
+    assert settings_window.bootmode_kernel_opts.text() == "mode2kern1 mode2kern2"
+    _select_item(settings_window.bootmode, "Mode One")
+
+    expected_call = (vm_name, 'admin.vm.property.Set', 'bootmode', b'mode1')
+    assert expected_call not in settings_window.qubesapp.expected_calls
+
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+    assert expected_call in settings_window.qubesapp.actual_calls, \
+        "Boot mode not changed"
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ["test-vm-bootmodes-nondefault"], indirect=True)
+def test_215_bootmode_appvm_nondefault(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+
+    assert "mode1" in settings_window.bootmode_ids
+    assert "mode2" in settings_window.bootmode_ids
+    assert "Mode One" in settings_window.bootmode_names
+    assert "mode2" in settings_window.bootmode_names
+    assert settings_window.bootmode_kernel_opts.text() == "mode2kern1 mode2kern2"
+
+    _select_item(settings_window.bootmode, "Mode One")
+    assert settings_window.bootmode_kernel_opts.text() == "mode1kern"
+    _select_item(settings_window.bootmode, "mode2")
+    assert settings_window.bootmode_kernel_opts.text() == "mode2kern1 mode2kern2"
+    _select_item(settings_window.bootmode, "Mode One")
+
+    expected_call = (vm_name, 'admin.vm.property.Set', 'bootmode', b'mode1')
+    assert expected_call not in settings_window.qubesapp.expected_calls
+
+    settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
+
+    settings_window.accept()
+    assert expected_call in settings_window.qubesapp.actual_calls, \
+        "Boot mode not changed"
 
 
 # FIREWALL TAB
