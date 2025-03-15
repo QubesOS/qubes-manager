@@ -1020,6 +1020,17 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.run_in_debug_mode.setVisible(False)
             self.run_in_debug_mode.setEnabled(False)
 
+        rationale = utils.get_feature(self.vm, "prohibit-start", "")
+        self.prohibit_start_rationale.setText(rationale)
+        self.prohibit_start_rationale.setVisible(bool(rationale))
+        self.prohibit_start_rationale.textEdited.connect(
+            lambda x: self.prohibit_start_checkbox.setChecked(bool(x))
+        )
+        self.prohibit_start_checkbox.setChecked(bool(rationale))
+        self.prohibit_start_checkbox.stateChanged.connect(
+            lambda x: self.prohibit_start_rationale.setVisible(bool(x))
+        )
+
         utils.initialize_widget(
             widget=self.allow_fullscreen,
             choices=[
@@ -1145,6 +1156,17 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     self.vm.debug = self.run_in_debug_mode.isChecked()
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
+
+        rationale = self.vm.features.get("prohibit-start", "")
+        if (self.prohibit_start_checkbox.isChecked() != bool(rationale)) or (
+            bool(rationale)
+            and self.prohibit_start_rationale.text() != rationale
+        ):
+            rationale = self.prohibit_start_rationale.text()
+            if bool(rationale) and self.prohibit_start_checkbox.isChecked():
+                self.vm.features["prohibit-start"] = rationale
+            else:
+                del self.vm.features["prohibit-start"]
 
         if self.allow_fullscreen_initial !=\
                 self.allow_fullscreen.currentIndex():
