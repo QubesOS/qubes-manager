@@ -1,3 +1,18 @@
+qubes-manager (4.3.11-1) unstable; urgency=medium
+
+  [ Ali Mirjamali ]
+  * Fix Drang-and-Drop for Qube Settings, Apps tab
+  * Add `qubesimgconverter.Image.tint` binding for QImage
+  * Add Icons to Qubes VM Settings Apps tab
+  * Fix Backup toggle in Qube Manager
+  * Fix Qube Manager sorting by state column
+
+  [ Aaron Rainbolt ]
+  * Add boot mode support
+  * Shallow-copy choices in initialize_widget_for_property
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sat, 15 Mar 2025 01:10:46 +0100
+
 qubes-manager (4.3.10-1) unstable; urgency=medium
 
   [ Marta Marczykowska-Górecka ]
