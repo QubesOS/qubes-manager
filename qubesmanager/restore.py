@@ -250,12 +250,12 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
         self.progress_bar.setValue(100)
 
         if self.thread.msg:
-            QtWidgets.QMessageBox.warning(
-                self,
-                self.tr("Restore qubes"),
-                self.tr(self.thread.msg))
-
-        if self.thread.msg:
+            messagebox = (
+                QtWidgets.QMessageBox.information
+                if "successful" in self.thread.msg
+                else QtWidgets.QMessageBox.warning
+            )
+            messagebox(self, self.tr("Restore qubes"), self.tr(self.thread.msg))
             self.append_output(self.thread.msg)
 
         if self.showFileDialog.isChecked():
