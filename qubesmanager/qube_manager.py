@@ -722,7 +722,7 @@ class QubesProxyModel(QSortFilterProxyModel):
             return super().filterAcceptsRow(sourceRow, sourceParent)
 
         if self.window.show_running.isChecked() and \
-                vm.state['power'] != 'Halted':
+                not vm.state['power'] in ['Halted', 'Blocked']:
             return super().filterAcceptsRow(sourceRow, sourceParent)
         if self.window.show_halted.isChecked() and \
                 vm.state['power'] == 'Halted':
