@@ -762,7 +762,7 @@ border-width: 1px;</string>
               <item row="8" column="0" colspan="2">
                <widget class="QPushButton" name="boot_from_device_button">
                 <property name="text">
-                 <string>Boot qube from CD-ROM</string>
+                 <string>Boot qube from DISC or block device</string>
                 </property>
                </widget>
               </item>
