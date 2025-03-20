@@ -93,6 +93,13 @@ def settings_fixture(request, qapp, test_qubes_app) -> Tuple[
         name="test-pci-dev", qapp=test_qubes_app, label="green",
         virt_mode='hvm'
     )
+
+    test_qubes_app._qubes['sys-whonix'] = MockQube(
+        name="sys-whonix", qapp=test_qubes_app, tags=['anon-gateway'])
+
+    test_qubes_app._qubes['anon-whonix'] = MockQube(
+        name="anon-whonix", qapp=test_qubes_app, tags=['anon-vm'])
+
     test_qubes_app._devices.append(
         MockDevice(test_qubes_app, 'pci', 'USB Controller', '00:03.2',
                    'dom0', attached='test-pci-dev'))
@@ -344,7 +351,6 @@ def test_102_change_netvm(settings_fixture):
     else:
         assert expected_call not in settings_window.qubesapp.actual_calls, \
             "Unnecessary NetVM change"
-
 
 @mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
 @pytest.mark.parametrize("settings_fixture", ["fedora-35"], indirect=True)
@@ -610,6 +616,34 @@ def test_112_clonevm(mock_clone, settings_fixture):
     settings_window.clone_vm_button.click()
 
     mock_clone.assert_called_with(mock.ANY, mock.ANY, src_vm=vm)
+
+
+@mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
+@pytest.mark.parametrize("settings_fixture", ["anon-whonix"], indirect=True)
+def test_113_change_netvm_anon(mock_warning, settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    change_netvm_call = (vm_name, 'admin.vm.property.Set', 'netvm', b'sys-net')
+    get_tag_call = (vm_name, 'admin.vm.tag.Get', 'anon-vm', None)
+
+    assert settings_window.netVM.isEnabled()
+
+    _select_item(settings_window.netVM, "sys-net")
+
+    assert get_tag_call in settings_window.qubesapp.actual_calls
+
+    assert change_netvm_call not in settings_window.qubesapp.expected_calls
+    settings_window.qubesapp.expected_calls[change_netvm_call] = b'0\x00'
+
+    settings_window.accept()
+
+    settings_window.qubesapp.expected_calls[change_netvm_call] = b'0\x00'
+
+    assert mock_warning.call_count == 1, ("Didn't warn for changing netvm "
+                                          "on anon-vm")
+
+    assert change_netvm_call in settings_window.qubesapp.actual_calls
 
 
 # ADVANCED TAB
