@@ -140,6 +140,11 @@ class AppmenuSelectManager:
                     qpixmap = icon.pixmap(QtCore.QSize(512, 512))
                     qimage = QtGui.QImage(qpixmap)
                     qimage = tint_qimage(qimage, self.vm.label.color)
+                    if (
+                        qimage.size().width() < 48
+                        or qimage.size().height() < 48
+                    ):
+                        qimage = qimage.scaled(48, 48)
                     qpixmap = QtGui.QPixmap(qimage)
                     icon = QtGui.QIcon(qpixmap)
                 else:
@@ -162,6 +167,13 @@ class AppmenuSelectManager:
 
         for app in whitelist:
             item = AppListWidgetItem.from_ident(app)
+            if item.icon().isNull():
+                qpixmap = QtGui.QPixmap(48, 48)
+                color = QtGui.QColor(0)
+                color.setAlpha(0)
+                qpixmap.fill(color)
+                icon = QtGui.QIcon(qpixmap)
+                item.setIcon(icon)
             self.app_list.selected_list.addItem(item)
 
         self.app_list.available_list.sortItems()
