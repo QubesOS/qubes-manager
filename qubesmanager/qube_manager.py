@@ -238,9 +238,18 @@ class VmInfo():
         self.icon = getattr(vm, 'icon', 'appvm-black')
         self.auto_cleanup = getattr(vm, 'auto_cleanup', False)
 
+        self.available = None
         self.state = {'power': "", 'outdated': ""}
         self.updateable = getattr(vm, 'updateable', False)
-        self.update(True)
+        self.update(update_size_on_disk=True, update_availability=True)
+
+    def check_availability_state(self):
+        for volume in self.vm.volumes.values():
+            try:
+                volume.validate()
+            except exc.QubesException:
+                return False
+        return True
 
     def update_power_state(self):
         try:
@@ -288,10 +297,15 @@ class VmInfo():
         except exc.QubesDaemonAccessError:
             pass
 
-    def update(self, update_size_on_disk=False, event=None):
+    def update(self,
+        update_size_on_disk=False,
+        update_availability=False,
+        event=None
+    ):
         """
         Update VmInfo
         :param update_size_on_disk: should disk utilization be updated?
+        :param update_availability: should disk volume availability be updated?
         :param event: name of the event that caused the update, to avoid
         updating unnecessary properties; if event is none, update everything
         :return: None
@@ -361,6 +375,9 @@ class VmInfo():
             except exc.QubesDaemonAccessError:
                 self.disk_float = None
                 self.disk = None
+
+        if self.vm.klass != 'AdminVM' and update_availability:
+            self.available = self.check_availability_state()
 
         if self.vm.klass != 'AdminVM':
             self.virt_mode = getattr(self.vm, 'virt_mode', None)
@@ -712,6 +729,10 @@ class QubesProxyModel(QSortFilterProxyModel):
         if not self.window.show_internal_action.isChecked() and vm.internal:
             return False
 
+        if not self.window.show_unavailable_pool_action.isChecked() and \
+                not vm.available:
+            return False
+
         if self.window.show_user.isChecked() \
                 and vm.klass in ['AppVM', 'StandaloneVM'] \
                 and not getattr(vm.vm, 'template_for_dispvms', False) \
@@ -821,6 +842,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.show_internal_action.setCheckable(True)
         self.show_internal_action.toggled.connect(self.invalidate)
 
+        self.show_unavailable_pool_action = self.menu_view.addAction(
+            self.tr('Show qubes stored on unavailable storage pools'))
+        self.show_unavailable_pool_action.setCheckable(True)
+        self.show_unavailable_pool_action.toggled.connect(self.invalidate)
+
         self.menu_view.addSeparator()
         self.menu_view.addAction(self.action_toolbar)
         self.menu_view.addAction(self.action_menubar)
@@ -917,15 +943,27 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.size_on_disk_timer.setInterval(1000 * 60 * 5)  # every 5 mins
         self.size_on_disk_timer.start()
 
+        self.volumes_available_timer = QTimer()
+        self.volumes_available_timer.timeout.connect(
+            self.update_halted_availability
+        )
+        self.volumes_available_timer.setInterval(
+            1000 * 60 * 5
+        )  # every 5 minutes
+        self.volumes_available_timer.start()
+
         self.new_qube = QProcess()
 
     def eventFilter(self, _object, event):
-        ''' refresh disk usage every 60s if focused & every 5m in background '''
+        ''' refresh disk info every 60s if focused & every 5m in background '''
         if event.type() == QEvent.Type.WindowActivate:
             self.update_running_size()
+            self.update_halted_availability()
             self.size_on_disk_timer.setInterval(1000 * 60)
+            self.volumes_available_timer.setInterval(1000 * 60)
         elif event.type() == QEvent.Type.WindowDeactivate:
             self.size_on_disk_timer.setInterval(1000 * 60 * 5)
+            self.volumes_available_timer.setInterval(1000 * 60 * 5)
         return False
 
     def scroll_to_top(self):
@@ -1043,6 +1081,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self.show_standalone.isChecked())
         self.manager_settings.setValue('show/internal',
                 self.show_internal_action.isChecked())
+        self.manager_settings.setValue('show/unavailable_pool',
+                self.show_unavailable_pool_action.isChecked())
         self.manager_settings.setValue('show/user',
                 self.show_user.isChecked())
         self.manager_settings.setValue('show/all',
@@ -1168,6 +1208,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self.qubes_cache.get_vm(qid=vm.qid).update(
                     update_size_on_disk=True, event='disk_size')
 
+    def update_halted_availability(self, *_args):
+        if not self.show_unavailable_pool_action.isChecked():
+            for vm in self.qubes_app.domains:
+                if not vm.is_running():
+                    self.qubes_cache.get_vm(qid=vm.qid).update(
+                        update_availability=True, event='volume_availability')
+            self.invalidate()
+
     def on_domain_added(self, _submitter, _event, vm, **_kwargs):
         try:
             domain = self.qubes_app.domains[vm]
@@ -1287,6 +1335,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         self.show_internal_action.setChecked(self.manager_settings.value(
             'show/internal', "false") == "true")
+        self.show_unavailable_pool_action.setChecked(
+            self.manager_settings.value(
+                'show/unavailable_pool', "false") == "true")
         # load last window size
         self.resize(self.manager_settings.value("window_size",
                                                 QSize(1100, 600)))
