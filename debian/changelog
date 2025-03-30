@@ -1,3 +1,16 @@
+qubes-manager (4.3.12-1) unstable; urgency=medium
+
+  [ ooops ]
+  * Shows scary exclamation mark in QMessageBox.warning. Use
+    QMessageBox.information instead. (Resolves qubes-issues/8538)
+
+  [ Ali Mirjamali ]
+  * Add `prohibit-start` to Qube Settings GUI.
+  * Hide `prohibit-start` qubes from list of `Running` qubes
+  * Fix `qubes-vm-boot-from-device`, Improve settings
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sun, 30 Mar 2025 06:32:53 +0200
+
 qubes-manager (4.3.11-1) unstable; urgency=medium
 
   [ Ali Mirjamali ]
