@@ -1,3 +1,43 @@
+qubes-manager (4.2.10-1) unstable; urgency=medium
+
+  [ Ali Mirjamali ]
+  * Enable debugging for qubes-restore
+  * Use GiB & MiB for private & system storage sizes
+  * Show no IP for non-networked qubes
+  * Make `Create new qube` ComboBoxes smart
+  * Use MiB & GiB (binary size) in Qube Manager
+
+  [ Marta Marczykowska-Górecka ]
+  * Fix use of two Qubes() objects in VM settings
+  * Fix weird package references in VM settings
+  * Fix display of NetVM warnings in VM settings
+  * Fix superfluous feature changes in VM settings
+  * Make Firewall edit dialog properly async
+  * Do not save firewall in VM settings if unchanged
+  * Fix incorrect assumption in backup
+
+  [ Rusty Bird ]
+  * Fix cloning from non-default to default pool
+  * Update the location of partial restores in error message
+
+  [ Marta Marczykowska-Górecka ]
+  * Stop CTD on failure to set seamless mode
+
+  [ ooops ]
+  * Shows scary exclamation mark in QMessageBox.warning. Use
+    QMessageBox.information instead. (Resolves qubes-issues/8538)
+
+  [ Ali Mirjamali ]
+  * Fix `qubes-vm-boot-from-device`, Improve settings
+
+  [ Marta Marczykowska-Górecka ]
+  * Use more keyword-only arguments to appease pylint
+
+  [ Marek Marczykowski-Górecki ]
+  * ci: drop R4.1
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sun, 30 Mar 2025 18:12:41 +0200
+
 qubes-manager (4.2.9-1) unstable; urgency=medium
 
   [ Ali Mirjamali ]
