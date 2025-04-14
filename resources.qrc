@@ -18,6 +18,7 @@
     <file alias="killvm">icons/kill.svg</file>
     <file alias="log">icons/log.svg</file>
     <file alias="networking">icons/netvm.svg</file>
+    <file alias="notes">icons/notes.svg</file>
     <file alias="obsolete.svg">icons/obsolete.svg</file>
     <file alias="outdated">icons/outdated.svg</file>
     <file alias="paused">icons/paused.svg</file>
