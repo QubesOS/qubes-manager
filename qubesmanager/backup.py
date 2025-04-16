@@ -23,6 +23,8 @@
 import signal
 from qubesadmin import exc
 from qubesadmin import utils as admin_utils
+from qubesadmin.backup.restore \
+    import KNOWN_COMPRESSION_FILTERS, OPTIONAL_COMPRESSION_FILTERS
 
 from PyQt6 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
 from qubesmanager import ui_backupdlg  # pylint: disable=no-name-in-module
@@ -129,6 +131,13 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
             self.appvm_combobox.findText("dom0"))
 
         self.unrecognized_config_label.setVisible(False)
+
+        self.compression_combobox.addItem("Default (gzip)")
+        self.compression_combobox.addItems(KNOWN_COMPRESSION_FILTERS)
+        self.compression_combobox.addItems(
+            [c for c in OPTIONAL_COMPRESSION_FILTERS if shutil.which(c)]
+        )
+        self.compression_combobox.addItem("Disabled (uncompressed)")
         self.load_settings()
 
         self.show_passwd_button.pressed.connect(self.show_hide_password)
@@ -234,7 +243,21 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
             self.save_passphrase_checkbox.setChecked(False)
 
         if 'compression' in profile_data:
-            self.compress_checkbox.setChecked(profile_data['compression'])
+            if isinstance(profile_data["compression"], bool):
+                if profile_data["compression"]:
+                    # Technically this is necessary as the default index is -1
+                    self.compression_combobox.setCurrentIndex(0)
+                else:
+                    self.compression_combobox.setCurrentIndex(
+                        self.compression_combobox.count() - 1
+                    )
+            else:
+                for i in range(self.compression_combobox.count()):
+                    if profile_data[
+                        "compression"
+                    ] == self.compression_combobox.itemText(i):
+                        self.compression_combobox.setCurrentIndex(i)
+                        break
 
     def save_settings(self, use_temp, save_passphrase=True):
         """
@@ -244,10 +267,20 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         :param use_temp: whether to use temporary profile (True) or the default
          backup profile (False)
         """
-        settings = {'destination_vm': self.appvm_combobox.currentText(),
-                    'destination_path': self.dir_line_edit.text(),
-                    'include': [vm.name for vm in self.selected_vms],
-                    'compression': self.compress_checkbox.isChecked()}
+        if self.compression_combobox.currentIndex() != -1:
+            compression_filter = self.compression_combobox.currentText()
+            if compression_filter.startswith("Default"):
+                compression_filter = True
+            elif compression_filter.startswith("Disabled"):
+                compression_filter = False
+        else:
+            compression_filter = True
+        settings = {
+            "destination_vm": self.appvm_combobox.currentText(),
+            "destination_path": self.dir_line_edit.text(),
+            "include": [vm.name for vm in self.selected_vms],
+            "compression": compression_filter
+        }
 
         if save_passphrase:
             settings['passphrase_text'] = self.passphrase_line_edit.text()

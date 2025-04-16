@@ -81,14 +81,35 @@
      </layout>
     </item>
     <item>
-     <widget class="QCheckBox" name="compress_checkbox">
-      <property name="text">
-       <string>Compress backup</string>
-      </property>
-      <property name="checked">
-       <bool>true</bool>
-      </property>
-     </widget>
+     <layout class="QGridLayout" name="gridLayout_compression">
+      <item row="0" column="1">
+       <layout class="QHBoxLayout" name="horizontalLayout_compression">
+        <item>
+         <widget class="QLabel" name="label_compression">
+          <property name="text">
+           <string>Compression filter:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="compression_combobox"/>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_compression">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+     </layout>
     </item>
     <item>
      <widget class="QLabel" name="metadata_warning_label">
@@ -452,7 +473,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
   </widget>
  </widget>
  <tabstops>
-  <tabstop>compress_checkbox</tabstop>
+  <tabstop>compression_combobox</tabstop>
   <tabstop>appvm_combobox</tabstop>
   <tabstop>dir_line_edit</tabstop>
   <tabstop>select_path_button</tabstop>
