@@ -286,6 +286,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
                 continue
 
             item = BackupVMsWindow.VmListItem(vm)
+            item.setIcon(QtGui.QIcon.fromTheme(vm.icon))
             if (selected is None and
                     getattr(vm, 'include_in_backups', True)) \
                     or (selected and vm.name in selected):
