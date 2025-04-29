@@ -1,3 +1,18 @@
+qubes-manager (4.3.13-1) unstable; urgency=medium
+
+  [ Guillaume Chinal ]
+  * add a warning box when connecting an anon vm to a non-anon gateway
+  * add a test for warning message when changing anon-vm netvm
+
+  [ Ali Mirjamali ]
+  * Show qube label icon in backup selection
+  * Improve and fix Settings App icons
+
+  [ Guillaume Chinal ]
+  * anon gateway warning box on main qubesmanager page
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Tue, 29 Apr 2025 04:48:46 +0200
+
 qubes-manager (4.3.12-1) unstable; urgency=medium
 
   [ ooops ]
