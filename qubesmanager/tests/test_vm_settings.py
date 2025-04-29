@@ -94,8 +94,11 @@ def settings_fixture(request, qapp, test_qubes_app) -> Tuple[
         virt_mode='hvm'
     )
     test_qubes_app._devices.append(
-        MockDevice(test_qubes_app, 'pci', 'USB Controller', '00:03.2',
-                   'dom0', attached='test-pci-dev'))
+        MockDevice(
+            test_qubes_app, dev_class='pci',
+            device_id='0x8008:0x1234::p040000', backend_vm='dom0',
+            port='00_04.3', product='Important Device', vendor='Test',
+            assigned=[('test-pci-dev', 'required', None)]))
 
     test_qubes_app.update_vm_calls()
 
@@ -1540,8 +1543,8 @@ def test_601_device_add(settings_fixture):
     settings_window.dev_list.add_selected_button.click()
 
     expected_call = (
-        vm.name, 'admin.vm.device.pci.Assign', 'dom0+00_03.2:*',
-        b"device_id='*' port_id='00_03.2' devclass='pci' "
+        vm.name, 'admin.vm.device.pci.Assign', 'dom0+00_03.0:*',
+        b"device_id='*' port_id='00_03.0' devclass='pci' "
         b"backend_domain='dom0' mode='required' "
         b"frontend_domain='test-vm-set'")
     assert expected_call not in settings_window.qubesapp.actual_calls
@@ -1561,9 +1564,10 @@ def test_602_device_remove(settings_fixture):
     available_items = []
     for i in range(settings_window.dev_list.available_list.count()):
         item = settings_window.dev_list.available_list.item(i)
+        print(item.text())
         available_items.append(item.text())
 
-    assert len(available_items) == 4
+    assert len(available_items) == 3
 
     selected_items = []
     for i in range(settings_window.dev_list.selected_list.count()):
@@ -1575,8 +1579,8 @@ def test_602_device_remove(settings_fixture):
 
     settings_window.dev_list.remove_selected_button.click()
 
-    expected_call = (vm.name, 'admin.vm.device.pci.Unassign', 'dom0+00:03.2',
-                     None)
+    expected_call = (vm.name, 'admin.vm.device.pci.Unassign',
+                     'dom0+00_04.3:0x8008:0x1234::p040000', None)
     assert expected_call not in settings_window.qubesapp.actual_calls
     settings_window.qubesapp.expected_calls[expected_call] = b'0\x00'
 
