@@ -1381,9 +1381,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.devices_layout.addWidget(self.dev_list)
 
         try:
-            dom0_devs = \
-                list(self.vm.app.domains['dom0'].
-                     devices['pci'].get_exposed_devices())
+            dom0_devs = list(
+                dev
+                for dev in self.vm.app.domains["dom0"]
+                .devices["pci"]
+                .get_exposed_devices()
+                if dev.interfaces[0].category
+                != device_protocol.DeviceCategory.PCI_Bridge
+            )
             attached = list(
                 self.vm.devices['pci'].get_assigned_devices(required_only=True))
         except qubesadmin.exc.QubesException:
@@ -1395,7 +1400,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         class DevListWidgetItem(QtWidgets.QListWidgetItem):
             def __init__(self, dev, unknown=False, parent=None):
                 super().__init__(parent)
-                name = dev.port_id.replace('_', ":") + ' ' + dev.description
+                name = (
+                    dev.port_id.replace("_", ":").replace("-", " -> ")
+                    + " "
+                    + dev.description
+                )
                 if unknown:
                     name += ' (unknown)'
                 self.setText(name)
