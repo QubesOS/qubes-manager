@@ -562,10 +562,14 @@ def run_asynchronous(window_class):
     loop = qasync.QEventLoop(qt_app)
     asyncio.set_event_loop(loop)
 
+    stats_dispatcher = events.EventsDispatcher(
+        qubes_app,
+        api_method = "admin.vm.Stats"
+    )
     async def setup():
         dispatcher = events.EventsDispatcher(qubes_app)
 
-        window = window_class(qt_app, qubes_app, dispatcher)
+        window = window_class(qt_app, qubes_app, dispatcher, stats_dispatcher)
 
         if hasattr(window, "setup_application"):
             window.setup_application()
@@ -575,6 +579,7 @@ def run_asynchronous(window_class):
         await dispatcher.listen_for_events()
 
     try:
+        loop.create_task(stats_dispatcher.listen_for_events())
         loop.run_until_complete(asyncio.ensure_future(setup()))
     except asyncio.CancelledError:
         pass
