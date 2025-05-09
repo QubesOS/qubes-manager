@@ -71,8 +71,8 @@ def test_00_load_backup(backup_dlg):
 
 
 def test_01_correct_default(backup_dlg):
-    # backup is compressed
-    assert backup_dlg.compress_checkbox.isChecked()
+    # backup compresssion is the default (no item selected or item 0)
+    assert backup_dlg.compression_combobox.currentIndex() in [0, -1]
 
     # passphrase is empty
     assert backup_dlg.passphrase_line_edit.text() == "", "Password non-empty"
@@ -175,7 +175,10 @@ def test_10_do_backup(mock_open, backup_dlg):
     backup_dlg.passphrase_line_edit_verify.setText("pass")
     backup_dlg.save_profile_checkbox.setChecked(False)
     backup_dlg.turn_off_checkbox.setChecked(False)
-    backup_dlg.compress_checkbox.setChecked(False)
+    backup_dlg.compression_combobox.addItem("Disabled (uncompressed")
+    backup_dlg.compression_combobox.setCurrentIndex(
+        backup_dlg.compression_combobox.count() - 1
+    )
 
     expected_call = ('dom0', 'admin.backup.Info', 'qubes-manager-backup-tmp',
                      None)
@@ -233,7 +236,7 @@ def test_20_loading_settings(mock_load, test_qubes_app, qapp):
         "Passphrase not loaded"
     assert backup_dlg.passphrase_line_edit_verify.text() == "longerPassPhrase" \
         , "Passphrase verify not loaded"
-    assert backup_dlg.compress_checkbox.isChecked()
+    assert backup_dlg.compression_combobox.currentIndex() == 0
 
     # check that 'include' vms were not pre-selected
     include_in_backups_no = len(
@@ -245,6 +248,67 @@ def test_20_loading_settings(mock_load, test_qubes_app, qapp):
 
     # check no errors were detected
     assert not backup_dlg.unrecognized_config_label.isVisible()
+
+
+@mock.patch('qubesmanager.backup_utils.load_backup_profile')
+def test_20_loading_settings_nocomp(mock_load, test_qubes_app, qapp):
+
+    mock_load.return_value = {
+        'destination_vm': 'test-blue',
+        'destination_path': "/home",
+        'include': ['dom0', 'test-red', 'sys-net'],
+        'passphrase_text': "longerPassPhrase",
+        'compression': False
+    }
+
+    dispatcher = MockAsyncDispatcher(test_qubes_app)
+    backup_dlg = backup.BackupVMsWindow(qapp, test_qubes_app, dispatcher)
+    # needed because otherwise the wizard will not test correctly
+    backup_dlg.show()
+
+    # check if last compression filter (Disabled) is selected
+    assert backup_dlg.compression_combobox.currentIndex() == \
+        backup_dlg.compression_combobox.count() - 1
+
+
+@mock.patch('qubesmanager.backup_utils.load_backup_profile')
+def test_20_loading_settings_bzip2(mock_load, test_qubes_app, qapp):
+
+    mock_load.return_value = {
+        'destination_vm': 'test-blue',
+        'destination_path': "/home",
+        'include': ['dom0', 'test-red', 'sys-net'],
+        'passphrase_text': "longerPassPhrase",
+        'compression': "bzip2"
+    }
+
+    dispatcher = MockAsyncDispatcher(test_qubes_app)
+    backup_dlg = backup.BackupVMsWindow(qapp, test_qubes_app, dispatcher)
+    # needed because otherwise the wizard will not test correctly
+    backup_dlg.show()
+
+    # check if the right compression filter is selected
+    assert backup_dlg.compression_combobox.currentText() == "bzip2"
+
+
+@mock.patch('qubesmanager.backup_utils.load_backup_profile')
+def test_20_loading_settings_pkzip(mock_load, test_qubes_app, qapp):
+
+    mock_load.return_value = {
+        'destination_vm': 'test-blue',
+        'destination_path': "/home",
+        'include': ['dom0', 'test-red', 'sys-net'],
+        'passphrase_text': "longerPassPhrase",
+        'compression': "pkzip"
+    }
+
+    dispatcher = MockAsyncDispatcher(test_qubes_app)
+    backup_dlg = backup.BackupVMsWindow(qapp, test_qubes_app, dispatcher)
+    # needed because otherwise the wizard will not test correctly
+    backup_dlg.show()
+
+    # check if the compression filter reverts to the default
+    assert backup_dlg.compression_combobox.currentIndex() == 0
 
 
 @mock.patch('qubesmanager.backup_utils.load_backup_profile')
