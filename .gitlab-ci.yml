@@ -21,10 +21,11 @@ checks:tests:
   stage: checks
   variables:
     PYTEST_ADDOPTS: "--color=yes"
+    BLACK_ARGS: -l88 -v --diff --color --check
   before_script: &before-script
     - "PATH=$PATH:$HOME/.local/bin"
     - sudo dnf install -y python3-gobject python3-pytest python3-pytest-asyncio
-      python3-coverage sequoia-sqv python3-pip python3-pytest-qt 
+      python3-coverage sequoia-sqv python3-pip python3-pytest-qt
       xorg-x11-server-Xvfb python3-PyQt6-devel python3-pyqt6
     - pip3 install --quiet -r ci/requirements.txt
     - git clone https://github.com/QubesOS/qubes-core-admin-client ~/core-admin-client
