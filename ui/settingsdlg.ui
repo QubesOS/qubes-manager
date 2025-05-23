@@ -742,6 +742,13 @@ border-width: 1px;</string>
               <property name="topMargin">
                <number>15</number>
               </property>
+              <item row="1" column="0">
+               <widget class="QCheckBox" name="run_in_debug_mode">
+                <property name="text">
+                 <string>Run in debug mode</string>
+                </property>
+               </widget>
+              </item>
               <item row="2" column="0" colspan="2">
                <layout class="QHBoxLayout" name="horizontalLayout_prohibit_start">
                 <item>
@@ -780,6 +787,172 @@ border-width: 1px;</string>
                 </property>
                </widget>
               </item>
+              <item row="5" column="0">
+               <widget class="QLabel" name="preload_dispvm_label">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Configure how many disposables this template must preload.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>Preload disposables:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="1">
+               <widget class="QSpinBox" name="preload_dispvm">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+                <property name="maximum">
+                 <number>50</number>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0" colspan="2">
+               <widget class="QLabel" name="warn_default_dispvm_preload_label">
+                <property name="palette">
+                 <palette>
+                  <active>
+                   <colorrole role="WindowText">
+                    <brush brushstyle="SolidPattern">
+                     <color alpha="255">
+                      <red>239</red>
+                      <green>41</green>
+                      <blue>41</blue>
+                     </color>
+                    </brush>
+                   </colorrole>
+                   <colorrole role="Text">
+                    <brush brushstyle="SolidPattern">
+                     <color alpha="255">
+                      <red>239</red>
+                      <green>41</green>
+                      <blue>41</blue>
+                     </color>
+                    </brush>
+                   </colorrole>
+                   <colorrole role="PlaceholderText">
+                    <brush brushstyle="SolidPattern">
+                     <color alpha="128">
+                      <red>239</red>
+                      <green>41</green>
+                      <blue>41</blue>
+                     </color>
+                    </brush>
+                   </colorrole>
+                  </active>
+                  <inactive>
+                   <colorrole role="WindowText">
+                    <brush brushstyle="SolidPattern">
+                     <color alpha="255">
+                      <red>239</red>
+                      <green>41</green>
+                      <blue>41</blue>
+                     </color>
+                    </brush>
+                   </colorrole>
+                   <colorrole role="Text">
+                    <brush brushstyle="SolidPattern">
+                     <color alpha="255">
+                      <red>239</red>
+                      <green>41</green>
+                      <blue>41</blue>
+                     </color>
+                    </brush>
+                   </colorrole>
+                   <colorrole role="PlaceholderText">
+                    <brush brushstyle="SolidPattern">
+                     <color alpha="128">
+                      <red>239</red>
+                      <green>41</green>
+                      <blue>41</blue>
+                     </color>
+                    </brush>
+                   </colorrole>
+                  </inactive>
+                  <disabled>
+                   <colorrole role="WindowText">
+                    <brush brushstyle="SolidPattern">
+                     <color alpha="255">
+                      <red>190</red>
+                      <green>190</green>
+                      <blue>190</blue>
+                     </color>
+                    </brush>
+                   </colorrole>
+                   <colorrole role="Text">
+                    <brush brushstyle="SolidPattern">
+                     <color alpha="255">
+                      <red>190</red>
+                      <green>190</green>
+                      <blue>190</blue>
+                     </color>
+                    </brush>
+                   </colorrole>
+                   <colorrole role="PlaceholderText">
+                    <brush brushstyle="SolidPattern">
+                     <color alpha="128">
+                      <red>0</red>
+                      <green>0</green>
+                      <blue>0</blue>
+                     </color>
+                    </brush>
+                   </colorrole>
+                  </disabled>
+                 </palette>
+                </property>
+                <property name="font">
+                 <font>
+                  <italic>true</italic>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>This qube is the default disposable template the global preload feature is set, therefore, it will honor the Global Config preference until the feature is deleted.</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignJustify|Qt::AlignVCenter</set>
+                </property>
+                <property name="wordWrap">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="0" colspan="2">
+               <layout class="QHBoxLayout" name="horizontalLayout_6">
+                <item>
+                 <widget class="QLabel" name="label_26">
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Which qube should be used by default as a template for disposables started from this one? Disposables will inherit their template's configuration and installed programs.&lt;br/&gt;For a qube to to appear in this list, it must have the &amp;quot;Disposable template&amp;quot; setting enabled. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="text">
+                   <string>Default disposable template</string>
+                  </property>
+                  <property name="buddy">
+                   <cstring>default_dispvm</cstring>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QComboBox" name="default_dispvm">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Which qube should be used by default as a template for disposables started from this one? Disposables will inherit their template's configuration and installed programs.&lt;br/&gt;For a qube to to appear in this list, it must have the &amp;quot;Disposable template&amp;quot; setting enabled. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
               <item row="8" column="0" colspan="2">
                <widget class="QPushButton" name="boot_from_device_button">
                 <property name="text">
@@ -812,43 +985,6 @@ The qube must be running to disable seamless mode. This setting is not persisten
                  </widget>
                 </item>
                </layout>
-              </item>
-              <item row="6" column="0" colspan="2">
-               <layout class="QHBoxLayout" name="horizontalLayout_6">
-                <item>
-                 <widget class="QLabel" name="label_26">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Which qube should be used by default as a template for disposables started from this one? Disposables will inherit their template's configuration and installed programs.&lt;br/&gt;For a qube to to appear in this list, it must have the &amp;quot;Disposable template&amp;quot; setting enabled. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                  <property name="text">
-                   <string>Default disposable template</string>
-                  </property>
-                  <property name="buddy">
-                   <cstring>default_dispvm</cstring>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QComboBox" name="default_dispvm">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Which qube should be used by default as a template for disposables started from this one? Disposables will inherit their template's configuration and installed programs.&lt;br/&gt;For a qube to to appear in this list, it must have the &amp;quot;Disposable template&amp;quot; setting enabled. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </item>
-              <item row="1" column="0">
-               <widget class="QCheckBox" name="run_in_debug_mode">
-                <property name="text">
-                 <string>Run in debug mode</string>
-                </property>
-               </widget>
               </item>
              </layout>
             </widget>
@@ -1933,6 +2069,7 @@ For user reference only.
   <tabstop>run_in_debug_mode</tabstop>
   <tabstop>provides_network_checkbox</tabstop>
   <tabstop>dvm_template_checkbox</tabstop>
+  <tabstop>preload_dispvm</tabstop>
   <tabstop>default_dispvm</tabstop>
   <tabstop>boot_from_device_button</tabstop>
   <tabstop>seamless_on_button</tabstop>
