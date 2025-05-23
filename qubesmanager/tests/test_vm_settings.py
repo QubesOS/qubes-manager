@@ -285,6 +285,10 @@ def test_002_data(settings_fixture):
     assert settings_window.dvm_template_checkbox.isChecked() == getattr(
         vm, "template_for_dispvms", False
     )
+    assert (
+        settings_window.preload_dispvm.isEnabled()
+        == settings_window.dvm_template_checkbox.isChecked()
+    )
 
     if hasattr(vm, "default_dispvm"):
         if vm.property_is_default("default_dispvm"):
@@ -913,6 +917,10 @@ def test_206_dispvmtempl(settings_fixture):
     assert settings_window.dvm_template_checkbox.isEnabled()
 
     assert settings_window.dvm_template_checkbox.isChecked() == vm.template_for_dispvms
+    assert (
+        settings_window.preload_dispvm.isEnabled()
+        == settings_window.dvm_template_checkbox.isChecked()
+    )
 
     settings_window.dvm_template_checkbox.setChecked(not vm.template_for_dispvms)
 

@@ -126,9 +126,9 @@ class RefreshAppsVMThread(common_threads.QubesThread):
 
         for vm in vms_to_refresh:
             self.button.setText(
-                self.tr(
-                    "Refresh in progress (refreshing applications " "from {})"
-                ).format(vm.name)
+                self.tr("Refresh in progress (refreshing applications from {})").format(
+                    vm.name
+                )
             )
             try:
                 if not utils.is_running(vm, True):
@@ -207,6 +207,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.init_mem.editingFinished.connect(self.check_mem_changes)
         self.max_mem_size.editingFinished.connect(self.check_mem_changes)
         self.check_mem_changes()
+
+        self.dvm_template_checkbox.stateChanged.connect(
+            self.dvm_template_checkbox_changed
+        )
+        self.preload_dispvm.editingFinished.connect(self.check_disp_changes)
+        self.check_disp_changes()
+
         self.boot_from_device_button.clicked.connect(
             self.boot_from_cdrom_button_pressed
         )
@@ -775,6 +782,12 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         if is_linux and self.init_mem.value() * 10 < self.max_mem_size.value():
             self.warn_too_much_mem_label.setVisible(True)
 
+    def check_disp_changes(self):
+        if not self.dvm_template_checkbox.isChecked():
+            return
+        if not self.preload_dispvm.isEnabled():
+            return
+
     def check_warn_templatenetvm(self):
         if self.vm.klass != "TemplateVM":
             return
@@ -955,10 +968,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
     ######### advanced tab
 
-    def __init_advanced_tab__(self):
+    def __init_advanced_tab__(self):  # pylint: disable=too-many-statements
 
         vm_memory = getattr(self.vm, "memory", None)
         vm_maxmem = getattr(self.vm, "maxmem", None)
+        vm_preload_dispvm = int(self.vm.features.get("preload-dispvm-max", 0) or 0)
 
         if vm_memory is None:
             self.init_mem.setEnabled(False)
@@ -1090,6 +1104,15 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         if not hasattr(self.vm, "template_for_dispvms"):
             self.dvm_template_checkbox.setEnabled(False)
 
+        self.preload_dispvm.setMinimum(0)
+        self.preload_dispvm.setMaximum(50)
+        self.preload_dispvm.setEnabled(self.dvm_template_checkbox.isChecked())
+        if self.preload_dispvm.isEnabled():
+            vm_preload_dispvm = int(self.vm.features.get("preload-dispvm-max", 0) or 0)
+        else:
+            vm_preload_dispvm = 0
+        self.preload_dispvm.setValue(vm_preload_dispvm)
+
         self.provides_network_checkbox.setChecked(
             getattr(self.vm, "provides_network", False)
         )
@@ -1099,8 +1122,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 self.provides_network_checkbox.setEnabled(False)
                 self.provides_network_checkbox.setToolTip(
                     self.tr(
-                        "Cannot change this setting while this qube is used as a "
-                        "NetVM by the following qubes:\n"
+                        "Cannot change this setting while this qube is used as "
+                        "a NetVM by the following qubes:\n"
                     )
                     + "\n".join(domains_using)
                 )
@@ -1204,6 +1227,17 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
             if self.vcpus.isEnabled() and self.vcpus.value() != int(self.vm.vcpus):
                 self.vm.vcpus = self.vcpus.value()
+
+            if (
+                self.dvm_template_checkbox.isChecked()
+                and self.preload_dispvm.isEnabled()
+            ):
+                curr_preload_dispvm = int(
+                    self.vm.features.get("preload-dispvm-max", 0) or 0
+                )
+                preload_dispvm = self.preload_dispvm.value()
+                if preload_dispvm != curr_preload_dispvm:
+                    self.vm.features["preload-dispvm-max"] = preload_dispvm
 
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
@@ -1310,6 +1344,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.max_mem_size.setEnabled(self.include_in_balancing.isChecked())
         if self.include_in_balancing.isChecked():
             self.check_mem_changes()
+
+    def dvm_template_checkbox_changed(self, state):  # pylint: disable=unused-argument
+        self.preload_dispvm.setEnabled(self.dvm_template_checkbox.isChecked())
+        if self.dvm_template_checkbox.isChecked():
+            self.check_disp_changes()
 
     def boot_from_cdrom_button_pressed(self):
         boot_dialog = bootfromdevice.VMBootFromDeviceWindow(

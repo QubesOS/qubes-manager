@@ -780,14 +780,14 @@ border-width: 1px;</string>
                 </property>
                </widget>
               </item>
-              <item row="8" column="0" colspan="2">
+              <item row="9" column="0" colspan="2">
                <widget class="QPushButton" name="boot_from_device_button">
                 <property name="text">
                  <string>Boot qube from DISC or block device</string>
                 </property>
                </widget>
               </item>
-              <item row="9" column="0" colspan="2">
+              <item row="10" column="0" colspan="2">
                <layout class="QHBoxLayout" name="horizontalLayout_8">
                 <item>
                  <widget class="QPushButton" name="seamless_on_button">
@@ -813,7 +813,7 @@ The qube must be running to disable seamless mode. This setting is not persisten
                 </item>
                </layout>
               </item>
-              <item row="6" column="0" colspan="2">
+              <item row="7" column="0" colspan="2">
                <layout class="QHBoxLayout" name="horizontalLayout_6">
                 <item>
                  <widget class="QLabel" name="label_26">
@@ -847,6 +847,32 @@ The qube must be running to disable seamless mode. This setting is not persisten
                <widget class="QCheckBox" name="run_in_debug_mode">
                 <property name="text">
                  <string>Run in debug mode</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="0">
+               <widget class="QLabel" name="preload_dispvm_label">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Configure how many disposables this template must preload.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>Preload disposables:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="6" column="1">
+               <widget class="QSpinBox" name="preload_dispvm">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+                <property name="maximum">
+                 <number>50</number>
                 </property>
                </widget>
               </item>
@@ -1909,6 +1935,7 @@ The qube must be running to disable seamless mode. This setting is not persisten
   <tabstop>run_in_debug_mode</tabstop>
   <tabstop>provides_network_checkbox</tabstop>
   <tabstop>dvm_template_checkbox</tabstop>
+  <tabstop>preload_dispvm</tabstop>
   <tabstop>default_dispvm</tabstop>
   <tabstop>boot_from_device_button</tabstop>
   <tabstop>seamless_on_button</tabstop>
