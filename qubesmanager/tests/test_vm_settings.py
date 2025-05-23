@@ -192,6 +192,20 @@ def settings_fixture(
         mock_subprocess.side_effect = mock_subprocess_complex
         expected_call = (vm.name, "admin.vm.notes.Get", None, None)
         test_qubes_app.expected_calls[expected_call] = b"0\x00Some Notes\x00"
+        expected_call_preload = (
+            vm.name,
+            "admin.vm.feature.Get",
+            "preload-dispvm-max",
+            None,
+        )
+        test_qubes_app.expected_calls[expected_call_preload] = b"0\x00"
+        expected_call_preload = (
+            "dom0",
+            "admin.vm.feature.Get",
+            "preload-dispvm-max",
+            None,
+        )
+        test_qubes_app.expected_calls[expected_call_preload] = b"0\x00"
         vms = vm_settings.VMSettingsWindow(vm, page, qapp, test_qubes_app)
         yield vms, page, vm.name
 
@@ -287,6 +301,10 @@ def test_002_data(settings_fixture):
     )
     assert settings_window.dvm_template_checkbox.isChecked() == getattr(
         vm, "template_for_dispvms", False
+    )
+    assert (
+        settings_window.preload_dispvm.isEnabled()
+        == settings_window.dvm_template_checkbox.isChecked()
     )
 
     if hasattr(vm, "default_dispvm"):
@@ -916,8 +934,17 @@ def test_206_dispvmtempl(settings_fixture):
     assert settings_window.dvm_template_checkbox.isEnabled()
 
     assert settings_window.dvm_template_checkbox.isChecked() == vm.template_for_dispvms
+    assert (
+        settings_window.preload_dispvm.isEnabled()
+        == settings_window.dvm_template_checkbox.isChecked()
+    )
 
     settings_window.dvm_template_checkbox.setChecked(not vm.template_for_dispvms)
+
+    assert (
+        settings_window.preload_dispvm.isEnabled()
+        == settings_window.dvm_template_checkbox.isChecked()
+    )
 
     expected_calls = [
         (
