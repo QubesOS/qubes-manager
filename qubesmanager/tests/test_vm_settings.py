@@ -143,6 +143,8 @@ def settings_fixture(request, qapp, test_qubes_app) -> Tuple[
         page = 'basic'
     with mock.patch('subprocess.check_output') as mock_subprocess:
         mock_subprocess.side_effect = mock_subprocess_complex
+        expected_call = (vm.name, 'admin.vm.notes.Get', None, None)
+        test_qubes_app.expected_calls[expected_call] = b'0\x00Some Notes\x00'
         vms = vm_settings.VMSettingsWindow(vm, page, qapp,
                                            test_qubes_app)
 
@@ -1313,6 +1315,7 @@ def test_306_firewall_unlimit(settings_fixture):
 def test_307_open_with_limit(mock_subprocess, qapp, test_qubes_app):
     # this test is supposed to check if the settings open even when there is
     # an unlimited FW access set
+    # It also checks if inaccessible qube note is disabled
     mock_subprocess.result = []
 
     # add 2 minutes to now
@@ -1330,6 +1333,9 @@ def test_307_open_with_limit(mock_subprocess, qapp, test_qubes_app):
         name="test-vm-fw", qapp=test_qubes_app, label="green",
         firewall_rules=fw_rules
     )
+    expected_call = ("test-vm-fw", 'admin.vm.notes.Get', None, None)
+    test_qubes_app.expected_calls[expected_call] = \
+        '2\0QubesNotesException\0\0Notes not available!\0'
     test_qubes_app.update_vm_calls()
 
     settings_window = vm_settings.VMSettingsWindow(
@@ -1341,6 +1347,7 @@ def test_307_open_with_limit(mock_subprocess, qapp, test_qubes_app):
 
     assert settings_window.temp_full_access.isChecked()
     assert settings_window.tempFullAccessWidget.isEnabled()
+    assert not settings_window.notes.isEnabled()
 
 
 @check_errors

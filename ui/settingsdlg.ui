@@ -1866,6 +1866,30 @@ The qube must be running to disable seamless mode. This setting is not persisten
          </item>
         </layout>
        </widget>
+       <widget class="QWidget" name="notes_tab">
+        <attribute name="icon">
+         <iconset resource="../resources.qrc">
+          <normaloff>:/notes</normaloff>:/notes</iconset>
+        </attribute>
+        <attribute name="title">
+         <string>Notes</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="verticalLayout_notes_tab">
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout_notes">
+           <item>
+            <widget class="QPlainTextEdit" name="notes">
+             <property name="placeholderText">
+               <string>Notes and comments (up to 256KB of clear text)
+For user reference only.
+       </string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
       </widget>
      </item>
      <item>
