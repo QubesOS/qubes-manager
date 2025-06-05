@@ -1,6 +1,6 @@
 Icon Notes
 
-Most icons are taken from lucide.dev under a MIT license. They are based on
+Most icons are taken from lucide.dev under a ISC license. They are based on
 outlined icons and each icon has a stroke width which can be customized.
 We recommend following stroke weight for different resolutions:
 
