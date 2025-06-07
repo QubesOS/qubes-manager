@@ -180,6 +180,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
     def setup_application(self):
         self.qt_app.setApplicationName(self.tr("Qubes Backup VMs"))
         self.qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
+        self.qt_app.setDesktopFileName("qubes-backup")
 
     def on_backup_progress(self, __submitter, _event, **kwargs):
         self.progress_bar.setValue(int(float(kwargs['progress'])))

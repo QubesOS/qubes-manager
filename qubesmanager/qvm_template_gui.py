@@ -641,6 +641,7 @@ class QvmTemplateWindow(
         self.qubes_app = qubes_app
         self.qt_app: PyQt6.QtWidgets.QApplication = qt_app
         self.qt_app.setWindowIcon(PyQt6.QtGui.QIcon.fromTheme("qubes-manager"))
+        self.qt_app.setDesktopFileName("qubes-template-manager")
         self.dispatcher = dispatcher
 
         self.template_model = TemplateModel(self.qubes_app)
