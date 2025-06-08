@@ -151,6 +151,7 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
     def setup_application(self):
         self.qt_app.setApplicationName(self.tr("Qubes Restore VMs"))
         self.qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
+        self.qt_app.setDesktopFileName("qubes-backup-restore")
 
     @QtCore.pyqtSlot(name='on_select_path_button_clicked')
     def select_path_button_clicked(self):

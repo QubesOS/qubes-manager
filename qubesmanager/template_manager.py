@@ -82,6 +82,7 @@ class TemplateManagerWindow(
     def setup_application(self):
         self.qt_app.setApplicationName(self.tr("Template Switcher"))
         self.qt_app.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
+        self.qt_app.setDesktopFileName("qubes-template-switcher")
 
     def prepare_lists(self):
         self.templates = [vm.name for vm in self.qubes_app.domains

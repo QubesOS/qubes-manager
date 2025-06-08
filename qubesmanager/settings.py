@@ -280,6 +280,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
     def setup_application(self):
         self.qapp.setApplicationName(self.tr("Qube Settings"))
         self.qapp.setWindowIcon(QtGui.QIcon.fromTheme("qubes-manager"))
+        self.qapp.setDesktopFileName("qubes-qube-manager")
 
     def clear_threads(self):
         for thread in self.threads_list:

@@ -1129,6 +1129,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     def setup_application(self):
         self.qt_app.setApplicationName(self.tr("Qube Manager"))
         self.qt_app.setWindowIcon(QIcon.fromTheme("qubes-manager"))
+        self.qt_app.setDesktopFileName("qubes-qube-manager")
 
     def keyPressEvent(self, event):  # pylint: disable=invalid-name
         if event.key() == Qt.Key.Key_Escape:
