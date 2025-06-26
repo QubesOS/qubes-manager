@@ -1,3 +1,27 @@
+qubes-manager (4.3.14-1) unstable; urgency=medium
+
+  [ Ali Mirjamali ]
+  * Allow user to select compression filter
+
+  [ Marek Marczykowski-Górecki ]
+  * Bump required python3-qubesadmin version
+
+  [ Ali Mirjamali ]
+  * Make `Devices` tab prettier & safer
+  * Add free-form text to qube for notes, comments, ...
+
+  [ Marta Marczykowska-Górecka ]
+  * Fix tests for changes in mock API
+
+  [ Ali Mirjamali ]
+  * Show (Manager App) Icons for Wayland/KDE
+
+  [ Ben Grande ]
+  * Black formatter
+  * Add preload disposable option to advanced settings
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Thu, 26 Jun 2025 18:57:42 +0200
+
 qubes-manager (4.3.13-1) unstable; urgency=medium
 
   [ Guillaume Chinal ]
