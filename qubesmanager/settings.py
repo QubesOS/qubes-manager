@@ -65,12 +65,8 @@ INTERNAL_SUPPORTED_FEATURES = [IDLE_SUPPORTED_SERVICE]
 
 def get_default_bootmode_name(vm, bootmode):
     if bootmode == "default":
-        return vm.features.check_with_template(
-            "boot-mode.name.default", ""
-        )
-    return vm.features.check_with_template(
-        f"boot-mode.name.{bootmode}", bootmode
-    )
+        return vm.features.check_with_template("boot-mode.name.default", "")
+    return vm.features.check_with_template(f"boot-mode.name.{bootmode}", bootmode)
 
 
 # pylint: disable=too-few-public-methods
@@ -86,7 +82,7 @@ class RenameVMThread(common_threads.QubesThread):
 
             failed_props = []
 
-            for (holder, prop) in self.dependencies:
+            for holder, prop in self.dependencies:
                 try:
                     if holder is None:
                         setattr(self.vm.app, prop, new_vm)
@@ -98,14 +94,17 @@ class RenameVMThread(common_threads.QubesThread):
                 del self.vm.app.domains[self.vm.name]
             else:
                 list_text = utils.format_dependencies_list(failed_props)
-                self.msg = (self.tr("Warning: rename partially unsuccessful!"),
-                            self.tr("Some properties could not be changed to "
-                                    "the new name. The system has now both {} "
-                                    "and {} qubes. To resolve this, please "
-                                    "check and change the following properties "
-                                    "and remove the qube {} manually.<br>"
-                                    ).format(self.vm.name, self.new_vm_name,
-                                             self.vm.name) + list_text)
+                self.msg = (
+                    self.tr("Warning: rename partially unsuccessful!"),
+                    self.tr(
+                        "Some properties could not be changed to "
+                        "the new name. The system has now both {} "
+                        "and {} qubes. To resolve this, please "
+                        "check and change the following properties "
+                        "and remove the qube {} manually.<br>"
+                    ).format(self.vm.name, self.new_vm_name, self.vm.name)
+                    + list_text,
+                )
 
         except qubesadmin.exc.QubesException as ex:
             self.msg = (self.tr("Rename error!"), str(ex))
@@ -121,14 +120,16 @@ class RefreshAppsVMThread(common_threads.QubesThread):
 
     def run(self):
         vms_to_refresh = [self.vm]
-        template = getattr(self.vm, 'template', None)
+        template = getattr(self.vm, "template", None)
         if template:
             vms_to_refresh.append(template)
 
         for vm in vms_to_refresh:
             self.button.setText(
-                self.tr('Refresh in progress (refreshing applications '
-                        'from {})').format(vm.name))
+                self.tr("Refresh in progress (refreshing applications from {})").format(
+                    vm.name
+                )
+            )
             try:
                 if not utils.is_running(vm, True):
                     not_running = True
@@ -136,7 +137,7 @@ class RefreshAppsVMThread(common_threads.QubesThread):
                 else:
                     not_running = False
 
-                subprocess.check_call(['qvm-sync-appmenus', vm.name])
+                subprocess.check_call(["qvm-sync-appmenus", vm.name])
 
                 if not_running:
                     vm.shutdown()
@@ -146,19 +147,22 @@ class RefreshAppsVMThread(common_threads.QubesThread):
 
 # pylint: disable=too-many-instance-attributes
 class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
-    tabs_indices = collections.OrderedDict((
-        ('basic', 0),
-        ('advanced', 1),
-        ('firewall', 2),
-        ('devices', 3),
-        ('applications', 4),
-        ('services', 5),
-        ('notes', 6),
-        ))
+    tabs_indices = collections.OrderedDict(
+        (
+            ("basic", 0),
+            ("advanced", 1),
+            ("firewall", 2),
+            ("devices", 3),
+            ("applications", 4),
+            ("services", 5),
+            ("notes", 6),
+        )
+    )
 
     # pylint: disable=too-many-positional-arguments
-    def __init__(self, vm_name, init_page="basic", qapp=None, qubesapp=None,
-                 parent=None):
+    def __init__(
+        self, vm_name, init_page="basic", qapp=None, qubesapp=None, parent=None
+    ):
         super().__init__(parent)
 
         self.vm = qubesapp.domains[vm_name]
@@ -170,17 +174,19 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         self.setupUi(self)
         self.setWindowTitle(self.tr("Settings: {vm}").format(vm=self.vm.name))
-        self.setWindowFlags(self.windowFlags() |
-                            QtCore.Qt.WindowType.WindowMaximizeButtonHint |
-                            QtCore.Qt.WindowType.WindowMinimizeButtonHint)
+        self.setWindowFlags(
+            self.windowFlags()
+            | QtCore.Qt.WindowType.WindowMaximizeButtonHint
+            | QtCore.Qt.WindowType.WindowMinimizeButtonHint
+        )
         if init_page in self.tabs_indices:
             idx = self.tabs_indices[init_page]
             assert idx in range(self.tabWidget.count())
             self.tabWidget.setCurrentIndex(idx)
 
         self.buttonBox.button(
-            QtWidgets.QDialogButtonBox.StandardButton.Apply).clicked.connect(
-            self.apply)
+            QtWidgets.QDialogButtonBox.StandardButton.Apply
+        ).clicked.connect(self.apply)
 
         self.tabWidget.currentChanged.connect(self.current_tab_changed)
 
@@ -197,15 +203,22 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         ###### advanced tab
         self.__init_advanced_tab__()
         self.include_in_balancing.stateChanged.connect(
-            self.include_in_balancing_changed)
+            self.include_in_balancing_changed
+        )
         self.init_mem.editingFinished.connect(self.check_mem_changes)
         self.max_mem_size.editingFinished.connect(self.check_mem_changes)
         self.check_mem_changes()
+
+        self.dvm_template_checkbox.stateChanged.connect(
+            self.dvm_template_checkbox_changed
+        )
+
         self.boot_from_device_button.clicked.connect(
-            self.boot_from_cdrom_button_pressed)
+            self.boot_from_cdrom_button_pressed
+        )
 
         ###### firewall tab
-        if self.tabWidget.isTabEnabled(self.tabs_indices['firewall']):
+        if self.tabWidget.isTabEnabled(self.tabs_indices["firewall"]):
             model = firewall.QubesFirewallRulesModel()
             try:
                 model.set_vm(self.vm)
@@ -214,23 +227,20 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             except firewall.FirewallModifiedOutsideError:
                 self.disable_all_fw_conf()
             except qubesadmin.exc.QubesException:
-                self.tabWidget.setTabEnabled(
-                    self.tabs_indices['firewall'], False)
+                self.tabWidget.setTabEnabled(self.tabs_indices["firewall"], False)
 
             self.new_rule_button.clicked.connect(self.new_rule_button_pressed)
             self.edit_rule_button.clicked.connect(self.edit_rule_button_pressed)
-            self.delete_rule_button.clicked.connect(
-                self.delete_rule_button_pressed)
+            self.delete_rule_button.clicked.connect(self.delete_rule_button_pressed)
             self.policy_deny_radio_button.clicked.connect(self.policy_changed)
             self.policy_allow_radio_button.clicked.connect(self.policy_changed)
-            if init_page == 'firewall':
+            if init_page == "firewall":
                 self.check_network_availability()
 
         ####### devices tab
         self.__init_devices_tab__()
         self.dev_list.selectedChanged.connect(self.devices_selection_changed)
-        self.no_strict_reset_button.clicked.connect(
-            self.strict_reset_button_pressed)
+        self.no_strict_reset_button.clicked.connect(self.strict_reset_button_pressed)
         self.current_strict_reset_list = []
         self.new_strict_reset_list = []
         self.define_strict_reset_devices()
@@ -245,11 +255,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.app_list = multiselectwidget.MultiSelectWidget(self)
             self.app_list.change_labels(
                 available="All available applications",
-                selected="Applications shown in App Menu")
+                selected="Applications shown in App Menu",
+            )
             self.apps_layout.addWidget(self.app_list)
             self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
-            self.refresh_apps_button.clicked.connect(
-                self.refresh_apps_button_pressed)
+            self.refresh_apps_button.clicked.connect(self.refresh_apps_button_pressed)
 
             # Enable Drag & Drop between between two panels
             # ToDo: Disable D&D between multiple instances of qubes-vm-settings
@@ -257,22 +267,28 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.app_list.available_list.setDragEnabled(True)
             self.app_list.available_list.setAcceptDrops(True)
             self.app_list.available_list.setDragDropMode(
-                QtWidgets.QListWidget.DragDropMode.DragDrop)
+                QtWidgets.QListWidget.DragDropMode.DragDrop
+            )
             self.app_list.available_list.setDefaultDropAction(
-                QtCore.Qt.DropAction.MoveAction)
+                QtCore.Qt.DropAction.MoveAction
+            )
             self.app_list.selected_list.setDragEnabled(True)
             self.app_list.selected_list.setAcceptDrops(True)
             self.app_list.selected_list.setDragDropMode(
-                QtWidgets.QListWidget.DragDropMode.DragDrop)
+                QtWidgets.QListWidget.DragDropMode.DragDrop
+            )
             self.app_list.selected_list.setDefaultDropAction(
-                QtCore.Qt.DropAction.MoveAction)
+                QtCore.Qt.DropAction.MoveAction
+            )
 
             # template change
             if self.template_name.isEnabled():
                 self.template_name.currentIndexChanged.connect(
-                    self.template_apps_change)
+                    self.template_apps_change
+                )
             self.warn_template_missing_apps.setVisible(
-                self.app_list_manager.has_missing)
+                self.app_list_manager.has_missing
+            )
 
         ####### notes tab
         self.__init_notes_tab__()
@@ -291,10 +307,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
                 if thread.msg:
                     (title, msg) = thread.msg
-                    QtWidgets.QMessageBox.warning(
-                        self,
-                        title,
-                        msg)
+                    QtWidgets.QMessageBox.warning(self, title, msg)
 
                 self.threads_list.remove(thread)
 
@@ -303,11 +316,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
                 return
 
-        raise RuntimeError(self.tr('No finished thread found'))
+        raise RuntimeError(self.tr("No finished thread found"))
 
     def keyPressEvent(self, event):  # pylint: disable=invalid-name
-        if event.key() == QtCore.Qt.Key.Key_Enter \
-                or event.key() == QtCore.Qt.Key.Key_Return:
+        if (
+            event.key() == QtCore.Qt.Key.Key_Enter
+            or event.key() == QtCore.Qt.Key.Key_Return
+        ):
             return
         super().keyPressEvent(event)
 
@@ -321,9 +336,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         if error:
             QtWidgets.QMessageBox.warning(
                 self,
-                self.tr("Error while changing settings for {0}!"
-                        ).format(self.vm.name),
-                self.tr("ERROR: {0}").format('\n'.join(error)))
+                self.tr("Error while changing settings for {0}!").format(self.vm.name),
+                self.tr("ERROR: {0}").format("\n".join(error)),
+            )
 
     def apply(self):
         self.save_changes()
@@ -363,17 +378,20 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             if ret_tmp:
                 ret += [self.tr("Notes tab:")] + ret_tmp
         except qubesadmin.exc.QubesException as qex:
-            ret.append(self.tr('Error while saving changes: ') + str(qex))
+            ret.append(self.tr("Error while saving changes: ") + str(qex))
         except Exception as ex:  # pylint: disable=broad-except
             ret.append(repr(ex))
 
         try:
-            if self.tabWidget.isTabEnabled(self.tabs_indices['firewall']) and \
-                    self.policy_allow_radio_button.isEnabled():
+            if (
+                self.tabWidget.isTabEnabled(self.tabs_indices["firewall"])
+                and self.policy_allow_radio_button.isEnabled()
+            ):
                 self.fw_model.apply_rules(
                     self.policy_allow_radio_button.isChecked(),
                     self.temp_full_access.isChecked(),
-                    self.temp_full_access_time.value())
+                    self.temp_full_access_time.value(),
+                )
         except qubesadmin.exc.QubesException as qex:
             ret += [self.tr("Firewall tab:"), str(qex)]
         except Exception as ex:  # pylint: disable=broad-except
@@ -387,14 +405,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         except Exception as ex:  # pylint: disable=broad-except
             ret += [self.tr("Applications tab:"), repr(ex)]
 
-        utils.debug('\n'.join(ret))
+        utils.debug("\n".join(ret))
         return ret
 
     def check_network_availability(self):
         # this should attempt to use whatever is currently selected, not VM
         # settings
         if self.netVM.currentData() == qubesadmin.DEFAULT:
-            netvm = self.vm.property_get_default('netvm')
+            netvm = self.vm.property_get_default("netvm")
         else:
             netvm = self.netVM.currentData()
         provides_network = self.provides_network_checkbox.isChecked()
@@ -402,9 +420,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.no_netvm_label.setVisible(netvm is None and not provides_network)
 
         try:
-            no_firewall_state = \
-                netvm is not None and \
-                not netvm.features.check_with_template('qubes-firewall', False)
+            no_firewall_state = (
+                netvm is not None
+                and not netvm.features.check_with_template("qubes-firewall", False)
+            )
         except qubesadmin.exc.QubesDaemonAccessError:
             no_firewall_state = False
 
@@ -413,20 +432,23 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
     def collect_bootmode_data(self):
         bootmode_ids = [
-            x.split('.')[2] for x in self.vm.features \
-                if x.startswith("boot-mode.kernelopts.")
+            x.split(".")[2]
+            for x in self.vm.features
+            if x.startswith("boot-mode.kernelopts.")
         ]
         subject = self.vm
         while hasattr(subject, "template"):
-            bootmode_ids.extend([
-                x.split('.')[2] for x in subject.template.features \
+            bootmode_ids.extend(
+                [
+                    x.split(".")[2]
+                    for x in subject.template.features
                     if x.startswith("boot-mode.kernelopts.")
-            ])
+                ]
+            )
             subject = subject.template
         bootmode_names = [
-            self.vm.features.check_with_template(
-                f"boot-mode.name.{x}", x
-            ) for x in bootmode_ids
+            self.vm.features.check_with_template(f"boot-mode.name.{x}", x)
+            for x in bootmode_ids
         ]
         return bootmode_names, bootmode_ids
 
@@ -451,50 +473,56 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             QtGui.QRegularExpressionValidator(
                 QtCore.QRegularExpression(
                     "[a-zA-Z0-9_-]*",
-                    QtCore.QRegularExpression.
-                    PatternOption.CaseInsensitiveOption), None))
+                    QtCore.QRegularExpression.PatternOption.CaseInsensitiveOption,
+                ),
+                None,
+            )
+        )
         self.vmname.setEnabled(False)
         self.rename_vm_button.setEnabled(not self.vm.is_running())
         self.delete_vm_button.setEnabled(not self.vm.is_running())
 
         if utils.is_running(self.vm, False):
             self.delete_vm_button.setText(
-                self.tr('Delete qube (cannot delete a running qube)'))
+                self.tr("Delete qube (cannot delete a running qube)")
+            )
 
-        if self.vm.klass == 'AdminVM':
+        if self.vm.klass == "AdminVM":
             self.vmlabel.setVisible(False)
         else:
             try:
                 utils.initialize_widget_with_labels(
-                    widget=self.vmlabel,
-                    qubes_app=self.qubesapp,
-                    holder=self.vm)
+                    widget=self.vmlabel, qubes_app=self.qubesapp, holder=self.vm
+                )
                 self.vmlabel.setVisible(True)
                 self.vmlabel.setEnabled(not utils.is_running(self.vm, False))
             except qubesadmin.exc.QubesDaemonAccessError:
                 self.vmlabel.setEnabled(False)
 
-        if self.vm.klass == 'AppVM':
+        if self.vm.klass == "AppVM":
             try:
                 utils.initialize_widget_with_vms(
                     widget=self.template_name,
                     qubes_app=self.qubesapp,
-                    filter_function=(lambda vm: vm.klass == 'TemplateVM'),
+                    filter_function=(lambda vm: vm.klass == "TemplateVM"),
                     holder=self.vm,
-                    property_name='template')
+                    property_name="template",
+                )
             except qubesadmin.exc.QubesDaemonAccessError:
                 self.template_name.setCurrentIndex(-1)
                 self.template_name.setEnabled(False)
 
-        elif self.vm.klass == 'DispVM':
+        elif self.vm.klass == "DispVM":
             try:
                 utils.initialize_widget_with_vms(
                     widget=self.template_name,
                     qubes_app=self.qubesapp,
                     filter_function=(
-                        lambda vm: getattr(vm, 'template_for_dispvms', False)),
+                        lambda vm: getattr(vm, "template_for_dispvms", False)
+                    ),
                     holder=self.vm,
-                    property_name='template')
+                    property_name="template",
+                )
             except qubesadmin.exc.QubesDaemonAccessError:
                 self.template_name.setCurrentIndex(-1)
                 self.template_name.setEnabled(False)
@@ -509,12 +537,12 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             utils.initialize_widget_with_vms(
                 widget=self.netVM,
                 qubes_app=self.qubesapp,
-                filter_function=(lambda vm:
-                                 getattr(vm, 'provides_network', False)),
+                filter_function=(lambda vm: getattr(vm, "provides_network", False)),
                 holder=self.vm,
-                property_name='netvm',
+                property_name="netvm",
                 allow_default=True,
-                allow_none=True)
+                allow_none=True,
+            )
         except qubesadmin.exc.QubesDaemonAccessError:
             self.netVM.setEnabled(False)
             self.netVM.setCurrentIndex(-1)
@@ -531,26 +559,32 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         try:
             has_shutdown_idle = self.vm.features.check_with_template(
-                IDLE_SUPPORTED_SERVICE, False)
+                IDLE_SUPPORTED_SERVICE, False
+            )
             if has_shutdown_idle:
                 self.idle_shutdown_checkbox.setChecked(
-                    bool(self.vm.features.get(IDLE_SERVICE, False)))
+                    bool(self.vm.features.get(IDLE_SERVICE, False))
+                )
             else:
                 text = "Shut down when idle "
-                if getattr(self.vm, 'template', None):
-                    additional_text = "(unavailable: package " \
-                                      "qubes-app-shutdown-idle missing " \
-                                      "in the template)"
+                if getattr(self.vm, "template", None):
+                    additional_text = (
+                        "(unavailable: package "
+                        "qubes-app-shutdown-idle missing "
+                        "in the template)"
+                    )
                 else:
-                    additional_text = "(unavailable: package " \
-                                      "qubes-app-shutdown-idle missing " \
-                                      "in the qube)"
+                    additional_text = (
+                        "(unavailable: package "
+                        "qubes-app-shutdown-idle missing "
+                        "in the qube)"
+                    )
                 self.idle_shutdown_checkbox.setText(text + additional_text)
                 self.idle_shutdown_checkbox.setEnabled(False)
         except qubesadmin.exc.QubesDaemonCommunicationError:
             self.idle_shutdown_checkbox.setText(
-                self.idle_shutdown_checkbox.text() +
-                " (unavailable: permission denied)")
+                self.idle_shutdown_checkbox.text() + " (unavailable: permission denied)"
+            )
             self.idle_shutdown_checkbox.setEnabled(False)
 
         try:
@@ -567,46 +601,57 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         # installed by rpm
         self.rpm_label.setText(
-            'Yes' if getattr(self.vm, 'installed_by_rpm', False) else 'No')
+            "Yes" if getattr(self.vm, "installed_by_rpm", False) else "No"
+        )
 
         # networking info
-        if getattr(self.vm, 'netvm', None):
+        if getattr(self.vm, "netvm", None):
             self.networking_groupbox.setEnabled(True)
-            self.ip_label.setText(getattr(self.vm, 'ip', None) or "none")
+            self.ip_label.setText(getattr(self.vm, "ip", None) or "none")
             self.netmask_label.setText(
-                getattr(self.vm, 'visible_netmask', None) or "none")
+                getattr(self.vm, "visible_netmask", None) or "none"
+            )
             self.gateway_label.setText(
-                getattr(self.vm, 'visible_gateway', None) or "none")
-            dns_list = getattr(self.vm, 'dns', '10.139.1.1 10.139.1.2')
-            self.dns_label.setText(dns_list.replace(' ', ', '))
+                getattr(self.vm, "visible_gateway", None) or "none"
+            )
+            dns_list = getattr(self.vm, "dns", "10.139.1.1 10.139.1.2")
+            self.dns_label.setText(dns_list.replace(" ", ", "))
         else:
             self.networking_groupbox.setEnabled(False)
 
         # max priv storage
         try:
-            self.priv_img_size = self.vm.volumes['private'].size // 1024**2
+            self.priv_img_size = self.vm.volumes["private"].size // 1024**2
             self.max_priv_storage.setMinimum(self.priv_img_size)
             self.max_priv_storage.setValue(self.priv_img_size)
             self.max_priv_storage.setMaximum(
-                max(self.priv_img_size,
-                    self.qubesapp.pools[self.vm.volumes['private'].pool].size
-                    // 1024**2))
+                max(
+                    self.priv_img_size,
+                    self.qubesapp.pools[self.vm.volumes["private"].pool].size
+                    // 1024**2,
+                )
+            )
         except qubesadmin.exc.QubesException:
             self.max_priv_storage.setEnabled(False)
 
         try:
-            self.root_img_size = self.vm.volumes['root'].size // 1024**2
+            self.root_img_size = self.vm.volumes["root"].size // 1024**2
             self.root_resize.setValue(self.root_img_size)
             self.root_resize.setMinimum(self.root_img_size)
             self.root_resize.setMaximum(
-                max(self.root_img_size,
-                    self.qubesapp.pools[self.vm.volumes['root'].pool].size
-                    // 1024**2))
-            self.root_resize.setEnabled(self.vm.volumes['root'].save_on_stop)
+                max(
+                    self.root_img_size,
+                    self.qubesapp.pools[self.vm.volumes["root"].pool].size // 1024**2,
+                )
+            )
+            self.root_resize.setEnabled(self.vm.volumes["root"].save_on_stop)
             if not self.root_resize.isEnabled():
                 self.root_resize.setToolTip(
-                    self.tr("To change system storage size, change properties "
-                            "of the underlying template."))
+                    self.tr(
+                        "To change system storage size, change properties "
+                        "of the underlying template."
+                    )
+                )
             self.root_resize_label.setEnabled(self.root_resize.isEnabled())
         except qubesadmin.exc.QubesException:
             self.root_resize.setEnabled(False)
@@ -633,19 +678,26 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         try:
             if utils.did_widget_selection_change(self.netVM):
                 if self.netVM.currentData() == qubesadmin.DEFAULT:
-                    netvm = self.vm.property_get_default('netvm')
+                    netvm = self.vm.property_get_default("netvm")
                 else:
                     netvm = self.netVM.currentData()
-                if self.vm.get_power_state() == 'Running' and netvm and \
-                        netvm.get_power_state() != 'Running':
+                if (
+                    self.vm.get_power_state() == "Running"
+                    and netvm
+                    and netvm.get_power_state() != "Running"
+                ):
                     reply = QtWidgets.QMessageBox.question(
-                        self, self.tr("Qube Start Confirmation"),
-                        self.tr("<br>Can not change netvm of a running qube"
-                                "to a halted Qube.<br>"
-                                "Do you want to start the Qube"
-                                " <b>'{0}'</b>?").format(netvm.name),
-                        QtWidgets.QMessageBox.StandardButton.Yes |
-                        QtWidgets.QMessageBox.StandardButton.Cancel)
+                        self,
+                        self.tr("Qube Start Confirmation"),
+                        self.tr(
+                            "<br>Can not change netvm of a running qube"
+                            "to a halted Qube.<br>"
+                            "Do you want to start the Qube"
+                            " <b>'{0}'</b>?"
+                        ).format(netvm.name),
+                        QtWidgets.QMessageBox.StandardButton.Yes
+                        | QtWidgets.QMessageBox.StandardButton.Cancel,
+                    )
 
                     if reply == QtWidgets.QMessageBox.StandardButton.Yes:
                         netvm.start()
@@ -657,9 +709,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         # include in backups
         try:
-            if self.include_in_backups.isEnabled() and\
-                    self.vm.include_in_backups != \
-                    self.include_in_backups.isChecked():
+            if (
+                self.include_in_backups.isEnabled()
+                and self.vm.include_in_backups != self.include_in_backups.isChecked()
+            ):
                 self.vm.include_in_backups = self.include_in_backups.isChecked()
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
@@ -675,10 +728,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         # shutdown-idle
         try:
             current_idle = self.vm.features.get(IDLE_SERVICE, False)
-            if self.idle_shutdown_checkbox.isEnabled() and \
-                    self.idle_shutdown_checkbox.isChecked() != current_idle:
-                self.vm.features[IDLE_SERVICE] = \
-                    self.idle_shutdown_checkbox.isChecked()
+            if (
+                self.idle_shutdown_checkbox.isEnabled()
+                and self.idle_shutdown_checkbox.isChecked() != current_idle
+            ):
+                self.vm.features[IDLE_SERVICE] = self.idle_shutdown_checkbox.isChecked()
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
 
@@ -687,7 +741,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             priv_size = self.max_priv_storage.value()
             if self.priv_img_size != priv_size:
                 try:
-                    self.vm.volumes['private'].resize(priv_size * 1024**2)
+                    self.vm.volumes["private"].resize(priv_size * 1024**2)
                     self.priv_img_size = priv_size
                 except qubesadmin.exc.QubesException as ex:
                     msg.append(str(ex))
@@ -697,7 +751,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             sys_size = self.root_resize.value()
             if self.root_img_size != sys_size:
                 try:
-                    self.vm.volumes['root'].resize(sys_size * 1024**2)
+                    self.vm.volumes["root"].resize(sys_size * 1024**2)
                     self.root_img_size = sys_size
                 except qubesadmin.exc.QubesException as ex:
                     msg.append(str(ex))
@@ -717,24 +771,25 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Warning!"),
-                self.tr("Max memory can not be less than initial memory.<br>"
-                        "Setting max memory to equal initial memory."))
+                self.tr(
+                    "Max memory can not be less than initial memory.<br>"
+                    "Setting max memory to equal initial memory."
+                ),
+            )
             self.max_mem_size.setValue(self.init_mem.value())
         # Linux specific limit: init memory must not be below
         # max_mem_size/10.79 in order to allow scaling up to
         # max_mem_size (or else "add_memory() failed: -17" problem)
         try:
-            is_linux = self.vm.features.check_with_template('os', None) == \
-                       'Linux'
+            is_linux = self.vm.features.check_with_template("os", None) == "Linux"
         except qubesadmin.exc.QubesException:
             is_linux = False
 
-        if is_linux and \
-                self.init_mem.value() * 10 < self.max_mem_size.value():
+        if is_linux and self.init_mem.value() * 10 < self.max_mem_size.value():
             self.warn_too_much_mem_label.setVisible(True)
 
     def check_warn_templatenetvm(self):
-        if self.vm.klass != 'TemplateVM':
+        if self.vm.klass != "TemplateVM":
             return
 
         current_netvm = self.netVM.currentData()
@@ -749,10 +804,12 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     "Connecting a TemplateVM directly to a network is highly"
                     " discouraged! <br> <small>You are breaking a basic part "
                     "of Qubes security and there is probably no real need"
-                    " to do so. Continue at your own risk.</small>"))
+                    " to do so. Continue at your own risk.</small>"
+                ),
+            )
 
     def check_warn_dispvmnetvm(self):
-        if not hasattr(self.vm, 'default_dispvm'):
+        if not hasattr(self.vm, "default_dispvm"):
             self.warn_netvm_dispvm.setVisible(False)
             return
         dispvm = self.default_dispvm.currentData()
@@ -760,7 +817,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         if dispvm == qubesadmin.DEFAULT:
             try:
-                dispvm = self.vm.property_get_default('default_dispvm')
+                dispvm = self.vm.property_get_default("default_dispvm")
             except qubesadmin.exc.QubesDaemonAccessError:
                 pass
 
@@ -768,11 +825,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.warn_netvm_dispvm.setVisible(False)
             return
 
-        dispvm_netvm = getattr(dispvm, 'netvm', None)
+        dispvm_netvm = getattr(dispvm, "netvm", None)
 
         if own_netvm == qubesadmin.DEFAULT:
             try:
-                own_netvm = self.vm.property_get_default('netvm')
+                own_netvm = self.vm.property_get_default("netvm")
             except qubesadmin.exc.QubesDaemonAccessError:
                 # no point in warning if we don't know what we're warning about
                 self.warn_netvm_dispvm.setVisible(False)
@@ -784,7 +841,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.warn_netvm_dispvm.setVisible(False)
 
     def check_warn_anonnetvm(self):
-        if 'anon-vm' not in self.vm.tags:
+        if "anon-vm" not in self.vm.tags:
             return
 
         current_net_vm = self.netVM.currentData()
@@ -793,9 +850,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             return
 
         if current_net_vm == qubesadmin.DEFAULT:
-            current_net_vm = self.vm.property_get_default('netvm')
+            current_net_vm = self.vm.property_get_default("netvm")
 
-        if 'anon-gateway' not in current_net_vm.tags:
+        if "anon-gateway" not in current_net_vm.tags:
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Warning!"),
@@ -804,16 +861,19 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     "to ensure privacy and anonymity. By changing the net qube "
                     "to a gateway that does not provide anonymity, your IP "
                     "address will be leaked on the Internet. Continue at your "
-                    "own risk.")
+                    "own risk."
+                ),
             )
 
     def rename_vm(self):
 
         dependencies = admin_utils.vm_dependencies(self.vm.app, self.vm)
 
-        running_dependencies = [vm.name for (vm, prop) in dependencies
-                                if vm and prop == 'template'
-                                and utils.is_running(vm, False)]
+        running_dependencies = [
+            vm.name
+            for (vm, prop) in dependencies
+            if vm and prop == "template" and utils.is_running(vm, False)
+        ]
 
         if running_dependencies:
             QtWidgets.QMessageBox.warning(
@@ -822,15 +882,17 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 self.tr(
                     "The following qubes using this qube as a template are "
                     "running: <br> {}. <br> In order to rename this qube, you "
-                    "must first shut them down.").format(
-                        ", ".join(running_dependencies)))
+                    "must first shut them down."
+                ).format(", ".join(running_dependencies)),
+            )
             return
 
         new_vm_name, ok = QtWidgets.QInputDialog.getText(
             self,
-            self.tr('Rename qube'),
-            self.tr('New name: (WARNING: all other changes will be discarded)'),
-            text=self.vm.name)
+            self.tr("Rename qube"),
+            self.tr("New name: (WARNING: all other changes will be discarded)"),
+            text=self.vm.name,
+        )
 
         if ok:
             thread = RenameVMThread(self.vm, new_vm_name, dependencies)
@@ -838,7 +900,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             thread.finished.connect(self.clear_threads)
 
             self.progress = QtWidgets.QProgressDialog(
-                self.tr("Renaming Qube..."), "", 0, 0)
+                self.tr("Renaming Qube..."), "", 0, 0
+            )
             self.progress.setCancelButton(None)
             self.progress.setModal(True)
             self.thread_closes = True
@@ -855,20 +918,26 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Qube cannot be removed!"),
-                self.tr("This qube cannot be removed. It is used as:"
-                        " <br> {} <small>If you want to  remove this qube, "
-                        "you should remove or change settings of each qube "
-                        "or setting that uses it.</small>").format(list_text))
+                self.tr(
+                    "This qube cannot be removed. It is used as:"
+                    " <br> {} <small>If you want to  remove this qube, "
+                    "you should remove or change settings of each qube "
+                    "or setting that uses it.</small>"
+                ).format(list_text),
+            )
 
             return
 
         answer, ok = QtWidgets.QInputDialog.getText(
             self,
-            self.tr('Delete qube'),
-            self.tr('Are you absolutely sure you want to delete this qube? '
-                    '<br/> All qube settings and data will be irrevocably'
-                    ' deleted. <br/> If you are sure, please enter this '
-                    'qube\'s name below.'))
+            self.tr("Delete qube"),
+            self.tr(
+                "Are you absolutely sure you want to delete this qube? "
+                "<br/> All qube settings and data will be irrevocably"
+                " deleted. <br/> If you are sure, please enter this "
+                "qube's name below."
+            ),
+        )
 
         if ok and answer == self.vm.name:
             thread = common_threads.RemoveVMThread(self.vm)
@@ -876,7 +945,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.threads_list.append(thread)
 
             self.progress = QtWidgets.QProgressDialog(
-                self.tr("Deleting Qube..."), "", 0, 0)
+                self.tr("Deleting Qube..."), "", 0, 0
+            )
             self.progress.setCancelButton(None)
             self.progress.setModal(True)
             self.thread_closes = True
@@ -888,20 +958,20 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Removal cancelled"),
-                self.tr("The qube will not be removed."))
+                self.tr("The qube will not be removed."),
+            )
 
     def clone_vm(self):
         with common_threads.busy_cursor():
-            clone_window = clone_vm.CloneVMDlg(
-                self.qapp, self.qubesapp, src_vm=self.vm)
+            clone_window = clone_vm.CloneVMDlg(self.qapp, self.qubesapp, src_vm=self.vm)
         clone_window.exec()
 
     ######### advanced tab
 
-    def __init_advanced_tab__(self):
+    def __init_advanced_tab__(self):  # pylint: disable=too-many-statements
 
-        vm_memory = getattr(self.vm, 'memory', None)
-        vm_maxmem = getattr(self.vm, 'maxmem', None)
+        vm_memory = getattr(self.vm, "memory", None)
+        vm_maxmem = getattr(self.vm, "maxmem", None)
 
         if vm_memory is None:
             self.init_mem.setEnabled(False)
@@ -914,21 +984,20 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.max_mem_size.setValue(int(vm_maxmem))
         else:
             try:
-                maxmem = self.vm.property_get_default('maxmem')
+                maxmem = self.vm.property_get_default("maxmem")
             except qubesadmin.exc.QubesDaemonAccessError:
                 maxmem = 0
             if maxmem == 0:
                 maxmem = vm_memory
             self.max_mem_size.setValue(
-                int(utils.get_feature(
-                    self.vm, 'qubesmanager.maxmem_value', maxmem)))
+                int(utils.get_feature(self.vm, "qubesmanager.maxmem_value", maxmem))
+            )
 
         self.vcpus.setMinimum(1)
-        self.vcpus.setValue(int(getattr(self.vm, 'vcpus', 1)))
+        self.vcpus.setValue(int(getattr(self.vm, "vcpus", 1)))
 
         self.include_in_balancing.setEnabled(True)
-        self.include_in_balancing.setChecked(
-            int(getattr(self.vm, 'maxmem', 0)) > 0)
+        self.include_in_balancing.setChecked(int(getattr(self.vm, "maxmem", 0)) > 0)
         self.max_mem_size.setEnabled(self.include_in_balancing.isChecked())
 
         # in case VM is HVM
@@ -941,9 +1010,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     allow_none=True,
                     allow_default=True,
                     holder=self.vm,
-                    property_name='kernel')
+                    property_name="kernel",
+                )
                 self.kernel.currentIndexChanged.connect(self.kernel_changed)
-                self.kernel_opts.setText(getattr(self.vm, 'kernelopts', '-'))
+                self.kernel_opts.setText(getattr(self.vm, "kernelopts", "-"))
                 # load bootmode information from features
                 if hasattr(self.vm, "appvm_default_bootmode"):
                     self.appvm_default_bootmode_desc.setVisible(True)
@@ -951,11 +1021,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 else:
                     self.appvm_default_bootmode_desc.setVisible(False)
                     self.appvm_default_bootmode.setVisible(False)
-                self.bootmode_names, self.bootmode_ids \
-                    = self.collect_bootmode_data()
-                bootmode_widget_data = list(zip(
-                    self.bootmode_names, self.bootmode_ids
-                ))
+                self.bootmode_names, self.bootmode_ids = self.collect_bootmode_data()
+                bootmode_widget_data = list(zip(self.bootmode_names, self.bootmode_ids))
                 bootmode_widget_data.sort()
                 utils.initialize_widget_for_property(
                     widget=self.bootmode,
@@ -963,7 +1030,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     property_name="bootmode",
                     holder=self.vm,
                     allow_default=True,
-                    default_text_provider=get_default_bootmode_name
+                    default_text_provider=get_default_bootmode_name,
                 )
                 if hasattr(self.vm, "appvm_default_bootmode"):
                     utils.initialize_widget_for_property(
@@ -972,13 +1039,12 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                         property_name="appvm_default_bootmode",
                         holder=self.vm,
                         allow_default=True,
-                        default_text_provider=get_default_bootmode_name
+                        default_text_provider=get_default_bootmode_name,
                     )
                 if self.vm.bootmode != "default":
                     self.bootmode_kernel_opts.setText(
                         self.vm.features.check_with_template(
-                            f"boot-mode.kernelopts.{self.vm.bootmode}",
-                            ""
+                            f"boot-mode.kernelopts.{self.vm.bootmode}", ""
                         )
                     )
                 else:
@@ -991,7 +1057,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.kernel.setEnabled(False)
             self.kernel_groupbox.setVisible(False)
 
-        if not hasattr(self.vm, 'default_dispvm'):
+        if not hasattr(self.vm, "default_dispvm"):
             self.other_groupbox.setVisible(False)
         else:
             try:
@@ -999,16 +1065,17 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 utils.initialize_widget_with_vms(
                     widget=self.default_dispvm,
                     qubes_app=self.qubesapp,
-                    filter_function=(lambda vm:
-                                     getattr(
-                                         vm, 'template_for_dispvms', False)),
+                    filter_function=(
+                        lambda vm: getattr(vm, "template_for_dispvms", False)
+                    ),
                     allow_none=True,
                     allow_default=True,
                     holder=self.vm,
-                    property_name='default_dispvm'
+                    property_name="default_dispvm",
                 )
                 self.default_dispvm.currentIndexChanged.connect(
-                    self.check_warn_dispvmnetvm)
+                    self.check_warn_dispvmnetvm
+                )
             except qubesadmin.exc.QubesDaemonAccessError:
                 self.other_groupbox.setVisible(False)
 
@@ -1016,9 +1083,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.update_virt_mode_list()
 
         try:
-            windows_running = \
-                self.vm.features.check_with_template('os', None) == 'Windows' \
+            windows_running = (
+                self.vm.features.check_with_template("os", None) == "Windows"
                 and self.vm.is_running()
+            )
         except qubesadmin.exc.QubesException:
             windows_running = False
 
@@ -1029,22 +1097,43 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.seamless_off_button.clicked.connect(self.disable_seamless)
 
         self.dvm_template_checkbox.setChecked(
-            getattr(self.vm, 'template_for_dispvms', False))
+            getattr(self.vm, "template_for_dispvms", False)
+        )
 
-        if not hasattr(self.vm, 'template_for_dispvms'):
+        if not hasattr(self.vm, "template_for_dispvms"):
             self.dvm_template_checkbox.setEnabled(False)
 
+        self.preload_dispvm.setMinimum(0)
+        self.preload_dispvm.setMaximum(50)
+        if (
+            self.vm.name == getattr(self.vm.app, "default_dispvm", None)
+            and self.vm.app.domains["dom0"].features.get("preload-dispvm-max", None)
+            is not None
+        ):
+            self.warn_default_dispvm_preload_label.setVisible(True)
+        else:
+            self.warn_default_dispvm_preload_label.setVisible(False)
+        self.preload_dispvm.setEnabled(self.dvm_template_checkbox.isChecked())
+        if self.preload_dispvm.isEnabled():
+            vm_preload_dispvm = int(self.vm.features.get("preload-dispvm-max") or 0)
+        else:
+            vm_preload_dispvm = 0
+        self.preload_dispvm.setValue(vm_preload_dispvm)
+
         self.provides_network_checkbox.setChecked(
-            getattr(self.vm, 'provides_network', False))
+            getattr(self.vm, "provides_network", False)
+        )
         if self.provides_network_checkbox.isChecked():
-            domains_using = [vm.name for vm
-                             in getattr(self.vm, 'connected_vms', [])]
+            domains_using = [vm.name for vm in getattr(self.vm, "connected_vms", [])]
             if domains_using:
                 self.provides_network_checkbox.setEnabled(False)
-                self.provides_network_checkbox.setToolTip(self.tr(
-                    "Cannot change this setting while this qube is used as a "
-                    "NetVM by the following qubes:\n") +
-                    "\n".join(domains_using))
+                self.provides_network_checkbox.setToolTip(
+                    self.tr(
+                        "Cannot change this setting while this qube is used as "
+                        "a NetVM by the following qubes:\n"
+                    )
+                    + "\n".join(domains_using)
+                )
 
         try:
             self.run_in_debug_mode.setChecked(self.vm.debug)
@@ -1061,29 +1150,27 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.prohibit_start_rationale_edited
         )
         self.prohibit_start_checkbox.setChecked(bool(rationale))
-        self.prohibit_start_checkbox.clicked.connect(
-            self.prohibit_start_checked
-        )
+        self.prohibit_start_checkbox.clicked.connect(self.prohibit_start_checked)
 
         utils.initialize_widget(
             widget=self.allow_fullscreen,
             choices=[
-                ('(use system default)', None),
-                ('allow', True),
-                ('disallow', False)
+                ("(use system default)", None),
+                ("allow", True),
+                ("disallow", False),
             ],
-            selected_value=utils.get_boolean_feature(self.vm,
-                                                     'gui-allow-fullscreen'))
+            selected_value=utils.get_boolean_feature(self.vm, "gui-allow-fullscreen"),
+        )
         self.allow_fullscreen_initial = self.allow_fullscreen.currentIndex()
         utils.initialize_widget(
             widget=self.allow_utf8,
             choices=[
-                ('(use system default)', None),
-                ('allow', True),
-                ('disallow', False)
+                ("(use system default)", None),
+                ("allow", True),
+                ("disallow", False),
             ],
-            selected_value=utils.get_boolean_feature(self.vm,
-                                                     'gui-allow-utf8-titles'))
+            selected_value=utils.get_boolean_feature(self.vm, "gui-allow-utf8-titles"),
+        )
         self.allow_utf8_initial = self.allow_utf8.currentIndex()
 
     def prohibit_start_checked(self, status):
@@ -1098,35 +1185,41 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
     def enable_seamless(self):
         try:
-            self.vm.run_service_for_stdio("qubes.SetGuiMode", input=b'SEAMLESS')
-        except (qubesadmin.exc.QubesException,
-                subprocess.CalledProcessError) as ex:
+            self.vm.run_service_for_stdio("qubes.SetGuiMode", input=b"SEAMLESS")
+        except (
+            qubesadmin.exc.QubesException,
+            subprocess.CalledProcessError,
+        ) as ex:
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Failed to set seamless mode"),
-                self.tr("Error occurred: {}".format(str(ex))))
+                self.tr("Error occurred: {}".format(str(ex))),
+            )
 
     def disable_seamless(self):
         try:
-            self.vm.run_service_for_stdio("qubes.SetGuiMode",
-                                          input=b'FULLSCREEN')
-        except (qubesadmin.exc.QubesException,
-                subprocess.CalledProcessError) as ex:
+            self.vm.run_service_for_stdio("qubes.SetGuiMode", input=b"FULLSCREEN")
+        except (
+            qubesadmin.exc.QubesException,
+            subprocess.CalledProcessError,
+        ) as ex:
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Failed to set fullscreen mode"),
-                self.tr("Error occurred: {}".format(str(ex))))
+                self.tr("Error occurred: {}".format(str(ex))),
+            )
 
     def __apply_advanced_tab__(self):
         msg = []
 
         # mem/cpu
         try:
-            if self.init_mem.isEnabled() and \
-                    self.init_mem.value() != int(self.vm.memory):
+            if self.init_mem.isEnabled() and self.init_mem.value() != int(
+                self.vm.memory
+            ):
                 self.vm.memory = self.init_mem.value()
 
-            curr_maxmem = int(getattr(self.vm, 'maxmem', 0))
+            curr_maxmem = int(getattr(self.vm, "maxmem", 0))
 
             if not self.include_in_balancing.isChecked():
                 maxmem = 0
@@ -1135,13 +1228,23 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
             if maxmem != curr_maxmem:
                 if curr_maxmem > 0:
-                    self.vm.features['qubesmanager.maxmem_value'] = curr_maxmem
+                    self.vm.features["qubesmanager.maxmem_value"] = curr_maxmem
                 if maxmem == 0 or self.max_mem_size.isEnabled():
                     self.vm.maxmem = maxmem
 
-            if self.vcpus.isEnabled() and \
-                    self.vcpus.value() != int(self.vm.vcpus):
+            if self.vcpus.isEnabled() and self.vcpus.value() != int(self.vm.vcpus):
                 self.vm.vcpus = self.vcpus.value()
+
+            if (
+                self.dvm_template_checkbox.isChecked()
+                and self.preload_dispvm.isEnabled()
+            ):
+                curr_preload_dispvm = (
+                    int(self.vm.features.get("preload-dispvm-max") or 0)
+                )
+                preload_dispvm = self.preload_dispvm.value()
+                if preload_dispvm != curr_preload_dispvm:
+                    self.vm.features["preload-dispvm-max"] = preload_dispvm
 
         except qubesadmin.exc.QubesException as ex:
             msg.append(str(ex))
@@ -1154,10 +1257,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 if utils.did_widget_selection_change(self.bootmode):
                     self.vm.bootmode = self.bootmode.currentData()
                 if hasattr(self.vm, "appvm_default_bootmode"):
-                    if utils.did_widget_selection_change(
-                        self.appvm_default_bootmode):
-                        self.vm.appvm_default_bootmode \
-                            = self.appvm_default_bootmode.currentData()
+                    if utils.did_widget_selection_change(self.appvm_default_bootmode):
+                        self.vm.appvm_default_bootmode = (
+                            self.appvm_default_bootmode.currentData()
+                        )
             except qubesadmin.exc.QubesException as ex:
                 msg.append(str(ex))
 
@@ -1173,11 +1276,12 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         except Exception as ex:  # pylint: disable=broad-except
             msg.append(str(ex))
 
-        if getattr(self.vm, "template_for_dispvms", False) != \
-                self.dvm_template_checkbox.isChecked():
+        if (
+            getattr(self.vm, "template_for_dispvms", False)
+            != self.dvm_template_checkbox.isChecked()
+        ):
             try:
-                self.vm.template_for_dispvms = \
-                    self.dvm_template_checkbox.isChecked()
+                self.vm.template_for_dispvms = self.dvm_template_checkbox.isChecked()
                 if self.dvm_template_checkbox.isChecked():
                     self.vm.features["appmenus-dispvm"] = True
                 else:
@@ -1185,11 +1289,12 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             except Exception as ex:  # pylint: disable=broad-except
                 msg.append(str(ex))
 
-        if getattr(self.vm, 'provides_network', False) != \
-                self.provides_network_checkbox.isChecked():
+        if (
+            getattr(self.vm, "provides_network", False)
+            != self.provides_network_checkbox.isChecked()
+        ):
             try:
-                self.vm.provides_network = \
-                    self.provides_network_checkbox.isChecked()
+                self.vm.provides_network = self.provides_network_checkbox.isChecked()
             except Exception as ex:  # pylint: disable=broad-except
                 msg.append(str(ex))
 
@@ -1203,8 +1308,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         rationale = self.vm.features.get("prohibit-start", "")
         if (self.prohibit_start_checkbox.isChecked() != bool(rationale)) or (
-            bool(rationale)
-            and self.prohibit_start_rationale.text() != rationale
+            bool(rationale) and self.prohibit_start_rationale.text() != rationale
         ):
             rationale = self.prohibit_start_rationale.text()
             if bool(rationale) and self.prohibit_start_checkbox.isChecked():
@@ -1212,25 +1316,25 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             else:
                 del self.vm.features["prohibit-start"]
 
-        if self.allow_fullscreen_initial !=\
-                self.allow_fullscreen.currentIndex():
+        if self.allow_fullscreen_initial != self.allow_fullscreen.currentIndex():
             try:
                 if self.allow_fullscreen.currentData() is None:
-                    del self.vm.features['gui-allow-fullscreen']
+                    del self.vm.features["gui-allow-fullscreen"]
                 else:
-                    self.vm.features['gui-allow-fullscreen'] = \
+                    self.vm.features["gui-allow-fullscreen"] = (
                         self.allow_fullscreen.currentData()
+                    )
             except qubesadmin.exc.QubesException as ex:
                 msg.append(str(ex))
 
-        if self.allow_utf8_initial !=\
-                self.allow_utf8.currentIndex():
+        if self.allow_utf8_initial != self.allow_utf8.currentIndex():
             try:
                 if self.allow_utf8.currentData() is None:
-                    del self.vm.features['gui-allow-utf8-titles']
+                    del self.vm.features["gui-allow-utf8-titles"]
                 else:
-                    self.vm.features['gui-allow-utf8-titles'] = \
+                    self.vm.features["gui-allow-utf8-titles"] = (
                         self.allow_utf8.currentData()
+                    )
             except qubesadmin.exc.QubesException as ex:
                 msg.append(str(ex))
 
@@ -1248,14 +1352,16 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         if self.include_in_balancing.isChecked():
             self.check_mem_changes()
 
+    def dvm_template_checkbox_changed(self, state):  # pylint: disable=unused-argument
+        self.preload_dispvm.setEnabled(self.dvm_template_checkbox.isChecked())
+
     def boot_from_cdrom_button_pressed(self):
         boot_dialog = bootfromdevice.VMBootFromDeviceWindow(
-                vm=self.vm.name, qapp=self.qapp, qubesapp=self.qubesapp,
-                parent=self)
+            vm=self.vm.name, qapp=self.qapp, qubesapp=self.qubesapp, parent=self
+        )
         if boot_dialog.exec():
             self.save_and_apply()
-            qvm_start.main(
-                    ['--cdrom', boot_dialog.cdrom_location, self.vm.name])
+            qvm_start.main(["--cdrom", boot_dialog.cdrom_location, self.vm.name])
 
     def virt_mode_changed(self, new_idx):  # pylint: disable=unused-argument
         self.update_pv_warning()
@@ -1263,22 +1369,22 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.update_pvh_kernel_ver_warning()
 
     def update_pv_warning(self):
-        if self.virt_mode.currentData() == 'pv':
+        if self.virt_mode.currentData() == "pv":
             self.pv_warning.show()
         else:
             self.pv_warning.hide()
 
     def update_virt_mode_list(self):
-        choices = [('HVM', 'hvm'),
-                   ('PV', 'pv')]
+        choices = [("HVM", "hvm"), ("PV", "pv")]
 
         if hasattr(self, "dev_list"):
             devs_attached = self.dev_list.selected_list.count() != 0
         else:
             try:
-                devs_attached = bool(list(
-                    self.vm.devices['pci'].get_assigned_devices(
-                        required_only=True))
+                devs_attached = bool(
+                    list(
+                        self.vm.devices["pci"].get_assigned_devices(required_only=True)
+                    )
                 )
             except qubesadmin.exc.QubesException:
                 devs_attached = False
@@ -1286,7 +1392,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         if devs_attached:
             self.pvh_mode_hidden.show()
         else:
-            choices.insert(0, ('PVH', 'pvh'))
+            choices.insert(0, ("PVH", "pvh"))
             self.pvh_mode_hidden.hide()
 
         old_mode = self.virt_mode.currentData()
@@ -1296,20 +1402,25 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         # due to how virtualization mode has uniquely different displayed and
         # actual name of the default value, I will add it manually
         try:
-            choices.insert(0, (
-                "default ({})".format(
-                    self.vm.property_get_default('virt_mode').upper()),
-                qubesadmin.DEFAULT))
+            choices.insert(
+                0,
+                (
+                    "default ({})".format(
+                        self.vm.property_get_default("virt_mode").upper()
+                    ),
+                    qubesadmin.DEFAULT,
+                ),
+            )
         except qubesadmin.exc.QubesException:
-            choices.insert(0,
-                           ("default ({SYSTEM DEFAULT})", qubesadmin.DEFAULT))
+            choices.insert(0, ("default ({SYSTEM DEFAULT})", qubesadmin.DEFAULT))
 
         try:
             utils.initialize_widget_for_property(
                 widget=self.virt_mode,
                 choices=choices,
                 holder=self.vm,
-                property_name='virt_mode')
+                property_name="virt_mode",
+            )
         except qubesadmin.exc.QubesDaemonAccessError:
             self.virt_mode.setEnabled(False)
 
@@ -1322,7 +1433,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.update_pvh_kernel_ver_warning()
 
     def update_pvh_kernel_ver_warning(self):
-        if self.virt_mode.currentData() != 'pvh':
+        if self.virt_mode.currentData() != "pvh":
             self.pvh_kernel_version_warning.hide()
             return
 
@@ -1346,9 +1457,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             return False
 
         if name is qubesadmin.DEFAULT:
-            name = getattr(self.vm.app, 'default_kernel', None)
+            name = getattr(self.vm.app, "default_kernel", None)
 
-        m = re.search(r'(\d+)\.(\d+)', name)
+        m = re.search(r"(\d+)\.(\d+)", name)
 
         if m is None:
             return False
@@ -1360,8 +1471,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         if isinstance(active_bootmode, str):
             self.bootmode_kernel_opts.setText(
                 self.vm.features.check_with_template(
-                    f"boot-mode.kernelopts.{active_bootmode}",
-                    ""
+                    f"boot-mode.kernelopts.{active_bootmode}", ""
                 )
             )
         else:
@@ -1371,8 +1481,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             else:
                 self.bootmode_kernel_opts.setText(
                     self.vm.features.check_with_template(
-                        f"boot-mode.kernelopts.{default_bootmode}",
-                        ""
+                        f"boot-mode.kernelopts.{default_bootmode}", ""
                     )
                 )
 
@@ -1384,7 +1493,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.dev_list = multiselectwidget.MultiSelectWidget(self)
         self.dev_list.change_labels(
             available="Available devices",
-            selected="Devices always connected to this qube")
+            selected="Devices always connected to this qube",
+        )
         self.dev_list.add_all_button.setVisible(False)
         self.devices_layout.addWidget(self.dev_list)
 
@@ -1398,10 +1508,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 != device_protocol.DeviceCategory.PCI_Bridge
             )
             attached = list(
-                self.vm.devices['pci'].get_assigned_devices(required_only=True))
+                self.vm.devices["pci"].get_assigned_devices(required_only=True)
+            )
         except qubesadmin.exc.QubesException:
             # no permission to access devices
-            self.tabWidget.setTabEnabled(self.tabs_indices['devices'], False)
+            self.tabWidget.setTabEnabled(self.tabs_indices["devices"], False)
             return
 
         # pylint: disable=too-few-public-methods
@@ -1414,7 +1525,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     + dev.description
                 )
                 if unknown:
-                    name += ' (unknown)'
+                    name += " (unknown)"
                 self.setText(name)
                 self.dev = dev
 
@@ -1426,10 +1537,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         for ass in attached:
             if not any(ass.matches(dev) for dev in dom0_devs):
                 self.dev_list.selected_list.addItem(
-                    DevListWidgetItem(ass.device, unknown=True))
+                    DevListWidgetItem(ass.device, unknown=True)
+                )
 
-        if self.dev_list.selected_list.count() > 0\
-                and self.include_in_balancing.isChecked():
+        if (
+            self.dev_list.selected_list.count() > 0
+            and self.include_in_balancing.isChecked()
+        ):
             self.dmm_warning_adv.show()
             self.dmm_warning_dev.show()
         else:
@@ -1451,45 +1565,48 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
     def __apply_devices_tab__(self):
         msg = []
 
-        if not self.tabWidget.isTabEnabled(self.tabs_indices['devices']):
+        if not self.tabWidget.isTabEnabled(self.tabs_indices["devices"]):
             return msg
 
         try:
             old_devs = list(
-                self.vm.devices['pci'].get_assigned_devices(required_only=True))
+                self.vm.devices["pci"].get_assigned_devices(required_only=True)
+            )
 
-            new_devs = [self.dev_list.selected_list.item(i).dev
-                        for i in range(self.dev_list.selected_list.count())]
+            new_devs = [
+                self.dev_list.selected_list.item(i).dev
+                for i in range(self.dev_list.selected_list.count())
+            ]
 
             for dev in new_devs:
-                old_assignments = [old for old in old_devs
-                                   if old.matches(dev)]
+                old_assignments = [old for old in old_devs if old.matches(dev)]
                 if not old_assignments:
                     options = {}
                     if dev.port_id in self.new_strict_reset_list:
-                        options['no-strict-reset'] = True
+                        options["no-strict-reset"] = True
                     ass = device_protocol.DeviceAssignment.new(
-                        backend_domain=self.vm.app.domains['dom0'],
+                        backend_domain=self.vm.app.domains["dom0"],
                         port_id=dev.port_id,
-                        devclass='pci',
-                        mode='required',
+                        devclass="pci",
+                        mode="required",
                         options=options,
                     )
-                    self.vm.devices['pci'].assign(ass)
-                elif (dev.port_id in self.current_strict_reset_list) != \
-                        (dev.port_id in self.new_strict_reset_list):
+                    self.vm.devices["pci"].assign(ass)
+                elif (dev.port_id in self.current_strict_reset_list) != (
+                    dev.port_id in self.new_strict_reset_list
+                ):
                     current_assignment = old_assignments[0]
-                    self.vm.devices['pci'].unassign(current_assignment)
+                    self.vm.devices["pci"].unassign(current_assignment)
 
-                    current_assignment.options['no-strict-reset'] = \
+                    current_assignment.options["no-strict-reset"] = (
                         dev.port_id in self.new_strict_reset_list
+                    )
 
-                    self.vm.devices['pci'].assign(current_assignment)
+                    self.vm.devices["pci"].assign(current_assignment)
 
-            for ass in self.vm.devices['pci'].get_assigned_devices(
-                    required_only=True):
+            for ass in self.vm.devices["pci"].get_assigned_devices(required_only=True):
                 if ass.device not in new_devs:
-                    self.vm.devices['pci'].unassign(ass)
+                    self.vm.devices["pci"].unassign(ass)
 
         except qubesadmin.exc.QubesException as ex:
             if utils.is_debug():
@@ -1512,7 +1629,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
     def update_pvh_dont_support_devs(self):
         # this is the easiest way to check for both normal 'PVH' and
         # default (PVH) options
-        if 'PVH' in self.virt_mode.currentText().upper():
+        if "PVH" in self.virt_mode.currentText().upper():
             self.dev_list.setEnabled(False)
             self.pvh_dont_support_devs.setVisible(True)
         else:
@@ -1520,17 +1637,23 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.pvh_dont_support_devs.setVisible(False)
 
     def define_strict_reset_devices(self):
-        for assignment in self.vm.devices['pci'].get_assigned_devices(
-                required_only=True):
-            if assignment.options.get('no-strict-reset', False):
+        for assignment in self.vm.devices["pci"].get_assigned_devices(
+            required_only=True
+        ):
+            if assignment.options.get("no-strict-reset", False):
                 self.current_strict_reset_list.append(
-                    assignment.port_id.replace('_', ':'))
+                    assignment.port_id.replace("_", ":")
+                )
         self.new_strict_reset_list = self.current_strict_reset_list.copy()
 
     def strict_reset_button_pressed(self):
         device_list_window = device_list.PCIDeviceListWindow(
-            vm=self.vm, qapp=self.qapp, dev_list=self.dev_list,
-            no_strict_reset_list=self.new_strict_reset_list, parent=self)
+            vm=self.vm,
+            qapp=self.qapp,
+            dev_list=self.dev_list,
+            no_strict_reset_list=self.new_strict_reset_list,
+            parent=self,
+        )
         device_list_window.exec()
 
     ######## applications tab
@@ -1538,7 +1661,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
     def refresh_apps_button_pressed(self):
 
         self.refresh_apps_button.setEnabled(False)
-        self.refresh_apps_button.setText(self.tr('Refresh in progress...'))
+        self.refresh_apps_button.setText(self.tr("Refresh in progress..."))
 
         thread = RefreshAppsVMThread(self.vm, self.refresh_apps_button)
         thread.finished.connect(self.clear_threads)
@@ -1549,15 +1672,17 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
     def refresh_finished(self):
         self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
         self.refresh_apps_button.setEnabled(True)
-        self.refresh_apps_button.setText(self.tr('Refresh applications'))
+        self.refresh_apps_button.setText(self.tr("Refresh applications"))
 
     def template_apps_change(self):
         if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
             self.app_list_manager.fill_apps_list(
-                template=self.template_name.currentData())
+                template=self.template_name.currentData()
+            )
             # add a label to show
             self.warn_template_missing_apps.setVisible(
-                self.app_list_manager.has_missing)
+                self.app_list_manager.has_missing
+            )
 
     ######## services tab
 
@@ -1565,15 +1690,18 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.new_srv_dict = {}
         try:
             for feature in self.vm.features:
-                if not feature.startswith(SERVICE_PREFIX) or \
-                        feature in INTERNAL_SERVICE_FEATURES:
+                if (
+                    not feature.startswith(SERVICE_PREFIX)
+                    or feature in INTERNAL_SERVICE_FEATURES
+                ):
                     continue
-                service = feature[len(SERVICE_PREFIX):]
+                service = feature[len(SERVICE_PREFIX) :]
                 item = QtWidgets.QListWidgetItem(service)
                 item.setCheckState(
                     ui_settingsdlg.QtCore.Qt.CheckState.Checked
                     if self.vm.features[feature]
-                    else ui_settingsdlg.QtCore.Qt.CheckState.Unchecked)
+                    else ui_settingsdlg.QtCore.Qt.CheckState.Unchecked
+                )
                 self.services_list.addItem(item)
                 self.new_srv_dict[service] = self.vm.features[feature]
         except qubesadmin.exc.QubesDaemonAccessError:
@@ -1585,32 +1713,33 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         supported_services = set()
 
         for feature in self.vm.features:
-            if feature.startswith(SUPPORTED_SERVICE_PREFIX) and \
-                    feature not in INTERNAL_SUPPORTED_FEATURES:
-                supported_services.add(feature[len(SUPPORTED_SERVICE_PREFIX):])
+            if (
+                feature.startswith(SUPPORTED_SERVICE_PREFIX)
+                and feature not in INTERNAL_SUPPORTED_FEATURES
+            ):
+                supported_services.add(feature[len(SUPPORTED_SERVICE_PREFIX) :])
         if getattr(self.vm, "template", None):
             try:
                 for feature in self.vm.template.features:
-                    if feature.startswith(SUPPORTED_SERVICE_PREFIX) and \
-                            feature not in INTERNAL_SUPPORTED_FEATURES:
-                        supported_services.add(
-                            feature[len(SUPPORTED_SERVICE_PREFIX):])
+                    if (
+                        feature.startswith(SUPPORTED_SERVICE_PREFIX)
+                        and feature not in INTERNAL_SUPPORTED_FEATURES
+                    ):
+                        supported_services.add(feature[len(SUPPORTED_SERVICE_PREFIX) :])
             except qubesadmin.exc.QubesDaemonAccessError:
                 pass
 
         for service in sorted(supported_services):
             self.service_line_edit.addItem(service)
 
-        self.service_line_edit.addItem(self.tr('(custom...)'))
+        self.service_line_edit.addItem(self.tr("(custom...)"))
         self.service_line_edit.setEditText("")
 
     def __init_notes_tab__(self):
         try:
             self.notes.setPlainText(self.vm.get_notes())
         except qubesadmin.exc.QubesException:
-            self.notes.setPlainText(
-                "Could not retrieve notes for this qube "
-            )
+            self.notes.setPlainText("Could not retrieve notes for this qube ")
             self.notes.setEnabled(False)
 
     def __apply_notes_tab__(self):
@@ -1625,21 +1754,20 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         srv = str(self.service_line_edit.currentText()).strip()
 
         if srv != "":
-            if self.service_line_edit.currentIndex() == \
-                    len(self.service_line_edit) - 1:
+            if self.service_line_edit.currentIndex() == len(self.service_line_edit) - 1:
                 (custom_name, ok) = QtWidgets.QInputDialog.getText(
-                    self, self.tr("Custom service name"),
-                    self.tr(
-                        "Name of the service:"))
+                    self,
+                    self.tr("Custom service name"),
+                    self.tr("Name of the service:"),
+                )
                 if ok:
                     srv = custom_name.strip()
                 else:
                     return
             if srv in self.new_srv_dict:
                 QtWidgets.QMessageBox.information(
-                    self,
-                    '',
-                    self.tr('Service already on the list!'))
+                    self, "", self.tr("Service already on the list!")
+                )
                 return
             item = QtWidgets.QListWidgetItem(srv)
             item.setCheckState(ui_settingsdlg.QtCore.Qt.CheckState.Checked)
@@ -1659,27 +1787,29 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
     def __apply_services_tab__(self):
         msg = []
 
-        if not self.tabWidget.isTabEnabled(self.tabs_indices['services']):
+        if not self.tabWidget.isTabEnabled(self.tabs_indices["services"]):
             return msg
 
         try:
             for i in range(self.services_list.count()):
                 item = self.services_list.item(i)
-                self.new_srv_dict[str(item.text())] = \
-                    (item.checkState() ==
-                     QtCore.Qt.CheckState.Checked)
+                self.new_srv_dict[str(item.text())] = (
+                    item.checkState() == QtCore.Qt.CheckState.Checked
+                )
 
             for service, v in self.new_srv_dict.items():
                 feature = SERVICE_PREFIX + service
-                val = '1' if v else ''
+                val = "1" if v else ""
                 if val != self.vm.features.get(feature, object()):
                     self.vm.features[feature] = val
 
             for feature in self.vm.features:
-                if not feature.startswith(SERVICE_PREFIX) or \
-                        feature in INTERNAL_SERVICE_FEATURES:
+                if (
+                    not feature.startswith(SERVICE_PREFIX)
+                    or feature in INTERNAL_SERVICE_FEATURES
+                ):
                     continue
-                service = feature[len(SERVICE_PREFIX):]
+                service = feature[len(SERVICE_PREFIX) :]
                 if service not in self.new_srv_dict:
                     del self.vm.features[feature]
         except qubesadmin.exc.QubesException as ex:
@@ -1692,14 +1822,17 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.fw_model = model
         self.rulesTreeView.setModel(model)
         self.rulesTreeView.header().setSectionResizeMode(
-            QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
+            QtWidgets.QHeaderView.ResizeMode.ResizeToContents
+        )
         self.rulesTreeView.header().setSectionResizeMode(
-            0, QtWidgets.QHeaderView.ResizeMode.Stretch)
+            0, QtWidgets.QHeaderView.ResizeMode.Stretch
+        )
         self.set_allow(model.allow)
         if model.temp_full_access_expire_time:
             self.temp_full_access.setChecked(True)
-            expire_time = model.temp_full_access_expire_time - \
-                datetime.datetime.now().timestamp()
+            expire_time = (
+                model.temp_full_access_expire_time - datetime.datetime.now().timestamp()
+            )
             self.temp_full_access_time.setValue(int(expire_time / 60))
 
     def disable_all_fw_conf(self):
@@ -1719,18 +1852,12 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.policy_changed()
 
     def policy_changed(self):
-        self.rulesTreeView.setEnabled(
-            self.policy_deny_radio_button.isChecked())
-        self.new_rule_button.setEnabled(
-            self.policy_deny_radio_button.isChecked())
-        self.edit_rule_button.setEnabled(
-            self.policy_deny_radio_button.isChecked())
-        self.delete_rule_button.setEnabled(
-            self.policy_deny_radio_button.isChecked())
-        self.firewal_rules_label.setEnabled(
-            self.policy_deny_radio_button.isChecked())
-        self.tempFullAccessWidget.setEnabled(
-            self.policy_deny_radio_button.isChecked())
+        self.rulesTreeView.setEnabled(self.policy_deny_radio_button.isChecked())
+        self.new_rule_button.setEnabled(self.policy_deny_radio_button.isChecked())
+        self.edit_rule_button.setEnabled(self.policy_deny_radio_button.isChecked())
+        self.delete_rule_button.setEnabled(self.policy_deny_radio_button.isChecked())
+        self.firewal_rules_label.setEnabled(self.policy_deny_radio_button.isChecked())
+        self.tempFullAccessWidget.setEnabled(self.policy_deny_radio_button.isChecked())
 
     def new_rule_button_pressed(self):
         dialog = firewall.NewFwRuleDlg(parent=self)
@@ -1748,34 +1875,39 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.fw_model.run_rule_dialog(dialog, row)
 
     def delete_rule_button_pressed(self):
-        for i in {index.row() for index
-                  in self.rulesTreeView.selectedIndexes()}:
+        for i in {index.row() for index in self.rulesTreeView.selectedIndexes()}:
             self.fw_model.remove_child(i)
 
 
 parser = QubesArgumentParser(vmname_nargs=1)
 
-parser.add_argument('--tab', metavar='TAB',
-                    action='store',
-                    choices=VMSettingsWindow.tabs_indices.keys())
+parser.add_argument(
+    "--tab",
+    metavar="TAB",
+    action="store",
+    choices=VMSettingsWindow.tabs_indices.keys(),
+)
 
 parser.set_defaults(
-    tab='basic',
+    tab="basic",
 )
 
 
 def main(args=None):
     args = parser.parse_args(args)
     vm = args.domains.pop()
-    if vm.klass == 'AdminVM':
-        print("This tool cannot be used to change properties of an "
-              f"AdminVM ({vm.name}).")
-        print("You can use command-line tools such as qvm-prefs "
-              "and qvm-features to change properties of an AdminVM")
+    if vm.klass == "AdminVM":
+        print(
+            "This tool cannot be used to change properties of an "
+            f"AdminVM ({vm.name})."
+        )
+        print(
+            "You can use command-line tools such as qvm-prefs "
+            "and qvm-features to change properties of an AdminVM"
+        )
         return 1
 
-    utils.run_synchronous(functools.partial(VMSettingsWindow, vm.name,
-                                            args.tab))
+    utils.run_synchronous(functools.partial(VMSettingsWindow, vm.name, args.tab))
 
 
 if __name__ == "__main__":
