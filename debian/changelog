@@ -1,3 +1,10 @@
+qubes-manager (4.2.12-1) unstable; urgency=medium
+
+  [ Ali Mirjamali ]
+  * Fix `qubes-vm-boot-from-device`, Improve settings
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Wed, 06 Aug 2025 00:55:02 +0200
+
 qubes-manager (4.2.11-1) unstable; urgency=medium
 
   [ Marta Marczykowska-Górecka ]
