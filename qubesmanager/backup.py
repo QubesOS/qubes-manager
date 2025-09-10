@@ -211,6 +211,9 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         try:
             profile_data = backup_utils.load_backup_profile()
         except FileNotFoundError:
+            dest_vm_idx = self.appvm_combobox.findText("sys-usb")
+            if dest_vm_idx > -1:
+                self.appvm_combobox.setCurrentIndex(dest_vm_idx)
             return
         except exc.QubesException:
             QtWidgets.QMessageBox.information(
@@ -408,6 +411,8 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
             except exc.QubesDaemonAccessError:
                 backup_summary = "Failed to get backup summary: " \
                                  "insufficient permissions"
+            except exc.QubesException as e:
+                backup_summary = str(e)
 
             self.textEdit.setReadOnly(True)
             self.textEdit.setFontFamily("Monospace")
