@@ -87,6 +87,8 @@ class RenameVMThread(common_threads.QubesThread):
                     if holder is None:
                         setattr(self.vm.app, prop, new_vm)
                     else:
+                        if utils.is_preload(holder):
+                            continue
                         setattr(holder, prop, new_vm)
                 except qubesadmin.exc.QubesException:
                     failed_props += [(holder, prop)]
@@ -872,7 +874,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         running_dependencies = [
             vm.name
             for (vm, prop) in dependencies
-            if vm and prop == "template" and utils.is_running(vm, False)
+            if vm
+            and prop == "template"
+            and utils.is_running(vm, False)
+            and not utils.is_preload(vm)
         ]
 
         if running_dependencies:
@@ -911,7 +916,11 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
     def remove_vm(self):
 
-        dependencies = admin_utils.vm_dependencies(self.vm.app, self.vm)
+        dependencies = [
+            (vm, prop)
+            for (vm, prop) in admin_utils.vm_dependencies(self.vm.app, self.vm)
+            if not vm or (vm and not utils.is_preload(vm))
+        ]
 
         if dependencies:
             list_text = utils.format_dependencies_list(dependencies)
@@ -1239,8 +1248,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 self.dvm_template_checkbox.isChecked()
                 and self.preload_dispvm.isEnabled()
             ):
-                curr_preload_dispvm = (
-                    int(self.vm.features.get("preload-dispvm-max") or 0)
+                curr_preload_dispvm = int(
+                    self.vm.features.get("preload-dispvm-max") or 0
                 )
                 preload_dispvm = self.preload_dispvm.value()
                 if preload_dispvm != curr_preload_dispvm:

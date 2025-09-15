@@ -1472,7 +1472,11 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         for vm_info in self.get_selected_vms():
             vm = vm_info.vm
 
-            dependencies = utils.vm_dependencies(self.qubes_app, vm)
+            dependencies = [
+                (vm, prop)
+                for (vm, prop) in utils.vm_dependencies(self.qubes_app, vm)
+                if not vm or (vm and not manager_utils.is_preload(vm))
+            ]
 
             if dependencies:
                 list_deps = manager_utils.format_dependencies_list(dependencies)

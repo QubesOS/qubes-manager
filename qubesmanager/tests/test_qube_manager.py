@@ -489,12 +489,14 @@ def test_212_remove_vm_dependencies(mock_msgbox, qubes_manager):
 @mock.patch("PyQt6.QtWidgets.QInputDialog.getText")
 def test_213_remove_vm_no_dependencies(mock_input, mock_warning, qubes_manager):
     # get a non-running vm
-    _select_vm(qubes_manager, 'test-red')
+    qube_name = 'default-dvm'
+    _select_vm(qubes_manager, qube_name)
+    assert qubes_manager.qubes_app.domains['test-disp'].template.name == qube_name
 
-    with (mock.patch('qubesmanager.common_threads.RemoveVMThread') as
-          mock_thread):
+    with mock.patch('qubesmanager.common_threads.RemoveVMThread') as mock_thread, \
+        mock.patch('qubesmanager.utils.is_preload', return_value=True):
         # user cancels
-        mock_input.return_value = ('test-red', False)
+        mock_input.return_value = (qube_name, False)
         qubes_manager.action_removevm.trigger()
         assert mock_thread.call_count == 0
         assert mock_warning.call_count == 0
@@ -504,11 +506,11 @@ def test_213_remove_vm_no_dependencies(mock_input, mock_warning, qubes_manager):
         assert mock_warning.call_count == 1
         assert mock_thread.call_count == 0
 
-        mock_input.return_value = ('test-red', True)
+        mock_input.return_value = (qube_name, True)
         qubes_manager.action_removevm.trigger()
         assert mock_warning.call_count == 1
         mock_thread.assert_called_once_with(
-            qubes_manager.qubes_app.domains['test-red'])
+            qubes_manager.qubes_app.domains[qube_name])
         mock_thread().finished.connect.assert_called_once_with(
             qubes_manager.clear_threads)
         mock_thread().start.assert_called_once_with()
