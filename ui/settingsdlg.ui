@@ -1883,6 +1883,20 @@ The qube must be running to disable seamless mode. This setting is not persisten
           </widget>
          </item>
          <item row="1" column="0">
+          <layout class="QHBoxLayout" name="horizontalLayoutAppSearch">
+           <item>
+            <widget class="QLabel" name="labelAppSearch">
+             <property name="text">
+              <string>Search for application:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="app_search"/>
+           </item>
+          </layout>
+         </item>
+         <item row="2" column="0">
           <layout class="QVBoxLayout" name="apps_layout"/>
          </item>
         </layout>
