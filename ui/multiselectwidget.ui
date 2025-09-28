@@ -14,22 +14,12 @@
    <string>Form</string>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout_3">
-   <item>
-    <spacer name="horizontalSpacer">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeType">
-      <enum>QSizePolicy::Maximum</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>10</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
+   <property name="leftMargin">
+    <number>1</number>
+   </property>
+   <property name="rightMargin">
+    <number>1</number>
+   </property>
    <item>
     <layout class="QVBoxLayout" name="verticalLayout_2">
      <item>
@@ -76,6 +66,9 @@
    </item>
    <item>
     <layout class="QVBoxLayout" name="verticalLayout">
+     <property name="spacing">
+      <number>12</number>
+     </property>
      <item>
       <spacer name="verticalSpacer">
        <property name="orientation">
@@ -91,29 +84,45 @@
      </item>
      <item>
       <widget class="QPushButton" name="add_all_button">
-       <property name="text">
-        <string>&gt;&gt;</string>
+       <property name="toolTip">
+        <string>Add all</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../resources.qrc">
+         <normaloff>:/fast-forward</normaloff>:/fast-forward</iconset>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="add_selected_button">
-       <property name="text">
-        <string>&gt;</string>
+       <property name="toolTip">
+        <string>Add selected</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../resources.qrc">
+         <normaloff>:/play</normaloff>:/play</iconset>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="remove_selected_button">
-       <property name="text">
-        <string>&lt;</string>
+       <property name="toolTip">
+        <string>Remove selected</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../resources.qrc">
+         <normaloff>:/rewind</normaloff>:/rewind</iconset>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="remove_all_button">
-       <property name="text">
-        <string>&lt;&lt;</string>
+       <property name="toolTip">
+        <string>Remove all</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../resources.qrc">
+         <normaloff>:/fast-rewind</normaloff>:/fast-rewind</iconset>
        </property>
       </widget>
      </item>
@@ -175,22 +184,6 @@
       <widget class="QListWidget" name="selected_list"/>
      </item>
     </layout>
-   </item>
-   <item>
-    <spacer name="horizontalSpacer_2">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeType">
-      <enum>QSizePolicy::Maximum</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>10</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
    </item>
   </layout>
  </widget>

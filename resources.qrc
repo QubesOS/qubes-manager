@@ -41,5 +41,11 @@
     <file alias="updateable">icons/updateable.svg</file>
     <file alias="vm-settings">icons/vm-settings.svg</file>
     <file alias="warning">icons/warning.svg</file>
+    <file alias="play">icons/play.svg</file>
+    <file alias="rewind">icons/rewind.svg</file>
+    <file alias="fast-forward">icons/fast-forward.svg</file>
+    <file alias="fast-rewind">icons/fast-rewind.svg</file>
+    <file alias="step-back">icons/step-back.svg</file>
+    <file alias="step-forward">icons/step-forward.svg</file>
   </qresource>
 </RCC>
