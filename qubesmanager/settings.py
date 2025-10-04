@@ -1736,11 +1736,22 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.service_line_edit.setEditText("")
 
     def __init_notes_tab__(self):
+        self.notes.textChanged.connect(self.__notes_changed)
         try:
             self.notes.setPlainText(self.vm.get_notes())
         except qubesadmin.exc.QubesException:
             self.notes.setPlainText("Could not retrieve notes for this qube ")
             self.notes.setEnabled(False)
+
+    def __notes_changed(self):
+        length = len(self.notes.toPlainText().encode())
+        self.notes_count.setText(
+            "{} / 256000".format(length)
+        )
+        self.notes_count.setStyleSheet(
+            "" if bool(length < 256000)
+            else "QLabel#notes_count {color: red}"
+        )
 
     def __apply_notes_tab__(self):
         try:

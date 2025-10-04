@@ -2022,6 +2022,16 @@ For user reference only.
              </property>
             </widget>
            </item>
+           <item>
+            <widget class="QLabel" name="notes_count">
+             <property name="text">
+              <string>0 of 256000</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
           </layout>
          </item>
         </layout>
