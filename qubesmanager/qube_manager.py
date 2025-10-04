@@ -288,7 +288,7 @@ class VmInfo():
                         self.state['outdated'] = 'eol'
                 else:
                     self.state['outdated'] = ""
-        except exc.QubesDaemonAccessError:
+        except (exc.QubesDaemonAccessError, exc.QubesVMNotFoundError):
             pass
 
     def update(self, update_size_on_disk=False, event=None):
