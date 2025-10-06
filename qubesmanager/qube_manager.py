@@ -288,7 +288,7 @@ class VmInfo():
                         self.state['outdated'] = 'eol'
                 else:
                     self.state['outdated'] = ""
-        except (exc.QubesDaemonAccessError, exc.QubesVMNotFoundError):
+        except exc.QubesDaemonAccessError:
             pass
 
     def update(self, update_size_on_disk=False, event=None):
@@ -1188,9 +1188,12 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
     def update_running_size(self, *_args):
         for vm in self.qubes_app.domains:
-            if vm.is_running():
-                self.qubes_cache.get_vm(qid=vm.qid).update(
-                    update_size_on_disk=True, event='disk_size')
+            try:
+                if vm.is_running():
+                    self.qubes_cache.get_vm(qid=vm.qid).update(
+                        update_size_on_disk=True, event='disk_size')
+            except exc.QubesVMNotFoundError:
+                pass  # qube was destroyed in the meantime.
 
     def on_domain_added(self, _submitter, _event, vm, **_kwargs):
         try:
