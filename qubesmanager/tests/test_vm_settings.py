@@ -1923,6 +1923,30 @@ def test_506_application_remove_all(settings_fixture):
 
 
 @check_errors
+@pytest.mark.parametrize("settings_fixture", ["test-red", "test-vm-set"], indirect=True)
+def test_507_filter_apps(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+
+    settings_window.app_search.setText("app test3")
+
+    available = []
+    for i in range(settings_window.app_list.available_list.count()):
+        item = settings_window.app_list.available_list.item(i)
+        if not item.isHidden():
+            available.append(item.text())
+    assert available == ["Test3 App"]
+
+    settings_window.app_search.setText("  test2    app    ")
+
+    available = []
+    for i in range(settings_window.app_list.available_list.count()):
+        item = settings_window.app_list.available_list.item(i)
+        if not item.isHidden():
+            available.append(item.text())
+    assert available == ["Test2 App"]
+
+
+@check_errors
 @pytest.mark.parametrize("settings_fixture", ["test-vm-set"], indirect=True)
 def test_600_devices(settings_fixture):
     settings_window, page, vm_name = settings_fixture

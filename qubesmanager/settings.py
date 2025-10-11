@@ -261,6 +261,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
             self.refresh_apps_button.clicked.connect(self.refresh_apps_button_pressed)
 
+            self.app_search.textChanged.connect(self.filter_apps)
+
             # Enable Drag & Drop between between two panels
             # ToDo: Disable D&D between multiple instances of qubes-vm-settings
             # - by overriding QListWidget.dragMoveEvent event
@@ -1683,6 +1685,31 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.warn_template_missing_apps.setVisible(
                 self.app_list_manager.has_missing
             )
+
+    def filter_apps(self):
+        keywords = [word for word in self.app_search.text().split(" ") if word]
+        for i in range(self.app_list.available_list.count()):
+            hide = False
+            for word in keywords:
+                if not re.search(
+                    word,
+                    self.app_list.available_list.item(i).text(),
+                    re.IGNORECASE
+                ):
+                    hide = True
+                    break
+            self.app_list.available_list.item(i).setHidden(hide)
+        for i in range(self.app_list.selected_list.count()):
+            hide = False
+            for word in keywords:
+                if not re.search(
+                    word,
+                    self.app_list.selected_list.item(i).text(),
+                    re.IGNORECASE
+                ):
+                    hide = True
+                    break
+            self.app_list.selected_list.item(i).setHidden(hide)
 
     ######## services tab
 
