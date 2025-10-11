@@ -26,6 +26,8 @@ import pytest
 
 from PyQt6 import QtCore, QtWidgets
 import qubesmanager.settings as vm_settings
+import qubesmanager.utils as utils
+import qubesadmin.utils as admin_utils
 from qubesadmin.tests.mock_app import MockQube, MockDevice
 
 PAGES = ["basic", "advanced", "firewall", "devices", "applications", "services"]
@@ -38,6 +40,10 @@ TEST_VMS = [
     "test-standalone",
     "test-old",
     "test-vm-set",
+    "default-dvm",
+    "test-disp",
+    "test-alt-dvm",
+    "test-alt-disp",
 ]
 
 # with a template
@@ -372,7 +378,9 @@ def test_101_change_template(settings_fixture):
     settings_window, page, vm_name = settings_fixture
     vm = settings_window.qubesapp.domains[vm_name]
 
-    if vm.is_running() or not hasattr(vm, "template"):
+    if vm.klass == "DispVM":
+        return
+    if vm.is_running() or not hasattr(vm, "template") or vm.klass == "StandaloneVM":
         assert not settings_window.template_name.isEnabled()
         return
 
@@ -609,7 +617,9 @@ def test_108_disk_space(settings_fixture):
 @mock.patch("qubesmanager.settings.RenameVMThread")
 @mock.patch("PyQt6.QtWidgets.QMessageBox.warning")
 @pytest.mark.parametrize(
-    "settings_fixture", ["fedora-36", "test-vm-set", "test-blue"], indirect=True
+    "settings_fixture",
+    ["fedora-36", "test-vm-set", "test-blue", "default-dvm", "test-disp"],
+    indirect=True,
 )
 def test_109_renamevm(mock_warning, mock_thread, mock_input, settings_fixture):
     settings_window, page, vm_name = settings_fixture
@@ -619,29 +629,68 @@ def test_109_renamevm(mock_warning, mock_thread, mock_input, settings_fixture):
         assert not settings_window.rename_vm_button.isEnabled()
         assert mock_warning.call_count == 0
         return
-    else:
-        assert settings_window.rename_vm_button.isEnabled()
+    assert settings_window.rename_vm_button.isEnabled()
 
     mock_input.return_value = ("renamed-vm", True)
-    settings_window.rename_vm_button.click()
+    # Qubes with identical names on both mock_app may and the current system
+    # may affects test, names such as sys-net.
+    dependencies = admin_utils.vm_dependencies(settings_window.qubesapp, vm)
+    running_dependencies = []
+    running_dependencies.extend(
+        [
+            vm
+            for (vm, prop) in dependencies
+            if vm and prop == "template" and utils.is_running(vm, False)
+        ]
+    )
+    for qube in running_dependencies:
+        expected_call = (
+            qube.name,
+            "admin.vm.property.Get",
+            "is_preload",
+            None,
+        )
+        assert expected_call not in settings_window.qubesapp.actual_calls
+        settings_window.qubesapp.expected_calls[expected_call] = (
+            b"0\x00default=False type=bool False"
+        )
+
+    if vm.name == "default-dvm":
+        dispvm = settings_window.qubesapp.domains["test-disp"]
+        expected_call = (
+            dispvm.name,
+            "admin.vm.property.Get",
+            "is_preload",
+            None,
+        )
+        settings_window.qubesapp.expected_calls[expected_call] = (
+            b"0\x00default=False type=bool True"
+        )
+        assert expected_call not in settings_window.qubesapp.actual_calls
+        with mock.patch.object(dispvm, "is_running", return_value=True):
+            settings_window.rename_vm_button.click()
+        assert expected_call in settings_window.qubesapp.actual_calls
+    else:
+        settings_window.rename_vm_button.click()
 
     if vm.name == "fedora-36":
         assert mock_warning.call_count == 1
         assert mock_thread.call_count == 0
         return
-    elif vm.name == "test-vm-set":
-        mock_thread.assert_called_with(vm, "renamed-vm", mock.ANY)
-        mock_thread().start.assert_called_with()
-        assert mock_warning.call_count == 0
 
     assert mock_warning.call_count == 0
+    if vm.name in ["test-vm-set", "default-dvm"]:
+        mock_thread.assert_called_with(vm, "renamed-vm", mock.ANY)
+        mock_thread().start.assert_called_with()
 
 
 @mock.patch("PyQt6.QtWidgets.QInputDialog.getText")
 @mock.patch("qubesmanager.common_threads.RemoveVMThread")
 @mock.patch("PyQt6.QtWidgets.QMessageBox.warning")
 @pytest.mark.parametrize(
-    "settings_fixture", ["fedora-36", "test-vm-set", "test-blue"], indirect=True
+    "settings_fixture",
+    ["fedora-36", "test-vm-set", "test-blue", "default-dvm", "test-alt-dvm"],
+    indirect=True,
 )
 def test_110_deletevm(mock_warning, mock_thread, mock_input, settings_fixture):
     settings_window, page, vm_name = settings_fixture
@@ -651,22 +700,60 @@ def test_110_deletevm(mock_warning, mock_thread, mock_input, settings_fixture):
         assert not settings_window.delete_vm_button.isEnabled()
         assert mock_warning.call_count == 0
         return
-    else:
-        assert settings_window.delete_vm_button.isEnabled()
+    assert settings_window.delete_vm_button.isEnabled()
 
     mock_input.return_value = (vm.name, True)
-    settings_window.delete_vm_button.click()
 
-    if vm.name == "fedora-36":
+    # Qubes with same names from mock_app may be on the system, such as
+    # sys-net, which affects test.
+    dependencies = [
+        (vm, prop)
+        for (vm, prop) in admin_utils.vm_dependencies(settings_window.qubesapp, vm)
+        if vm
+    ]
+    for qube, prop in dependencies:
+        expected_call = (
+            qube.name,
+            "admin.vm.property.Get",
+            "is_preload",
+            None,
+        )
+        assert expected_call not in settings_window.qubesapp.actual_calls
+        settings_window.qubesapp.expected_calls[expected_call] = (
+            b"0\x00default=False type=bool False"
+        )
+
+    if vm.name in ["default-dvm", "test-alt-dvm"]:
+        if vm.name == "default-dvm":
+            dispvm_name = "test-disp"
+        else:
+            dispvm_name = "test-alt-disp"
+        dispvm = settings_window.qubesapp.domains[dispvm_name]
+        expected_call = (
+            dispvm.name,
+            "admin.vm.property.Get",
+            "is_preload",
+            None,
+        )
+        settings_window.qubesapp.expected_calls[expected_call] = (
+            b"0\x00default=False type=bool True"
+        )
+        assert expected_call not in settings_window.qubesapp.actual_calls
+        with mock.patch.object(dispvm, "is_running", return_value=True):
+            settings_window.delete_vm_button.click()
+        assert expected_call in settings_window.qubesapp.actual_calls
+    else:
+        settings_window.delete_vm_button.click()
+
+    if vm.name in ["fedora-36", "default-dvm"]:
         assert mock_warning.call_count == 1
         assert mock_thread.call_count == 0
         return
-    elif vm.name == "test-vm-set":
-        mock_thread.assert_called_with(vm)
-        mock_thread().start.assert_called_with()
-        assert mock_warning.call_count == 0
 
     assert mock_warning.call_count == 0
+    if vm.name in ["test-vm-set", "test-alt-dvm"]:
+        mock_thread.assert_called_with(vm)
+        mock_thread().start.assert_called_with()
 
 
 @mock.patch("PyQt6.QtWidgets.QInputDialog.getText")

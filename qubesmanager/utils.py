@@ -85,11 +85,20 @@ def is_internal(vm):
 
 def is_running(vm, default_state):
     """Checks if the VM is running, returns default_state if we have
-    insufficient permissions to deteremine that."""
+    insufficient permissions to determine that."""
     try:
         return vm.is_running()
     except exc.QubesDaemonAccessError:
         return default_state
+
+
+def is_preload(vm):
+    """Checks if the VM is a preloaded disposable, returns False if we have
+    insufficient permissions to determine that."""
+    try:
+        return getattr(vm, "is_preload", False)
+    except exc.QubesDaemonAccessError:
+        return False
 
 
 def translate(string):
