@@ -1,3 +1,13 @@
+qubes-manager (4.3.16-1) unstable; urgency=medium
+
+  [ Ben Grande ]
+  * Skip updating disk size when qube is removed
+
+  [ Ali Mirjamali ]
+  * Add Application search to qube settings
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Sat, 11 Oct 2025 05:46:47 +0200
+
 qubes-manager (4.3.15-1) unstable; urgency=medium
 
   [ Ali Mirjamali ]
