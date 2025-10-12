@@ -1793,7 +1793,18 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         for vm_info in self.get_selected_vms():
             if vm_info.vm.features.check_with_template(
                     "supported-feature.keyboard-layout", False):
-                vm_info.vm.run('qubes-change-keyboard-layout')
+                # TODO: re-implement keyboard layout config. See issue 9906
+                # vm_info.vm.run('qubes-change-keyboard-layout')
+                QMessageBox.information(
+                    self,
+                    self.tr("Currently unsupported feature"),
+                    self.tr(
+                        "Setting a fixed keyboard layout is not currently "
+                        "possible via Qube Manager. Please use the below "
+                        "command in dom0:<br/><br/>"
+                        "<i>qvm-prefs {} keyboard_layout LAYOUT</i>"
+                    ).format(str(vm_info.vm))
+                )
             else:
                 QMessageBox.warning(
                     self,
