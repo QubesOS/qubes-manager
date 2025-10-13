@@ -358,8 +358,9 @@ def test_203_vm_settings_dom0(mock_window, qubes_manager):
     assert not qubes_manager.action_run_command_in_vm.isEnabled()
 
 
+@mock.patch('PyQt6.QtWidgets.QMessageBox.information')
 @mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
-def test_204_vm_keyboard(mock_message, qubes_manager):
+def test_204_vm_keyboard(mock_message_warn, mock_message_info, qubes_manager):
     # should not be enabled on dom0
     _select_vm(qubes_manager, 'dom0')
 
@@ -370,13 +371,16 @@ def test_204_vm_keyboard(mock_message, qubes_manager):
 
     assert qubes_manager.action_set_keyboard_layout.isEnabled()
 
-    vm = qubes_manager.qubes_app.domains['sys-usb']
+    # TODO: This has to be reimplemented the proper way. See commit message
+    # vm = qubes_manager.qubes_app.domains['sys-usb']
+    #
+    # with mock.patch.object(vm, 'run') as mock_run:
+    #     qubes_manager.action_set_keyboard_layout.trigger()
+    #     mock_run.assert_called_once_with("qubes-change-keyboard-layout")
 
-    with mock.patch.object(vm, 'run') as mock_run:
-        qubes_manager.action_set_keyboard_layout.trigger()
-        mock_run.assert_called_once_with("qubes-change-keyboard-layout")
-
-    mock_message.assert_not_called()
+    qubes_manager.action_set_keyboard_layout.trigger()
+    mock_message_info.assert_called()
+    mock_message_warn.assert_not_called()
 
 
 def test_205_update_vm_admin(qubes_manager):
