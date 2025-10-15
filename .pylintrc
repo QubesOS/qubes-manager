@@ -1,6 +1,6 @@
 [MASTER]
 persistent=no
-ignore=tests,
+ignore-paths=qubesmanager/tests,
     ui_about.py,
     ui_backupdlg.py,
     ui_bootfromdevice.py,
