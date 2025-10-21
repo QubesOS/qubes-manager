@@ -2044,3 +2044,35 @@ def test_603_virtmode_limitation(settings_fixture):
     assert "PVH" not in available_virtmodes
     assert "HVM (current)" in available_virtmodes
     assert "PV" in available_virtmodes
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ["test-pci-dev"], indirect=True)
+def test_604_device_filter(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+    settings_window.dev_search.setText("usb")
+    settings_window.dev_usb_controller.setChecked(True)
+
+    for i in range(settings_window.dev_list.available_list.count()):
+        item = settings_window.dev_list.available_list.item(i)
+        assert item.isHidden() != ("USB" in item.text())
+
+    for i in range(settings_window.dev_list.selected_list.count()):
+        item = settings_window.dev_list.selected_list.item(i)
+        assert item.isHidden() != ("USB" in item.text())
+
+    settings_window.dev_search.setText("")
+    settings_window.dev_other.setChecked(True)
+
+    for i in range(settings_window.dev_list.available_list.count()):
+        item = settings_window.dev_list.available_list.item(i)
+        if not item.isHidden():
+            for i in item.dev.interfaces:
+                assert i.category not in settings_window.device_radio_buttons.values()
+
+    for i in range(settings_window.dev_list.selected_list.count()):
+        item = settings_window.dev_list.selected_list.item(i)
+        if not item.isHidden():
+            for i in item.dev.interfaces:
+                assert i.category not in settings_window.device_radio_buttons.values()
