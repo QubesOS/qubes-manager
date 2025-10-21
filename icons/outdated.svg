@@ -1,4 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-    <path stroke="#404040" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
-    <path stroke="#404040" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 3v5h-5"/>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="24"
+   height="24"
+   viewBox="0 0 24 24"
+   fill="none"
+   version="1.1"
+   xmlns="http://www.w3.org/2000/svg">
+  <path
+     d="m 3.0000165,12 c 0,1.78 0.5278,3.5201 1.5168,5.0001 0.9889,1.4801 2.3945,2.6336 4.039,3.3148 1.6446005,0.6812 3.4542005,0.8594 5.2000005,0.5122 1.74584,-0.3473 3.34948,-1.2045 4.60816,-2.4631 1.25867,-1.2587 2.11584,-2.8624 2.4631,-4.6082 0.34727,-1.7458 0.16904,-3.5554 -0.51215,-5.19995 C 19.633737,6.91131 18.480187,5.50571 17.000147,4.51677 15.520107,3.52784 13.780017,3 12.000017,3 9.4800165,3 7.0700165,4 5.2600165,5.74 l -2.26,2.26"
+     stroke="#404040"
+     stroke-width="2"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     id="path1" />
+  <path
+     d="m 3.0000165,3 v 5 h 5"
+     stroke="#404040"
+     stroke-width="2"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     id="path2" />
 </svg>
