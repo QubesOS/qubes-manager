@@ -300,7 +300,6 @@
     <addaction name="action_updatevm"/>
     <addaction name="action_run_command_in_vm"/>
     <addaction name="action_open_console"/>
-    <addaction name="action_set_keyboard_layout"/>
     <addaction name="separator"/>
     <addaction name="action_show_logs"/>
    </widget>
@@ -355,7 +354,6 @@
    <addaction name="action_editfwrules"/>
    <addaction name="action_appmenus"/>
    <addaction name="action_updatevm"/>
-   <addaction name="action_set_keyboard_layout"/>
    <addaction name="action_open_console"/>
    <addaction name="separator"/>
    <addaction name="action_global_settings"/>
@@ -604,18 +602,6 @@
    </property>
    <property name="toolTip">
     <string>Kill selected qube</string>
-   </property>
-  </action>
-  <action name="action_set_keyboard_layout">
-   <property name="icon">
-    <iconset resource="../resources.qrc">
-     <normaloff>:/kbd-layout</normaloff>:/kbd-layout</iconset>
-   </property>
-   <property name="text">
-    <string>Keyboard la&amp;yout</string>
-   </property>
-   <property name="toolTip">
-    <string>Set keyboard layout per qube</string>
    </property>
   </action>
   <action name="action_vm_type">

@@ -1036,7 +1036,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         self.context_menu.addAction(self.network_menu.menuAction())
         self.context_menu.addAction(self.action_editfwrules)
         self.context_menu.addAction(self.action_appmenus)
-        self.context_menu.addAction(self.action_set_keyboard_layout)
         self.context_menu.addSeparator()
         self.context_menu.addAction(self.action_updatevm)
         self.context_menu.addAction(self.action_run_command_in_vm)
@@ -1359,18 +1358,15 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             elif vm.state['power'] == 'Paused':
                 self.action_removevm.setEnabled(False)
                 self.action_pausevm.setEnabled(False)
-                self.action_set_keyboard_layout.setEnabled(False)
                 self.action_restartvm.setEnabled(False)
                 self.action_open_console.setEnabled(False)
                 self.template_menu.setEnabled(False)
             elif vm.state['power'] == 'Suspend':
-                self.action_set_keyboard_layout.setEnabled(False)
                 self.action_removevm.setEnabled(False)
                 self.action_pausevm.setEnabled(False)
                 self.action_open_console.setEnabled(False)
                 self.template_menu.setEnabled(False)
             elif vm.state['power'] == 'Halted':
-                self.action_set_keyboard_layout.setEnabled(False)
                 self.action_pausevm.setEnabled(False)
                 self.action_shutdownvm.setEnabled(False)
                 self.action_restartvm.setEnabled(False)
@@ -1389,7 +1385,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self.action_shutdownvm.setEnabled(False)
                 self.action_appmenus.setEnabled(False)
                 self.action_editfwrules.setEnabled(False)
-                self.action_set_keyboard_layout.setEnabled(False)
                 self.action_run_command_in_vm.setEnabled(False)
                 self.template_menu.setEnabled(False)
                 self.network_menu.setEnabled(False)
@@ -1785,23 +1780,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             subprocess.Popen(['qvm-console-dispvm', vm.name],
                              stdout=subprocess.DEVNULL,
                              stderr=subprocess.DEVNULL)
-
-    # noinspection PyArgumentList
-    @pyqtSlot(name='on_action_set_keyboard_layout_triggered')
-    def action_set_keyboard_layout_triggered(self):
-        # pylint: disable=invalid-name
-        for vm_info in self.get_selected_vms():
-            if vm_info.vm.features.check_with_template(
-                    "supported-feature.keyboard-layout", False):
-                vm_info.vm.run('qubes-change-keyboard-layout')
-            else:
-                QMessageBox.warning(
-                    self,
-                    self.tr("Keyboard layout change unsupported"),
-                    self.tr(
-                        "Please update the qube {} or its template to the "
-                        "newest version of Qubes tools.").format(
-                        str(vm_info.vm)))
 
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_editfwrules_triggered')
