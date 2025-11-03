@@ -547,6 +547,8 @@ class TemplateInstallConfirmDialog(
             operation_name,
             PyQt6.QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole)
         ok_button.setPalette(palette)
+        ok_button.setFlat(True)
+        ok_button.setAutoFillBackground(True)
 
         self.button_box.addButton(
             "Cancel",
@@ -678,12 +680,14 @@ class QvmTemplateWindow(
                                self.reinstall_button, self.uninstall_button]
         palette = self.qt_app.palette()
         palette.setColor(PyQt6.QtGui.QPalette.ColorRole.Button,
-                         PyQt6.QtGui.QColor("#4180c9"))
+                         PyQt6.QtGui.QColor("#4488df"))
         palette.setColor(PyQt6.QtGui.QPalette.ColorRole.ButtonText,
                          PyQt6.QtGui.QColor("#ffffff"))
 
         for button in qubes_style_buttons:
             button.setPalette(palette)
+            button.setFlat(True)
+            button.setAutoFillBackground(True)
 
         return palette
 
