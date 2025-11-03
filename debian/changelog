@@ -1,3 +1,10 @@
+qubes-manager (4.3.18-1) unstable; urgency=medium
+
+  [ Ali Mirjamali ]
+  * Add filtering to Qube Settings -> Devices Tab
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 03 Nov 2025 02:28:19 +0100
+
 qubes-manager (4.3.17-1) unstable; urgency=medium
 
   [ Marek Marczykowski-Górecki ]
