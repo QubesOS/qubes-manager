@@ -32,6 +32,7 @@ import traceback
 import datetime
 from qubesadmin.tools import QubesArgumentParser
 from qubesadmin import device_protocol
+from qubesadmin.device_protocol import DeviceCategory
 from qubesadmin import utils as admin_utils
 from qubesadmin.tools import qvm_start
 import qubesadmin.exc
@@ -159,6 +160,23 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         )
     )
 
+    device_icons = {
+        DeviceCategory.Network: "networking",
+        DeviceCategory.Keyboard: "keyboard",
+        DeviceCategory.Mouse: "mouse",
+        DeviceCategory.Camera: "camera",
+        DeviceCategory.Audio: "speaker",
+        DeviceCategory.Multimedia: "clapperboard",
+        DeviceCategory.Storage: "storage",
+        DeviceCategory.Bluetooth: "Bluetooth",
+        DeviceCategory.Smart_Card_Readers: "card-sim",
+        DeviceCategory.Display: "monitor",
+        DeviceCategory.Memory: "memory-stick",
+        DeviceCategory.Docking_Station: "dock",
+        DeviceCategory.Processor: "cpu",
+        DeviceCategory.PCI_USB: "usb",
+    }
+
     # pylint: disable=too-many-positional-arguments
     def __init__(
         self, vm_name, init_page="basic", qapp=None, qubesapp=None, parent=None
@@ -244,6 +262,17 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.current_strict_reset_list = []
         self.new_strict_reset_list = []
         self.define_strict_reset_devices()
+        self.device_radio_buttons = {
+            self.dev_network: DeviceCategory.Network,
+            self.dev_display: DeviceCategory.Display,
+            self.dev_audio: DeviceCategory.Audio,
+            self.dev_storage: DeviceCategory.Storage,
+            self.dev_usb_controller: DeviceCategory.PCI_USB,
+        }
+        self.dev_search.textChanged.connect(self.filter_devices)
+        for button in self.device_radio_buttons:
+            button.toggled.connect(self.filter_devices)
+        self.dev_other.toggled.connect(self.filter_devices)
 
         ####### services tab
         self.__init_services_tab__()
@@ -1493,6 +1522,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
     ######## devices tab
     def __init_devices_tab__(self):
         self.dev_list = multiselectwidget.MultiSelectWidget(self)
+        self.dev_list.selected_list.setSpacing(5)
+        self.dev_list.available_list.setSpacing(5)
         self.dev_list.change_labels(
             available="Available devices",
             selected="Devices always connected to this qube",
@@ -1507,7 +1538,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 .devices["pci"]
                 .get_exposed_devices()
                 if dev.interfaces[0].category
-                != device_protocol.DeviceCategory.PCI_Bridge
+                != DeviceCategory.PCI_Bridge
             )
             attached = list(
                 self.vm.devices["pci"].get_assigned_devices(required_only=True)
@@ -1530,6 +1561,15 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     name += " (unknown)"
                 self.setText(name)
                 self.dev = dev
+                intfs = list({i.category for i in dev.interfaces})
+                if len(intfs) != 1 or intfs[0] not in VMSettingsWindow.device_icons:
+                    self.setIcon(QtGui.QIcon(":/circuit-board"))
+                else:
+                    self.setIcon(
+                        QtGui.QIcon(
+                            ":/{}".format(VMSettingsWindow.device_icons[intfs[0]])
+                        )
+                    )
 
         for dev in dom0_devs:
             if any(attached_dev.matches(dev) for attached_dev in attached):
@@ -1657,6 +1697,59 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             parent=self,
         )
         device_list_window.exec()
+
+    def filter_devices(self):
+        keywords = [word for word in self.dev_search.text().split(" ") if word]
+        for i in range(self.dev_list.available_list.count()):
+            device = self.dev_list.available_list.item(i)
+            hide = False
+            for button, category in self.device_radio_buttons.items():
+                if button.isChecked():
+                    hide = True
+                    for i in device.dev.interfaces:
+                        if i.category == category:
+                            hide = False
+                            break
+            if self.dev_other.isChecked():
+                hide = True
+                for i in device.dev.interfaces:
+                    if i.category not in self.device_radio_buttons.values():
+                        hide = False
+                        break
+            for word in keywords:
+                if not re.search(
+                    word,
+                    device.text(),
+                    re.IGNORECASE
+                ):
+                    hide = True
+                    break
+            device.setHidden(hide)
+        for i in range(self.dev_list.selected_list.count()):
+            device = self.dev_list.selected_list.item(i)
+            hide = False
+            for button, category in self.device_radio_buttons.items():
+                if button.isChecked():
+                    hide = True
+                    for i in device.dev.interfaces:
+                        if i.category == category:
+                            hide = False
+                            break
+            if self.dev_other.isChecked():
+                hide = True
+                for i in device.dev.interfaces:
+                    if i.category not in self.device_radio_buttons.values():
+                        hide = False
+                        break
+            for word in keywords:
+                if not re.search(
+                    word,
+                    device.text(),
+                    re.IGNORECASE
+                ):
+                    hide = True
+                    break
+            device.setHidden(hide)
 
     ######## applications tab
 

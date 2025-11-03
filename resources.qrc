@@ -47,5 +47,19 @@
     <file alias="fast-rewind">icons/fast-rewind.svg</file>
     <file alias="step-back">icons/step-back.svg</file>
     <file alias="step-forward">icons/step-forward.svg</file>
+    <file alias="bluetooth">icons/bluetooth.svg</file>
+    <file alias="camera">icons/camera.svg</file>
+    <file alias="card-sim">icons/card-sim.svg</file>
+    <file alias="circuit-board">icons/circuit-board.svg</file>
+    <file alias="clapperboard">icons/clapperboard.svg</file>
+    <file alias="cpu">icons/cpu.svg</file>
+    <file alias="dock">icons/dock.svg</file>
+    <file alias="gpu">icons/gpu.svg</file>
+    <file alias="keyboard">icons/keyboard.svg</file>
+    <file alias="memory-stick">icons/memory-stick.svg</file>
+    <file alias="monitor">icons/monitor.svg</file>
+    <file alias="mouse">icons/mouse.svg</file>
+    <file alias="speaker">icons/speaker.svg</file>
+    <file alias="usb">icons/usb.svg</file>
   </qresource>
 </RCC>
