@@ -1252,7 +1252,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
             curr_maxmem = int(getattr(self.vm, "maxmem", 0))
 
-            if not self.include_in_balancing.isChecked():
+            if (not self.max_mem_size.isEnabled() or
+                    not self.include_in_balancing.isChecked()):
                 maxmem = 0
             else:
                 maxmem = self.max_mem_size.value()
