@@ -136,6 +136,21 @@ def settings_fixture(
         )
     )
 
+    # orphaned device
+    test_qubes_app._devices.append(
+        MockDevice(
+            test_qubes_app,
+            dev_class="pci",
+            device_id="0x8008:0x6789::p050000",
+            backend_vm="dom0",
+            port="00_04.3",
+            product="Weird Lost Device",
+            vendor="Test Vendor",
+            assigned=[("test-pci-dev", "required", None)],
+            device_unknown=True,
+        )
+    )
+
     # add a TemplateVM with some boot modes
     test_qubes_app._qubes["fedora-36-bootmodes"] = MockQube(
         name="fedora-36-bootmodes",
@@ -2007,8 +2022,9 @@ def test_602_device_remove(settings_fixture):
     selected_items = []
     for i in range(settings_window.dev_list.selected_list.count()):
         item = settings_window.dev_list.selected_list.item(i)
-        selected_items.append(item.text())
-        item.setSelected(True)
+        if "unknown " not in item.text():
+            selected_items.append(item.text())
+            item.setSelected(True)
 
     assert len(selected_items) == 1
 
