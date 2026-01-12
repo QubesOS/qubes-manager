@@ -1179,9 +1179,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                         info.vm, 'updates-available', False):
                     info.state['outdated'] = 'update'
                 else:
-                    info.state['outdated'] = None
+                    info.state['outdated'] = ''
             else:
-                info.state['outdated'] = None
+                info.state['outdated'] = ''
         except exc.QubesDaemonAccessError:
             return
 
