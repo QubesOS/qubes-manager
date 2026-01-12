@@ -1,3 +1,13 @@
+qubes-manager (4.3.20-1) unstable; urgency=medium
+
+  [ Marek Marczykowski-Górecki ]
+  * tests: update for changed device id encoding in call arg
+
+  [ dimlev ]
+  * Change outdated state from None to empty string
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 12 Jan 2026 16:10:57 +0100
+
 qubes-manager (4.3.19-1) unstable; urgency=medium
 
   [ Ali Mirjamali ]
