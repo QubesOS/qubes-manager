@@ -1978,7 +1978,7 @@ def test_601_device_add(settings_fixture):
     expected_call = (
         vm.name,
         "admin.vm.device.pci.Assign",
-        "dom0+00_03.0:*",
+        "dom0+00_03.0+_",
         b"device_id='*' port_id='00_03.0' devclass='pci' "
         b"backend_domain='dom0' mode='required' "
         b"frontend_domain='test-vm-set'",
