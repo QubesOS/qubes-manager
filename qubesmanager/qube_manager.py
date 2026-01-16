@@ -244,10 +244,18 @@ class VmInfo():
         self.state = {'power': "", 'outdated': ""}
         self.updateable = getattr(vm, 'updateable', False)
         self.update(True)
+        self.CPU_usage = None
+        self.RAM_usage = None
+
+    def update_resource_usage(self, RAM_usage, CPU_usage):
+        self.RAM_usage = RAM_usage
+        self.CPU_usage = CPU_usage
 
     def update_power_state(self):
         try:
             self.state['power'] = self.vm.get_power_state()
+            if self.state["power"] in ["Halted", "Paused", "Suspended"]:
+                self.update_resource_usage(None, None)
             if self.state['power'] == "Halted" and \
                     self.vm.klass != "AdminVM" and \
                     manager_utils.get_feature(
@@ -258,6 +266,7 @@ class VmInfo():
                 self.state['power'] = 'Blocked'
         except exc.QubesDaemonAccessError:
             self.state['power'] = ""
+
 
         self.state['outdated'] = ""
         try:
@@ -422,6 +431,8 @@ class QubesTableModel(QAbstractTableModel):
                 "Label",
                 "Name",
                 "State",
+                "CPU",
+                "MEM",
                 "Template",
                 "NetVM",
                 "Disk Usage",
@@ -453,6 +464,12 @@ class QubesTableModel(QAbstractTableModel):
         col_name = self.columns_indices[col]
         vm = self.qubes_cache.get_vm(row)
 
+        if role == Qt.ItemDataRole.SizeHintRole:
+            if col_name in ["CPU", "MEM"]:
+                return QSize(100, 22)
+        if role == Qt.ItemDataRole.TextAlignmentRole:
+            if col_name in ["CPU", "MEM", "Disk Usage"]:
+                return Qt.AlignmentFlag.AlignCenter
         if role == Qt.ItemDataRole.DisplayRole:
             if col_name == "Name":
                 return vm.name
@@ -464,6 +481,14 @@ class QubesTableModel(QAbstractTableModel):
                 return vm.template
             if col_name == "NetVM":
                 return vm.netvm
+            if col_name == "CPU":
+                if not vm.CPU_usage:
+                    return "-"
+                return vm.CPU_usage + " %"
+            if col_name == "MEM":
+                if not vm.RAM_usage:
+                    return "-"
+                return str(int(int(vm.RAM_usage) / 1024)) + " MiB"
             if col_name == "Disk Usage":
                 return vm.disk
             if col_name == "Internal":
@@ -508,6 +533,13 @@ class QubesTableModel(QAbstractTableModel):
         if role == Qt.ItemDataRole.UserRole + 1:
             if vm.klass == 'AdminVM':
                 return ""
+            # Consider allowing dom0 to be sorted for CPU & MEM usage
+            if col_name == "CPU":
+                if vm.CPU_usage:
+                    return int(vm.CPU_usage)
+            if col_name == "MEM":
+                if vm.RAM_usage:
+                    return int(vm.RAM_usage)
             if col_name == "Label":
                 vmtype, vmcolor = vm.icon.split("-", 1)
                 try:
@@ -746,7 +778,14 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     # suppress saving settings while initializing widgets
     settings_loaded = False
 
-    def __init__(self, qt_app, qubes_app, dispatcher, _parent=None):
+    def __init__(
+            self,
+            qt_app,
+            qubes_app,
+            dispatcher,
+            stats_dispatcher=None,
+            _parent=None
+        ):
         # pylint: disable=too-many-statements
         super().__init__()
         self.setupUi(self)
@@ -772,6 +811,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         self.frame_width = 0
         self.frame_height = 0
+        self.foreground = True
 
         self.init_template_menu()
         self.init_network_menu()
@@ -908,6 +948,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         dispatcher.add_handler('domain-feature-delete:skip-update',
                                self.on_domain_updates_available)
 
+        if stats_dispatcher:
+            stats_dispatcher.add_handler("vm-stats", self.on_vm_stats)
+
         self.installEventFilter(self)
 
         # It needs to store threads until they finish
@@ -927,8 +970,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         if event.type() == QEvent.Type.WindowActivate:
             self.update_running_size()
             self.size_on_disk_timer.setInterval(1000 * 60)
+            self.foreground = True
         elif event.type() == QEvent.Type.WindowDeactivate:
             self.size_on_disk_timer.setInterval(1000 * 60 * 5)
+            self.foreground = False
         return False
 
     def scroll_to_top(self):
@@ -1193,6 +1238,16 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                         update_size_on_disk=True, event='disk_size')
             except exc.QubesVMNotFoundError:
                 pass  # qube was destroyed in the meantime.
+
+    def on_vm_stats(self, vm, _event, **kwargs):
+        if not self.foreground:
+            return
+        domain = self.qubes_app.domains[vm]
+        self.qubes_cache.get_vm(qid=domain.qid).update_resource_usage(
+            kwargs["memory_kb"],
+            kwargs["cpu_usage"],
+        )
+        self.proxy.invalidate()
 
     def on_domain_added(self, _submitter, _event, vm, **_kwargs):
         try:
