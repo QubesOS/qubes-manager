@@ -2,10 +2,10 @@
     <g id="layer1" transform="translate(-121.836 -112.7)">
         <g id="g1" style="fill:none" transform="translate(98.473 142.018)scale(.26458)">
             <g id="g12" transform="translate(0 2.571)">
-                <path id="path3-8-0" stroke="#ca8a04" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M105.04-98.804h.02" style="fill:none;stroke:#000;stroke-width:1.99937;stroke-dasharray:none;stroke-opacity:1"/>
-                <path id="path4-9-3" stroke="#ca8a04" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M100.538-98.804h.02" style="fill:none;stroke:#000;stroke-width:1.99937;stroke-dasharray:none;stroke-opacity:1"/>
+                <path id="path3-8-0" stroke="#3b82f6" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M105.04-98.804h.02" style="fill:none;stroke:#3b82f6;stroke-width:1.99937;stroke-dasharray:none;stroke-opacity:1"/>
+                <path id="path4-9-3" stroke="#3b82f6" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M100.538-98.804h.02" style="fill:none;stroke:#3b82f6;stroke-width:1.99937;stroke-dasharray:none;stroke-opacity:1"/>
                 <g id="g11" style="fill:none" transform="translate(85.301 -116.449)">
-                    <path id="path1-2" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m20 6.645-11 11-5-5" style="stroke-width:1.99937;stroke-dasharray:none"/>
+                    <path id="path1-2" stroke="#3b82f6" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m20 6.645-11 11-5-5" style="stroke-width:1.99937;stroke-dasharray:none"/>
                 </g>
             </g>
         </g>
