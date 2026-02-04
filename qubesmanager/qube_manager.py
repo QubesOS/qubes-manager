@@ -327,6 +327,8 @@ class VmInfo():
         if not event or event.endswith(':internal'):
             self.internal = manager_utils.get_boolean_feature(
                 self.vm, 'internal')
+        if not event or event.endswith(':is_preload'):
+            self.is_preload = getattr(self.vm, 'is_preload', None)
 
         if not event or event.endswith(':ip') or event.endswith(':netvm'):
             if getattr(self.vm, 'netvm', None) \
@@ -467,7 +469,11 @@ class QubesTableModel(QAbstractTableModel):
             if col_name == "Disk Usage":
                 return vm.disk
             if col_name == "Internal":
-                return "Yes" if vm.internal else ""
+                if getattr(vm, "is_preload", None):
+                    return "Yes (preloaded disposable)"
+                if vm.internal:
+                    return "Yes"
+                return ""
             if col_name == "IP Address":
                 return vm.ip
             if col_name == "Last backup":
@@ -888,6 +894,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         dispatcher.add_handler('domain-add', self.on_domain_added)
         dispatcher.add_handler('domain-delete', self.on_domain_removed)
 
+        dispatcher.add_handler('property-reset:*',
+                               self.on_domain_changed)
         dispatcher.add_handler('property-set:*',
                                self.on_domain_changed)
         dispatcher.add_handler('property-del:*',
