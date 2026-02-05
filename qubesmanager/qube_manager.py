@@ -106,6 +106,11 @@ class StateIconDelegate(QStyledItemDelegate):
                 "Halted" : QIcon(":/blank"),
                 "Blocked" : QIcon(":/ban"),
                 }
+        self.preloadIcon = QIcon(":/preloaded")
+        self.preloadTooltip = (
+            "Preloaded disposable qube\n\nTo configure memory usage of "
+            "these qubes, see Qubes Global Config"
+        )
         self.outdatedIcons = {
                 "update" : QIcon(":/updateable"),
                 "outdated" : QIcon(":/outdated"),
@@ -175,6 +180,11 @@ class StateIconDelegate(QStyledItemDelegate):
                            .pixmap(iconSize))
             left += delta
 
+        if index.data()['is_preload']:
+            qp.drawPixmap(iconRect.translated(left, 0),
+                    self.preloadIcon.pixmap(iconSize))
+            left += delta
+
         qp.restore()
 
     def helpEvent(self, event, view, option, index):
@@ -209,6 +219,7 @@ class StateIconDelegate(QStyledItemDelegate):
             else:
                 QToolTip.showText(event.globalPos(),
                     index.data()['power'], view)
+
         else:
             margin = iconRect.left() - option.rect.left()
             left = delta = margin + iconRect.width()
@@ -223,7 +234,18 @@ class StateIconDelegate(QStyledItemDelegate):
                             view)
                 # shift the left *only* if the role is True, otherwise we
                 # can assume that that icon doesn't exist at all
-            left += delta
+                left += delta
+
+            if index.data()['is_preload']:
+                if event.pos() in iconRect.translated(left, 0):
+                    # see above (*)
+                    if index != self.lastIndex:
+                        QToolTip.showText(QPoint(), ' ')
+                    QToolTip.showText(event.globalPos(), self.preloadTooltip, view)
+                # shift the left *only* if the role is True, otherwise we
+                # can assume that that icon doesn't exist at all
+                left += delta
+
         self.lastIndex = index
         return True
 
@@ -241,7 +263,7 @@ class VmInfo():
         self.icon = getattr(vm, 'icon', 'appvm-black')
         self.auto_cleanup = getattr(vm, 'auto_cleanup', False)
 
-        self.state = {'power': "", 'outdated': ""}
+        self.state = {'power': "", 'outdated': "", 'is_preload': ""}
         self.updateable = getattr(vm, 'updateable', False)
         self.update(True)
 
@@ -329,6 +351,7 @@ class VmInfo():
                 self.vm, 'internal')
         if not event or event.endswith(':is_preload'):
             self.is_preload = getattr(self.vm, 'is_preload', None)
+            self.state['is_preload'] = getattr(self.vm, 'is_preload', None)
 
         if not event or event.endswith(':ip') or event.endswith(':netvm'):
             if getattr(self.vm, 'netvm', None) \
