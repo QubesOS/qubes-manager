@@ -75,10 +75,9 @@ def set_organization():
     QtCore.QCoreApplication.setApplicationName('qubes-qube-manager')
 
 def is_internal(vm):
-    """checks if the VM is either an AdminVM or has the 'internal' features"""
+    """checks if the VM has the 'internal' features"""
     try:
-        return (vm.klass == 'AdminVM'
-                or vm.features.get('internal', False))
+        return vm.features.get('internal', False)
     except exc.QubesDaemonAccessError:
         return False
 
@@ -278,8 +277,7 @@ def initialize_widget_with_vms(
     :param property_name: name of the property
     :param allow_default: should a position with qubesadmin.DEFAULT be added;
         default False
-    :param allow_internal: should AdminVMs and vms with feature 'internal' be
-        used
+    :param allow_internal: should vms with feature 'internal' be used
     :return:
     """
     choices = []

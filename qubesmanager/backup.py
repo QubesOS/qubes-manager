@@ -124,8 +124,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
             filter_function=(lambda vm:
                              vm.klass != 'TemplateVM'
                              and utils.is_running(vm, False)
-                             and not utils.get_feature(vm, 'internal', False)),
-            allow_internal=True,
+                            ),
         )
         self.appvm_combobox.setCurrentIndex(
             self.appvm_combobox.findText("dom0"))
