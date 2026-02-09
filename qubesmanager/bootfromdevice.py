@@ -115,7 +115,6 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
                              and not utils.get_feature(vm, "service.guivm", False)
                              and not getattr(vm, "template_for_dispvms", False)
                             ),
-            allow_internal=True
         )
 
         device_choice = []
