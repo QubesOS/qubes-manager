@@ -108,8 +108,13 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
         utils.initialize_widget_with_vms(
             widget=self.fileVM,
             qubes_app=self.qubesapp,
-            filter_function=(lambda x: x != self.vm),
-            allow_internal=True
+            filter_function=(lambda vm:
+                             vm.klass != "TemplateVM"
+                             and not utils.get_feature(vm, "internal", False)
+                             and not utils.get_feature(vm, "service.audiovm", False)
+                             and not utils.get_feature(vm, "service.guivm", False)
+                             and not getattr(vm, "template_for_dispvms", False)
+                            ),
         )
 
         device_choice = []
