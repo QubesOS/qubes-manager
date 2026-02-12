@@ -7,3 +7,4 @@ Name=Backup Qubes
 GenericName=Backup Qubes
 StartupNotify=false
 Categories=Settings;X-XFCE-SettingsDialog
+Keywords=qubes;

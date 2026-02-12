@@ -7,3 +7,4 @@ Name=Qube Manager
 GenericName=Qube Manager
 StartupNotify=false
 Categories=Settings;X-XFCE-SettingsDialog
+Keywords=qubes;
