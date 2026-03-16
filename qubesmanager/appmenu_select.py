@@ -96,7 +96,6 @@ class AppmenuSelectManager:
         command = [
             "qvm-appmenus",
             "--get-available",
-            "--i-understand-format-is-unstable",
             "--file-field",
             "Comment",
             "--file-field",
