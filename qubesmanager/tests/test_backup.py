@@ -57,10 +57,12 @@ def _get_vms_from_widget(widget: QtWidgets.QListWidget):
 def test_00_load_backup(backup_dlg):
     expected_selected_vms = [
         f"{vm.name} ({vm.klass})" for vm in
-        backup_dlg.qubes_app.domains if vm.include_in_backups]
+        backup_dlg.qubes_app.domains if vm.include_in_backups
+        and not vm.features.get("internal", False)]
     expected_avail_vms = [
         f"{vm.name} ({vm.klass})" for vm in
-        backup_dlg.qubes_app.domains if not vm.include_in_backups]
+        backup_dlg.qubes_app.domains if not vm.include_in_backups
+        and not vm.features.get("internal", False)]
     avail_vms = _get_vms_from_widget(
         backup_dlg.select_vms_widget.available_list)
     selected_vms = _get_vms_from_widget(
