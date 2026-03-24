@@ -29,7 +29,7 @@ checks:tests:
       xorg-x11-server-Xvfb python3-PyQt6-devel python3-pyqt6
     - pip3 install --quiet -r ci/requirements.txt
     - git clone https://github.com/QubesOS/qubes-core-admin-client ~/core-admin-client
-    - (cd ~/core-admin-client;python3 setup.py egg_info)
+    - (cd ~/core-admin-client; if [ -f setup.py ]; then python3 setup.py egg_info; else python3 -m pip install --quiet --no-deps -e .; fi)
     - git clone https://github.com/QubesOS/qubes-linux-utils ~/linux-utils
     - (cd ~/linux-utils/imgconverter;sudo python3 setup.py install)
   script:
