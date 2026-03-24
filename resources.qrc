@@ -38,6 +38,7 @@
     <file alias="template-switcher.svg">icons/template-switcher.svg</file>
     <file alias="templatevm">icons/templatevm.svg</file>
     <file alias="transient">icons/transient.svg</file>
+    <file alias="preloaded">icons/qubes-preloaded.svg</file>
     <file alias="updateable">icons/updateable.svg</file>
     <file alias="vm-settings">icons/vm-settings.svg</file>
     <file alias="warning">icons/warning.svg</file>
