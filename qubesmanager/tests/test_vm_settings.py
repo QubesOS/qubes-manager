@@ -1461,6 +1461,42 @@ def test_305_firewall_edit_rule(settings_fixture):
 
 @check_errors
 @pytest.mark.parametrize("settings_fixture", ["test-vm-set"], indirect=True)
+def test_305b_firewall_add_rule_with_comment(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+
+    assert settings_window.policy_deny_radio_button.isChecked()
+
+    settings_window.new_rule_button.click()
+    settings_window.fw_model.current_dialog.addressComboBox.setCurrentText(
+        "example.com"
+    )
+    settings_window.fw_model.current_dialog.commentLineEdit.setText(
+        "temporary access for testing"
+    )
+    settings_window.fw_model.current_dialog.buttonBox.button(
+        QtWidgets.QDialogButtonBox.StandardButton.Ok
+    ).click()
+
+    expected_call = (
+        "test-vm-set",
+        "admin.vm.firewall.Set",
+        None,
+        b"action=accept dsthost=qubes-os.org\n"
+        b"action=accept dsthost=example.com"
+        b" comment=temporary access for testing\n"
+        b"action=accept specialtarget=dns\n"
+        b"action=accept proto=icmp\n"
+        b"action=drop\n",
+    )
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b"0\x00"
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ["test-vm-set"], indirect=True)
 def test_306_firewall_unlimit(settings_fixture):
     settings_window, page, vm_name = settings_fixture
 
@@ -1487,6 +1523,66 @@ def test_306_firewall_unlimit(settings_fixture):
         b"proto=icmp\naction=drop\n",
     )
     assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b"0\x00"
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@mock.patch("subprocess.check_output")
+def test_306b_firewall_preserve_cli_comment(mock_subprocess, qapp, test_qubes_app):
+    """Rules created via CLI with comments should survive GUI round-trip."""
+    mock_subprocess.return_value = b""
+
+    fw_rules = [
+        {"action": "accept", "dsthost": "gitlab.com",
+         "comment": "IP for gitlab at the time"},
+        {"action": "accept", "specialtarget": "dns"},
+        {"action": "accept", "proto": "icmp"},
+        {"action": "drop"},
+    ]
+
+    test_qubes_app._qubes["test-vm-comment"] = MockQube(
+        name="test-vm-comment",
+        qapp=test_qubes_app,
+        label="green",
+        firewall_rules=fw_rules,
+    )
+    test_qubes_app.expected_calls[
+        ("test-vm-comment", "admin.vm.notes.Get", None, None)
+    ] = b"0\x00"
+    test_qubes_app.update_vm_calls()
+
+    settings_window = vm_settings.VMSettingsWindow(
+        "test-vm-comment", "firewall", qapp, test_qubes_app
+    )
+
+    # Comment should be visible in the model
+    assert settings_window.fw_model.get_column_string(
+        3, settings_window.fw_model.children[0]
+    ) == "IP for gitlab at the time"
+
+    # Edit the rule (opens dialog, accept it unchanged) to trigger fw_changed
+    settings_window.rulesTreeView.setCurrentIndex(
+        settings_window.fw_model.index(0, 0))
+    settings_window.edit_rule_button.click()
+    settings_window.fw_model.current_dialog.buttonBox.button(
+        QtWidgets.QDialogButtonBox.StandardButton.Ok
+    ).click()
+
+    # The comment must survive the edit round-trip
+    expected_call = (
+        "test-vm-comment",
+        "admin.vm.firewall.Set",
+        None,
+        b"action=accept dsthost=gitlab.com"
+        b" comment=IP for gitlab at the time\n"
+        b"action=accept specialtarget=dns\n"
+        b"action=accept proto=icmp\n"
+        b"action=drop\n",
+    )
     settings_window.qubesapp.expected_calls[expected_call] = b"0\x00"
 
     settings_window.accept()
