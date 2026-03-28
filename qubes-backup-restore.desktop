@@ -7,3 +7,4 @@ Name=Restore Backup
 GenericName=Restore Backup
 StartupNotify=false
 Categories=Settings;X-XFCE-SettingsDialog
+Keywords=qubes;
