@@ -28,7 +28,7 @@ Depends:
   python3-pyinotify,
   python3-qasync,
   python3-xdg,
-  qubes-desktop-linux-common,
+  qubes-desktop-linux-common (>= 4.4.0),
   qubes-artwork,
   pmount,
   cryptsetup,
