@@ -201,11 +201,14 @@ class TemplateManagerWindow(
 
     def table_double_click(self, row, column):
         template_column = column_names.index('Current template')
-        current_state = self.vm_list.cellWidget(
-            row, column_names.index('State')).isChecked()
 
         if column != template_column:
             return
+
+        checkbox = self.vm_list.cellWidget(row, column_names.index('State'))
+        if not checkbox:
+            return
+        current_state = checkbox.isChecked()
 
         template_name = self.vm_list.item(row, column).text()
 
