@@ -116,10 +116,10 @@
       <item row="3" column="1" colspan="3">
       <widget class="QLineEdit" name="commentLineEdit">
        <property name="toolTip">
-        <string>Optional note for your own reference.</string>
+        <string>Comments are for user reference only</string>
        </property>
        <property name="placeholderText">
-        <string>Optional note (e.g. reason for this rule)</string>
+        <string>Comment (optional)</string>
        </property>
        <property name="maxLength">
         <number>512</number>
