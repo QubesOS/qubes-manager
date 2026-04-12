@@ -793,6 +793,21 @@ p, li { white-space: pre-wrap; }
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Port/service can be provided as either port number (e.g. 122), port range (1024-1234) or service name (e.g. smtp) . For full list of services known, see /etc/services in dom0.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../ui_newfwruledlg.py" line="105"/>
+        <source>Comment</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui_newfwruledlg.py" line="106"/>
+        <source>Optional note for your own reference.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui_newfwruledlg.py" line="107"/>
+        <source>Optional note (e.g. reason for this rule)</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QubeManager</name>

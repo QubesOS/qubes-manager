@@ -107,6 +107,10 @@ class NewFwRuleDlg(QtWidgets.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
                             "invalid.".format(parsed_service)))
                     return False
 
+        comment_text = self.commentLineEdit.text().strip()
+        if comment_text:
+            rule.comment = comment_text
+
         if self.model.current_row is not None:
             self.model.set_child(self.model.current_row, rule)
         else:
@@ -173,7 +177,12 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         self.current_row = None
         self.current_dialog = None
 
-        self.__column_names = {0: "Address", 1: "Port/Service", 2: "Protocol", }
+        self.__column_names = {
+            0: "Address",
+            1: "Port/Service",
+            2: "Protocol",
+            3: "Comment",
+        }
         self.__services = []
 
         self.port_range_pattern = re.compile(r'\d+-\d+')
@@ -243,6 +252,13 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
             if rule.proto is None:
                 return "any"
             return str(rule.proto)
+
+        # Comment
+        if col == 3:
+            if rule.comment is None:
+                return ""
+            return str(rule.comment)
+
         return "unknown"
 
     def get_firewall_conf(self, vm):
@@ -392,6 +408,8 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
             dialog.udp_radio.setChecked(True)
         else:
             dialog.any_radio.setChecked(True)
+        comment = self.get_column_string(3, self.children[row])
+        dialog.commentLineEdit.setText(comment)
 
     def run_rule_dialog(self, dialog, row=None):
         self.current_row = row
