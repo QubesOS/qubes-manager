@@ -1551,15 +1551,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         # pylint: disable=too-few-public-methods
         class DevListWidgetItem(QtWidgets.QListWidgetItem):
-            def __init__(self, dev, unknown=False, parent=None):
+            def __init__(self, dev, parent=None):
                 super().__init__(parent)
                 name = (
                     dev.port_id.replace("_", ":").replace("-", " -> ")
                     + " "
                     + dev.description
                 )
-                if unknown:
-                    name += " (unknown)"
                 self.setText(name)
                 self.dev = dev
                 intfs = list({i.category for i in dev.interfaces})
@@ -1580,7 +1578,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         for ass in attached:
             if not any(ass.matches(dev) for dev in dom0_devs):
                 self.dev_list.selected_list.addItem(
-                    DevListWidgetItem(ass.device, unknown=True)
+                    DevListWidgetItem(ass.device)
                 )
 
         if (
