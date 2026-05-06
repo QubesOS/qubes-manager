@@ -1,3 +1,41 @@
+qubes-manager (4.4.0-1) unstable; urgency=medium
+
+  [ Marek Marczykowski-Górecki ]
+  * ci: fix handling new core-admin-client
+  * tests: update for changed mocks
+
+  [ Ben Grande ]
+  * Add preloaded disposable string to internal column
+  * Add preloaded disposable icon to state column
+
+  [ Jayant-Kernel ]
+  * appmenu_select: remove --i-understand-format-is-unstable flag
+
+  [ Ben Grande ]
+  * Allow search GUI tools using 'qubes' search string
+
+  [ Marek Marczykowski-Górecki ]
+  * ci: switch to devel version
+  * Bump qubes-desktop-linux-common version requirement
+
+  [ Ben Grande ]
+  * Hide irrelevant qubes from boot device selection
+  * Don't hide AdminVM as being an internal qube
+
+  [ Jayant-Kernel ]
+  * template_manager: fix crash on double-click on a running qube
+
+  [ Nihal ]
+  * firewall: Add comment field to firewall rules
+
+  [ Nihal Kumar ]
+  * straight forward placeholder
+
+  [ Corey Ford ]
+  * Make Template Manager text selectable for copying
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Wed, 06 May 2026 19:05:36 +0200
+
 qubes-manager (4.3.21-1) unstable; urgency=medium
 
   [ Marta Marczykowska-Górecka ]
