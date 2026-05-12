@@ -697,6 +697,20 @@ class StartVMThread(common_threads.QubesThread):
 
 
 # pylint: disable=too-few-public-methods
+class ShutdownVMThread(common_threads.QubesThread):
+    def __init__(self, vm, force: bool = False, wait: bool = False):
+        super().__init__(vm)
+        self.force = force
+        self.wait_end = wait  # wait() is callable, let's not interfere.
+
+    def run(self):
+        try:
+            self.vm.shutdown(force=self.force, wait=self.wait_end)
+        except exc.QubesException as ex:
+            self.msg = ("Error starting Qube!", str(ex))
+
+
+# pylint: disable=too-few-public-methods
 class UpdateVMsThread(common_threads.QubesThread):
     def run(self):
         vm_names = self.vm
@@ -1660,9 +1674,15 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
                 force = True
                 for connected_vm in connected_vms:
-                    connected_vm.shutdown(force=force)
+                    thread = ShutdownVMThread(connected_vm, force=force)
+                    self.threads_list.append(thread)
+                    thread.finished.connect(self.clear_threads)
+                    thread.start()
 
-            vm.shutdown(force=force)
+            thread = ShutdownVMThread(vm, force=force, wait=True)
+            self.threads_list.append(thread)
+            thread.finished.connect(self.clear_threads)
+            thread.start()
         except exc.QubesException as ex:
             QMessageBox.warning(
                 self,
