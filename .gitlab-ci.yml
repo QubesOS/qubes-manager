@@ -2,9 +2,9 @@ checks:pylint:
   before_script:
   - sudo dnf install -y python3-pip python3-pyxdg python3-pytest-qt
   - pip3 install --quiet -r ci/requirements.txt
-  - git clone https://github.com/QubesOS/qubes-core-admin-client ~/core-admin-client
+  - git clone -b release4.3 https://github.com/QubesOS/qubes-core-admin-client ~/core-admin-client
   - (cd ~/core-admin-client;python3 setup.py egg_info)
-  - git clone https://github.com/QubesOS/qubes-linux-utils ~/linux-utils
+  - git clone -b release4.3 https://github.com/QubesOS/qubes-linux-utils ~/linux-utils
   - (cd ~/linux-utils/imgconverter;sudo python3 setup.py install)
   script:
   - PYTHONPATH=~/core-admin-client python3 -m pylint qubesmanager
@@ -28,9 +28,9 @@ checks:tests:
       python3-coverage sequoia-sqv python3-pip python3-pytest-qt
       xorg-x11-server-Xvfb python3-PyQt6-devel python3-pyqt6
     - pip3 install --quiet -r ci/requirements.txt
-    - git clone https://github.com/QubesOS/qubes-core-admin-client ~/core-admin-client
+    - git clone -b release4.3 https://github.com/QubesOS/qubes-core-admin-client ~/core-admin-client
     - (cd ~/core-admin-client;python3 setup.py egg_info)
-    - git clone https://github.com/QubesOS/qubes-linux-utils ~/linux-utils
+    - git clone -b release4.3 https://github.com/QubesOS/qubes-linux-utils ~/linux-utils
     - (cd ~/linux-utils/imgconverter;sudo python3 setup.py install)
   script:
     - make ui
