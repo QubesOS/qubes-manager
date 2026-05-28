@@ -1,3 +1,28 @@
+qubes-manager (4.3.22-1) unstable; urgency=medium
+
+  [ Ben Grande ]
+  * Allow search GUI tools using 'qubes' search string
+  * Add preloaded disposable string to internal column
+  * Add preloaded disposable icon to state column
+
+  [ Marek Marczykowski-Górecki ]
+  * tests: update for changed mocks
+
+  [ Jayant-Kernel ]
+  * template_manager: fix crash on double-click on a running qube
+
+  [ Corey Ford ]
+  * Make Template Manager text selectable for copying
+
+  [ Marta Marczykowska-Górecka ]
+  * Improve reactions to missing PCI devices
+
+  [ Marek Marczykowski-Górecki ]
+  * ci: switch to release4.3 branch for dependencies
+  * Require python3-qubesadmin >= 4.3.32
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Thu, 28 May 2026 17:12:15 +0200
+
 qubes-manager (4.3.21-1) unstable; urgency=medium
 
   [ Marta Marczykowska-Górecka ]
