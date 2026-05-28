@@ -1101,7 +1101,7 @@ def test_211_virtmode(settings_fixture):
     assert expected_call in settings_window.qubesapp.actual_calls
 
 
-@mock.patch("qubesadmin.tools.qvm_start.main")
+@mock.patch("qubesadmin.utils.start_expert")
 @mock.patch("qubesmanager.bootfromdevice.VMBootFromDeviceWindow")
 @check_errors
 @pytest.mark.parametrize("settings_fixture", TEST_VMS, indirect=True)
@@ -1120,7 +1120,7 @@ def test_212_boot_from_device(mock_boot, mock_start, settings_fixture):
         parent=settings_window,
     )
 
-    mock_start.assert_called_with(["--cdrom", mock.ANY, vm.name])
+    mock_start.assert_called_with(domain=vm, drive=mock.ANY)
 
 
 @check_errors

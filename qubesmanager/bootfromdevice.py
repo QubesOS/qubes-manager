@@ -24,7 +24,7 @@ from . import ui_bootfromdevice  # pylint: disable=no-name-in-module
 from PyQt6 import QtWidgets, QtGui, QtCore  # pylint: disable=import-error
 from qubesadmin import tools
 from qubesadmin import exc
-from qubesadmin.tools import qvm_start
+from qubesadmin import utils as admin_utils
 
 # this is needed for icons to actually work
 # pylint: disable=unused-import, no-name-in-module
@@ -178,7 +178,7 @@ def main(args=None):
     window = utils.run_synchronous(
         functools.partial(VMBootFromDeviceWindow, vm))
     if window.result() == 1 and window.cdrom_location is not None:
-        qvm_start.main(['--cdrom', window.cdrom_location, vm.name])
+        admin_utils.start_expert(domain=vm, drive="cdrom:" + window.cdrom_location)
 
 if __name__ == "__main__":
     main()

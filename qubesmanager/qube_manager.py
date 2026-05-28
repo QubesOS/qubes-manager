@@ -31,7 +31,6 @@ from os import path
 
 from qubesadmin import exc
 from qubesadmin import utils
-from qubesadmin.tools import qvm_start
 
 # pylint: disable=import-error
 from PyQt6 import QtWidgets
@@ -1613,8 +1612,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     self.tr("'qubes-windows-tools' is not installed in dom0."))
         for vm_info in self.get_selected_vms():
             vm = vm_info.vm
-            qvm_start.main(['--cdrom',
-                'dom0:/usr/lib/qubes/qubes-windows-tools.iso', vm.name])
+            utils.start_expert(
+                domain=vm, drive="cdrom:dom0:/usr/lib/qubes/qubes-windows-tools.iso"
+            )
 
     @pyqtSlot(name='on_action_pausevm_triggered')
     def action_pausevm_triggered(self):
