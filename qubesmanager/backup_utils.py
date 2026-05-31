@@ -98,12 +98,11 @@ def select_path_button_clicked(dialog, select_file=False, read_only=False):
                     vm,
                     "qubes.SelectFile" if select_file
                     else "qubes.SelectDirectory")
-            except ValueError:
+            except ValueError as ex:
                 QtWidgets.QMessageBox.warning(
                     dialog,
                     dialog.tr("Unexpected characters in path!"),
-                    dialog.tr("Backup path can only contain the following "
-                              "special characters: /:.,_+=() -"))
+                    str(ex))
             except subprocess.CalledProcessError as ex:
                 # dialog cancelled
                 if read_only and ex.returncode == 1:
