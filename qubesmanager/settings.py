@@ -34,7 +34,6 @@ from qubesadmin.tools import QubesArgumentParser
 from qubesadmin import device_protocol
 from qubesadmin.device_protocol import DeviceCategory
 from qubesadmin import utils as admin_utils
-from qubesadmin.tools import qvm_start
 import qubesadmin.exc
 
 from . import bootfromdevice
@@ -1393,7 +1392,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         )
         if boot_dialog.exec():
             self.save_and_apply()
-            qvm_start.main(["--cdrom", boot_dialog.cdrom_location, self.vm.name])
+            admin_utils.start_expert(
+                domain=self.vm, drive="cdrom:" + boot_dialog.cdrom_location
+            )
 
     def virt_mode_changed(self, new_idx):  # pylint: disable=unused-argument
         self.update_pv_warning()
