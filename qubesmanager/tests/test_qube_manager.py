@@ -23,7 +23,7 @@ import subprocess
 import time
 from datetime import datetime
 
-from PyQt6.QtCore import Qt, QSettings, QItemSelectionModel
+from PyQt6.QtCore import Qt, QSettings, QItemSelectionModel, QModelIndex
 from PyQt6.QtGui import QPixmap, QIcon
 from PyQt6.QtWidgets import QMessageBox
 
@@ -154,6 +154,37 @@ def _is_icon(icon, icon_name: str = 'checked'):
     if my_icon == off_icon:
         return False
     raise ValueError
+
+
+# A RemoteVM is a BaseVM: it has none of the AppVM properties below, so reading
+# them must raise (as on a real system) rather than return a mock value.
+REMOTE_VM_MISSING_PROPS = [
+    "template",
+    "netvm",
+    "provides_network",
+    "default_dispvm",
+    "template_for_dispvms",
+    "virt_mode",
+]
+
+# The qubesd response a property.Get returns for a property the VM doesn't have.
+_NO_SUCH_PROPERTY = b"2\x00QubesNoSuchPropertyError\x00\x00No such property\x00"
+
+
+def _add_remote_vm(qapp, name="test-remote"):
+    """Register a RemoteVM in the mock app"""
+    qube = MockQube(name=name, qapp=qapp, klass="RemoteVM")
+    qapp._qubes[name] = qube
+    for prop in REMOTE_VM_MISSING_PROPS:
+        qube.properties.pop(prop, None)
+    qapp.update_vm_calls()
+    for prop in REMOTE_VM_MISSING_PROPS:
+        qapp.expected_calls[
+            (name, "admin.vm.property.Get", prop, None)] = _NO_SUCH_PROPERTY
+        qapp.expected_calls[
+            (name, "admin.vm.property.GetDefault", prop, None)] = \
+            _NO_SUCH_PROPERTY
+    return qube
 
 
 def test_000_window_loads(qapp, test_qubes_app):
@@ -311,6 +342,70 @@ def test_004_hide_column(mock_settings, qubes_manager):
 
     qubes_manager.menu_view.actions()[action_no].trigger()
     mock_settings.assert_called_with('columns/Is DVM Template', False)
+
+
+def test_006_remote_vm_listed(qapp, test_qubes_app):
+    """
+    A RemoteVM is listed in the manager
+    """
+    _add_remote_vm(test_qubes_app)
+    dispatcher = MockAsyncDispatcher(test_qubes_app)
+    qube_manager_window = qube_manager.VmManagerWindow(
+        qapp, test_qubes_app, dispatcher)
+    assert "test-remote" in _get_current_vms(qube_manager_window)
+
+
+def test_007_remote_vm_added(qubes_manager):
+    """
+    A RemoteVM appearing at runtime is added to the table, not skipped.
+    """
+    assert "test-remote" not in _get_current_vms(qubes_manager)
+    _add_remote_vm(qubes_manager.qubes_app)
+    qubes_manager.qubes_app.domains.clear_cache()
+    qubes_manager.on_domain_added(None, "domain-add", "test-remote")
+    assert "test-remote" in _get_current_vms(qubes_manager)
+
+
+def test_008_remote_vm_actions_disabled(qubes_manager):
+    """
+    Selecting a RemoteVM disable the management actions it cannot support.
+    """
+    _add_remote_vm(qubes_manager.qubes_app)
+    qubes_manager.qubes_app.domains.clear_cache()
+    qubes_manager.on_domain_added(None, "domain-add", "test-remote")
+    _select_vm(qubes_manager, "test-remote")
+    qubes_manager.table_selection_changed()
+    for action in ("action_settings", "action_appmenus", "action_clonevm",
+                   "action_pausevm", "action_shutdownvm", "action_restartvm",
+                   "action_killvm", "action_open_console",
+                   "action_run_command_in_vm", "action_editfwrules"):
+        assert not getattr(qubes_manager, action).isEnabled(), action
+    assert not qubes_manager.network_menu.isEnabled()
+    assert not qubes_manager.template_menu.isEnabled()
+
+
+def test_009_remote_vm_backup_not_checkable(qubes_manager):
+    """The Backup checkbox is not user-toggleable for a RemoteVM, whose
+    include_in_backups property does not exist."""
+    _add_remote_vm(qubes_manager.qubes_app)
+    qubes_manager.qubes_app.domains.clear_cache()
+    qubes_manager.on_domain_added(None, "domain-add", "test-remote")
+    model = qubes_manager.qubes_model
+    backup_col = model.columns_indices.index("Backup")
+    name_col = model.columns_indices.index("Name")
+    checkable = Qt.ItemFlag.ItemIsUserCheckable
+    seen_remote = seen_normal = False
+    for row in range(model.rowCount(QModelIndex())):
+        name = model.data(model.index(row, name_col),
+                          Qt.ItemDataRole.DisplayRole)
+        flags = model.flags(model.index(row, backup_col))
+        if name == "test-remote":
+            seen_remote = True
+            assert not (flags & checkable)
+        elif name != "dom0":
+            seen_normal = True
+            assert flags & checkable
+    assert seen_remote and seen_normal
 
 
 @mock.patch('qubesmanager.settings.VMSettingsWindow')

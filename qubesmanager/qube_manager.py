@@ -370,7 +370,8 @@ class VmInfo():
         if not event or event.endswith(':default_dispvm'):
             self.dvm = getattr(self.vm, 'default_dispvm', None)
             try:
-                if self.vm.property_is_default("default_dispvm"):
+                if hasattr(self.vm, 'default_dispvm') \
+                        and self.vm.property_is_default("default_dispvm"):
                     self.dvm = "default (" + str(self.dvm) + ")"
                 elif self.dvm is not None:
                     self.dvm = str(self.dvm)
@@ -591,7 +592,12 @@ class QubesTableModel(QAbstractTableModel):
 
         def_flags = QAbstractTableModel.flags(self, index)
         if self.columns_indices[index.column()] == "Backup":
-            return  def_flags | Qt.ItemFlag.ItemIsUserCheckable
+            vm = self.qubes_cache.get_vm(index.row())
+            if getattr(vm, 'klass', None) == "RemoteVM":
+                # include_in_backups is absent on a RemoteVM, so the checkbox
+                # must not be toggleable (the write would raise).
+                return def_flags
+            return def_flags | Qt.ItemFlag.ItemIsUserCheckable
         return def_flags
 
 vm_restart_check_timeout = 1000  # in msec
@@ -1164,7 +1170,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         action.triggered.connect(partial(self.change_network, 'default'))
 
         for vm in self.qubes_app.domains:
-            if vm.qid != 0 and vm.provides_network:
+            if vm.qid != 0 and getattr(vm, 'provides_network', False):
                 action = self.network_menu.addAction(vm.name)
                 action.setData(vm.name)
                 action.triggered.connect(partial(self.change_network, vm.name))
@@ -1438,6 +1444,24 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     self.action_restartvm.setEnabled(False)
                 self.template_menu.setEnabled(False)
             elif vm.klass == 'TemplateVM':
+                self.template_menu.setEnabled(False)
+                self.network_menu.setEnabled(False)
+            elif vm.klass == 'RemoteVM':
+                # RemoteVM lives on another host: no local lifecycle, console,
+                # settings, networking or template. Keep it listed, actions off.
+                self.action_settings.setEnabled(False)
+                self.action_appmenus.setEnabled(False)
+                self.action_clonevm.setEnabled(False)
+                self.action_resumevm.setEnabled(False)
+                self.action_pausevm.setEnabled(False)
+                self.action_shutdownvm.setEnabled(False)
+                self.action_restartvm.setEnabled(False)
+                self.action_killvm.setEnabled(False)
+                self.action_startvm_tools_install.setEnabled(False)
+                self.action_open_console.setEnabled(False)
+                self.action_run_command_in_vm.setEnabled(False)
+                self.action_editfwrules.setEnabled(False)
+                self.action_updatevm.setEnabled(False)
                 self.template_menu.setEnabled(False)
                 self.network_menu.setEnabled(False)
 
