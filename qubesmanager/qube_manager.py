@@ -1433,6 +1433,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self.action_run_command_in_vm.setEnabled(False)
                 self.template_menu.setEnabled(False)
                 self.network_menu.setEnabled(False)
+                self.action_startvm_tools_install.setEnabled(False)
             elif vm.klass == "RemoteVM":
                 self.action_open_console.setEnabled(False)
                 self.action_settings.setEnabled(False)
@@ -1448,6 +1449,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self.action_run_command_in_vm.setEnabled(False)
                 self.template_menu.setEnabled(False)
                 self.network_menu.setEnabled(False)
+                self.action_startvm_tools_install.setEnabled(False)
             elif vm.klass == 'DispVM':
                 self.action_appmenus.setEnabled(False)
                 if vm.auto_cleanup:
