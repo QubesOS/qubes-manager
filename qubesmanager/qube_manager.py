@@ -374,7 +374,7 @@ class VmInfo():
                     self.dvm = "default (" + str(self.dvm) + ")"
                 elif self.dvm is not None:
                     self.dvm = str(self.dvm)
-            except exc.QubesDaemonAccessError:
+            except (exc.QubesDaemonAccessError, AttributeError):
                 if self.dvm is not None:
                     self.dvm = str(self.dvm)
 
@@ -1164,7 +1164,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         action.triggered.connect(partial(self.change_network, 'default'))
 
         for vm in self.qubes_app.domains:
-            if vm.qid != 0 and vm.provides_network:
+            if vm.qid != 0 and getattr(vm, "provides_network", False):
                 action = self.network_menu.addAction(vm.name)
                 action.setData(vm.name)
                 action.triggered.connect(partial(self.change_network, vm.name))
@@ -1418,6 +1418,21 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self.action_open_console.setEnabled(False)
 
             if vm.klass == 'AdminVM':
+                self.action_open_console.setEnabled(False)
+                self.action_settings.setEnabled(False)
+                self.action_resumevm.setEnabled(False)
+                self.action_removevm.setEnabled(False)
+                self.action_clonevm.setEnabled(False)
+                self.action_pausevm.setEnabled(False)
+                self.action_restartvm.setEnabled(False)
+                self.action_killvm.setEnabled(False)
+                self.action_shutdownvm.setEnabled(False)
+                self.action_appmenus.setEnabled(False)
+                self.action_editfwrules.setEnabled(False)
+                self.action_run_command_in_vm.setEnabled(False)
+                self.template_menu.setEnabled(False)
+                self.network_menu.setEnabled(False)
+            elif vm.klass == "RemoteVM":
                 self.action_open_console.setEnabled(False)
                 self.action_settings.setEnabled(False)
                 self.action_resumevm.setEnabled(False)
