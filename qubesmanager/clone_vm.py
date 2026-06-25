@@ -54,7 +54,7 @@ class CloneVMDlg(QtWidgets.QDialog, Ui_CloneVMDlg):
         utils.initialize_widget_with_vms(
             widget=self.src_vm,
             qubes_app=self.app,
-            filter_function=lambda vm: vm.klass != 'AdminVM')
+            filter_function=lambda vm: vm.klass not in ['AdminVM', 'RemoteVM'])
 
         if src_vm and self.src_vm.findText(src_vm.name) > -1:
             self.src_vm.setCurrentIndex(self.src_vm.findText(src_vm.name))
@@ -172,6 +172,10 @@ def main(args=None):
         src_vm = args.domains.pop()
     else:
         src_vm = None
+
+    if src_vm and src_vm.klass in ['AdminVM', 'RemoteVM']:
+        print("A {} qube cannot be cloned.".format(src_vm.klass))
+        sys.exit(1)
 
     qtapp = QtWidgets.QApplication(sys.argv)
 
