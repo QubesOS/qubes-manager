@@ -2027,14 +2027,14 @@ parser.set_defaults(
 def main(args=None):
     args = parser.parse_args(args)
     vm = args.domains.pop()
-    if vm.klass == "AdminVM":
+    if vm.klass in ["AdminVM", "RemoteVM"]:
         print(
             "This tool cannot be used to change properties of an "
-            f"AdminVM ({vm.name})."
+            f"{vm.klass} ({vm.name})."
         )
         print(
             "You can use command-line tools such as qvm-prefs "
-            "and qvm-features to change properties of an AdminVM"
+            f"and qvm-features to change properties of a {vm.klass}"
         )
         return 1
 
