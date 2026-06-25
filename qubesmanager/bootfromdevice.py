@@ -19,6 +19,8 @@
 
 import functools
 import subprocess
+import sys
+
 from . import utils
 from . import ui_bootfromdevice  # pylint: disable=no-name-in-module
 from PyQt6 import QtWidgets, QtGui, QtCore  # pylint: disable=import-error
@@ -40,6 +42,13 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
         self.qubesapp = qubesapp
         self.cdrom_location = None
         self.new_vm = new_vm
+
+        if vm.klass in ["RemoteVM", "AdminVM"]:
+            QtWidgets.QMessageBox.warning(
+                self,
+                self.tr("Error!"),
+                self.tr("A {} qube cannot be booted from a device.".format(vm.klass)))
+            sys.exit(1)
 
         self.setupUi(self)
         self.setWindowTitle(
@@ -108,12 +117,15 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
         utils.initialize_widget_with_vms(
             widget=self.fileVM,
             qubes_app=self.qubesapp,
-            filter_function=(lambda vm: vm != self.vm and vm.klass != "TemplateVM"),
+            filter_function=(lambda vm: vm != self.vm and vm.klass != "TemplateVM"
+                                        and vm.klass != "RemoteVM"),
         )
 
         device_choice = []
 
         for domain in self.qubesapp.domains:
+            if domain.klass == 'RemoteVM':
+                continue
             try:
                 for device in domain.devices["block"]:
                     device_choice.append((str(device), device))

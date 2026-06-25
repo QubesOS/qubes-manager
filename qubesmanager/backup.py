@@ -118,11 +118,14 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
 
         self.total_size = 0
 
+        # enable for RemoteVMs if qubes.SelectDirectory is implemented
+        # or if RemoteVM as backup target will work at all - then enable it while
+        # disabling the [...] select directory button
         utils.initialize_widget_with_vms(
             widget=self.appvm_combobox,
             qubes_app=self.qubes_app,
             filter_function=(lambda vm:
-                             vm.klass != 'TemplateVM'
+                             vm.klass != 'TemplateVM' and vm.klass != 'RemoteVM'
                              and utils.is_running(vm, False)
                             ),
         )
@@ -319,6 +322,8 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
     def __fill_vms_list__(self, selected=None):
         for vm in self.qubes_app.domains:
             if utils.get_feature(vm, 'internal', False):
+                continue
+            if vm.klass == 'RemoteVM':
                 continue
 
             item = BackupVMsWindow.VmListItem(vm)

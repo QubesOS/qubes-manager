@@ -46,9 +46,13 @@ def fill_appvms_list(dialog):
     dialog.appvm_combobox.setCurrentIndex(0)  # current selected is null ""
 
     for vm in dialog.qubes_app.domains:
-        if utils.get_feature(vm, 'internal', False) or vm.klass == 'TemplateVM':
+        if utils.get_feature(vm, 'internal', False):
             continue
-
+        if vm.klass in ["TemplateVM", "RemoteVM"]:
+            # this should be enabled for RemoteVMs when qubes.SelectFile is implemented
+            # or if RemoteVM as backup target will work at all - then enable it while
+            # disabling the [...] select directory button
+            continue
         if utils.is_running(vm, False) and vm.klass != 'AdminVM':
             dialog.appvm_combobox.addItem(vm.name)
 
