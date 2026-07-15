@@ -100,6 +100,7 @@ class StateIconDelegate(QStyledItemDelegate):
                 "Paused" : QIcon(":/paused"),
                 "Suspended" : QIcon(":/paused"),
                 "Transient" : QIcon(":/transient"),
+                "Starting" : QIcon(":/transient"),
                 "Halting" : QIcon(":/transient"),
                 "Dying" : QIcon(":/transient"),
                 "Halted" : QIcon(":/blank"),
@@ -549,8 +550,8 @@ class QubesTableModel(QAbstractTableModel):
                 state = vm.state.get('power', '')
                 try:
                     ordered_state = str(
-                        ["Running", "Transient", "Halting", "Paused",
-                         "Suspended", "Dying", "Crashed",
+                        ["Running", "Transient", "Starting", "Paused",
+                         "Suspended", "Dying", "Halting", "Crashed",
                          "Halted", "NA"].index(state))
                 except ValueError:
                     ordered_state = state
@@ -1395,7 +1396,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             #  TODO: add boot from device to menu and add windows tools there
             # Update available actions:
             if vm.state['power'] in \
-                    ['Running', 'Transient', 'Halting', 'Dying']:
+                    ['Running', 'Transient', 'Starting', 'Halting', 'Dying']:
                 self.action_resumevm.setEnabled(False)
                 self.action_removevm.setEnabled(False)
                 self.template_menu.setEnabled(False)
