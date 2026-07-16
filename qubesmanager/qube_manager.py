@@ -105,6 +105,7 @@ class StateIconDelegate(QStyledItemDelegate):
                 "Dying" : QIcon(":/transient"),
                 "Halted" : QIcon(":/blank"),
                 "Blocked" : QIcon(":/ban"),
+                "NA" : QIcon(":/transient"),
                 }
         self.preloadIcon = QIcon(":/preloaded")
         self.preloadTooltip = (
@@ -171,7 +172,7 @@ class StateIconDelegate(QStyledItemDelegate):
 
         # draw the main state icon, assuming all items have one
         qp.drawPixmap(iconRect,
-            self.stateIcons[index.data()['power']].pixmap(iconSize))
+            self.stateIcons.get(index.data()['power'], 'NA').pixmap(iconSize))
 
         left = delta = margin + iconRect.width()
         if index.data()['outdated']:
