@@ -1,3 +1,31 @@
+qubes-manager (4.3.23-1) unstable; urgency=medium
+
+  [ Nihal ]
+  * firewall: Add comment field to firewall rules
+
+  [ Nihal Kumar ]
+  * straight forward placeholder
+
+  [ Ben Grande ]
+  * Don't block main thread on qube hanging shutdown
+  * Hide irrelevant qubes from boot device selection
+  * Don't hide AdminVM as being an internal qube
+
+  [ Marta Marczykowska-Górecka ]
+  * Fix qubesmanager to work with remotevms
+  * Disable installing qwt for dom0 and remotevms
+  * Fix backups and boot from device for remote VMs
+  * Fix qubes-vm-clone for AdminVM and RemoteVM
+  * Block using qubes-vm-settings for RemoteVMs
+
+  [ Rusty Bird ]
+  * Template Switcher: fix message mentioning button
+
+  [ Marta Marczykowska-Górecka ]
+  * Add warning about domain names/ip addresses to VM settings
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Fri, 17 Jul 2026 03:11:46 +0200
+
 qubes-manager (4.3.22-1) unstable; urgency=medium
 
   [ Ben Grande ]
