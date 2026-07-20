@@ -349,7 +349,6 @@ class VmInfo():
             self.internal = manager_utils.get_boolean_feature(
                 self.vm, 'internal')
         if not event or event.endswith(':is_preload'):
-            self.is_preload = getattr(self.vm, 'is_preload', None)
             self.state['is_preload'] = getattr(self.vm, 'is_preload', None)
 
         if not event or event.endswith(':ip') or event.endswith(':netvm'):
@@ -491,7 +490,7 @@ class QubesTableModel(QAbstractTableModel):
             if col_name == "Disk Usage":
                 return vm.disk
             if col_name == "Internal":
-                if getattr(vm, "is_preload", None):
+                if vm.state["is_preload"]:
                     return "Yes (preloaded)"
                 if vm.internal:
                     return "Yes"
