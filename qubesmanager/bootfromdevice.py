@@ -27,14 +27,24 @@ from PyQt6 import QtWidgets, QtGui, QtCore  # pylint: disable=import-error
 from qubesadmin import tools
 from qubesadmin import exc
 from qubesadmin.tools import qvm_start
+from qubesadmin.app import QubesBase
+from qubesadmin.vm import QubesVM
 
 # this is needed for icons to actually work
 # pylint: disable=unused-import, no-name-in-module
 from . import resources
 
-class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
-                             QtWidgets.QDialog):
-    def __init__(self, vm, qapp, qubesapp=None, *, parent=None, new_vm=False):
+
+class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtWidgets.QDialog):
+    def __init__(
+        self,
+        vm: QubesVM,
+        qapp: QtWidgets.QApplication,
+        qubesapp: QubesBase,
+        *,
+        parent=None,
+        new_vm: bool = False
+    ):
         super().__init__(parent)
 
         self.vm = vm
@@ -91,7 +101,7 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog,
             return
 
         try:
-            if self.qubesapp.domains[self.vm].is_running():
+            if self.vm.is_running():
                 QtWidgets.QMessageBox.warning(
                     self,
                     self.tr("Warning!"),

@@ -1129,7 +1129,7 @@ def test_212_boot_from_device(mock_boot, mock_start, settings_fixture):
     settings_window.boot_from_device_button.click()
 
     mock_boot.assert_called_with(
-        vm=vm.name,
+        vm=vm,
         qapp=settings_window.qapp,
         qubesapp=settings_window.qubesapp,
         parent=settings_window,

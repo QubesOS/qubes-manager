@@ -1389,7 +1389,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
     def boot_from_cdrom_button_pressed(self):
         boot_dialog = bootfromdevice.VMBootFromDeviceWindow(
-            vm=self.vm.name, qapp=self.qapp, qubesapp=self.qubesapp, parent=self
+            vm=self.vm, qapp=self.qapp, qubesapp=self.qubesapp, parent=self
         )
         if boot_dialog.exec():
             self.save_and_apply()
