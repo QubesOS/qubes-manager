@@ -53,11 +53,14 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtWidgets.QDialog)
         self.cdrom_location = None
         self.new_vm = new_vm
 
-        if vm.klass in ["RemoteVM", "AdminVM"]:
+        if self.vm.klass in ["RemoteVM", "AdminVM"]:
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Error!"),
-                self.tr("A {} qube cannot be booted from a device.".format(vm.klass)))
+                self.tr("A {} qube cannot be booted from a device.".format(
+                    self.vm.klass
+                ))
+            )
             sys.exit(1)
 
         self.setupUi(self)
