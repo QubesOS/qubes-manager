@@ -57,18 +57,19 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtWidgets.QDialog)
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Error!"),
-                self.tr("A {} qube cannot be booted from a device.".format(
-                    self.vm.klass
-                ))
+                self.tr(
+                    "A {} qube cannot be booted from a device.".format(self.vm.klass)
+                ),
             )
             sys.exit(1)
 
         self.setupUi(self)
-        self.setWindowTitle(
-            self.tr("Boot {vm} from device").format(vm=self.vm))
-        self.setWindowFlags(self.windowFlags() |
-                            QtCore.Qt.WindowType.WindowMaximizeButtonHint |
-                            QtCore.Qt.WindowType.WindowMinimizeButtonHint)
+        self.setWindowTitle(self.tr("Boot {vm} from device").format(vm=self.vm))
+        self.setWindowFlags(
+            self.windowFlags()
+            | QtCore.Qt.WindowType.WindowMaximizeButtonHint
+            | QtCore.Qt.WindowType.WindowMinimizeButtonHint
+        )
 
         self.buttonBox.accepted.connect(self.save_and_apply)
         self.buttonBox.rejected.connect(self.reject)
@@ -86,13 +87,15 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtWidgets.QDialog)
         if self.blockDeviceRadioButton.isChecked():
             self.cdrom_location = self.blockDeviceComboBox.currentText()
         elif self.fileRadioButton.isChecked():
-            self.cdrom_location = str(self.fileVM.currentData()) + \
-                             ":" + self.pathText.text()
+            self.cdrom_location = (
+                str(self.fileVM.currentData()) + ":" + self.pathText.text()
+            )
         else:
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("ERROR!"),
-                self.tr("No file or block device selected; please select one."))
+                self.tr("No file or block device selected; please select one."),
+            )
             return
 
         # warn user if the VM is currently running
@@ -108,15 +111,21 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtWidgets.QDialog)
                 QtWidgets.QMessageBox.warning(
                     self,
                     self.tr("Warning!"),
-                    self.tr("Qube must be turned off before booting it from "
-                            "device. Please turn off the qube."))
+                    self.tr(
+                        "Qube must be turned off before booting it from "
+                        "device. Please turn off the qube."
+                    ),
+                )
         except exc.QubesDaemonAccessError:
             QtWidgets.QMessageBox.warning(
                 self,
                 self.tr("Warning!"),
-                self.tr("Insufficient permissions to determine if qube is "
-                        "running. It must be turned off before booting it from "
-                        "device."))
+                self.tr(
+                    "Insufficient permissions to determine if qube is "
+                    "running. It must be turned off before booting it from "
+                    "device."
+                ),
+            )
 
     def __init_buttons__(self):
         self.fileVM.setEnabled(False)
@@ -130,14 +139,17 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtWidgets.QDialog)
         utils.initialize_widget_with_vms(
             widget=self.fileVM,
             qubes_app=self.qubesapp,
-            filter_function=(lambda vm: vm != self.vm and vm.klass != "TemplateVM"
-                                        and vm.klass != "RemoteVM"),
+            filter_function=(
+                lambda vm: vm != self.vm
+                and vm.klass != "TemplateVM"
+                and vm.klass != "RemoteVM"
+            ),
         )
 
         device_choice = []
 
         for domain in self.qubesapp.domains:
-            if domain.klass == 'RemoteVM':
+            if domain.klass == "RemoteVM":
                 continue
             try:
                 for device in domain.devices["block"]:
@@ -151,7 +163,7 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtWidgets.QDialog)
                 widget=self.blockDeviceComboBox,
                 choices=device_choice,
                 selected_value=device_choice[0][1],
-                add_current_label=False
+                add_current_label=False,
             )
         else:
             self.blockDeviceRadioButton.setEnabled(False)
@@ -160,8 +172,7 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtWidgets.QDialog)
             self.blockDeviceComboBox.setCurrentIndex(0)
 
     def radio_button_clicked(self):
-        self.blockDeviceComboBox.setEnabled(
-            self.blockDeviceRadioButton.isChecked())
+        self.blockDeviceComboBox.setEnabled(self.blockDeviceRadioButton.isChecked())
         self.fileVM.setEnabled(self.fileRadioButton.isChecked())
         self.selectFileButton.setEnabled(self.fileRadioButton.isChecked())
         self.pathText.setEnabled(self.fileRadioButton.isChecked())
@@ -185,8 +196,10 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtWidgets.QDialog)
             QtWidgets.QMessageBox.warning(
                 None,
                 self.tr("Failed to display file selection dialog"),
-                self.tr("Check if the qube {0} can be started and has a file"
-                        " manager installed.").format(backend_vm)
+                self.tr(
+                    "Check if the qube {0} can be started and has a file"
+                    " manager installed."
+                ).format(backend_vm),
             )
 
         if new_path:
@@ -200,10 +213,10 @@ def main(args=None):
     args = parser.parse_args(args)
     vm = args.domains.pop()
 
-    window = utils.run_synchronous(
-        functools.partial(VMBootFromDeviceWindow, vm))
+    window = utils.run_synchronous(functools.partial(VMBootFromDeviceWindow, vm))
     if window.result() == 1 and window.cdrom_location is not None:
         qvm_start.main(['--cdrom', window.cdrom_location, vm.name])
+
 
 if __name__ == "__main__":
     main()
