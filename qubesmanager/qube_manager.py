@@ -283,8 +283,10 @@ class VmInfo():
         self.state['outdated'] = ""
         try:
             if manager_utils.is_running(self.vm, False):
-                if hasattr(self.vm, 'template') and \
-                        manager_utils.is_running(self.vm.template, False):
+                if hasattr(self.vm, 'template') and (
+                    manager_utils.is_running(self.vm.template, False)
+                    or not self.vm.property_is_default("active_template")
+                ):
                     self.state['outdated'] = "to-be-outdated"
                 else:
                     try:
