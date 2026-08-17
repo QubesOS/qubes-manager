@@ -176,6 +176,15 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         DeviceCategory.PCI_USB: "usb",
     }
 
+    template_deferred_tooltip = (
+        "Pending template change, requires qube restart to take effect."
+    )
+    template_missing_apps_tooltip = (
+        "Some applications enabled in the Applications tab cannot be found in the\n"
+        "current template. The most likely cause is a template change - to restore\n"
+        "them, install them in the template."
+    )
+
     # pylint: disable=too-many-positional-arguments
     def __init__(
         self, vm_name, init_page="basic", qapp=None, qubesapp=None, parent=None
@@ -316,12 +325,38 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 self.template_name.currentIndexChanged.connect(
                     self.template_apps_change
                 )
-            self.warn_template_missing_apps.setVisible(
-                self.app_list_manager.has_missing
-            )
+            self._set_template_tooltip()
 
         ####### notes tab
         self.__init_notes_tab__()
+
+    def _set_template_tooltip(self):
+        missing_apps = (
+            hasattr(self, "app_list_manager")
+            and self.app_list_manager.has_missing
+        )
+        deferred_template = (
+            hasattr(self.vm, "active_template")
+            and not self.vm.property_is_default("active_template")
+        )
+        if not deferred_template and not missing_apps:
+            self.warn_template_missing_apps.setVisible(False)
+        elif deferred_template or missing_apps:
+            self.warn_template_missing_apps.setVisible(True)
+            if deferred_template and missing_apps:
+                self.warn_template_missing_apps.setToolTip(
+                    self.template_deferred_tooltip
+                    + "\n\n"
+                    + self.template_missing_apps_tooltip
+                )
+            elif deferred_template:
+                self.warn_template_missing_apps.setToolTip(
+                    self.template_deferred_tooltip
+                )
+            elif missing_apps:
+                self.warn_template_missing_apps.setToolTip(
+                    self.template_missing_apps_tooltip
+                )
 
     def setup_application(self):
         self.qapp.setApplicationName(self.tr("Qube Settings"))
@@ -565,9 +600,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         else:
             self.template_name.setEnabled(False)
 
-        if utils.is_running(self.vm, False):
-            self.template_name.setEnabled(False)
-
         try:
             utils.initialize_widget_with_vms(
                 widget=self.netVM,
@@ -691,7 +723,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         except qubesadmin.exc.QubesException:
             self.root_resize.setEnabled(False)
 
-        self.warn_template_missing_apps.setVisible(False)
+        self._set_template_tooltip()
 
     def __apply_basic_tab__(self):
         msg = []
@@ -1778,10 +1810,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.app_list_manager.fill_apps_list(
                 template=self.template_name.currentData()
             )
-            # add a label to show
-            self.warn_template_missing_apps.setVisible(
-                self.app_list_manager.has_missing
-            )
+            self._set_template_tooltip()
 
     def filter_apps(self):
         keywords = [word for word in self.app_search.text().split(" ") if word]
