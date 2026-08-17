@@ -117,12 +117,6 @@ class TemplateManagerWindow(
         self.vm_list.horizontalHeader().sortIndicatorChanged.connect(
             self.sorting_changed)
 
-        self.dispatcher.add_handler('domain-pre-start', self.vm_state_changed)
-        self.dispatcher.add_handler('domain-start-failed',
-                                    self.vm_state_changed)
-        self.dispatcher.add_handler('domain-stopped', self.vm_state_changed)
-        self.dispatcher.add_handler('domain-shutdown', self.vm_state_changed)
-
         self.dispatcher.add_handler('domain-add', self.vm_added)
         self.dispatcher.add_handler('domain-delete', self.vm_removed)
 
@@ -156,22 +150,6 @@ class TemplateManagerWindow(
             return
 
         self.vm_list.removeRow(self.rows_in_table[kwargs['vm']].name_item.row())
-
-    def vm_state_changed(self, vm, event, **_kwargs):
-        try:
-            if vm.name not in self.rows_in_table:
-                return
-        except exc.QubesException:
-            return  # it was a crashing DispVM or closed DispVM
-
-        if event == 'domain-pre-start':
-            self.rows_in_table[vm.name].vm_state_change(is_running=True)
-        elif event == 'domain-start-failed':
-            self.rows_in_table[vm.name].vm_state_change(is_running=False)
-        elif event == 'domain-stopped':
-            self.rows_in_table[vm.name].vm_state_change(is_running=False)
-        elif event == 'domain-shutdown':
-            self.rows_in_table[vm.name].vm_state_change(is_running=False)
 
     def sorting_changed(self, index, _order):
         # this is very much not perfect, but QTableWidget does not
@@ -297,28 +275,12 @@ class VMNameItem(QtWidgets.QTableWidgetItem):
 
 
 class StatusItem(QtWidgets.QTableWidgetItem):
+    # pylint: disable=too-few-public-methods
     def __init__(self, vm):
         super().__init__()
         self.vm = vm
-
-        self.state = None
-
-    def set_state(self, is_running):
-        self.state = is_running
-
-        if self.state:
-            self.setIcon(QtGui.QIcon.fromTheme('dialog-warning'))
-            self.setToolTip(QtCore.QCoreApplication.translate(
-                "template-manager", "Cannot change template on a running VM."))
-        else:
-            self.setIcon(QtGui.QIcon())
-            self.setToolTip("")
-
-    def __lt__(self, other):
-        if self.state == other.state:
-            return self.vm.name < other.vm.name
-        return self.state < other.state
-
+        self.setIcon(QtGui.QIcon())
+        self.setToolTip("")
 
 class CurrentTemplateItem(QtWidgets.QTableWidgetItem):
     # pylint: disable=too-few-public-methods
@@ -390,52 +352,26 @@ class VMRow:
                              self.current_item)
 
         # new template
-        self.dummy_new_item = QtWidgets.QTableWidgetItem(
-            QtCore.QCoreApplication.translate("TemplateManager",
-                                              "qube is running"))
         self.new_item = NewTemplateItem(self.vm, templates, table_widget)
 
-        table_widget.setItem(row_no, columns.index('New template'),
-                             self.dummy_new_item)
-
-        self.vm_state_change(utils.is_running(self.vm, False), row_no)
-
-    def vm_state_change(self, is_running, row=None):
-        self.state_item.set_state(is_running)
-
-        if not row:
-            row = 0
-            while row < self.table_widget.rowCount():
+        if not row_no:
+            row_no = 0
+            while row_no < self.table_widget.rowCount():
                 if self.table_widget.item(
-                        row, column_names.index('Qube')).text() == \
+                        row_no, column_names.index('Qube')).text() == \
                         self.name_item.text():
                     break
-                row += 1
+                row_no += 1
 
         # hiding cellWidgets does not work in a qTableWidget
-        if not is_running:
-            self.new_item = NewTemplateItem(self.vm, self.templates,
-                                            self.table_widget)
-            self.checkbox = QtWidgets.QCheckBox()
+        self.new_item = NewTemplateItem(self.vm, self.templates,
+                                        self.table_widget)
+        self.checkbox = QtWidgets.QCheckBox()
 
-            self.table_widget.setCellWidget(
-                row, column_names.index('New template'), self.new_item)
-            self.table_widget.setCellWidget(
-                row, column_names.index('State'), self.checkbox)
-        else:
-            new_template = self.table_widget.cellWidget(
-                row, column_names.index('New template'))
-            if new_template:
-                self.table_widget.removeCellWidget(
-                    row, column_names.index('New template'))
-                self.new_item = None
-
-            checkbox = self.table_widget.cellWidget(
-                row, column_names.index('State'))
-            if checkbox:
-                self.table_widget.removeCellWidget(
-                    row, column_names.index('State'))
-                self.checkbox = None
+        self.table_widget.setCellWidget(
+            row_no, column_names.index('New template'), self.new_item)
+        self.table_widget.setCellWidget(
+            row_no, column_names.index('State'), self.checkbox)
 
 
 def main():
