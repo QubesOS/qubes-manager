@@ -560,9 +560,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         else:
             self.template_name.setEnabled(False)
 
-        if utils.is_running(self.vm, False):
-            self.template_name.setEnabled(False)
-
         try:
             utils.initialize_widget_with_vms(
                 widget=self.netVM,
@@ -685,6 +682,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.root_resize_label.setEnabled(self.root_resize.isEnabled())
         except qubesadmin.exc.QubesException:
             self.root_resize.setEnabled(False)
+
+        if (
+            hasattr(self.vm, "active_template")
+            and not self.vm.property_is_default("active_template")
+        ):
+            self.warn_template_deferred.setVisible(True)
+        else:
+            self.warn_template_deferred.setVisible(False)
 
         self.warn_template_missing_apps.setVisible(False)
 
