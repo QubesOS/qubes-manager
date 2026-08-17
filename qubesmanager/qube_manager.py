@@ -1417,18 +1417,15 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     ['Running', 'Transient', 'Starting', 'Halting', 'Dying']:
                 self.action_resumevm.setEnabled(False)
                 self.action_removevm.setEnabled(False)
-                self.template_menu.setEnabled(False)
             elif vm.state['power'] == 'Paused':
                 self.action_removevm.setEnabled(False)
                 self.action_pausevm.setEnabled(False)
                 self.action_restartvm.setEnabled(False)
                 self.action_open_console.setEnabled(False)
-                self.template_menu.setEnabled(False)
             elif vm.state['power'] == 'Suspended':
                 self.action_removevm.setEnabled(False)
                 self.action_pausevm.setEnabled(False)
                 self.action_open_console.setEnabled(False)
-                self.template_menu.setEnabled(False)
             elif vm.state['power'] == 'Halted':
                 self.action_pausevm.setEnabled(False)
                 self.action_shutdownvm.setEnabled(False)
