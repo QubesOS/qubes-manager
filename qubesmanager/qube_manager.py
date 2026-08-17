@@ -285,8 +285,13 @@ class VmInfo():
         self.state['outdated'] = ""
         try:
             if manager_utils.is_running(self.vm, False):
-                if hasattr(self.vm, 'template') and \
-                        manager_utils.is_running(self.vm.template, False):
+                if hasattr(self.vm, "template") and (
+                    manager_utils.is_running(self.vm.template, False)
+                    or (
+                        self.vm.active_template
+                        and not self.vm.property_is_default("active_template")
+                    )
+                ):
                     self.state['outdated'] = "to-be-outdated"
                 else:
                     try:
@@ -328,11 +333,19 @@ class VmInfo():
             self.label = getattr(self.vm, 'label', None)
             self.icon = getattr(self.vm, 'icon', 'appvm-black')
 
-        if not event or event.endswith(':template'):
+        if (
+            not event
+            or event.endswith(':template')
+            or event.endswith(':active_template')
+        ):
             try:
                 self.template = self.vm.template.name
             except AttributeError:
                 self.template = None
+            try:
+                self.active_template = self.vm.active_template.name
+            except AttributeError:
+                self.active_template = None
 
         if not event or event.endswith(':netvm'):
             self.netvm = getattr(self.vm, 'netvm', None)
