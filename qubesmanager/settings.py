@@ -65,8 +65,12 @@ INTERNAL_SUPPORTED_FEATURES = [IDLE_SUPPORTED_SERVICE]
 
 def get_default_bootmode_name(vm, bootmode):
     if bootmode == "default":
-        return vm.features.check_with_template("boot-mode.name.default", "")
-    return vm.features.check_with_template(f"boot-mode.name.{bootmode}", bootmode)
+        return vm.features.check_with_template(
+            "boot-mode.name.default", "", active=False
+        )
+    return vm.features.check_with_template(
+        f"boot-mode.name.{bootmode}", bootmode, active=False
+    )
 
 
 # pylint: disable=too-few-public-methods
@@ -517,7 +521,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             )
             subject = subject.template
         bootmode_names = [
-            self.vm.features.check_with_template(f"boot-mode.name.{x}", x)
+            self.vm.features.check_with_template(f"boot-mode.name.{x}", x, active=False)
             for x in bootmode_ids
         ]
         return bootmode_names, bootmode_ids
@@ -538,6 +542,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
     # hvm -> include_in_balancing
 
     def __init_basic_tab__(self):
+        # pylint: disable=too-many-statements
         self.vmname.setText(self.vm.name)
         self.vmname.setValidator(
             QtGui.QRegularExpressionValidator(
@@ -626,7 +631,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         try:
             has_shutdown_idle = self.vm.features.check_with_template(
-                IDLE_SUPPORTED_SERVICE, False
+                IDLE_SUPPORTED_SERVICE, False, active=False
             )
             if has_shutdown_idle:
                 self.idle_shutdown_checkbox.setChecked(
@@ -848,7 +853,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         # max_mem_size/10.79 in order to allow scaling up to
         # max_mem_size (or else "add_memory() failed: -17" problem)
         try:
-            is_linux = self.vm.features.check_with_template("os", None) == "Linux"
+            is_linux = self.vm.features.check_with_template(
+                "os", None, active=False
+            ) == "Linux"
         except qubesadmin.exc.QubesException:
             is_linux = False
 
@@ -1111,7 +1118,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 if self.vm.bootmode != "default":
                     self.bootmode_kernel_opts.setText(
                         self.vm.features.check_with_template(
-                            f"boot-mode.kernelopts.{self.vm.bootmode}", ""
+                            f"boot-mode.kernelopts.{self.vm.bootmode}", "", active=False
                         )
                     )
                 else:
@@ -1540,7 +1547,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         if isinstance(active_bootmode, str):
             self.bootmode_kernel_opts.setText(
                 self.vm.features.check_with_template(
-                    f"boot-mode.kernelopts.{active_bootmode}", ""
+                    f"boot-mode.kernelopts.{active_bootmode}", "", active=False
                 )
             )
         else:
@@ -1550,7 +1557,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             else:
                 self.bootmode_kernel_opts.setText(
                     self.vm.features.check_with_template(
-                        f"boot-mode.kernelopts.{default_bootmode}", ""
+                        f"boot-mode.kernelopts.{default_bootmode}", "", active=False
                     )
                 )
 
