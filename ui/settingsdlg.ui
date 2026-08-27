@@ -928,7 +928,7 @@ border-width: 1px;</string>
                 <item>
                  <widget class="QLabel" name="label_26">
                   <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Which qube should be used by default as a template for disposables started from this one? Disposables will inherit their template's configuration and installed programs.&lt;br/&gt;For a qube to to appear in this list, it must have the &amp;quot;Disposable template&amp;quot; setting enabled. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Which qube should be used by default as a template for disposables started from this one? Disposables will inherit their template's configuration and installed programs.&lt;br/&gt;For a qube to appear in this list, it must have the &amp;quot;Disposable template&amp;quot; setting enabled. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                   </property>
                   <property name="text">
                    <string>Default disposable template</string>
@@ -947,7 +947,7 @@ border-width: 1px;</string>
                    </sizepolicy>
                   </property>
                   <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Which qube should be used by default as a template for disposables started from this one? Disposables will inherit their template's configuration and installed programs.&lt;br/&gt;For a qube to to appear in this list, it must have the &amp;quot;Disposable template&amp;quot; setting enabled. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Which qube should be used by default as a template for disposables started from this one? Disposables will inherit their template's configuration and installed programs.&lt;br/&gt;For a qube to appear in this list, it must have the &amp;quot;Disposable template&amp;quot; setting enabled. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                   </property>
                  </widget>
                 </item>
