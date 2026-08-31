@@ -1,3 +1,16 @@
+qubes-manager (4.3.24-1) unstable; urgency=medium
+
+  [ Ben Grande ]
+  * Remove duplicated is_preload definition
+  * Get attribute from VM object instead of string
+  * Use instance attribute instead of method parameter
+  * Format bootfromdevice with black 26.5.1
+
+  [ notmuchtohide ]
+  * Typo
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Mon, 31 Aug 2026 21:25:51 +0200
+
 qubes-manager (4.3.23-1) unstable; urgency=medium
 
   [ Nihal ]
