@@ -23,7 +23,7 @@ import subprocess
 import time
 from datetime import datetime
 
-from PyQt6.QtCore import Qt, QSettings, QItemSelectionModel
+from PyQt6.QtCore import Qt, QSettings, QItemSelectionModel, QEvent
 from PyQt6.QtGui import QPixmap, QIcon
 from PyQt6.QtWidgets import QMessageBox
 
@@ -168,7 +168,12 @@ def test_000_window_loads(qapp, test_qubes_app):
 
 def test_001_model_correctness(qapp, test_qubes_app):
     dispatcher = MockDispatcher(test_qubes_app)
-    qm = qube_manager.VmManagerWindow(qapp, test_qubes_app, dispatcher)
+    qm = qube_manager.VmManagerWindow(
+        qapp,
+        test_qubes_app,
+        dispatcher,
+        stats_dispatcher=dispatcher,
+    )
 
     model = qm.qubes_model
 
@@ -176,6 +181,13 @@ def test_001_model_correctness(qapp, test_qubes_app):
 
     # number of domains
     assert model.rowCount(None) == len(domains)
+
+    # emulating CPU/MEM usage update for dom0
+    qm.on_vm_stats('dom0', _event=None, memory_kb="67108864", cpu_usage="100")
+    # emulating skipping of CPU/MEM usage update for personal
+    qm.eventFilter(_object=None, event=QEvent(QEvent.Type.WindowDeactivate))
+    qm.on_vm_stats('personal', _event=None, memory_kb="524288", cpu_usage="1")
+    qm.eventFilter(_object=None, event=QEvent(QEvent.Type.WindowActivate))
 
     # domain data
     for row in range(model.rowCount(None)):
@@ -221,6 +233,24 @@ def test_001_model_correctness(qapp, test_qubes_app):
         internal_data = model.data(index_internal, Qt.ItemDataRole.DisplayRole)
         if getattr(vm_object, 'internal', False):
             assert internal_data == "Yes"
+
+        # cpu usage
+        cpu_index = model.index(row, model.columns_indices.index(
+            "CPU"))
+        cpu_data = model.data(cpu_index, Qt.ItemDataRole.DisplayRole)
+        if vm_object.klass == "AdminVM":
+            assert str(cpu_data) == "100 %"
+        else:
+            assert str(cpu_data) == "-"
+
+        # mem usage
+        mem_index = model.index(row, model.columns_indices.index(
+            "MEM"))
+        mem_data = model.data(mem_index, Qt.ItemDataRole.DisplayRole)
+        if vm_object.klass == "AdminVM":
+            assert str(mem_data) == "65536 MiB"
+        else:
+            assert str(mem_data) == "-"
 
         # disk usage
         du_index = model.index(row, model.columns_indices.index(
