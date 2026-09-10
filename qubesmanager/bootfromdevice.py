@@ -85,7 +85,8 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtWidgets.QDialog)
 
     def save_and_apply(self):
         if self.blockDeviceRadioButton.isChecked():
-            self.cdrom_location = self.blockDeviceComboBox.currentText()
+            device = self.blockDeviceComboBox.currentData()
+            self.cdrom_location = str(device.port)
         elif self.fileRadioButton.isChecked():
             self.cdrom_location = (
                 str(self.fileVM.currentData()) + ":" + self.pathText.text()
@@ -153,7 +154,7 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtWidgets.QDialog)
                 continue
             try:
                 for device in domain.devices["block"]:
-                    device_choice.append((str(device), device))
+                    device_choice.append((str(device.port), device))
             except exc.QubesDaemonAccessError:
                 # insufficient permissions
                 pass
