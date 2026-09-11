@@ -985,6 +985,45 @@ def test_313_template_menu_multiple(mock_question, qubes_manager):
     for call in calls:
         assert call in qubes_manager.qubes_app.actual_calls
 
+@pytest.mark.asyncio(loop_scope="module")
+@mock.patch('PyQt6.QtWidgets.QMessageBox.question')
+async def test_312_template_menu_dispvm(mock_question, qubes_manager):
+    mock_question.return_value = QMessageBox.StandardButton.Yes
+
+    _select_vm(qubes_manager, 'test-disp')
+
+    assert qubes_manager.template_menu.isEnabled()
+
+    expected_templates = {
+        str(vm) for vm in qubes_manager.qubes_app.domains
+        if getattr(vm, 'template_for_dispvms', False)
+    }
+
+    current_templates = {
+        action.text() for action in qubes_manager.template_menu.actions()
+    }
+
+    assert current_templates == expected_templates
+
+    change_call = (
+        'test-disp',
+        'admin.vm.property.Set',
+        'template',
+        b'test-alt-dvm'
+    )
+
+    qubes_manager.qubes_app.expected_calls[change_call] = b'0\x00'
+
+    action = next(
+        action for action in qubes_manager.template_menu.actions()
+        if action.text() == 'test-alt-dvm'
+    )
+
+    action.trigger()
+
+    await asyncio.sleep(0)
+
+    assert change_call in qubes_manager.qubes_app.actual_calls
 
 @mock.patch('PyQt6.QtWidgets.QMessageBox.information')
 @mock.patch('PyQt6.QtWidgets.QMessageBox.warning')
