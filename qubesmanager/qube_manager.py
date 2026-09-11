@@ -1141,13 +1141,27 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         progress.setValue(row_no)
 
-    def init_template_menu(self):
+    def init_template_menu(self, selected_vms=None):
         self.template_menu.clear()
+
+        dispvm_selection = (
+            bool(selected_vms)
+            and all(vm.klass == 'DispVM' for vm in selected_vms)
+        )
+
         for vm in self.qubes_app.domains:
-            if vm.klass == 'TemplateVM':
+            if (
+                dispvm_selection
+                and getattr(vm, 'template_for_dispvms', False)
+            ) or (
+                not dispvm_selection
+                and vm.klass == 'TemplateVM'
+            ):
                 action = self.template_menu.addAction(vm.name)
                 action.setData(vm.name)
-                action.triggered.connect(partial(self.change_template, vm.name))
+                action.triggered.connect(
+                    partial(self.change_template, vm.name)
+                )
 
     def _get_default_netvm(self):
         for vm in self.qubes_app.domains:
@@ -1383,6 +1397,10 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         return vms
 
     def table_selection_changed(self):
+        selected_vms = self.get_selected_vms()
+
+        self.init_template_menu(selected_vms)
+
         # Since selection could have multiple domains
         # enable all first and then filter them
         self.template_menu.setEnabled(True)
@@ -1390,7 +1408,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
         for action in self.toolbar.actions() + self.context_menu.actions():
             action.setEnabled(True)
 
-        for vm in self.get_selected_vms():
+        for vm in selected_vms:
             #  TODO: add boot from device to menu and add windows tools there
             # Update available actions:
             if vm.state['power'] in \
@@ -1452,7 +1470,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self.action_appmenus.setEnabled(False)
                 if vm.auto_cleanup:
                     self.action_restartvm.setEnabled(False)
-                self.template_menu.setEnabled(False)
+
             elif vm.klass == 'TemplateVM':
                 self.template_menu.setEnabled(False)
                 self.network_menu.setEnabled(False)
@@ -1473,6 +1491,12 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self.action_shutdownvm.setEnabled(False)
                 self.action_updatevm.setEnabled(False)
                 self.action_run_command_in_vm.setEnabled(False)
+
+        if (
+            any(vm.klass == 'DispVM' for vm in selected_vms)
+            and not all(vm.klass == 'DispVM' for vm in selected_vms)
+        ):
+            self.template_menu.setEnabled(False)
 
         self.update_template_menu()
         self.update_network_menu()
