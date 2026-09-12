@@ -132,6 +132,9 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtWidgets.QDialog)
         self.fileVM.setEnabled(False)
         self.selectFileButton.setEnabled(False)
         self.blockDeviceComboBox.setEnabled(False)
+        path_allowed_chars_message = utils.get_path_chars_message()
+        self.pathText.setToolTip(path_allowed_chars_message)
+        self.selectFileButton.setToolTip(path_allowed_chars_message)
 
         self.blockDeviceRadioButton.clicked.connect(self.radio_button_clicked)
         self.fileRadioButton.clicked.connect(self.radio_button_clicked)
@@ -188,6 +191,13 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtWidgets.QDialog)
             if ex.returncode != 1:
                 # Error other than 'user did not select a file'
                 error_occurred = True
+            new_path = None
+        except ValueError as ex:
+            QtWidgets.QMessageBox.warning(
+                self,
+                self.tr("Unexpected characters in path!"),
+                str(ex)
+            )
             new_path = None
         except Exception:  # pylint: disable=broad-except
             error_occurred = True

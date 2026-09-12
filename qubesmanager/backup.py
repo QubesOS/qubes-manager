@@ -92,6 +92,9 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
 
         self.progress_status.text = self.tr("Backup in progress...")
         self.dir_line_edit.setReadOnly(False)
+        path_allowed_chars_message = utils.get_path_chars_message()
+        self.dir_line_edit.setToolTip(path_allowed_chars_message)
+        self.select_path_button.setToolTip(path_allowed_chars_message)
 
         self.select_vms_widget = multiselectwidget.MultiSelectWidget(self)
         self.verticalLayout.insertWidget(1, self.select_vms_widget)

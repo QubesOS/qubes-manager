@@ -42,6 +42,21 @@ from PyQt6 import QtWidgets, QtCore, QtGui  # pylint: disable=import-error
 import qasync
 
 
+PATH_ALLOWED_SPECIAL_CHARACTERS = "/:.,_+=() ?-"
+PATH_ALLOWED_CHARACTERS_RE = re.compile(
+    r"[a-zA-Z0-9" + re.escape(PATH_ALLOWED_SPECIAL_CHARACTERS) + r"]*"
+)
+PATH_MAX_LEN = 512
+
+
+def get_path_chars_message():
+    return QtCore.QCoreApplication.translate(
+        "ManagerUtils",
+        "Paths can contain only ASCII letters, digits, spaces, and the "
+        "following special characters: {characters}",
+    ).format(characters=PATH_ALLOWED_SPECIAL_CHARACTERS)
+
+
 # important usage note: which initialize_widget should I use?
 # - if you want a list of VMs, use initialize_widget_with_vms, optionally
 #   adding a property if you want to handle qubesadmin.DEFAULT and the
@@ -464,25 +479,24 @@ def get_path_from_vm(vm, service_name):
     :return: path to file, checked for validity
     """
 
-    path_re = re.compile(r"[a-zA-Z0-9/:.,_+=() ?-]*")
-    path_max_len = 512
-
     if not vm:
         return None
     stdout, _stderr = vm.run_service_for_stdio(service_name)
 
     stdout = stdout.strip()
 
-    untrusted_path = stdout.decode(encoding='ascii')[:path_max_len]
+    try:
+        untrusted_path = stdout.decode(encoding='ascii')[:PATH_MAX_LEN]
+    except UnicodeDecodeError as ex:
+        raise ValueError(get_path_chars_message()) from ex
 
     if not untrusted_path:
         return None
-    if path_re.fullmatch(untrusted_path):
+    if PATH_ALLOWED_CHARACTERS_RE.fullmatch(untrusted_path):
         assert '../' not in untrusted_path
         assert '\0' not in untrusted_path
         return untrusted_path.strip()
-    raise ValueError(QtCore.QCoreApplication.translate(
-        "ManagerUtils", 'Unexpected characters in path.'))
+    raise ValueError(get_path_chars_message())
 
 
 def format_dependencies_list(dependencies):
