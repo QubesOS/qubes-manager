@@ -283,8 +283,10 @@ class VmInfo():
         self.state['outdated'] = ""
         try:
             if manager_utils.is_running(self.vm, False):
-                if hasattr(self.vm, 'template') and \
-                        manager_utils.is_running(self.vm.template, False):
+                if hasattr(self.vm, 'template') and (
+                    manager_utils.is_running(self.vm.template, False)
+                    or not self.vm.property_is_default("active_template")
+                ):
                     self.state['outdated'] = "to-be-outdated"
                 else:
                     try:
@@ -1415,18 +1417,15 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     ['Running', 'Transient', 'Halting', 'Dying']:
                 self.action_resumevm.setEnabled(False)
                 self.action_removevm.setEnabled(False)
-                self.template_menu.setEnabled(False)
             elif vm.state['power'] == 'Paused':
                 self.action_removevm.setEnabled(False)
                 self.action_pausevm.setEnabled(False)
                 self.action_restartvm.setEnabled(False)
                 self.action_open_console.setEnabled(False)
-                self.template_menu.setEnabled(False)
             elif vm.state['power'] == 'Suspend':
                 self.action_removevm.setEnabled(False)
                 self.action_pausevm.setEnabled(False)
                 self.action_open_console.setEnabled(False)
-                self.template_menu.setEnabled(False)
             elif vm.state['power'] == 'Halted':
                 self.action_pausevm.setEnabled(False)
                 self.action_shutdownvm.setEnabled(False)

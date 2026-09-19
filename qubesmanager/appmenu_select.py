@@ -110,10 +110,12 @@ class AppmenuSelectManager:
             main_template = self.vm.name
         elif not hasattr(self.vm.template, "template"):
             # AppVMs
-            main_template = self.vm.template.name
+            main_template = self.vm.get_active_template().name
         else:
             # DispVMs
-            main_template = self.vm.template.template.name
+            main_template = (
+                self.vm.get_active_template().get_active_template().name
+            )
 
         template_icons_path = path.join(
             path.expanduser("~"),
