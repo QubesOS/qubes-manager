@@ -144,6 +144,34 @@ class RefreshAppsVMThread(common_threads.QubesThread):
             except Exception as ex:  # pylint: disable=broad-except
                 self.msg = (self.tr("Refresh failed!"), str(ex))
 
+class InstallAppsVMThread(common_threads.QubesThread):
+    def __init__(self, vm):
+        super().__init__(vm)
+
+    def run(self):
+
+        template = self.vm
+        while template is not None:
+            root_template = template
+            template = getattr(root_template, "template", None)
+
+        try:
+            if not utils.is_running(root_template, True):
+                not_running = True
+                root_template.start()
+            else:
+                not_running = False
+
+            # NOTE: Software manager must quit when the window is closed.
+            # This is enforced by qubes-gnome-software-plugin
+            root_template.run_service_for_stdio("qubes.StartApp+org.gnome.Software")
+
+            if not_running:
+                root_template.shutdown()
+
+        except (ChildProcessError, subprocess.CalledProcessError,
+                qubesadmin.exc.QubesException) as ex:
+            self.msg = (self.tr("Installation failed!"), str(ex))
 
 # pylint: disable=too-many-instance-attributes
 class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
@@ -288,6 +316,15 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.apps_layout.addWidget(self.app_list)
             self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
             self.refresh_apps_button.clicked.connect(self.refresh_apps_button_pressed)
+            self.install_apps_button.clicked.connect(self.install_apps_button_pressed)
+
+            if not self.app_list_manager.check_software_manager_installed():
+                self.install_apps_button.setEnabled(False)
+                self.install_apps_button.setToolTip(
+                    self.tr(
+                        "This feature requires Gnome Software in the template."
+                    )
+                )
 
             self.app_search.textChanged.connect(self.filter_apps)
 
@@ -1768,6 +1805,23 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
         self.refresh_apps_button.setEnabled(True)
         self.refresh_apps_button.setText(self.tr("Refresh applications"))
+
+    def install_apps_button_pressed(self):
+        self.install_apps_button.setEnabled(False)
+        self.refresh_apps_button.setEnabled(False)
+        self.install_apps_button.setText(self.tr("Launching Software Manager..."))
+
+        thread = InstallAppsVMThread(self.vm)
+        thread.finished.connect(self.clear_threads)
+        thread.finished.connect(self.install_finished)
+        self.threads_list.append(thread)
+        thread.start()
+
+    def install_finished(self):
+        self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
+        self.install_apps_button.setEnabled(True)
+        self.refresh_apps_button.setEnabled(True)
+        self.install_apps_button.setText(self.tr("Install applications"))
 
     def template_apps_change(self):
         if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
