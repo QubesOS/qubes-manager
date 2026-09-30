@@ -101,6 +101,7 @@ def settings_fixture(
         usage=0.5,
         template_for_dispvms=True,
         features={
+            "appmenus-dispvm": "1",
             "gui-allow-fullscreen": "1",
             "gui-allow-utf8-titles": "1",
             "supported-service.qubes-u2f-proxy": "1",
@@ -108,6 +109,14 @@ def settings_fixture(
             "supported-service.clocksync": "1",
         },
         firewall_rules=fw_rules,
+    )
+
+    # and add a dispvm template as qvm-prefs and Salt leave it: no appmenus feature
+    test_qubes_app._qubes["test-dvm-no-appmenus"] = MockQube(
+        name="test-dvm-no-appmenus",
+        qapp=test_qubes_app,
+        template="fedora-36",
+        template_for_dispvms=True,
     )
 
     # and add a qube that has a connected pci device
@@ -987,6 +996,32 @@ def test_206_dispvmtempl(settings_fixture):
 
     for call in expected_calls:
         assert call in settings_window.qubesapp.actual_calls
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ["test-dvm-no-appmenus"], indirect=True)
+def test_206_dispvmtempl_without_appmenus(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+    vm = settings_window.qubesapp.domains[vm_name]
+
+    settings_window.dvm_template_checkbox.setChecked(False)
+
+    property_call = (
+        vm.name,
+        "admin.vm.property.Set",
+        "template_for_dispvms",
+        b"False",
+    )
+    settings_window.qubesapp.expected_calls[property_call] = b"0\x00"
+    remove_call = (vm.name, "admin.vm.feature.Remove", "appmenus-dispvm", None)
+    settings_window.qubesapp.expected_calls[remove_call] = (
+        b"2\x00QubesFeatureNotFoundError\x00\x00appmenus-dispvm\x00"
+    )
+
+    settings_window.accept()
+
+    assert property_call in settings_window.qubesapp.actual_calls
+    assert remove_call not in settings_window.qubesapp.actual_calls
 
 
 @check_errors
