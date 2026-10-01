@@ -510,7 +510,7 @@ def test_214_restartvm(_msgbox, mock_monitor, _qtimer, qubes_manager):
     assert qubes_manager.action_restartvm.isEnabled()
     vm = qubes_manager.qubes_app.domains['test-blue']
 
-    expected_shutdown = ('test-blue', 'admin.vm.Shutdown', 'force+wait', None)
+    expected_shutdown = ('test-blue', 'admin.vm.Restart', 'force', None)
     assert expected_shutdown not in qubes_manager.qubes_app.actual_calls
     qubes_manager.qubes_app.expected_calls[expected_shutdown] = b'0\x00'
 
@@ -1585,13 +1585,25 @@ def test_701_vm_shutdown_correct( mock_timer, mock_question):
     mock_vm.is_running.return_value = False
 
     monitor = qube_manager.VmShutdownMonitor(mock_vm)
-    monitor.restart_vm_if_needed = mock.Mock()
 
     monitor.check_if_vm_has_shutdown()
 
     assert mock_question.call_count == 0
     assert mock_timer.call_count == 0
-    monitor.restart_vm_if_needed.assert_called_once_with()
+
+
+@mock.patch('qubesmanager.qube_manager.QMessageBox')
+@mock.patch('PyQt6.QtCore.QTimer')
+def test_701_vm_restart_correct( mock_timer, mock_question):
+    mock_vm = mock.Mock()
+    mock_vm.is_running.return_value = False
+
+    monitor = qube_manager.VmShutdownMonitor(mock_vm, and_restart=True)
+
+    monitor.check_if_vm_has_shutdown()
+
+    assert mock_question.call_count == 0
+    assert mock_timer.call_count == 0
 
 
 @mock.patch('qubesmanager.qube_manager.QMessageBox')
@@ -1615,6 +1627,25 @@ def test_702_vm_not_shutdown_wait(mock_timer, mock_question):
 
 @mock.patch('qubesmanager.qube_manager.QMessageBox')
 @mock.patch('PyQt6.QtCore.QTimer.singleShot')
+def test_702_vm_not_restart_wait(mock_timer, mock_question):
+    mock_question().clickedButton.return_value = 1
+    mock_question().addButton.return_value = 0
+
+    mock_vm = mock.Mock()
+    mock_vm.is_running.return_value = True
+    mock_vm.start_time = datetime.now().timestamp() - 3000
+    mock_vm.shutdown_timeout = 60
+
+    monitor = qube_manager.VmShutdownMonitor(mock_vm, and_restart=True)
+    time.sleep(3)
+
+    monitor.check_if_vm_has_shutdown()
+
+    assert mock_timer.call_count == 1
+
+
+@mock.patch('qubesmanager.qube_manager.QMessageBox')
+@mock.patch('PyQt6.QtCore.QTimer.singleShot')
 def test_703_vm_kill( mock_timer, mock_question):
     mock_question().clickedButton.return_value = 1
     mock_question().addButton.return_value = 1
@@ -1626,24 +1657,59 @@ def test_703_vm_kill( mock_timer, mock_question):
 
     monitor = qube_manager.VmShutdownMonitor(mock_vm)
     time.sleep(3)
-    monitor.restart_vm_if_needed = mock.Mock()
 
     monitor.check_if_vm_has_shutdown()
 
     assert mock_timer.call_count == 0
     mock_vm.kill.assert_called_once_with()
-    monitor.restart_vm_if_needed.assert_called_once_with()
 
 
 @mock.patch('qubesmanager.qube_manager.QMessageBox')
 @mock.patch('PyQt6.QtCore.QTimer.singleShot')
-def test_704_check_later(mock_timer, mock_question):
+def test_703_restart_vm_kill( mock_timer, mock_question):
+    mock_question().clickedButton.return_value = 1
+    mock_question().addButton.return_value = 1
+
+    mock_vm = mock.Mock()
+    mock_vm.is_running.return_value = True
+    mock_vm.start_time = datetime.now().timestamp() - 3000
+    mock_vm.shutdown_timeout = 1
+
+    monitor = qube_manager.VmShutdownMonitor(mock_vm, and_restart=True)
+    time.sleep(3)
+
+    monitor.check_if_vm_has_shutdown()
+
+    assert mock_timer.call_count == 0
+    mock_vm.kill.assert_called_once_with()
+
+
+@mock.patch('qubesmanager.qube_manager.QMessageBox')
+@mock.patch('PyQt6.QtCore.QTimer.singleShot')
+def test_704_shutdown_check_later(mock_timer, mock_question):
     mock_vm = mock.Mock()
     mock_vm.is_running.return_value = True
     mock_vm.start_time = datetime.now().timestamp() - 3000
     mock_vm.shutdown_timeout = 30
 
     monitor = qube_manager.VmShutdownMonitor(mock_vm)
+    time.sleep(1)
+
+    monitor.check_if_vm_has_shutdown()
+
+    assert mock_question.call_count == 0
+    assert mock_timer.call_count == 1
+
+
+@mock.patch('qubesmanager.qube_manager.QMessageBox')
+@mock.patch('PyQt6.QtCore.QTimer.singleShot')
+def test_704_restart_check_later(mock_timer, mock_question):
+    mock_vm = mock.Mock()
+    mock_vm.is_running.return_value = True
+    mock_vm.start_time = datetime.now().timestamp() - 3000
+    mock_vm.shutdown_timeout = 30
+
+    monitor = qube_manager.VmShutdownMonitor(mock_vm, and_restart=True)
     time.sleep(1)
 
     monitor.check_if_vm_has_shutdown()

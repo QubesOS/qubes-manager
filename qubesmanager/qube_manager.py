@@ -607,10 +607,6 @@ class VmShutdownMonitor(QObject):
         self.shutdown_started = datetime.now()
         self.caller = caller
 
-    def restart_vm_if_needed(self):
-        if self.and_restart and self.caller:
-            self.caller.start_vm(self.vm)
-
     def check_again_later(self):
         # noinspection PyTypeChecker,PyCallByClass
         QTimer.singleShot(self.check_time, self.check_if_vm_has_shutdown)
@@ -660,12 +656,14 @@ class VmShutdownMonitor(QObject):
 
                 if msgbox.clickedButton() is kill_button:
                     try:
-                        vm.kill()
+                        if self.and_restart:
+                            vm.restart(kill=True, start=True)
+                        else:
+                            vm.kill()
                     except exc.QubesVMNotStartedError:
                         # the VM shut down while the user was thinking about
                         # shutting it down
                         pass
-                    self.restart_vm_if_needed()
                 elif msgbox.clickedButton() is ignore_button:
                     return
                 else:
@@ -677,12 +675,10 @@ class VmShutdownMonitor(QObject):
             if vm_is_running:
                 # Due to unknown reasons, Xen sometimes reports that a domain
                 # is running even though its start-up timestamp is not valid.
-                # Make sure that "restart_vm_if_needed" is not called until
-                # the domain has been completely shut down according to Xen.
+                # Make sure to continue monitoring until the domain has been
+                # completely shut down according to Xen.
                 self.check_again_later()
                 return
-
-            self.restart_vm_if_needed()
 
 
 # pylint: disable=too-few-public-methods
@@ -705,7 +701,21 @@ class ShutdownVMThread(common_threads.QubesThread):
         try:
             self.vm.shutdown(force=self.force, wait=self.wait_end)
         except exc.QubesException as ex:
-            self.msg = ("Error starting Qube!", str(ex))
+            self.msg = ("Error shutting down Qube!", str(ex))
+
+
+# pylint: disable=too-few-public-methods
+class RestartVMThread(common_threads.QubesThread):
+    def __init__(self, vm, force: bool = False, kill: bool = False):
+        super().__init__(vm)
+        self.force = force
+        self.kill = kill
+
+    def run(self):
+        try:
+            self.vm.restart(force=self.force, kill=self.kill)
+        except exc.QubesException as ex:
+            self.msg = ("Error restarting Qube!", str(ex))
 
 
 # pylint: disable=too-few-public-methods
@@ -1714,19 +1724,29 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
                 force = True
                 for connected_vm in connected_vms:
-                    thread = ShutdownVMThread(connected_vm, force=force)
+                    if and_restart:
+                        thread = RestartVMThread(connected_vm, force=force)
+                    else:
+                        thread = ShutdownVMThread(connected_vm, force=force)
                     self.threads_list.append(thread)
                     thread.finished.connect(self.clear_threads)
                     thread.start()
 
-            thread = ShutdownVMThread(vm, force=force, wait=True)
+            if and_restart:
+                thread = RestartVMThread(vm, force=force)
+            else:
+                thread = ShutdownVMThread(vm, force=force, wait=True)
             self.threads_list.append(thread)
             thread.finished.connect(self.clear_threads)
             thread.start()
         except exc.QubesException as ex:
+            if and_restart:
+                msg = "restarting"
+            else:
+                msg = "shutting down"
             QMessageBox.warning(
                 self,
-                self.tr("Error shutting down Qube!"),
+                self.tr("Error {0} Qube!".format(msg)),
                 self.tr("ERROR: {0}").format(ex))
             return False
 
@@ -1754,10 +1774,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
             if reply == QMessageBox.StandardButton.Yes:
                 # in case the user shut down the VM in the meantime
                 try:
-                    if manager_utils.is_running(vm, False):
-                        self.shutdown_vm(vm, force=True, and_restart=True)
-                    else:
-                        self.start_vm(vm)
+                    self.shutdown_vm(vm, force=True, and_restart=True)
                 except exc.QubesException as ex:
                     QMessageBox.warning(
                         self,
