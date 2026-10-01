@@ -92,6 +92,9 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
 
         self.progress_status.text = self.tr("Backup in progress...")
         self.dir_line_edit.setReadOnly(False)
+        path_allowed_chars_message = utils.get_path_chars_message()
+        self.dir_line_edit.setToolTip(path_allowed_chars_message)
+        self.select_path_button.setToolTip(path_allowed_chars_message)
 
         self.select_vms_widget = multiselectwidget.MultiSelectWidget(self)
         self.verticalLayout.insertWidget(1, self.select_vms_widget)
@@ -373,6 +376,12 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
                 QtWidgets.QMessageBox.information(
                     self, self.tr("Wait!"),
                     self.tr("Enter backup target location first."))
+                return False
+            try:
+                utils.validate_path(backup_location)
+            except ValueError as ex:
+                QtWidgets.QMessageBox.warning(
+                    self, self.tr("Unexpected characters in path!"), str(ex))
                 return False
             if self.appvm_combobox.currentText() == "dom0" \
                     and not os.path.isdir(backup_location):

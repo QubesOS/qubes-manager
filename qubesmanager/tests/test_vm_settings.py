@@ -2076,6 +2076,11 @@ def test_601_device_add(settings_fixture):
     settings_window, page, vm_name = settings_fixture
     vm = settings_window.qubesapp.domains[vm_name]
 
+    device_classes_call = (
+        "dom0", "admin.deviceclass.List", "details", None)
+    settings_window.qubesapp.expected_calls[device_classes_call] = (
+        b"0\x00pci assignment_modes=required\n")
+
     for i in range(settings_window.dev_list.available_list.count()):
         item = settings_window.dev_list.available_list.item(i)
         if "USB" in item.text():

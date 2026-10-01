@@ -17,9 +17,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
+from unittest import mock
+
 from PyQt6 import QtWidgets
 
-from qubesmanager import backup_utils
+from qubesmanager import backup_utils, utils
 
 
 def test_01_fill_apvms(qapp, test_qubes_app):
@@ -46,3 +48,25 @@ def test_01_fill_apvms(qapp, test_qubes_app):
 
     assert sorted(expected_vm_list) == sorted(received_vm_list), \
         "VM list not filled correctly"
+
+
+@mock.patch("PyQt6.QtWidgets.QMessageBox.warning")
+@mock.patch("qubesmanager.backup_utils.utils.get_path_from_vm")
+def test_02_select_path_invalid_characters(mock_get_path, mock_warning):
+    dialog = mock.Mock()
+    dialog.dir_line_edit.text.return_value = ""
+    dialog.appvm_combobox.currentText.return_value = "test-vm"
+    dialog.qubes_app.domains = {"test-vm": mock.Mock(name="test-vm")}
+    dialog.tr.side_effect = lambda text: text
+    mock_get_path.side_effect = ValueError(
+        utils.get_path_chars_message()
+    )
+
+    backup_utils.select_path_button_clicked(dialog)
+
+    mock_warning.assert_called_once_with(
+        dialog,
+        "Unexpected characters in path!",
+        utils.get_path_chars_message(),
+    )
+    dialog.dir_line_edit.setText.assert_not_called()

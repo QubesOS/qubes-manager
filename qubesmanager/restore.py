@@ -123,6 +123,9 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
 
         self.currentIdChanged.connect(self.current_page_changed)
         self.dir_line_edit.textChanged.connect(self.backup_location_changed)
+        path_allowed_chars_message = utils.get_path_chars_message()
+        self.dir_line_edit.setToolTip(path_allowed_chars_message)
+        self.select_path_button.setToolTip(path_allowed_chars_message)
 
         self.select_dir_page.isComplete = self.has_selected_dir
         self.select_vms_page.isComplete = self.has_selected_vms
@@ -156,6 +159,16 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
     @QtCore.pyqtSlot(name='on_select_path_button_clicked')
     def select_path_button_clicked(self):
         backup_utils.select_path_button_clicked(self, True)
+
+    def validateCurrentPage(self):  # pylint: disable=invalid-name
+        if self.currentPage() is self.select_dir_page:
+            try:
+                utils.validate_path(str(self.dir_line_edit.text()))
+            except ValueError as ex:
+                QtWidgets.QMessageBox.warning(
+                    self, self.tr("Unexpected characters in path!"), str(ex))
+                return False
+        return True
 
     def cleanupPage(self, p_int):  # pylint: disable=invalid-name
         if self.page(p_int) is self.select_vms_page:
