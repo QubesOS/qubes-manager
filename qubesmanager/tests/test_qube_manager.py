@@ -450,6 +450,26 @@ def test_209_shutdownvm(mock_monitor, mock_timer, _mock_question,
     mock_timer.assert_called_once_with(mock.ANY, mock.ANY)
 
 
+@mock.patch("qubesmanager.qube_manager.VmManagerWindow.shutdown_vm")
+@mock.patch("PyQt6.QtWidgets.QMessageBox.question",
+            return_value=QMessageBox.StandardButton.Yes)
+def test_210_shutdownvm_multiple_confirmation(mock_question,
+                                               mock_shutdown,
+                                               qubes_manager):
+    _select_vm(qubes_manager, 'test-blue', 'test-red')
+
+    qubes_manager.action_shutdownvm_triggered()
+
+    mock_question.assert_called_once()
+    message = mock_question.call_args.args[2]
+    assert 'test-blue' in message
+    assert 'test-red' in message
+    assert mock_shutdown.call_args_list == [
+        mock.call(qubes_manager.qubes_app.domains['test-blue']),
+        mock.call(qubes_manager.qubes_app.domains['test-red']),
+    ]
+
+
 def test_211_remove_adminvm(qubes_manager):
     _select_vm(qubes_manager, 'dom0')
 

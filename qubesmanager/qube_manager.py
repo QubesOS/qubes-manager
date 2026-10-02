@@ -1671,18 +1671,30 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     # noinspection PyArgumentList
     @pyqtSlot(name='on_action_shutdownvm_triggered')
     def action_shutdownvm_triggered(self):
-        for vm_info in self.get_selected_vms():
-            vm = vm_info.vm
-            reply = QMessageBox.question(
-                self, self.tr("Qube Shutdown Confirmation"),
-                self.tr("Are you sure you want to power down the Qube <b>'{0}'"
-                        "</b>?<br><small>This will shutdown all the running"
-                        " applications within this Qube.</small>").format(
-                         vm.name),
-                QMessageBox.StandardButton.Yes |
-                QMessageBox.StandardButton.Cancel)
+        vms = [vm_info.vm for vm_info in self.get_selected_vms()]
+        if not vms:
+            return
 
-            if reply == QMessageBox.StandardButton.Yes:
+        if len(vms) == 1:
+            confirmation_text = self.tr(
+                "Are you sure you want to power down the Qube <b>'{0}'</b>?"
+                "<br><small>This will shutdown all the running applications "
+                "within this Qube.</small>").format(vms[0].name)
+        else:
+            vm_names = '<br>'.join(vm.name for vm in vms)
+            confirmation_text = self.tr(
+                "Are you sure you want to power down the following Qubes?"
+                "<br><b>{0}</b><br><small>This will shutdown all the running "
+                "applications within these Qubes.</small>").format(vm_names)
+
+        reply = QMessageBox.question(
+            self, self.tr("Qube Shutdown Confirmation"),
+            confirmation_text,
+            QMessageBox.StandardButton.Yes |
+            QMessageBox.StandardButton.Cancel)
+
+        if reply == QMessageBox.StandardButton.Yes:
+            for vm in vms:
                 self.shutdown_vm(vm)
 
     def get_connected_vms(self, vm, connected_vms):
