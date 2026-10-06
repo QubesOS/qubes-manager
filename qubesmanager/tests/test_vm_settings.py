@@ -230,6 +230,20 @@ def settings_fixture(
             None,
         )
         test_qubes_app.expected_calls[expected_call_preload] = b"0\x00"
+        for feature in (
+            "gui-max-clipboard-size",
+            "gui-max-clipboard-image-size",
+        ):
+            test_qubes_app.expected_calls[
+                (vm.name, "admin.vm.feature.Get", feature, None)
+            ] = b"0\x00"
+        for feature, value in (
+            ("gui-default-max-clipboard-size", b"64000"),
+            ("gui-default-max-clipboard-image-size", b"4194304"),
+        ):
+            test_qubes_app.expected_calls[
+                ("dom0", "admin.vm.feature.Get", feature, None)
+            ] = (b"0\x00" + value)
         vms = vm_settings.VMSettingsWindow(vm, page, qapp, test_qubes_app)
         yield vms, page, vm.name
 
@@ -2334,3 +2348,99 @@ def test_604_device_filter(settings_fixture):
         if not item.isHidden():
             for i in item.dev.interfaces:
                 assert i.category not in settings_window.device_radio_buttons.values()
+
+
+@check_errors
+@pytest.mark.parametrize(
+    "settings_fixture", [{"vm": "test-blue", "page": "advanced"}], indirect=True
+)
+def test_400_clipboard_limits_default(settings_fixture):
+    """
+    An unset feature means the qube follows the system default.
+    """
+    settings_window, page, vm_name = settings_fixture
+
+    for widget in (
+        settings_window.clipboard_text_widget,
+        settings_window.clipboard_image_widget,
+    ):
+        assert widget.get_value() is None
+        assert widget.spin_box.value() == 0
+        assert not widget.reset_button.isEnabled()
+
+    text_widget = settings_window.clipboard_text_widget
+    image_widget = settings_window.clipboard_image_widget
+    assert text_widget.system_default == 64000
+    assert image_widget.system_default == 4 * 1024 * 1024
+    assert text_widget.spin_box.specialValueText() == "default (64 kB)"
+    assert image_widget.spin_box.specialValueText() == "default (4 MiB)"
+
+
+@check_errors
+@pytest.mark.parametrize(
+    "settings_fixture", [{"vm": "test-blue", "page": "advanced"}], indirect=True
+)
+def test_401_clipboard_limits_custom(settings_fixture):
+    """
+    A custom value is set in whole units and saved in bytes.
+    """
+    settings_window, page, vm_name = settings_fixture
+    widget = settings_window.clipboard_image_widget
+
+    widget.spin_box.setValue(3)
+    assert widget.get_value() == 3 * 1024 * 1024
+    assert widget.reset_button.isEnabled()
+
+    expected_call = (
+        vm_name,
+        "admin.vm.feature.Set",
+        "gui-max-clipboard-image-size",
+        str(3 * 1024 * 1024).encode(),
+    )
+    settings_window.qubesapp.expected_calls[expected_call] = b"0\x00"
+    assert expected_call not in settings_window.qubesapp.actual_calls
+
+    widget.save()
+
+    assert (
+        expected_call in settings_window.qubesapp.actual_calls
+    ), "Clipboard image limit not saved"
+
+
+@check_errors
+@pytest.mark.parametrize(
+    "settings_fixture", [{"vm": "test-blue", "page": "advanced"}], indirect=True
+)
+def test_402_clipboard_limits_back_to_default(settings_fixture):
+    """
+    Removing the custom limit deletes the feature again.
+    """
+    settings_window, page, vm_name = settings_fixture
+    widget = settings_window.clipboard_image_widget
+
+    set_call = (
+        vm_name,
+        "admin.vm.feature.Set",
+        "gui-max-clipboard-image-size",
+        str(2 * 1024 * 1024).encode(),
+    )
+    remove_call = (
+        vm_name,
+        "admin.vm.feature.Remove",
+        "gui-max-clipboard-image-size",
+        None,
+    )
+    settings_window.qubesapp.expected_calls[set_call] = b"0\x00"
+    settings_window.qubesapp.expected_calls[remove_call] = b"0\x00"
+
+    widget.spin_box.setValue(2)
+    widget.save()
+    assert set_call in settings_window.qubesapp.actual_calls
+
+    widget.reset_button.click()
+    assert widget.get_value() is None
+    assert not widget.reset_button.isEnabled()
+    widget.save()
+    assert (
+        remove_call in settings_window.qubesapp.actual_calls
+    ), "Clipboard image limit not removed"

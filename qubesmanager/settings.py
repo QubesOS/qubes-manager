@@ -62,6 +62,134 @@ IDLE_SERVICE = f"{SERVICE_PREFIX}shutdown-idle"
 INTERNAL_SERVICE_FEATURES = [IDLE_SERVICE]
 INTERNAL_SUPPORTED_FEATURES = [IDLE_SUPPORTED_SERVICE]
 
+# bounds of the GUI protocol, see qubes-gui-protocol.h
+CLIPBOARD_TEXT_MAX = 256000
+CLIPBOARD_TEXT_DEFAULT = 64000
+CLIPBOARD_IMAGE_MAX = 16 * 1024 * 1024
+CLIPBOARD_IMAGE_DEFAULT = 4 * 1024 * 1024
+
+
+class ClipboardSizeWidget:
+    """
+    A size feature as one spin box in a fixed unit.
+    An unset feature means the qube follows the system default.
+    """
+
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
+    def __init__(
+        self,
+        vm,
+        feature,
+        default_feature,
+        spin_box,
+        reset_button,
+        unit_name,
+        unit_factor,
+        maximum,
+        fallback_default,
+        default_text,
+        reset_tooltip,
+        exact_text,
+    ):
+        self.vm = vm
+        self.feature = feature
+        self.spin_box = spin_box
+        self.reset_button = reset_button
+        self.unit_name = unit_name
+        self.unit_factor = unit_factor
+        self.maximum = maximum
+        self.exact_text = exact_text
+
+        self.system_default = self._system_default(
+            default_feature, fallback_default
+        )
+        shown_default = self._format(self.system_default)
+
+        spin_box.setSuffix(" " + unit_name)
+        spin_box.setRange(0, maximum // unit_factor)
+        spin_box.setSpecialValueText(default_text.format(shown_default))
+        reset_button.setToolTip(reset_tooltip.format(shown_default))
+        reset_button.setAccessibleName(reset_tooltip.format(shown_default))
+
+        self._show(self._feature_value())
+        self.initial_shown = self.get_value()
+
+        for signal in (reset_button.clicked, spin_box.valueChanged):
+            try:
+                signal.disconnect()
+            except TypeError:
+                pass
+        reset_button.clicked.connect(self.reset)
+        spin_box.valueChanged.connect(self._update_reset)
+        self._update_reset()
+
+    def _format(self, value):
+        if value < self.unit_factor:
+            return "{} B".format(value)
+        amount = "{:.1f}".format(value / self.unit_factor)
+        return "{} {}".format(amount.rstrip("0").rstrip("."), self.unit_name)
+
+    def _default_holder(self):
+        guivm = getattr(self.vm, "guivm", None)
+        for name in (getattr(guivm, "name", guivm), self.vm.app.local_name):
+            if not name:
+                continue
+            try:
+                return self.vm.app.domains[name]
+            except (qubesadmin.exc.QubesException, KeyError):
+                continue
+        return None
+
+    def _system_default(self, default_feature, fallback):
+        holder = self._default_holder()
+        if holder is None:
+            return fallback
+        value = utils.get_feature(holder, default_feature, None)
+        try:
+            return int(value) if value is not None else fallback
+        except ValueError:
+            return fallback
+
+    def _feature_value(self):
+        value = utils.get_feature(self.vm, self.feature, None)
+        try:
+            return int(value) if value is not None else None
+        except ValueError:
+            return None
+
+    def _show(self, value):
+        if value is None:
+            self.spin_box.setValue(0)
+            self.spin_box.setToolTip("")
+            return
+        self.spin_box.setValue(max(1, round(value / self.unit_factor)))
+        exact = self.spin_box.value() * self.unit_factor
+        self.spin_box.setToolTip(
+            "" if exact == value else self.exact_text.format(value)
+        )
+
+    def reset(self, *_args):
+        self.spin_box.setValue(0)
+
+    def _update_reset(self, *_args):
+        self.reset_button.setEnabled(self.spin_box.value() != 0)
+
+    def get_value(self):
+        amount = self.spin_box.value()
+        if amount == 0:
+            return None
+        return min(self.maximum, amount * self.unit_factor)
+
+    def save(self):
+        value = self.get_value()
+        if value == self.initial_shown:
+            return
+        if value is None:
+            del self.vm.features[self.feature]
+        else:
+            self.vm.features[self.feature] = value
+        self.initial_shown = value
+
 
 def get_default_bootmode_name(vm, bootmode):
     if bootmode == "default":
@@ -1208,6 +1336,35 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         )
         self.allow_utf8_initial = self.allow_utf8.currentIndex()
 
+        self.clipboard_text_widget = ClipboardSizeWidget(
+            self.vm,
+            "gui-max-clipboard-size",
+            "gui-default-max-clipboard-size",
+            self.clipboard_text_value,
+            self.clipboard_text_reset,
+            unit_name="kB",
+            unit_factor=1000,
+            maximum=CLIPBOARD_TEXT_MAX,
+            fallback_default=CLIPBOARD_TEXT_DEFAULT,
+            default_text=self.tr("default ({})"),
+            reset_tooltip=self.tr("Restore the default limit ({})"),
+            exact_text=self.tr("The limit in force is {} bytes"),
+        )
+        self.clipboard_image_widget = ClipboardSizeWidget(
+            self.vm,
+            "gui-max-clipboard-image-size",
+            "gui-default-max-clipboard-image-size",
+            self.clipboard_image_value,
+            self.clipboard_image_reset,
+            unit_name="MiB",
+            unit_factor=1024 * 1024,
+            maximum=CLIPBOARD_IMAGE_MAX,
+            fallback_default=CLIPBOARD_IMAGE_DEFAULT,
+            default_text=self.tr("default ({})"),
+            reset_tooltip=self.tr("Restore the default limit ({})"),
+            exact_text=self.tr("The limit in force is {} bytes"),
+        )
+
     def prohibit_start_checked(self, status):
         self.prohibit_start_rationale.setVisible(bool(status))
         self.prohibit_start_rationale.setFocus()
@@ -1371,6 +1528,12 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     self.vm.features["gui-allow-utf8-titles"] = (
                         self.allow_utf8.currentData()
                     )
+            except qubesadmin.exc.QubesException as ex:
+                msg.append(str(ex))
+
+        for widget in (self.clipboard_text_widget, self.clipboard_image_widget):
+            try:
+                widget.save()
             except qubesadmin.exc.QubesException as ex:
                 msg.append(str(ex))
 
