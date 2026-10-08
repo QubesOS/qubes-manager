@@ -1672,8 +1672,6 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     @pyqtSlot(name='on_action_shutdownvm_triggered')
     def action_shutdownvm_triggered(self):
         vms = [vm_info.vm for vm_info in self.get_selected_vms()]
-        if not vms:
-            return
 
         if len(vms) == 1:
             confirmation_text = self.tr(
