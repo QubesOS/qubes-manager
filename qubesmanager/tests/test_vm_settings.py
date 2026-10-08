@@ -1510,6 +1510,46 @@ def test_305b_firewall_add_rule_with_comment(settings_fixture):
 
     assert expected_call in settings_window.qubesapp.actual_calls
 
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ["test-vm-set"], indirect=True)
+@pytest.mark.parametrize("service", ["8080", "1024-1234", "http"])
+def test_305c_firewall_any_protocol_discards_port(settings_fixture, service):
+    settings_window, page, vm_name = settings_fixture
+
+    assert settings_window.policy_deny_radio_button.isChecked()
+
+    settings_window.new_rule_button.click()
+    dialog = settings_window.fw_model.current_dialog
+    dialog.addressComboBox.setCurrentText("test_stuff")
+    dialog.tcp_radio.setChecked(True)
+    dialog.serviceComboBox.setCurrentText(service)
+
+    # rules for any protocol cannot have ports, so the port must be dropped
+    dialog.any_radio.setChecked(True)
+    assert not dialog.serviceComboBox.isEnabled()
+    assert dialog.serviceComboBox.currentText() == ""
+
+    dialog.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).click()
+
+    expected_call = (
+        "test-vm-set",
+        "admin.vm.firewall.Set",
+        None,
+        b"action=accept dsthost=qubes-os.org\n"
+        b"action=accept dsthost=test_stuff\n"
+        b"action=accept specialtarget=dns\n"
+        b"action=accept proto=icmp\n"
+        b"action=drop\n",
+    )
+    assert expected_call not in settings_window.qubesapp.actual_calls
+    settings_window.qubesapp.expected_calls[expected_call] = b"0\x00"
+
+    settings_window.accept()
+
+    assert expected_call in settings_window.qubesapp.actual_calls
+
+
 @check_errors
 @pytest.mark.parametrize("settings_fixture", ["test-vm-set"], indirect=True)
 def test_306_firewall_unlimit(settings_fixture):
