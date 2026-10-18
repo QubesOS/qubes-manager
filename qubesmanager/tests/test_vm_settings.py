@@ -2455,7 +2455,7 @@ def test_400_clipboard_limits_default(settings_fixture):
         settings_window.clipboard_image_widget,
     ):
         assert widget.get_value() is None
-        assert widget.spin_box.value() == 0
+        assert widget.spin_box.value() == widget.spin_box.minimum()
         assert not widget.reset_button.isEnabled()
 
     text_widget = settings_window.clipboard_text_widget
@@ -2526,6 +2526,10 @@ def test_402_clipboard_limits_back_to_default(settings_fixture):
     widget.spin_box.setValue(2)
     widget.save()
     assert set_call in settings_window.qubesapp.actual_calls
+
+    widget.spin_box.setValue(0)
+    assert widget.get_value() == 0
+    assert widget.reset_button.isEnabled()
 
     widget.reset_button.click()
     assert widget.get_value() is None
