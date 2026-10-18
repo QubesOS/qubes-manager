@@ -90,6 +90,8 @@ class ClipboardSizeWidget:
         default_text,
         reset_tooltip,
         exact_text,
+        disabled_text="",
+        allow_disabled=False,
     ):
         self.vm = vm
         self.feature = feature
@@ -99,6 +101,8 @@ class ClipboardSizeWidget:
         self.unit_factor = unit_factor
         self.maximum = maximum
         self.exact_text = exact_text
+        self.lowest = -1 if allow_disabled else 0
+        self.base_tooltip = disabled_text if allow_disabled else ""
 
         self.system_default = self._system_default(
             default_feature, fallback_default
@@ -106,7 +110,7 @@ class ClipboardSizeWidget:
         shown_default = self._format(self.system_default)
 
         spin_box.setSuffix(" " + unit_name)
-        spin_box.setRange(0, maximum // unit_factor)
+        spin_box.setRange(self.lowest, maximum // unit_factor)
         spin_box.setSpecialValueText(default_text.format(shown_default))
         reset_button.setToolTip(reset_tooltip.format(shown_default))
         reset_button.setAccessibleName(reset_tooltip.format(shown_default))
@@ -158,25 +162,28 @@ class ClipboardSizeWidget:
             return None
 
     def _show(self, value):
+        self.spin_box.setToolTip(self.base_tooltip)
         if value is None:
+            self.spin_box.setValue(self.lowest)
+            return
+        if value == 0:
             self.spin_box.setValue(0)
-            self.spin_box.setToolTip("")
             return
         self.spin_box.setValue(max(1, round(value / self.unit_factor)))
         exact = self.spin_box.value() * self.unit_factor
-        self.spin_box.setToolTip(
-            "" if exact == value else self.exact_text.format(value)
-        )
+        if exact != value:
+            lines = [self.base_tooltip, self.exact_text.format(value)]
+            self.spin_box.setToolTip("\n".join(filter(None, lines)))
 
     def reset(self, *_args):
-        self.spin_box.setValue(0)
+        self.spin_box.setValue(self.lowest)
 
     def _update_reset(self, *_args):
-        self.reset_button.setEnabled(self.spin_box.value() != 0)
+        self.reset_button.setEnabled(self.spin_box.value() != self.lowest)
 
     def get_value(self):
         amount = self.spin_box.value()
-        if amount == 0:
+        if amount == self.lowest:
             return None
         return min(self.maximum, amount * self.unit_factor)
 
@@ -1405,6 +1412,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             default_text=self.tr("default ({})"),
             reset_tooltip=self.tr("Restore the default limit ({})"),
             exact_text=self.tr("The limit in force is {} bytes"),
+            disabled_text=self.tr("A limit of 0 refuses every image"),
+            allow_disabled=True,
         )
 
     def prohibit_start_checked(self, status):
