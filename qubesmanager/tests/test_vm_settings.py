@@ -230,7 +230,7 @@ def settings_fixture(
             ] = b"0\x00"
         for feature, value in (
             ("gui-default-max-clipboard-size", b"64000"),
-            ("gui-default-max-clipboard-image-size", b"4194304"),
+            ("gui-default-max-clipboard-image-size", b"33554432"),
         ):
             test_qubes_app.expected_calls[
                 ("dom0", "admin.vm.feature.Get", feature, None)
@@ -2316,9 +2316,9 @@ def test_400_clipboard_limits_default(settings_fixture):
     text_widget = settings_window.clipboard_text_widget
     image_widget = settings_window.clipboard_image_widget
     assert text_widget.system_default == 64000
-    assert image_widget.system_default == 4 * 1024 * 1024
+    assert image_widget.system_default == 32 * 1024 * 1024
     assert text_widget.spin_box.specialValueText() == "default (64 kB)"
-    assert image_widget.spin_box.specialValueText() == "default (4 MiB)"
+    assert image_widget.spin_box.specialValueText() == "default (32 MiB)"
 
 
 @check_errors
