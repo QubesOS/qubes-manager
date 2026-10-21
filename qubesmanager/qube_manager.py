@@ -499,6 +499,8 @@ class QubesTableModel(QAbstractTableModel):
             if col_name == "Template":
                 if vm.template is None:
                     return vm.klass
+                if vm.active_template:
+                    return vm.active_template
                 return vm.template
             if col_name == "NetVM":
                 return vm.netvm
@@ -521,6 +523,16 @@ class QubesTableModel(QAbstractTableModel):
             if col_name == "Virt Mode":
                 return vm.virt_mode
             return None
+        if role == Qt.ItemDataRole.ToolTipRole:
+            if col_name == "Template":
+                if (
+                    vm.active_template
+                    and not vm.vm.property_is_default("active_template")
+                ):
+                    return (
+                        "Template changed while the qube was running.\nNext "
+                        "template: {}".format(vm.template)
+                    )
         if role == Qt.ItemDataRole.DecorationRole:
             if col_name == "Label":
                 try:
@@ -539,10 +551,22 @@ class QubesTableModel(QAbstractTableModel):
                     font = QFont()
                     font.setItalic(True)
                     return font
+                if (
+                    vm.active_template
+                    and not vm.vm.property_is_default("active_template")
+                ):
+                    font = QFont()
+                    font.setStrikeOut(True)
+                    return font
         if role == Qt.ItemDataRole.ForegroundRole:
             if col_name == "Template":
                 if vm.template is None:
                     return QColor("gray")
+                if (
+                    vm.active_template
+                    and not vm.vm.property_is_default("active_template")
+                ):
+                    return QColor("orange")
         # Used for get VM Object
         if role == Qt.ItemDataRole.UserRole:
             return vm
