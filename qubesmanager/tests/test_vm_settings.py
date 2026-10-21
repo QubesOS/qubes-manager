@@ -221,6 +221,20 @@ def settings_fixture(
             None,
         )
         test_qubes_app.expected_calls[expected_call_preload] = b"0\x00"
+        for feature in (
+            "gui-max-clipboard-size",
+            "gui-max-clipboard-image-size",
+        ):
+            test_qubes_app.expected_calls[
+                (vm.name, "admin.vm.feature.Get", feature, None)
+            ] = b"0\x00"
+        for feature, value in (
+            ("gui-default-max-clipboard-size", b"64000"),
+            ("gui-default-max-clipboard-image-size", b"33554432"),
+        ):
+            test_qubes_app.expected_calls[
+                ("dom0", "admin.vm.feature.Get", feature, None)
+            ] = (b"0\x00" + value)
         vms = vm_settings.VMSettingsWindow(vm, page, qapp, test_qubes_app)
         yield vms, page, vm.name
 
@@ -242,14 +256,18 @@ def check_errors(test_function):
     return wrapper
 
 
-def _select_item(combobox: QtWidgets.QComboBox, text: str, match_strict: bool = False):
+def _select_item(
+    combobox: QtWidgets.QComboBox, text: str, match_strict: bool = False
+):
     """
     select a given item in the combobox; if match_strict is True, will only
     match exact matches, otherwise, will match any item that contains
     provided string.
     """
     for i in range(combobox.count()):
-        item_text = str(combobox.itemData(i, QtCore.Qt.ItemDataRole.DisplayRole))
+        item_text = str(
+            combobox.itemData(i, QtCore.Qt.ItemDataRole.DisplayRole)
+        )
         if (match_strict and item_text == text) or (
             not match_strict and text in item_text
         ):
@@ -306,7 +324,9 @@ def test_002_data(settings_fixture):
         vm, "include_in_backups", False
     )
 
-    assert settings_window.autostart_vm.isChecked() == getattr(vm, "autostart", False)
+    assert settings_window.autostart_vm.isChecked() == getattr(
+        vm, "autostart", False
+    )
 
     # advanced tab
 
@@ -327,10 +347,13 @@ def test_002_data(settings_fixture):
             assert "default" in settings_window.default_dispvm.currentText()
         if vm.default_dispvm:
             assert (
-                str(vm.default_dispvm) in settings_window.default_dispvm.currentText()
+                str(vm.default_dispvm)
+                in settings_window.default_dispvm.currentText()
             )
         else:
-            assert "none" in settings_window.default_dispvm.currentText().lower()
+            assert (
+                "none" in settings_window.default_dispvm.currentText().lower()
+            )
 
     else:
         assert not settings_window.default_dispvm.isEnabled()
@@ -465,7 +488,9 @@ def test_103_change_netvm_tpl(mock_warning, settings_fixture):
         "Didn't warn for changing netvm " "on a template"
     )
 
-    assert expected_call in settings_window.qubesapp.actual_calls, "NetVM not changed"
+    assert (
+        expected_call in settings_window.qubesapp.actual_calls
+    ), "NetVM not changed"
 
 
 @check_errors
@@ -510,7 +535,9 @@ def test_105_incl_in_backups(settings_fixture):
     vm = settings_window.qubesapp.domains[vm_name]
 
     assert settings_window.include_in_backups.isEnabled()
-    assert settings_window.include_in_backups.isChecked() == vm.include_in_backups
+    assert (
+        settings_window.include_in_backups.isChecked() == vm.include_in_backups
+    )
 
     expected_call = (
         vm_name,
@@ -576,7 +603,11 @@ def test_107_misc_info(settings_fixture):
         assert not settings_window.networking_groupbox.isEnabled()
 
     assert settings_window.type_label.text() == vm.klass
-    assert settings_window.rpm_label.text() == "Yes" if vm.installed_by_rpm else "No"
+    assert (
+        settings_window.rpm_label.text() == "Yes"
+        if vm.installed_by_rpm
+        else "No"
+    )
 
 
 @check_errors
@@ -747,7 +778,9 @@ def test_113_change_netvm_anon(mock_warning, settings_fixture):
 
     settings_window.qubesapp.expected_calls[change_netvm_call] = b"0\x00"
 
-    assert mock_warning.call_count == 1, "Didn't warn for changing netvm " "on anon-vm"
+    assert mock_warning.call_count == 1, (
+        "Didn't warn for changing netvm " "on anon-vm"
+    )
 
     assert change_netvm_call in settings_window.qubesapp.actual_calls
 
@@ -922,9 +955,14 @@ def test_205_povides_network(settings_fixture):
     settings_window, page, vm_name = settings_fixture
     vm = settings_window.qubesapp.domains[vm_name]
 
-    assert settings_window.provides_network_checkbox.isChecked() == vm.provides_network
+    assert (
+        settings_window.provides_network_checkbox.isChecked()
+        == vm.provides_network
+    )
 
-    settings_window.provides_network_checkbox.setChecked(not vm.provides_network)
+    settings_window.provides_network_checkbox.setChecked(
+        not vm.provides_network
+    )
 
     expected_call = (
         vm.name,
@@ -948,13 +986,18 @@ def test_206_dispvmtempl(settings_fixture):
 
     assert settings_window.dvm_template_checkbox.isEnabled()
 
-    assert settings_window.dvm_template_checkbox.isChecked() == vm.template_for_dispvms
+    assert (
+        settings_window.dvm_template_checkbox.isChecked()
+        == vm.template_for_dispvms
+    )
     assert (
         settings_window.preload_dispvm.isEnabled()
         == settings_window.dvm_template_checkbox.isChecked()
     )
 
-    settings_window.dvm_template_checkbox.setChecked(not vm.template_for_dispvms)
+    settings_window.dvm_template_checkbox.setChecked(
+        not vm.template_for_dispvms
+    )
 
     assert (
         settings_window.preload_dispvm.isEnabled()
@@ -1139,7 +1182,9 @@ def test_212_boot_from_device(mock_boot, mock_start, settings_fixture):
 
 
 @check_errors
-@pytest.mark.parametrize("settings_fixture", ["fedora-36-bootmodes"], indirect=True)
+@pytest.mark.parametrize(
+    "settings_fixture", ["fedora-36-bootmodes"], indirect=True
+)
 def test_213_bootmode_template(settings_fixture):
     settings_window, page, vm_name = settings_fixture
 
@@ -1149,7 +1194,9 @@ def test_213_bootmode_template(settings_fixture):
     assert "mode2" in settings_window.bootmode_names
 
     _select_item(settings_window.bootmode, "mode2")
-    assert settings_window.bootmode_kernel_opts.text() == "mode2kern1 mode2kern2"
+    assert (
+        settings_window.bootmode_kernel_opts.text() == "mode2kern1 mode2kern2"
+    )
     _select_item(settings_window.bootmode, "default")
     assert settings_window.bootmode_kernel_opts.text() == ""
     _select_item(settings_window.bootmode, "Mode One")
@@ -1189,7 +1236,9 @@ def test_213_bootmode_template(settings_fixture):
 
 
 @check_errors
-@pytest.mark.parametrize("settings_fixture", ["test-vm-bootmodes"], indirect=True)
+@pytest.mark.parametrize(
+    "settings_fixture", ["test-vm-bootmodes"], indirect=True
+)
 def test_214_bootmode_appvm(settings_fixture):
     settings_window, page, vm_name = settings_fixture
 
@@ -1201,7 +1250,9 @@ def test_214_bootmode_appvm(settings_fixture):
     _select_item(settings_window.bootmode, "Mode One")
     assert settings_window.bootmode_kernel_opts.text() == "mode1kern"
     _select_item(settings_window.bootmode, "mode2")
-    assert settings_window.bootmode_kernel_opts.text() == "mode2kern1 mode2kern2"
+    assert (
+        settings_window.bootmode_kernel_opts.text() == "mode2kern1 mode2kern2"
+    )
     _select_item(settings_window.bootmode, "Mode One")
 
     expected_call = (vm_name, "admin.vm.property.Set", "bootmode", b"mode1")
@@ -1226,12 +1277,16 @@ def test_215_bootmode_appvm_nondefault(settings_fixture):
     assert "mode2" in settings_window.bootmode_ids
     assert "Mode One" in settings_window.bootmode_names
     assert "mode2" in settings_window.bootmode_names
-    assert settings_window.bootmode_kernel_opts.text() == "mode2kern1 mode2kern2"
+    assert (
+        settings_window.bootmode_kernel_opts.text() == "mode2kern1 mode2kern2"
+    )
 
     _select_item(settings_window.bootmode, "Mode One")
     assert settings_window.bootmode_kernel_opts.text() == "mode1kern"
     _select_item(settings_window.bootmode, "mode2")
-    assert settings_window.bootmode_kernel_opts.text() == "mode2kern1 mode2kern2"
+    assert (
+        settings_window.bootmode_kernel_opts.text() == "mode2kern1 mode2kern2"
+    )
     _select_item(settings_window.bootmode, "Mode One")
 
     expected_call = (vm_name, "admin.vm.property.Set", "bootmode", b"mode1")
@@ -1300,7 +1355,8 @@ def test_300_firewall_start_limiting(settings_fixture):
         "test-blue",
         "admin.vm.firewall.Set",
         None,
-        b"action=accept specialtarget=dns\naction=accept " b"proto=icmp\naction=drop\n",
+        b"action=accept specialtarget=dns\naction=accept "
+        b"proto=icmp\naction=drop\n",
     )
     assert expected_call not in settings_window.qubesapp.actual_calls
     settings_window.qubesapp.expected_calls[expected_call] = b"0\x00"
@@ -1349,14 +1405,17 @@ def test_302_firewall_remove_rule(settings_fixture):
     assert settings_window.policy_allow_radio_button.isEnabled()
     assert settings_window.policy_deny_radio_button.isChecked()
 
-    settings_window.rulesTreeView.setCurrentIndex(settings_window.fw_model.index(0, 0))
+    settings_window.rulesTreeView.setCurrentIndex(
+        settings_window.fw_model.index(0, 0)
+    )
     settings_window.delete_rule_button.click()
 
     expected_call = (
         "test-vm-set",
         "admin.vm.firewall.Set",
         None,
-        b"action=accept specialtarget=dns\naction=accept " b"proto=icmp\naction=drop\n",
+        b"action=accept specialtarget=dns\naction=accept "
+        b"proto=icmp\naction=drop\n",
     )
     assert expected_call not in settings_window.qubesapp.actual_calls
     settings_window.qubesapp.expected_calls[expected_call] = b"0\x00"
@@ -1378,7 +1437,9 @@ def test_303_firewall_add_rule(settings_fixture):
     assert settings_window.policy_deny_radio_button.isChecked()
 
     settings_window.new_rule_button.click()
-    settings_window.fw_model.current_dialog.addressComboBox.setCurrentText("test_stuff")
+    settings_window.fw_model.current_dialog.addressComboBox.setCurrentText(
+        "test_stuff"
+    )
     settings_window.fw_model.current_dialog.buttonBox.button(
         QtWidgets.QDialogButtonBox.StandardButton.Ok
     ).click()
@@ -1413,9 +1474,13 @@ def test_304_firewall_add_rule_complex(settings_fixture):
     assert settings_window.policy_deny_radio_button.isChecked()
 
     settings_window.new_rule_button.click()
-    settings_window.fw_model.current_dialog.addressComboBox.setCurrentText("test_stuff")
+    settings_window.fw_model.current_dialog.addressComboBox.setCurrentText(
+        "test_stuff"
+    )
     settings_window.fw_model.current_dialog.udp_radio.setChecked(True)
-    _select_item(settings_window.fw_model.current_dialog.serviceComboBox, "http")
+    _select_item(
+        settings_window.fw_model.current_dialog.serviceComboBox, "http"
+    )
     settings_window.fw_model.current_dialog.buttonBox.button(
         QtWidgets.QDialogButtonBox.StandardButton.Ok
     ).click()
@@ -1449,11 +1514,15 @@ def test_305_firewall_edit_rule(settings_fixture):
     assert settings_window.policy_allow_radio_button.isEnabled()
     assert settings_window.policy_deny_radio_button.isChecked()
 
-    settings_window.rulesTreeView.setCurrentIndex(settings_window.fw_model.index(0, 0))
+    settings_window.rulesTreeView.setCurrentIndex(
+        settings_window.fw_model.index(0, 0)
+    )
     settings_window.edit_rule_button.click()
 
     settings_window.fw_model.current_dialog.tcp_radio.setChecked(True)
-    _select_item(settings_window.fw_model.current_dialog.serviceComboBox, "printer")
+    _select_item(
+        settings_window.fw_model.current_dialog.serviceComboBox, "printer"
+    )
     settings_window.fw_model.current_dialog.buttonBox.button(
         QtWidgets.QDialogButtonBox.StandardButton.Ok
     ).click()
@@ -1510,6 +1579,7 @@ def test_305b_firewall_add_rule_with_comment(settings_fixture):
 
     assert expected_call in settings_window.qubesapp.actual_calls
 
+
 @check_errors
 @pytest.mark.parametrize("settings_fixture", ["test-vm-set"], indirect=True)
 def test_306_firewall_unlimit(settings_fixture):
@@ -1547,13 +1617,18 @@ def test_306_firewall_unlimit(settings_fixture):
 
 @check_errors
 @mock.patch("subprocess.check_output")
-def test_306b_firewall_preserve_cli_comment(mock_subprocess, qapp, test_qubes_app):
+def test_306b_firewall_preserve_cli_comment(
+    mock_subprocess, qapp, test_qubes_app
+):
     """Rules created via CLI with comments should survive GUI round-trip."""
     mock_subprocess.return_value = b""
 
     fw_rules = [
-        {"action": "accept", "dsthost": "gitlab.com",
-         "comment": "IP for gitlab at the time"},
+        {
+            "action": "accept",
+            "dsthost": "gitlab.com",
+            "comment": "IP for gitlab at the time",
+        },
         {"action": "accept", "specialtarget": "dns"},
         {"action": "accept", "proto": "icmp"},
         {"action": "drop"},
@@ -1575,13 +1650,17 @@ def test_306b_firewall_preserve_cli_comment(mock_subprocess, qapp, test_qubes_ap
     )
 
     # Comment should be visible in the model
-    assert settings_window.fw_model.get_column_string(
-        3, settings_window.fw_model.children[0]
-    ) == "IP for gitlab at the time"
+    assert (
+        settings_window.fw_model.get_column_string(
+            3, settings_window.fw_model.children[0]
+        )
+        == "IP for gitlab at the time"
+    )
 
     # Edit the rule (opens dialog, accept it unchanged) to trigger fw_changed
     settings_window.rulesTreeView.setCurrentIndex(
-        settings_window.fw_model.index(0, 0))
+        settings_window.fw_model.index(0, 0)
+    )
     settings_window.edit_rule_button.click()
     settings_window.fw_model.current_dialog.buttonBox.button(
         QtWidgets.QDialogButtonBox.StandardButton.Ok
@@ -1614,7 +1693,9 @@ def test_307_open_with_limit(mock_subprocess, qapp, test_qubes_app):
     mock_subprocess.result = []
 
     # add 2 minutes to now
-    expiration_date = str((int(datetime.datetime.now().strftime("%s")) + 2 * 60))
+    expiration_date = str(
+        (int(datetime.datetime.now().strftime("%s")) + 2 * 60)
+    )
 
     fw_rules = [
         {"action": "accept", "expire": expiration_date},
@@ -1675,11 +1756,15 @@ def test_309_firewall_warn(settings_fixture):
 
     assert not settings_window.sysnet_warning_label.isVisibleTo(settings_window)
 
-    settings_window.tabWidget.setCurrentIndex(settings_window.tabs_indices["advanced"])
+    settings_window.tabWidget.setCurrentIndex(
+        settings_window.tabs_indices["advanced"]
+    )
 
     settings_window.provides_network_checkbox.setChecked(True)
 
-    settings_window.tabWidget.setCurrentIndex(settings_window.tabs_indices["firewall"])
+    settings_window.tabWidget.setCurrentIndex(
+        settings_window.tabs_indices["firewall"]
+    )
 
     assert settings_window.sysnet_warning_label.isVisibleTo(settings_window)
 
@@ -1689,11 +1774,15 @@ def test_309_firewall_warn(settings_fixture):
 def test_310_stupid_netvm(settings_fixture):
     settings_window, page, vm_name = settings_fixture
 
-    assert not settings_window.netvm_no_firewall_label.isVisibleTo(settings_window)
+    assert not settings_window.netvm_no_firewall_label.isVisibleTo(
+        settings_window
+    )
 
     _select_item(settings_window.netVM, "test-vm-set")
 
-    settings_window.tabWidget.setCurrentIndex(settings_window.tabs_indices["firewall"])
+    settings_window.tabWidget.setCurrentIndex(
+        settings_window.tabs_indices["firewall"]
+    )
 
     assert settings_window.netvm_no_firewall_label.isVisibleTo(settings_window)
 
@@ -1881,7 +1970,9 @@ def test_501_applications_list_existing(settings_fixture):
 
 
 @check_errors
-@pytest.mark.parametrize("settings_fixture", ["test-red", "test-vm-set"], indirect=True)
+@pytest.mark.parametrize(
+    "settings_fixture", ["test-red", "test-vm-set"], indirect=True
+)
 def test_502_application_add(settings_fixture):
     settings_window, page, vm_name = settings_fixture
     vm = settings_window.qubesapp.domains[vm_name]
@@ -1980,7 +2071,9 @@ def test_504_application_remove_missing(settings_fixture):
 
 
 @check_errors
-@pytest.mark.parametrize("settings_fixture", ["test-red", "test-vm-set"], indirect=True)
+@pytest.mark.parametrize(
+    "settings_fixture", ["test-red", "test-vm-set"], indirect=True
+)
 def test_505_application_add_all(settings_fixture):
     settings_window, page, vm_name = settings_fixture
     vm = settings_window.qubesapp.domains[vm_name]
@@ -2012,7 +2105,9 @@ def test_505_application_add_all(settings_fixture):
 
 
 @check_errors
-@pytest.mark.parametrize("settings_fixture", ["test-red", "test-vm-set"], indirect=True)
+@pytest.mark.parametrize(
+    "settings_fixture", ["test-red", "test-vm-set"], indirect=True
+)
 def test_506_application_remove_all(settings_fixture):
     settings_window, page, vm_name = settings_fixture
     vm = settings_window.qubesapp.domains[vm_name]
@@ -2034,7 +2129,9 @@ def test_506_application_remove_all(settings_fixture):
 
 
 @check_errors
-@pytest.mark.parametrize("settings_fixture", ["test-red", "test-vm-set"], indirect=True)
+@pytest.mark.parametrize(
+    "settings_fixture", ["test-red", "test-vm-set"], indirect=True
+)
 def test_507_filter_apps(settings_fixture):
     settings_window, page, vm_name = settings_fixture
 
@@ -2148,7 +2245,9 @@ def test_603_virtmode_limitation(settings_fixture):
 
     for i in range(settings_window.virt_mode.count()):
         item_text = str(
-            settings_window.virt_mode.itemData(i, QtCore.Qt.ItemDataRole.DisplayRole)
+            settings_window.virt_mode.itemData(
+                i, QtCore.Qt.ItemDataRole.DisplayRole
+            )
         )
         available_virtmodes.append(item_text)
 
@@ -2181,10 +2280,116 @@ def test_604_device_filter(settings_fixture):
         item = settings_window.dev_list.available_list.item(i)
         if not item.isHidden():
             for i in item.dev.interfaces:
-                assert i.category not in settings_window.device_radio_buttons.values()
+                assert (
+                    i.category
+                    not in settings_window.device_radio_buttons.values()
+                )
 
     for i in range(settings_window.dev_list.selected_list.count()):
         item = settings_window.dev_list.selected_list.item(i)
         if not item.isHidden():
             for i in item.dev.interfaces:
-                assert i.category not in settings_window.device_radio_buttons.values()
+                assert (
+                    i.category
+                    not in settings_window.device_radio_buttons.values()
+                )
+
+
+@check_errors
+@pytest.mark.parametrize(
+    "settings_fixture", [{"vm": "test-blue", "page": "advanced"}], indirect=True
+)
+def test_400_clipboard_limits_default(settings_fixture):
+    """
+    An unset feature means the qube follows the system default.
+    """
+    settings_window, page, vm_name = settings_fixture
+
+    for widget in (
+        settings_window.clipboard_text_widget,
+        settings_window.clipboard_image_widget,
+    ):
+        assert widget.get_value() is None
+        assert widget.spin_box.value() == 0
+        assert not widget.reset_button.isEnabled()
+
+    text_widget = settings_window.clipboard_text_widget
+    image_widget = settings_window.clipboard_image_widget
+    assert text_widget.system_default == 64000
+    assert image_widget.system_default == 32 * 1024 * 1024
+    assert text_widget.spin_box.specialValueText() == "default (64 kB)"
+    assert image_widget.spin_box.specialValueText() == "default (32 MiB)"
+
+
+@check_errors
+@pytest.mark.parametrize(
+    "settings_fixture", [{"vm": "test-blue", "page": "advanced"}], indirect=True
+)
+def test_401_clipboard_limits_custom(settings_fixture):
+    """
+    A custom value is set in whole units and saved in bytes.
+    """
+    settings_window, page, vm_name = settings_fixture
+    widget = settings_window.clipboard_image_widget
+
+    widget.spin_box.setValue(3)
+    assert widget.get_value() == 3 * 1024 * 1024
+    assert widget.reset_button.isEnabled()
+
+    expected_call = (
+        vm_name,
+        "admin.vm.feature.Set",
+        "gui-max-clipboard-image-size",
+        str(3 * 1024 * 1024).encode(),
+    )
+    settings_window.qubesapp.expected_calls[expected_call] = b"0\x00"
+    assert expected_call not in settings_window.qubesapp.actual_calls
+
+    widget.save()
+
+    assert (
+        expected_call in settings_window.qubesapp.actual_calls
+    ), "Clipboard image limit not saved"
+
+
+@check_errors
+@pytest.mark.parametrize(
+    "settings_fixture", [{"vm": "test-blue", "page": "advanced"}], indirect=True
+)
+def test_402_clipboard_limits_back_to_default(settings_fixture):
+    """
+    Removing the custom limit deletes the feature again.
+    """
+    settings_window, page, vm_name = settings_fixture
+    widget = settings_window.clipboard_image_widget
+
+    set_call = (
+        vm_name,
+        "admin.vm.feature.Set",
+        "gui-max-clipboard-image-size",
+        str(2 * 1024 * 1024).encode(),
+    )
+    remove_call = (
+        vm_name,
+        "admin.vm.feature.Remove",
+        "gui-max-clipboard-image-size",
+        None,
+    )
+    settings_window.qubesapp.expected_calls[set_call] = b"0\x00"
+    settings_window.qubesapp.expected_calls[remove_call] = b"0\x00"
+
+    widget.spin_box.setValue(2)
+    widget.save()
+    assert set_call in settings_window.qubesapp.actual_calls
+
+    widget.spin_box.setValue(0)
+    assert widget.get_value() == 0
+    assert widget.reset_button.isEnabled()
+
+    widget.reset_button.click()
+    assert widget.get_value() is None
+    assert not widget.reset_button.isEnabled()
+    widget.save()
+    assert (
+        remove_call in settings_window.qubesapp.actual_calls
+    ), "Clipboard image limit not removed"
