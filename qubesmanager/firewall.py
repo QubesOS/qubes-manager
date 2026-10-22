@@ -189,6 +189,8 @@ class NewFwRuleDlg(QtWidgets.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
     def on_any_radio_toggled(self, checked):
         if checked:
             self.serviceComboBox.setEnabled(False)
+            # ports are valid only for TCP/UDP rules
+            self.serviceComboBox.clearEditText()
 
 
 class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
