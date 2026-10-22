@@ -1320,7 +1320,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 self.vm.template_for_dispvms = self.dvm_template_checkbox.isChecked()
                 if self.dvm_template_checkbox.isChecked():
                     self.vm.features["appmenus-dispvm"] = True
-                else:
+                elif self.vm.features.get("appmenus-dispvm") is not None:
                     del self.vm.features["appmenus-dispvm"]
             except Exception as ex:  # pylint: disable=broad-except
                 msg.append(str(ex))
