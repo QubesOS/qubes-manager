@@ -38,6 +38,14 @@ class NewFwRuleDlg(QtWidgets.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
         super().__init__(parent)
         self.setupUi(self)
 
+        # Match the character whitelist in qubes.firewall.Comment.
+        self.commentLineEdit.setValidator(QtGui.QRegularExpressionValidator(
+            QtCore.QRegularExpression(r'[a-zA-Z0-9:;,./_\[\] -]*'),
+            self.commentLineEdit))
+        self.commentLineEdit.setToolTip(self.tr(
+            "Comments may only contain ASCII letters, digits, spaces, "
+            "and these characters: : ; , . / - _ [ ]"))
+        self.commentLineEdit.textChanged.connect(self.comment_editing_finished)
         self.set_ok_state(False)
         self.addressComboBox.editTextChanged.connect(
             self.address_editing_finished)
@@ -57,6 +65,12 @@ class NewFwRuleDlg(QtWidgets.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
 
     def try_to_create_rule(self):
         # return True if successful, False otherwise
+        if not self.commentLineEdit.hasAcceptableInput():
+            QtWidgets.QMessageBox.warning(
+                self, self.tr("Invalid comment"),
+                self.commentLineEdit.toolTip())
+            return False
+
         address = str(self.addressComboBox.currentText().strip())
         service = str(self.serviceComboBox.currentText().strip())
 
@@ -151,11 +165,18 @@ class NewFwRuleDlg(QtWidgets.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
     def address_editing_finished(self):
         self.set_ok_state(True)
 
+    def comment_editing_finished(self):
+        self.commentLineEdit.setStyleSheet(
+            '' if self.commentLineEdit.hasAcceptableInput() else 'color: red;')
+        self.set_ok_state(self._ok_state)
+
     def set_ok_state(self, ok_state):
+        self._ok_state = ok_state
         ok_button = self.buttonBox.button(
             QtWidgets.QDialogButtonBox.StandardButton.Ok)
         if ok_button is not None:
-            ok_button.setEnabled(ok_state)
+            ok_button.setEnabled(
+                ok_state and self.commentLineEdit.hasAcceptableInput())
 
     def on_tcp_radio_toggled(self, checked):
         if checked:

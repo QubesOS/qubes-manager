@@ -369,9 +369,12 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 self.tr("Error while changing settings for {0}!").format(self.vm.name),
                 self.tr("ERROR: {0}").format("\n".join(error)),
             )
+            return False
+        return True
 
     def apply(self):
-        self.save_changes()
+        if not self.save_changes():
+            return
 
         self.vm.clear_cache()
 
@@ -385,8 +388,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.__init_advanced_tab__()
 
     def save_and_apply(self):
-        self.save_changes()
+        if not self.save_changes():
+            return False
         self.done(0)
+        return True
 
     def __save_changes__(self):
         ret = []
@@ -1390,8 +1395,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         boot_dialog = bootfromdevice.VMBootFromDeviceWindow(
             vm=self.vm, qapp=self.qapp, qubesapp=self.qubesapp, parent=self
         )
-        if boot_dialog.exec():
-            self.save_and_apply()
+        if boot_dialog.exec() and self.save_and_apply():
             admin_utils.start_expert(
                 domain=self.vm, drive="cdrom:" + boot_dialog.cdrom_location
             )

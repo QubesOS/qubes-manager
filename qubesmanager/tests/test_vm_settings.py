@@ -275,6 +275,73 @@ def test_001_apply_changes_nothing(settings_fixture):
     settings_window.accept()
 
 
+@pytest.mark.parametrize("settings_fixture", ["test-vm-set"], indirect=True)
+@pytest.mark.parametrize("action", ["accept", "apply"])
+def test_save_error_preserves_changes_for_retry(settings_fixture, action, qtbot):
+    settings_window, _, vm_name = settings_fixture
+    qtbot.addWidget(settings_window)
+    settings_window.show()
+
+    new_size = settings_window.max_priv_storage.value() + 10
+    new_vcpus = settings_window.vcpus.value() + 1
+    settings_window.max_priv_storage.setValue(new_size)
+    settings_window.vcpus.setValue(new_vcpus)
+    settings_window.rulesTreeView.setCurrentIndex(settings_window.fw_model.index(0, 0))
+    settings_window.edit_rule_button.click()
+    dialog = settings_window.fw_model.current_dialog
+    dialog.commentLineEdit.setText("Keep these edits")
+    dialog.buttonBox.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).click()
+
+    expected_calls = [
+        (vm_name, "admin.vm.volume.Resize", "private", str(new_size * 1024**2).encode()),
+        (vm_name, "admin.vm.property.Set", "vcpus", str(new_vcpus).encode()),
+        (
+            vm_name,
+            "admin.vm.firewall.Set",
+            None,
+            b"action=accept dsthost=qubes-os.org comment=Keep these edits\n"
+            b"action=accept specialtarget=dns\naction=accept proto=icmp\naction=drop\n",
+        ),
+    ]
+    # An empty qubesd response reproduces the error reported in #11155.
+    for call in expected_calls:
+        settings_window.qubesapp.expected_calls[call] = b""
+
+    with mock.patch("PyQt6.QtWidgets.QMessageBox.warning") as warning:
+        getattr(settings_window, action)()
+    warning.assert_called_once()
+    assert "Got empty response from qubesd" in warning.call_args.args[2]
+    assert settings_window.isVisible()
+    assert settings_window.max_priv_storage.value() == new_size
+    assert settings_window.vcpus.value() == new_vcpus
+    assert str(settings_window.fw_model.children[0].comment) == "Keep these edits"
+    assert all(call in settings_window.qubesapp.actual_calls for call in expected_calls)
+
+    # Retry without re-entering anything; all three writes must be attempted again.
+    settings_window.qubesapp.actual_calls.clear()
+    for call in expected_calls:
+        settings_window.qubesapp.expected_calls[call] = b"0\x00"
+    with mock.patch("PyQt6.QtWidgets.QMessageBox.warning") as warning:
+        getattr(settings_window, action)()
+    warning.assert_not_called()
+    assert all(call in settings_window.qubesapp.actual_calls for call in expected_calls)
+    assert settings_window.isVisible() == (action == "apply")
+
+
+@pytest.mark.parametrize("settings_fixture", ["test-vm-set"], indirect=True)
+def test_boot_from_device_stops_after_save_error(settings_fixture):
+    settings_window, _, _ = settings_fixture
+    with (
+        mock.patch("qubesmanager.settings.bootfromdevice.VMBootFromDeviceWindow")
+        as boot_dialog,
+        mock.patch.object(settings_window, "save_changes", return_value=False),
+        mock.patch("qubesmanager.settings.admin_utils.start_expert") as start,
+    ):
+        boot_dialog.return_value.exec.return_value = True
+        settings_window.boot_from_cdrom_button_pressed()
+    start.assert_not_called()
+
+
 @check_errors
 @pytest.mark.parametrize("settings_fixture", ALL_TEST_VMS, indirect=True)
 def test_002_data(settings_fixture):
