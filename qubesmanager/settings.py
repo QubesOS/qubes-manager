@@ -124,7 +124,7 @@ class RefreshAppsVMThread(common_threads.QubesThread):
 
     def run(self):
         vms_to_refresh = [self.vm]
-        template = getattr(self.vm, "template", None)
+        template = self.vm.get_active_template()
         if template:
             vms_to_refresh.append(template)
 
@@ -1783,9 +1783,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
     def template_apps_change(self):
         if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
-            self.app_list_manager.fill_apps_list(
+            # Defer application change till deferred template is applied,
+            # guaranteeing that it always shows usable entries.
+            if utils.is_running(self.vm, False):
+                template=self.vm.get_active_template()
+            else:
                 template=self.template_name.currentData()
-            )
+            self.app_list_manager.fill_apps_list(template=template)
             # add a label to show
             self.warn_template_missing_apps.setVisible(
                 self.app_list_manager.has_missing
