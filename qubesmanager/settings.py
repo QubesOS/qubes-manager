@@ -75,10 +75,11 @@ def get_default_bootmode_name(vm, bootmode):
 
 # pylint: disable=too-few-public-methods
 class RenameVMThread(common_threads.QubesThread):
-    def __init__(self, vm, new_vm_name, dependencies):
+    def __init__(self, vm, new_vm_name, dependencies, skip_deletion):
         super().__init__(vm)
         self.new_vm_name = new_vm_name
         self.dependencies = dependencies
+        self.skip_deletion = skip_deletion
 
     def run(self):
         try:
@@ -92,23 +93,24 @@ class RenameVMThread(common_threads.QubesThread):
                         setattr(self.vm.app, prop, new_vm)
                     else:
                         setattr(holder, prop, new_vm)
-                except qubesadmin.exc.QubesException:
+                except (qubesadmin.exc.PermissionDenied, qubesadmin.exc.QubesException):
                     failed_props += [(holder, prop)]
-            if not failed_props:
-                del self.vm.app.domains[self.vm.name]
-            else:
+            if failed_props:
                 list_text = utils.format_dependencies_list(failed_props)
                 self.msg = (
                     self.tr("Warning: rename partially unsuccessful!"),
                     self.tr(
                         "Some properties could not be changed to "
-                        "the new name. The system has now both {} "
-                        "and {} qubes. To resolve this, please "
+                        "the new name. The system has now both <b>{}</b> "
+                        "and <b>{}</b> qubes. To resolve this, please "
                         "check and change the following properties "
-                        "and remove the qube {} manually.<br>"
+                        "and remove the qube <b>{}</b> manually.<br>"
                     ).format(self.vm.name, self.new_vm_name, self.vm.name)
                     + list_text,
                 )
+                return
+            if not self.skip_deletion:
+                del self.vm.app.domains[self.vm.name]
 
         except qubesadmin.exc.QubesException as ex:
             self.msg = (self.tr("Rename error!"), str(ex))
@@ -914,30 +916,30 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         running_dependencies = [
             vm.name
             for (vm, prop) in dependencies
-            if vm and prop == "template" and utils.is_running(vm, False)
+            if vm
+            and prop in ["active_template", "template"]
+            and utils.is_running(vm, False)
         ]
 
+        body = ""
         if running_dependencies:
-            QtWidgets.QMessageBox.warning(
-                self,
-                self.tr("Qube cannot be renamed!"),
-                self.tr(
-                    "The following qubes using this qube as a template are "
-                    "running: <br> {}. <br> In order to rename this qube, you "
-                    "must first shut them down."
-                ).format(", ".join(running_dependencies)),
+            body += (
+                "<b>WARNING</b>: some running qubes are using this one as a template, "
+                "preventing it from being deleted after the rename:<br>"
+                "{}<br>".format(", ".join(running_dependencies))
             )
-            return
 
+        body += "<b>WARNING</b>: all other changes will be discarded<br>New name:"
         new_vm_name, ok = QtWidgets.QInputDialog.getText(
             self,
             self.tr("Rename qube"),
-            self.tr("New name: (WARNING: all other changes will be discarded)"),
+            self.tr(body),
             text=self.vm.name,
         )
 
         if ok:
-            thread = RenameVMThread(self.vm, new_vm_name, dependencies)
+            skip_deletion = bool(running_dependencies)
+            thread = RenameVMThread(self.vm, new_vm_name, dependencies, skip_deletion)
             self.threads_list.append(thread)
             thread.finished.connect(self.clear_threads)
 
