@@ -283,8 +283,10 @@ class VmInfo():
         self.state['outdated'] = ""
         try:
             if manager_utils.is_running(self.vm, False):
-                if hasattr(self.vm, 'template') and \
-                        manager_utils.is_running(self.vm.template, False):
+                if hasattr(self.vm, 'template') and (
+                    manager_utils.is_running(self.vm.template, False)
+                    or not self.vm.property_is_default("active_template")
+                ):
                     self.state['outdated'] = "to-be-outdated"
                 else:
                     try:
@@ -326,11 +328,19 @@ class VmInfo():
             self.label = getattr(self.vm, 'label', None)
             self.icon = getattr(self.vm, 'icon', 'appvm-black')
 
-        if not event or event.endswith(':template'):
+        if (
+            not event
+            or event.endswith(':template')
+            or event.endswith(':active_template')
+        ):
             try:
                 self.template = self.vm.template.name
             except AttributeError:
                 self.template = None
+            try:
+                self.active_template = self.vm.active_template.name
+            except AttributeError:
+                self.active_template = None
 
         if not event or event.endswith(':netvm'):
             self.netvm = getattr(self.vm, 'netvm', None)
@@ -484,6 +494,8 @@ class QubesTableModel(QAbstractTableModel):
             if col_name == "Template":
                 if vm.template is None:
                     return vm.klass
+                if vm.active_template:
+                    return vm.active_template
                 return vm.template
             if col_name == "NetVM":
                 return vm.netvm
@@ -506,6 +518,16 @@ class QubesTableModel(QAbstractTableModel):
             if col_name == "Virt Mode":
                 return vm.virt_mode
             return None
+        if role == Qt.ItemDataRole.ToolTipRole:
+            if col_name == "Template":
+                if (
+                    vm.active_template
+                    and not vm.vm.property_is_default("active_template")
+                ):
+                    return (
+                        "Template changed while the qube was running.\nNext "
+                        "template: {}".format(vm.template)
+                    )
         if role == Qt.ItemDataRole.DecorationRole:
             if col_name == "Label":
                 try:
@@ -524,10 +546,22 @@ class QubesTableModel(QAbstractTableModel):
                     font = QFont()
                     font.setItalic(True)
                     return font
+                if (
+                    vm.active_template
+                    and not vm.vm.property_is_default("active_template")
+                ):
+                    font = QFont()
+                    font.setStrikeOut(True)
+                    return font
         if role == Qt.ItemDataRole.ForegroundRole:
             if col_name == "Template":
                 if vm.template is None:
                     return QColor("gray")
+                if (
+                    vm.active_template
+                    and not vm.vm.property_is_default("active_template")
+                ):
+                    return QColor("red")
         # Used for get VM Object
         if role == Qt.ItemDataRole.UserRole:
             return vm
@@ -1415,18 +1449,15 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     ['Running', 'Transient', 'Halting', 'Dying']:
                 self.action_resumevm.setEnabled(False)
                 self.action_removevm.setEnabled(False)
-                self.template_menu.setEnabled(False)
             elif vm.state['power'] == 'Paused':
                 self.action_removevm.setEnabled(False)
                 self.action_pausevm.setEnabled(False)
                 self.action_restartvm.setEnabled(False)
                 self.action_open_console.setEnabled(False)
-                self.template_menu.setEnabled(False)
             elif vm.state['power'] == 'Suspend':
                 self.action_removevm.setEnabled(False)
                 self.action_pausevm.setEnabled(False)
                 self.action_open_console.setEnabled(False)
-                self.template_menu.setEnabled(False)
             elif vm.state['power'] == 'Halted':
                 self.action_pausevm.setEnabled(False)
                 self.action_shutdownvm.setEnabled(False)

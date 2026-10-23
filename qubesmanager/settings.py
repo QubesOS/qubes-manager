@@ -65,16 +65,21 @@ INTERNAL_SUPPORTED_FEATURES = [IDLE_SUPPORTED_SERVICE]
 
 def get_default_bootmode_name(vm, bootmode):
     if bootmode == "default":
-        return vm.features.check_with_template("boot-mode.name.default", "")
-    return vm.features.check_with_template(f"boot-mode.name.{bootmode}", bootmode)
+        return vm.features.check_with_template(
+            "boot-mode.name.default", "", active=False
+        )
+    return vm.features.check_with_template(
+        f"boot-mode.name.{bootmode}", bootmode, active=False
+    )
 
 
 # pylint: disable=too-few-public-methods
 class RenameVMThread(common_threads.QubesThread):
-    def __init__(self, vm, new_vm_name, dependencies):
+    def __init__(self, vm, new_vm_name, dependencies, skip_deletion):
         super().__init__(vm)
         self.new_vm_name = new_vm_name
         self.dependencies = dependencies
+        self.skip_deletion = skip_deletion
 
     def run(self):
         try:
@@ -88,23 +93,24 @@ class RenameVMThread(common_threads.QubesThread):
                         setattr(self.vm.app, prop, new_vm)
                     else:
                         setattr(holder, prop, new_vm)
-                except qubesadmin.exc.QubesException:
+                except (qubesadmin.exc.PermissionDenied, qubesadmin.exc.QubesException):
                     failed_props += [(holder, prop)]
-            if not failed_props:
-                del self.vm.app.domains[self.vm.name]
-            else:
+            if failed_props:
                 list_text = utils.format_dependencies_list(failed_props)
                 self.msg = (
                     self.tr("Warning: rename partially unsuccessful!"),
                     self.tr(
                         "Some properties could not be changed to "
-                        "the new name. The system has now both {} "
-                        "and {} qubes. To resolve this, please "
+                        "the new name. The system has now both <b>{}</b> "
+                        "and <b>{}</b> qubes. To resolve this, please "
                         "check and change the following properties "
-                        "and remove the qube {} manually.<br>"
+                        "and remove the qube <b>{}</b> manually.<br>"
                     ).format(self.vm.name, self.new_vm_name, self.vm.name)
                     + list_text,
                 )
+                return
+            if not self.skip_deletion:
+                del self.vm.app.domains[self.vm.name]
 
         except qubesadmin.exc.QubesException as ex:
             self.msg = (self.tr("Rename error!"), str(ex))
@@ -120,7 +126,7 @@ class RefreshAppsVMThread(common_threads.QubesThread):
 
     def run(self):
         vms_to_refresh = [self.vm]
-        template = getattr(self.vm, "template", None)
+        template = self.vm.get_active_template()
         if template:
             vms_to_refresh.append(template)
 
@@ -482,7 +488,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             )
             subject = subject.template
         bootmode_names = [
-            self.vm.features.check_with_template(f"boot-mode.name.{x}", x)
+            self.vm.features.check_with_template(f"boot-mode.name.{x}", x, active=False)
             for x in bootmode_ids
         ]
         return bootmode_names, bootmode_ids
@@ -503,6 +509,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
     # hvm -> include_in_balancing
 
     def __init_basic_tab__(self):
+        # pylint: disable=too-many-statements
         self.vmname.setText(self.vm.name)
         self.vmname.setValidator(
             QtGui.QRegularExpressionValidator(
@@ -565,9 +572,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         else:
             self.template_name.setEnabled(False)
 
-        if utils.is_running(self.vm, False):
-            self.template_name.setEnabled(False)
-
         try:
             utils.initialize_widget_with_vms(
                 widget=self.netVM,
@@ -594,7 +598,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         try:
             has_shutdown_idle = self.vm.features.check_with_template(
-                IDLE_SUPPORTED_SERVICE, False
+                IDLE_SUPPORTED_SERVICE, False, active=False
             )
             if has_shutdown_idle:
                 self.idle_shutdown_checkbox.setChecked(
@@ -690,6 +694,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.root_resize_label.setEnabled(self.root_resize.isEnabled())
         except qubesadmin.exc.QubesException:
             self.root_resize.setEnabled(False)
+
+        if (
+            hasattr(self.vm, "active_template")
+            and not self.vm.property_is_default("active_template")
+        ):
+            self.warn_template_deferred.setVisible(True)
+        else:
+            self.warn_template_deferred.setVisible(False)
 
         self.warn_template_missing_apps.setVisible(False)
 
@@ -816,7 +828,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         # max_mem_size/10.79 in order to allow scaling up to
         # max_mem_size (or else "add_memory() failed: -17" problem)
         try:
-            is_linux = self.vm.features.check_with_template("os", None) == "Linux"
+            is_linux = self.vm.features.check_with_template(
+                "os", None, active=False
+            ) == "Linux"
         except qubesadmin.exc.QubesException:
             is_linux = False
 
@@ -907,30 +921,30 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         running_dependencies = [
             vm.name
             for (vm, prop) in dependencies
-            if vm and prop == "template" and utils.is_running(vm, False)
+            if vm
+            and prop in ["active_template", "template"]
+            and utils.is_running(vm, False)
         ]
 
+        body = ""
         if running_dependencies:
-            QtWidgets.QMessageBox.warning(
-                self,
-                self.tr("Qube cannot be renamed!"),
-                self.tr(
-                    "The following qubes using this qube as a template are "
-                    "running: <br> {}. <br> In order to rename this qube, you "
-                    "must first shut them down."
-                ).format(", ".join(running_dependencies)),
+            body += (
+                "<b>WARNING</b>: some running qubes are using this one as a template, "
+                "preventing it from being deleted after the rename:<br>"
+                "{}<br>".format(", ".join(running_dependencies))
             )
-            return
 
+        body += "<b>WARNING</b>: all other changes will be discarded<br>New name:"
         new_vm_name, ok = QtWidgets.QInputDialog.getText(
             self,
             self.tr("Rename qube"),
-            self.tr("New name: (WARNING: all other changes will be discarded)"),
+            self.tr(body),
             text=self.vm.name,
         )
 
         if ok:
-            thread = RenameVMThread(self.vm, new_vm_name, dependencies)
+            skip_deletion = bool(running_dependencies)
+            thread = RenameVMThread(self.vm, new_vm_name, dependencies, skip_deletion)
             self.threads_list.append(thread)
             thread.finished.connect(self.clear_threads)
 
@@ -1079,7 +1093,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 if self.vm.bootmode != "default":
                     self.bootmode_kernel_opts.setText(
                         self.vm.features.check_with_template(
-                            f"boot-mode.kernelopts.{self.vm.bootmode}", ""
+                            f"boot-mode.kernelopts.{self.vm.bootmode}", "", active=False
                         )
                     )
                 else:
@@ -1508,7 +1522,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         if isinstance(active_bootmode, str):
             self.bootmode_kernel_opts.setText(
                 self.vm.features.check_with_template(
-                    f"boot-mode.kernelopts.{active_bootmode}", ""
+                    f"boot-mode.kernelopts.{active_bootmode}", "", active=False
                 )
             )
         else:
@@ -1518,7 +1532,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             else:
                 self.bootmode_kernel_opts.setText(
                     self.vm.features.check_with_template(
-                        f"boot-mode.kernelopts.{default_bootmode}", ""
+                        f"boot-mode.kernelopts.{default_bootmode}", "", active=False
                     )
                 )
 
@@ -1775,9 +1789,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
     def template_apps_change(self):
         if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
-            self.app_list_manager.fill_apps_list(
+            # Defer application change till deferred template is applied,
+            # guaranteeing that it always shows usable entries.
+            if utils.is_running(self.vm, False):
+                template=self.vm.get_active_template()
+            else:
                 template=self.template_name.currentData()
-            )
+            self.app_list_manager.fill_apps_list(template=template)
             # add a label to show
             self.warn_template_missing_apps.setVisible(
                 self.app_list_manager.has_missing
