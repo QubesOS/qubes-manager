@@ -1272,7 +1272,7 @@ async def test_413_prop_change_internal(qubes_manager):
         MockEvent('test-blue',
                   'domain-feature-set:internal',
                   [('name', 'internal'),
-                   ('newvalue', '1'), ('oldvalue', '')]))
+                   ('value', '1'), ('oldvalue', '')]))
 
     with contextlib.suppress(asyncio.TimeoutError):
         await asyncio.wait_for(qubes_manager.dispatcher.listen_for_events(), 1)
@@ -1678,7 +1678,7 @@ async def test_705_prohibit_start_vms(qubes_manager):
         MockEvent('test-red',
                   'domain-feature-set:prohibit-start',
                   [('name', 'prohibit-start'),
-                   ('newvalue', 'Do not start this qube from now on')]))
+                   ('value', 'Do not start this qube from now on')]))
 
     with contextlib.suppress(asyncio.TimeoutError):
         await asyncio.wait_for(qubes_manager.dispatcher.listen_for_events(), 1)
