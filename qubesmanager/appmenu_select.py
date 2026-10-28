@@ -197,3 +197,23 @@ class AppmenuSelectManager:
             ) from ex
 
         return True
+
+    def check_software_manager_installed(self):
+
+        command = [
+            "qvm-appmenus",
+            "--get-available",
+        ]
+
+        command.append(self.vm.name)
+
+        try:
+            available_apps = subprocess.check_output(command).decode()
+        except subprocess.CalledProcessError as ex:
+            raise RuntimeError(
+                QtCore.QCoreApplication.translate(
+                    "exception", "Failed to set menu items"
+                )
+            ) from ex
+
+        return "org.gnome.Software" in available_apps

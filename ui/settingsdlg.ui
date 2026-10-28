@@ -1967,17 +1967,37 @@ The qube must be running to disable seamless mode. This setting is not persisten
         </attribute>
         <layout class="QGridLayout" name="gridLayout_7">
          <item row="0" column="0" alignment="Qt::AlignHCenter">
-          <widget class="QPushButton" name="refresh_apps_button">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
+          <layout class="QHBoxLayout" name="horizontalLayoutAppActions">
+           <property name="spacing">
+            <number>6</number>
            </property>
-           <property name="text">
-            <string>Refresh applications</string>
-           </property>
-          </widget>
+           <item>
+            <widget class="QPushButton" name="refresh_apps_button">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Refresh applications</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="install_apps_button">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Install applications</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
          <item row="1" column="0">
           <layout class="QHBoxLayout" name="horizontalLayoutAppSearch">
@@ -2209,6 +2229,7 @@ For user reference only.
   <tabstop>delete_rule_button</tabstop>
   <tabstop>no_strict_reset_button</tabstop>
   <tabstop>refresh_apps_button</tabstop>
+  <tabstop>install_apps_button</tabstop>
   <tabstop>service_line_edit</tabstop>
   <tabstop>add_srv_button</tabstop>
   <tabstop>services_list</tabstop>
