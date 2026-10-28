@@ -24,8 +24,9 @@ from typing import Tuple
 from unittest import mock
 import pytest
 
-from PyQt6 import QtCore, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 import qubesmanager.settings as vm_settings
+from qubesmanager.ui_newfwruledlg import Ui_NewFwRuleDlg
 from qubesadmin.tests.mock_app import MockQube, MockDevice
 
 PAGES = ["basic", "advanced", "firewall", "devices", "applications", "services"]
@@ -1838,6 +1839,27 @@ def test_310_stupid_netvm(settings_fixture):
     settings_window.tabWidget.setCurrentIndex(settings_window.tabs_indices["firewall"])
 
     assert settings_window.netvm_no_firewall_label.isVisibleTo(settings_window)
+
+
+@pytest.mark.parametrize("font_size", [9, 10, 12, 14])
+@pytest.mark.parametrize("width", [381, 600])
+def test_311_firewall_warning_fits(qtbot, font_size, width):
+    """The warning must fit even when a larger font wraps onto more lines."""
+    dialog = QtWidgets.QDialog()
+    font = QtGui.QFont(dialog.font())
+    font.setPointSize(font_size)
+    dialog.setFont(font)
+    ui = Ui_NewFwRuleDlg()
+    ui.setupUi(dialog)
+    qtbot.addWidget(dialog)
+    dialog.resize(width, dialog.height())
+    dialog.show()
+    qtbot.waitUntil(dialog.isVisible)
+    QtWidgets.QApplication.processEvents()
+
+    warning = ui.label_3
+    assert warning.height() >= warning.heightForWidth(warning.width())
+    assert warning.geometry().bottom() < ui.buttonBox.geometry().top()
 
 
 @check_errors
