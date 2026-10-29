@@ -1,3 +1,25 @@
+qubes-manager (4.3.25-1) unstable; urgency=medium
+
+  [ Frédéric Pierret (fepitre) ]
+  * Use device port as boot device identifier
+
+  [ jayesh v ]
+  * Fix changing templates for disposable qubes
+
+  [ Andreas Glashauser ]
+  * Skip removing missing appmenus-dispvm feature
+
+  [ earmark-halt ]
+  * Clear port field when switching firewall rule protocol to "any"
+
+  [ Nandeesh Khant ]
+  * Keep the firewall rule warning fully visible
+
+  [ Marek Marczykowski-Górecki ]
+  * tests: fix domain-feature-set event arguments
+
+ -- Marek Marczykowski-Górecki <marmarek@invisiblethingslab.com>  Thu, 29 Oct 2026 05:03:08 +0100
+
 qubes-manager (4.3.24-1) unstable; urgency=medium
 
   [ Ben Grande ]
