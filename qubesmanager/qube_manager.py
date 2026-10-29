@@ -324,7 +324,7 @@ class VmInfo():
         """
         self.update_power_state()
 
-        if not event or event.endswith(':label'):
+        if not event or event.endswith(':label') or event.endswith(':icon'):
             self.label = getattr(self.vm, 'label', None)
             self.icon = getattr(self.vm, 'icon', 'appvm-black')
 

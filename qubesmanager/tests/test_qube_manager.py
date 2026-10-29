@@ -1440,6 +1440,29 @@ async def test_418_prop_change_templ_for_disp(qubes_manager):
 
 
 @pytest.mark.asyncio(loop_scope="module")
+async def test_419_prop_reset_icon(qubes_manager):
+    vm_info = _get_column_value(qubes_manager, "Label", "test-blue",
+                                Qt.ItemDataRole.UserRole)
+    assert vm_info.icon != 'templatevm-blue'
+
+    # icon changes without its own property-set event, e.g. after
+    # template_for_dispvms is set
+    qubes_manager.qubes_app._qubes['test-blue'].icon = 'templatevm-blue'
+    qubes_manager.qubes_app.update_vm_calls()
+    qubes_manager.dispatcher.add_expected_event(
+        MockEvent('test-blue',
+                  'property-reset:icon',
+                  [('name', 'icon')]))
+
+    with contextlib.suppress(asyncio.TimeoutError):
+        await asyncio.wait_for(qubes_manager.dispatcher.listen_for_events(), 1)
+
+    vm_info = _get_column_value(qubes_manager, "Label", "test-blue",
+                                Qt.ItemDataRole.UserRole)
+    assert vm_info.icon == 'templatevm-blue'
+
+
+@pytest.mark.asyncio(loop_scope="module")
 async def test_420_vm_state_change(qubes_manager):
     current_value = _get_column_value(
         qubes_manager, "State", "test-red")
