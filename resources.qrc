@@ -62,5 +62,6 @@
     <file alias="mouse">icons/mouse.svg</file>
     <file alias="speaker">icons/speaker.svg</file>
     <file alias="usb">icons/usb.svg</file>
+    <file alias="undo">icons/undo.svg</file>
   </qresource>
 </RCC>
