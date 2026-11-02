@@ -32,10 +32,11 @@ checks:tests:
     - (cd ~/core-admin-client; if [ -f setup.py ]; then python3 setup.py egg_info; else python3 -m pip install --quiet --no-deps -e .; fi)
     - git clone https://github.com/QubesOS/qubes-linux-utils ~/linux-utils
     - (cd ~/linux-utils/imgconverter;sudo python3 setup.py install)
+    - git clone https://github.com/QubesOS/qubes-core-qrexec ~/core-qrexec
   script:
     - make ui
     - make res
-    - PYTHONPATH=~/core-admin-client:~/manager:. xvfb-run ./run-tests.sh
+    - PYTHONPATH=~/core-admin-client:~/core-qrexec:~/manager:. xvfb-run ./run-tests.sh
     - coverage report
   after_script:
     - "PATH=$PATH:$HOME/.local/bin"
