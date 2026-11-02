@@ -382,6 +382,10 @@ class VmInfo():
         if not event or event.endswith(':template_for_dispvms'):
             self.dvm_template = getattr(self.vm, 'template_for_dispvms', None)
 
+        if not event:
+            # volume pools do not change after the qube is created
+            self.pool = self.get_pool()
+
         if self.vm.klass != 'AdminVM' and update_size_on_disk:
             try:
                 self.disk_float = float(self.vm.get_disk_utilization())
@@ -395,6 +399,28 @@ class VmInfo():
         else:
             self.virt_mode = None
             self.disk = "n/a"
+
+    def get_pool(self):
+        """Pool of the private volume for template-based qubes, of the root
+        volume for templates, and of both for standalones (if they differ)"""
+        if self.klass == 'AdminVM':
+            return ""
+        if self.klass == 'TemplateVM':
+            volume_names = ['root']
+        elif self.template is not None:
+            volume_names = ['private']
+        else:
+            volume_names = ['root', 'private']
+        pools = []
+        try:
+            for volume_name in volume_names:
+                if volume_name in self.vm.volumes:
+                    pool = self.vm.volumes[volume_name].pool
+                    if pool not in pools:
+                        pools.append(pool)
+        except exc.QubesDaemonAccessError:
+            return ""
+        return ", ".join(pools)
 
 
 class QubesCache(QAbstractTableModel):
@@ -456,7 +482,8 @@ class QubesTableModel(QAbstractTableModel):
                 "Last backup",
                 "Default DispVM",
                 "Is DVM Template",
-                "Virt Mode"
+                "Virt Mode",
+                "Pool"
                 ]
 
     # pylint: disable=invalid-name
@@ -507,6 +534,8 @@ class QubesTableModel(QAbstractTableModel):
                 return "Yes" if vm.dvm_template else ""
             if col_name == "Virt Mode":
                 return vm.virt_mode
+            if col_name == "Pool":
+                return vm.pool
             return None
         if role == Qt.ItemDataRole.DecorationRole:
             if col_name == "Label":
