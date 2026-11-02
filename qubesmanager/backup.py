@@ -306,7 +306,10 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
                     self.size = None
             else:
                 try:
-                    self.size = vm.get_disk_utilization()
+                    # only save_on_stop volumes are backed up; this skips
+                    # e.g. root and volatile volumes of running AppVMs
+                    self.size = sum(vol.usage for vol in vm.volumes.values()
+                                    if vol.save_on_stop)
                 except exc.QubesDaemonAccessError:
                     self.size = None
 
