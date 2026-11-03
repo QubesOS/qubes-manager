@@ -1528,6 +1528,12 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                 self.action_updatevm.setEnabled(False)
                 self.action_run_command_in_vm.setEnabled(False)
 
+            if (
+                vm.active_template
+                and not vm.vm.property_is_default("active_template")
+            ):
+                self.action_appmenus.setEnabled(False)
+
         if (
             any(vm.klass == 'DispVM' for vm in selected_vms)
             and not all(vm.klass == 'DispVM' for vm in selected_vms)

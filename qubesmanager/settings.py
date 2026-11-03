@@ -292,6 +292,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.remove_srv_button.clicked.connect(self.__remove_service__)
 
         ####### apps tab
+        self.__applications_initialized = False
         self.__init_applications_tab__()
 
         ####### notes tab
@@ -388,6 +389,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         self.__init_basic_tab__()
         self.__init_advanced_tab__()
+        self.__init_applications_tab__()
 
     def save_and_apply(self):
         if not self.save_changes():
@@ -1760,44 +1762,61 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
     ######## applications tab
 
     def __init_applications_tab__(self):
-        if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
-            self.app_list = multiselectwidget.MultiSelectWidget(self)
-            self.app_list.change_labels(
-                available="All available applications",
-                selected="Applications shown in App Menu",
+        idx = self.tabs_indices["applications"]
+        if (
+            self.vm.active_template
+            and not self.vm.property_is_default("active_template")
+        ):
+            self.tabWidget.setTabEnabled(idx, False)
+            self.tabWidget.setTabToolTip(
+                idx, "Can't modify apps while the template change is deferred"
             )
-            self.apps_layout.addWidget(self.app_list)
-            self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
-            self.refresh_apps_button.clicked.connect(self.refresh_apps_button_pressed)
+        else:
+            self.tabWidget.setTabEnabled(idx, True)
+            self.tabWidget.setTabToolTip(idx, "")
 
-            self.app_search.textChanged.connect(self.filter_apps)
+        if not self.tabWidget.isTabEnabled(idx):
+            return
+        if self.__applications_initialized:
+            return
+        self.__applications_initialized = True
+        self.app_list = multiselectwidget.MultiSelectWidget(self)
+        self.app_list.change_labels(
+            available="All available applications",
+            selected="Applications shown in App Menu",
+        )
+        self.apps_layout.addWidget(self.app_list)
+        self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
+        self.refresh_apps_button.clicked.connect(self.refresh_apps_button_pressed)
 
-            # Enable Drag & Drop between between two panels
-            # ToDo: Disable D&D between multiple instances of qubes-vm-settings
-            # - by overriding QListWidget.dragMoveEvent event
-            self.app_list.available_list.setDragEnabled(True)
-            self.app_list.available_list.setAcceptDrops(True)
-            self.app_list.available_list.setDragDropMode(
-                QtWidgets.QListWidget.DragDropMode.DragDrop
-            )
-            self.app_list.available_list.setDefaultDropAction(
-                QtCore.Qt.DropAction.MoveAction
-            )
-            self.app_list.selected_list.setDragEnabled(True)
-            self.app_list.selected_list.setAcceptDrops(True)
-            self.app_list.selected_list.setDragDropMode(
-                QtWidgets.QListWidget.DragDropMode.DragDrop
-            )
-            self.app_list.selected_list.setDefaultDropAction(
-                QtCore.Qt.DropAction.MoveAction
-            )
+        self.app_search.textChanged.connect(self.filter_apps)
 
-            # template change
-            if self.template_name.isEnabled():
-                self.template_name.currentIndexChanged.connect(
-                    self.template_apps_change
-                )
-            self._set_template_tooltip()
+        # Enable Drag & Drop between between two panels
+        # ToDo: Disable D&D between multiple instances of qubes-vm-settings
+        # - by overriding QListWidget.dragMoveEvent event
+        self.app_list.available_list.setDragEnabled(True)
+        self.app_list.available_list.setAcceptDrops(True)
+        self.app_list.available_list.setDragDropMode(
+            QtWidgets.QListWidget.DragDropMode.DragDrop
+        )
+        self.app_list.available_list.setDefaultDropAction(
+            QtCore.Qt.DropAction.MoveAction
+        )
+        self.app_list.selected_list.setDragEnabled(True)
+        self.app_list.selected_list.setAcceptDrops(True)
+        self.app_list.selected_list.setDragDropMode(
+            QtWidgets.QListWidget.DragDropMode.DragDrop
+        )
+        self.app_list.selected_list.setDefaultDropAction(
+            QtCore.Qt.DropAction.MoveAction
+        )
+
+        # template change
+        if self.template_name.isEnabled():
+            self.template_name.currentIndexChanged.connect(
+                self.template_apps_change
+            )
+        self._set_template_tooltip()
 
     def refresh_apps_button_pressed(self):
 
