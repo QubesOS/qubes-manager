@@ -292,44 +292,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.remove_srv_button.clicked.connect(self.__remove_service__)
 
         ####### apps tab
-        if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
-            self.app_list = multiselectwidget.MultiSelectWidget(self)
-            self.app_list.change_labels(
-                available="All available applications",
-                selected="Applications shown in App Menu",
-            )
-            self.apps_layout.addWidget(self.app_list)
-            self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
-            self.refresh_apps_button.clicked.connect(self.refresh_apps_button_pressed)
-
-            self.app_search.textChanged.connect(self.filter_apps)
-
-            # Enable Drag & Drop between between two panels
-            # ToDo: Disable D&D between multiple instances of qubes-vm-settings
-            # - by overriding QListWidget.dragMoveEvent event
-            self.app_list.available_list.setDragEnabled(True)
-            self.app_list.available_list.setAcceptDrops(True)
-            self.app_list.available_list.setDragDropMode(
-                QtWidgets.QListWidget.DragDropMode.DragDrop
-            )
-            self.app_list.available_list.setDefaultDropAction(
-                QtCore.Qt.DropAction.MoveAction
-            )
-            self.app_list.selected_list.setDragEnabled(True)
-            self.app_list.selected_list.setAcceptDrops(True)
-            self.app_list.selected_list.setDragDropMode(
-                QtWidgets.QListWidget.DragDropMode.DragDrop
-            )
-            self.app_list.selected_list.setDefaultDropAction(
-                QtCore.Qt.DropAction.MoveAction
-            )
-
-            # template change
-            if self.template_name.isEnabled():
-                self.template_name.currentIndexChanged.connect(
-                    self.template_apps_change
-                )
-            self._set_template_tooltip()
+        self.__init_applications_tab__()
 
         ####### notes tab
         self.__init_notes_tab__()
@@ -1795,6 +1758,46 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             device.setHidden(hide)
 
     ######## applications tab
+
+    def __init_applications_tab__(self):
+        if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
+            self.app_list = multiselectwidget.MultiSelectWidget(self)
+            self.app_list.change_labels(
+                available="All available applications",
+                selected="Applications shown in App Menu",
+            )
+            self.apps_layout.addWidget(self.app_list)
+            self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
+            self.refresh_apps_button.clicked.connect(self.refresh_apps_button_pressed)
+
+            self.app_search.textChanged.connect(self.filter_apps)
+
+            # Enable Drag & Drop between between two panels
+            # ToDo: Disable D&D between multiple instances of qubes-vm-settings
+            # - by overriding QListWidget.dragMoveEvent event
+            self.app_list.available_list.setDragEnabled(True)
+            self.app_list.available_list.setAcceptDrops(True)
+            self.app_list.available_list.setDragDropMode(
+                QtWidgets.QListWidget.DragDropMode.DragDrop
+            )
+            self.app_list.available_list.setDefaultDropAction(
+                QtCore.Qt.DropAction.MoveAction
+            )
+            self.app_list.selected_list.setDragEnabled(True)
+            self.app_list.selected_list.setAcceptDrops(True)
+            self.app_list.selected_list.setDragDropMode(
+                QtWidgets.QListWidget.DragDropMode.DragDrop
+            )
+            self.app_list.selected_list.setDefaultDropAction(
+                QtCore.Qt.DropAction.MoveAction
+            )
+
+            # template change
+            if self.template_name.isEnabled():
+                self.template_name.currentIndexChanged.connect(
+                    self.template_apps_change
+                )
+            self._set_template_tooltip()
 
     def refresh_apps_button_pressed(self):
 
