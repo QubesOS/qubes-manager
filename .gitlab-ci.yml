@@ -40,3 +40,20 @@ checks:tests:
   after_script:
     - "PATH=$PATH:$HOME/.local/bin"
     - ci/codecov-wrapper
+
+checks:screenshots:
+  stage: checks
+  variables:
+    PYTEST_ADDOPTS: "--color=yes"
+    SCREENSHOT_DIR: $CI_PROJECT_DIR/screenshots
+  before_script: *before-script
+  script:
+    - make ui
+    - make res
+    - PYTHONPATH=~/core-admin-client:~/manager:. xvfb-run
+      python3 -m pytest -vv qubesmanager/tests/test_screenshots.py
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths:
+      - screenshots/
