@@ -24,7 +24,8 @@ from unittest import mock
 import pytest
 from PyQt6 import QtWidgets
 from qubesadmin import exc
-from qubesadmin.tests.mock_app import MockAsyncDispatcher, MockQube
+from qubesadmin.tests.mock_app import MockAsyncDispatcher, MockQube, \
+    VolumeInfo
 from qubesmanager import backup
 
 
@@ -147,6 +148,48 @@ def test_03_passphrase_verification(backup_dlg):
     backup_dlg.passphrase_line_edit_verify.setText("pass")
     assert next_button.isEnabled(), \
         "Matching passphrase/verification not accepted"
+
+
+def _set_volume_usage(qapp, vm_name, usage):
+    """Set usage (as a fraction of the 1 GiB volume size) of each volume"""
+    for vol_name, (usage_perc, save_on_stop) in usage.items():
+        qapp.expected_calls[
+            (vm_name, "admin.vm.volume.Info", vol_name, None)] = VolumeInfo(
+                vm_name, vol_name, usage_perc=usage_perc,
+                save_on_stop=save_on_stop).response_string()
+
+
+def test_04_vm_size(qapp, test_qubes_app):
+    # only save_on_stop volumes are backed up, so only they should count;
+    # test-blue is a running AppVM, fedora-35 a TemplateVM
+    _set_volume_usage(test_qubes_app, "test-blue", {
+        "root": (0.5, False), "private": (0.125, True),
+        "volatile": (0.25, False)})
+    _set_volume_usage(test_qubes_app, "fedora-35", {
+        "root": (0.5, True), "private": (0.125, True),
+        "volatile": (0.25, False)})
+    test_qubes_app._invalidate_cache_all()
+
+    dispatcher = MockAsyncDispatcher(test_qubes_app)
+    backup_dlg = backup.BackupVMsWindow(qapp, test_qubes_app, dispatcher)
+    backup_dlg.show()
+
+    widget = backup_dlg.select_vms_widget
+    items = {}
+    for item in [widget.selected_list.item(i)
+                 for i in range(widget.selected_list.count())] + \
+                [widget.available_list.item(i)
+                 for i in range(widget.available_list.count())]:
+        items[item.vm.name] = item
+
+    assert items["test-blue"].size == 2**30 // 8
+    assert items["test-blue"].text().endswith("(128.0 MiB)")
+    assert items["fedora-35"].size == 2**30 // 8 + 2**30 // 2
+
+    expected_total = sum(
+        widget.selected_list.item(i).size
+        for i in range(widget.selected_list.count()))
+    assert backup_dlg.total_size == expected_total
 
 
 @mock.patch('builtins.open', new_callable=mock.mock_open)
