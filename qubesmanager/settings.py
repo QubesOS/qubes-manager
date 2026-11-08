@@ -24,6 +24,7 @@
 
 
 import collections
+import contextlib
 import functools
 import re
 import subprocess
@@ -380,9 +381,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         # these signals must be disconnected to avoid unintended behavior
         # on refreshing the drop-downs
-        self.netVM.currentIndexChanged.disconnect()
-        self.kernel.currentIndexChanged.disconnect()
-        self.default_dispvm.currentIndexChanged.disconnect()
+        for widget in (self.netVM, self.kernel, self.default_dispvm):
+            # Not connected when its choices were refused
+            with contextlib.suppress(TypeError):
+                widget.currentIndexChanged.disconnect()
 
         self.__init_basic_tab__()
         self.__init_advanced_tab__()
@@ -1088,6 +1090,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             except qubesadmin.exc.QubesDaemonAccessError:
                 self.kernel_groupbox.setVisible(False)
                 self.kernel.setEnabled(False)
+                self.bootmode.setEnabled(False)
+                self.appvm_default_bootmode.setEnabled(False)
         else:
             self.kernel.setEnabled(False)
             self.kernel_groupbox.setVisible(False)
