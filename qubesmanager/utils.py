@@ -540,18 +540,30 @@ def handle_exception(exc_type, exc_value, exc_traceback):
     msg_box.exec()
 
 
-def run_asynchronous(window_class):
-    set_organization()
-    qt_app = QtWidgets.QApplication(sys.argv)
-
-    translator = QtCore.QTranslator(qt_app)
+def install_translators(qt_app):
+    """Load qubes-manager and Qt translations for the system locale and set
+    the layout direction the translation asks for."""
     locale = QtCore.QLocale.system().name()
     i18n_dir = os.path.join(
         os.path.dirname(os.path.realpath(__file__)),
         'i18n')
-    translator.load("qubesmanager_{!s}.qm".format(locale), i18n_dir)
-    qt_app.installTranslator(translator)
-    QtCore.QCoreApplication.installTranslator(translator)
+    qt_dir = QtCore.QLibraryInfo.path(
+        QtCore.QLibraryInfo.LibraryPath.TranslationsPath)
+    for name, directory in (("qubesmanager", i18n_dir), ("qtbase", qt_dir)):
+        translator = QtCore.QTranslator(qt_app)
+        if translator.load("{}_{}".format(name, locale), directory):
+            qt_app.installTranslator(translator)
+    # translate to "RTL" in right-to-left languages, keep "LTR" otherwise
+    if QtCore.QCoreApplication.translate(
+            "QGuiApplication", "QT_LAYOUT_DIRECTION") == "RTL":
+        qt_app.setLayoutDirection(QtCore.Qt.LayoutDirection.RightToLeft)
+
+
+def run_asynchronous(window_class):
+    set_organization()
+    qt_app = QtWidgets.QApplication(sys.argv)
+
+    install_translators(qt_app)
 
     qt_app.lastWindowClosed.connect(loop_shutdown)
 
@@ -586,14 +598,7 @@ def run_synchronous(window_class):
     set_organization()
     qt_app = QtWidgets.QApplication(sys.argv)
 
-    translator = QtCore.QTranslator(qt_app)
-    locale = QtCore.QLocale.system().name()
-    i18n_dir = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)),
-        'i18n')
-    translator.load("qubesmanager_{!s}.qm".format(locale), i18n_dir)
-    qt_app.installTranslator(translator)
-    QtCore.QCoreApplication.installTranslator(translator)
+    install_translators(qt_app)
 
     sys.excepthook = handle_exception
 

@@ -1173,9 +1173,9 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     def init_network_menu(self):
         default = self._get_default_netvm()
         self.network_menu.clear()
-        action = self.network_menu.addAction("None")
+        action = self.network_menu.addAction(self.tr("None"))
         action.triggered.connect(partial(self.change_network, None))
-        action = self.network_menu.addAction("default ({0})".format(default))
+        action = self.network_menu.addAction(self.tr("default ({0})").format(default))
         action.triggered.connect(partial(self.change_network, 'default'))
 
         for vm in self.qubes_app.domains:

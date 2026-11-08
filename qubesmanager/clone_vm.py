@@ -20,7 +20,6 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-import os
 import sys
 import subprocess
 
@@ -179,14 +178,7 @@ def main(args=None):
 
     qtapp = QtWidgets.QApplication(sys.argv)
 
-    translator = QtCore.QTranslator(qtapp)
-    locale = QtCore.QLocale.system().name()
-    i18n_dir = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)),
-        'i18n')
-    translator.load("qubesmanager_{!s}.qm".format(locale), i18n_dir)
-    qtapp.installTranslator(translator)
-    QtCore.QCoreApplication.installTranslator(translator)
+    utils.install_translators(qtapp)
 
     qtapp.setOrganizationName('Invisible Things Lab')
     qtapp.setOrganizationDomain('https://www.qubes-os.org/')

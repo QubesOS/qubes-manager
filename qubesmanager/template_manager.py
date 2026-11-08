@@ -63,12 +63,12 @@ class TemplateManagerWindow(
             QtWidgets.QDialogButtonBox.StandardButton.Ok).clicked.connect(
             self.apply)
         self.buttonBox.button(
-            QtWidgets.QDialogButtonBox.StandardButton.Ok).setText('Apply')
+            QtWidgets.QDialogButtonBox.StandardButton.Ok).setText(self.tr('Apply'))
         self.buttonBox.button(
             QtWidgets.QDialogButtonBox.StandardButton.Cancel).clicked.connect(
             self.cancel)
         self.buttonBox.button(
-            QtWidgets.QDialogButtonBox.StandardButton.Cancel).setText('Close')
+            QtWidgets.QDialogButtonBox.StandardButton.Cancel).setText(self.tr('Close'))
         self.buttonBox.button(
             QtWidgets.QDialogButtonBox.StandardButton.Reset).clicked.connect(
             self.reset)
@@ -249,7 +249,7 @@ class TemplateManagerWindow(
 
         # show a "in progress" dialog
         self.dialog = QtWidgets.QProgressDialog(
-            "Changing templates...", None, 0, len(items_to_change), self)
+            self.tr("Changing templates..."), None, 0, len(items_to_change), self)
         self.dialog.setCancelButton(None)
         self.dialog.setModal(True)
         self.dialog.show()
