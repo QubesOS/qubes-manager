@@ -382,7 +382,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         # these signals must be disconnected to avoid unintended behavior
         # on refreshing the drop-downs
         for widget in (self.netVM, self.kernel, self.default_dispvm):
-            # Not connected when its choices were refused
+            # TypeError if initialization failed before connecting
             with contextlib.suppress(TypeError):
                 widget.currentIndexChanged.disconnect()
 

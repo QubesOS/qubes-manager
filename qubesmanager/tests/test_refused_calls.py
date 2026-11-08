@@ -20,6 +20,7 @@ import subprocess
 from unittest import mock
 
 import pytest
+from PyQt6 import QtWidgets
 
 from qubesadmin import exc
 from qubesadmin.tests.mock_app import MockAsyncDispatcher
@@ -121,3 +122,46 @@ def test_no_windows_tools(warning, start, qapp, test_qubes_app):
         window.action_startvm_tools_install_triggered()
     warning.assert_called_once()
     start.assert_not_called()
+
+
+@mock.patch("PyQt6.QtWidgets.QMessageBox.warning")
+@mock.patch(
+    "PyQt6.QtWidgets.QMessageBox.question",
+    return_value=QtWidgets.QMessageBox.StandardButton.Yes,
+)
+def test_refused_network_change(_question, warning, qapp, test_qubes_app):
+    app = test_qubes_app
+    window = manager(qapp, app)
+    select(window, "test-red")
+    # An empty answer is qubesd's refusal
+    app.expected_calls[("test-red", "admin.vm.property.Set", "netvm", b"sys-net")] = b""
+    window.change_network("sys-net")
+    warning.assert_called_once()
+    assert "network change failed" in warning.call_args[0][1]
+
+
+@mock.patch("PyQt6.QtWidgets.QMessageBox.warning")
+def test_refused_clone(warning, qapp, test_qubes_app):
+    app = test_qubes_app
+    window = manager(qapp, app)
+    select(window, "test-red")
+    app.expected_calls[("dom0", "admin.label.List", None, None)] = b""
+    app.labels.clear_cache()
+    window.action_clonevm_triggered()
+    warning.assert_called_once()
+    assert warning.call_args[0][1] == "Cannot clone 'test-red'"
+
+
+def test_refused_command(test_qubes_app):
+    vm = test_qubes_app.domains["test-red"]
+    thread = qube_manager.RunCommandThread(vm, "true")
+    with mock.patch.object(
+        type(vm), "run", side_effect=subprocess.CalledProcessError(126, "true")
+    ):
+        thread.run()
+    assert thread.msg[1] == "Cannot run command due to qrexec policy"
+    with mock.patch.object(
+        type(vm), "run", side_effect=subprocess.CalledProcessError(2, "true")
+    ):
+        thread.run()
+    assert "exit status 2" in thread.msg[1]
