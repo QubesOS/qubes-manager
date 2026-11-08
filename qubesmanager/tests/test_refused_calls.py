@@ -16,6 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import subprocess
 from unittest import mock
 
 import pytest
@@ -57,3 +58,11 @@ def test_refused_notes(settings_for, test_qubes_app):
     errors = dialog.__save_changes__()
     assert errors[0] == "Notes tab:"
     assert "TypeError" not in "".join(errors)
+
+
+def test_refused_appmenus(settings_for, test_qubes_app):
+    dialog = settings_for(test_qubes_app)
+    refused = subprocess.CalledProcessError(1, "qvm-appmenus")
+    with mock.patch("subprocess.check_output", side_effect=refused):
+        dialog.app_list_manager.fill_apps_list(template=None)
+    assert dialog.app_list.available_list.count() == 0
