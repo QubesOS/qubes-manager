@@ -169,7 +169,7 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtWidgets.QDialog)
         else:
             self.blockDeviceRadioButton.setEnabled(False)
             self.blockDeviceComboBox.setEnabled(False)
-            self.blockDeviceComboBox.addItem("no block devices found!")
+            self.blockDeviceComboBox.addItem(self.tr("no block devices found!"))
             self.blockDeviceComboBox.setCurrentIndex(0)
 
     def radio_button_clicked(self):

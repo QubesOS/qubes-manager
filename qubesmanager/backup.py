@@ -134,12 +134,12 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
 
         self.unrecognized_config_label.setVisible(False)
 
-        self.compression_combobox.addItem("Default (gzip)")
+        self.compression_combobox.addItem(self.tr("Default (gzip)"))
         self.compression_combobox.addItems(KNOWN_COMPRESSION_FILTERS)
         self.compression_combobox.addItems(
             [c for c in OPTIONAL_COMPRESSION_FILTERS if shutil.which(c)]
         )
-        self.compression_combobox.addItem("Disabled (uncompressed)")
+        self.compression_combobox.addItem(self.tr("Disabled (uncompressed)"))
         self.load_settings()
 
         self.show_passwd_button.pressed.connect(self.show_hide_password)
@@ -273,12 +273,15 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         :param use_temp: whether to use temporary profile (True) or the default
          backup profile (False)
         """
-        if self.compression_combobox.currentIndex() != -1:
-            compression_filter = self.compression_combobox.currentText()
-            if compression_filter.startswith("Default"):
+        index = self.compression_combobox.currentIndex()
+        if index != -1:
+            # first and last items are the translated "Default"/"Disabled"
+            if index == 0:
                 compression_filter = True
-            elif compression_filter.startswith("Disabled"):
+            elif index == self.compression_combobox.count() - 1:
                 compression_filter = False
+            else:
+                compression_filter = self.compression_combobox.currentText()
         else:
             compression_filter = True
         settings = {

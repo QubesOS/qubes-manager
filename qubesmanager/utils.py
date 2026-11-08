@@ -91,10 +91,10 @@ def is_running(vm, default_state):
         return default_state
 
 
-def translate(string):
-    """helper function for translations"""
-    return QtCore.QCoreApplication.translate(
-        "ManagerUtils", string)
+def translate(context, string):
+    """helper function for translations; the context argument lets
+    pylupdate extract the string"""
+    return QtCore.QCoreApplication.translate(context, string)
 
 
 class SizeSpinBox(QtWidgets.QSpinBox):
@@ -160,7 +160,7 @@ def did_widget_selection_change(widget):
     translated 'current'"""
     if not widget.isEnabled():
         return False
-    return not translate(" (current)") in widget.currentText()
+    return not translate("ManagerUtils", " (current)") in widget.currentText()
 
 
 def initialize_widget(widget, choices, selected_value=None,
@@ -195,8 +195,9 @@ def initialize_widget(widget, choices, selected_value=None,
         widget.setCurrentIndex(widget.findText(str(selected_value)))
 
     if add_current_label:
-        widget.setItemText(widget.currentIndex(),
-                           widget.currentText() + translate(" (current)"))
+        widget.setItemText(
+            widget.currentIndex(),
+            widget.currentText() + translate("ManagerUtils", " (current)"))
 
 
 def initialize_widget_for_property(*, widget, choices, holder, property_name,
@@ -233,11 +234,12 @@ def initialize_widget_for_property(*, widget, choices, holder, property_name,
             default_property = "none"
         if default_text_provider is None:
             choices_copy.append(
-                (translate("default ({})").format(default_property),
+                (translate("ManagerUtils", "default ({})").format(
+                    default_property),
                 qubesadmin.DEFAULT))
         else:
             choices_copy.append(
-                (translate("default ({})").format(
+                (translate("ManagerUtils", "default ({})").format(
                     default_text_provider(holder, default_property)
                 ), qubesadmin.DEFAULT))
 
@@ -290,7 +292,7 @@ def initialize_widget_with_vms(
         choices.append((vm.name, vm))
 
     if allow_none:
-        choices.append((translate("(none)"), None))
+        choices.append((translate("ManagerUtils", "(none)"), None))
 
     if holder is None:
         initialize_widget(widget,
@@ -336,20 +338,22 @@ def initialize_widget_with_default(
                 default_value = qubesadmin.DEFAULT
 
             choices.insert(
-                0, (translate("default ({})").format(existing_default[0][0]),
+                0, (translate("ManagerUtils", "default ({})").format(
+                    existing_default[0][0]),
                     default_value))
             added_existing = True
 
     elif add_qubes_default:
-        choices.insert(0, (translate("default ({})").format(default_value),
+        choices.insert(0, (translate("ManagerUtils", "default ({})").format(
+            default_value),
                            qubesadmin.DEFAULT))
 
     if add_none:
         if mark_existing_as_default and default_value is None and \
                 not added_existing:
-            choices.append((translate("default (none)"), None))
+            choices.append((translate("ManagerUtils", "default (none)"), None))
         else:
-            choices.append((translate("(none)"), None))
+            choices.append((translate("ManagerUtils", "(none)"), None))
 
     if add_qubes_default:
         selected_value = qubesadmin.DEFAULT
@@ -385,7 +389,7 @@ def initialize_widget_with_kernels(
     choices = [(kernel, kernel) for kernel in kernels]
 
     if allow_none:
-        choices.append((translate("(provided by qube)"), ''))
+        choices.append((translate("ManagerUtils", "(provided by qube)"), ''))
 
     initialize_widget_for_property(
         widget=widget, choices=choices, holder=holder,
@@ -405,7 +409,19 @@ def initialize_widget_with_labels(widget, qubes_app,
     :return:
     """
     labels = sorted(qubes_app.labels.values(), key=lambda l: l.index)
-    choices = [(label.name, label) for label in labels]
+    # display names of the default labels; custom labels keep their name
+    label_names = {
+        "red": translate("ManagerUtils", "red"),
+        "orange": translate("ManagerUtils", "orange"),
+        "yellow": translate("ManagerUtils", "yellow"),
+        "green": translate("ManagerUtils", "green"),
+        "gray": translate("ManagerUtils", "gray"),
+        "blue": translate("ManagerUtils", "blue"),
+        "purple": translate("ManagerUtils", "purple"),
+        "black": translate("ManagerUtils", "black"),
+    }
+    choices = [(label_names.get(label.name, label.name), label)
+               for label in labels]
 
     def icon_getter(label):
         return QtGui.QIcon.fromTheme(label.icon)
@@ -540,18 +556,30 @@ def handle_exception(exc_type, exc_value, exc_traceback):
     msg_box.exec()
 
 
-def run_asynchronous(window_class):
-    set_organization()
-    qt_app = QtWidgets.QApplication(sys.argv)
-
-    translator = QtCore.QTranslator(qt_app)
+def install_translators(qt_app):
+    """Load qubes-manager and Qt translations for the system locale and set
+    the layout direction the translation asks for."""
     locale = QtCore.QLocale.system().name()
     i18n_dir = os.path.join(
         os.path.dirname(os.path.realpath(__file__)),
         'i18n')
-    translator.load("qubesmanager_{!s}.qm".format(locale), i18n_dir)
-    qt_app.installTranslator(translator)
-    QtCore.QCoreApplication.installTranslator(translator)
+    qt_dir = QtCore.QLibraryInfo.path(
+        QtCore.QLibraryInfo.LibraryPath.TranslationsPath)
+    for name, directory in (("qubesmanager", i18n_dir), ("qtbase", qt_dir)):
+        translator = QtCore.QTranslator(qt_app)
+        if translator.load("{}_{}".format(name, locale), directory):
+            qt_app.installTranslator(translator)
+    # translate to "RTL" in right-to-left languages, keep "LTR" otherwise
+    if QtCore.QCoreApplication.translate(
+            "QGuiApplication", "QT_LAYOUT_DIRECTION") == "RTL":
+        qt_app.setLayoutDirection(QtCore.Qt.LayoutDirection.RightToLeft)
+
+
+def run_asynchronous(window_class):
+    set_organization()
+    qt_app = QtWidgets.QApplication(sys.argv)
+
+    install_translators(qt_app)
 
     qt_app.lastWindowClosed.connect(loop_shutdown)
 
@@ -586,14 +614,7 @@ def run_synchronous(window_class):
     set_organization()
     qt_app = QtWidgets.QApplication(sys.argv)
 
-    translator = QtCore.QTranslator(qt_app)
-    locale = QtCore.QLocale.system().name()
-    i18n_dir = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)),
-        'i18n')
-    translator.load("qubesmanager_{!s}.qm".format(locale), i18n_dir)
-    qt_app.installTranslator(translator)
-    QtCore.QCoreApplication.installTranslator(translator)
+    install_translators(qt_app)
 
     sys.excepthook = handle_exception
 

@@ -282,8 +282,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
             self.app_list = multiselectwidget.MultiSelectWidget(self)
             self.app_list.change_labels(
-                available="All available applications",
-                selected="Applications shown in App Menu",
+                available=self.tr("All available applications"),
+                selected=self.tr("Applications shown in App Menu"),
             )
             self.apps_layout.addWidget(self.app_list)
             self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
@@ -601,20 +601,17 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                     bool(self.vm.features.get(IDLE_SERVICE, False))
                 )
             else:
-                text = "Shut down when idle "
                 if getattr(self.vm, "template", None):
-                    additional_text = (
-                        "(unavailable: package "
-                        "qubes-app-shutdown-idle missing "
-                        "in the template)"
+                    text = self.tr(
+                        "Shut down when idle (unavailable: package "
+                        "qubes-app-shutdown-idle missing in the template)"
                     )
                 else:
-                    additional_text = (
-                        "(unavailable: package "
-                        "qubes-app-shutdown-idle missing "
-                        "in the qube)"
+                    text = self.tr(
+                        "Shut down when idle (unavailable: package "
+                        "qubes-app-shutdown-idle missing in the qube)"
                     )
-                self.idle_shutdown_checkbox.setText(text + additional_text)
+                self.idle_shutdown_checkbox.setText(text)
                 self.idle_shutdown_checkbox.setEnabled(False)
         except qubesadmin.exc.QubesDaemonCommunicationError:
             self.idle_shutdown_checkbox.setText(
@@ -632,17 +629,27 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.autostart_vm.setVisible(False)
 
         # type
-        self.type_label.setText(self.vm.klass)
+        # the English text stays the class name; translations may differ
+        klass_names = {
+            "AppVM": self.tr("AppVM"),
+            "TemplateVM": self.tr("TemplateVM"),
+            "StandaloneVM": self.tr("StandaloneVM"),
+            "DispVM": self.tr("DispVM"),
+            "AdminVM": self.tr("AdminVM"),
+        }
+        self.type_label.setText(klass_names.get(self.vm.klass, self.vm.klass))
 
         # installed by rpm
         self.rpm_label.setText(
-            "Yes" if getattr(self.vm, "installed_by_rpm", False) else "No"
+            self.tr("Yes")
+            if getattr(self.vm, "installed_by_rpm", False)
+            else self.tr("No")
         )
 
         # networking info
         if getattr(self.vm, "netvm", None):
             self.networking_groupbox.setEnabled(True)
-            self.ip_label.setText(getattr(self.vm, "ip", None) or "none")
+            self.ip_label.setText(getattr(self.vm, "ip", None) or self.tr("none"))
             self.netmask_label.setText(
                 getattr(self.vm, "visible_netmask", None) or "none"
             )
@@ -1531,8 +1538,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.dev_list.selected_list.setSpacing(5)
         self.dev_list.available_list.setSpacing(5)
         self.dev_list.change_labels(
-            available="Available devices",
-            selected="Devices always connected to this qube",
+            available=self.tr("Available devices"),
+            selected=self.tr("Devices always connected to this qube"),
         )
         self.dev_list.add_all_button.setVisible(False)
         self.devices_layout.addWidget(self.dev_list)

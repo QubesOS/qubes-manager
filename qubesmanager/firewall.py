@@ -201,10 +201,10 @@ class QubesFirewallRulesModel(QtCore.QAbstractItemModel):
         self.current_dialog = None
 
         self.__column_names = {
-            0: "Address",
-            1: "Port/Service",
-            2: "Protocol",
-            3: "Comment",
+            0: self.tr("Address"),
+            1: self.tr("Port/Service"),
+            2: self.tr("Protocol"),
+            3: self.tr("Comment"),
         }
         self.__services = []
 
