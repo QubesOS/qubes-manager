@@ -1887,7 +1887,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 if self.notes.toPlainText() != self.vm.get_notes():
                     self.vm.set_notes(self.notes.toPlainText())
         except qubesadmin.exc.QubesException as ex:
-            return str(ex)
+            return [str(ex)]
 
     def __add_service__(self):
         srv = str(self.service_line_edit.currentText()).strip()

@@ -47,3 +47,13 @@ def test_refused_kernels(warning, settings_for, test_qubes_app):
         dialog.apply()
     warning.assert_not_called()
     assert not [call for call in app.actual_calls if call[1] == "admin.vm.property.Set"]
+
+
+def test_refused_notes(settings_for, test_qubes_app):
+    app = test_qubes_app
+    dialog = settings_for(app)
+    dialog.notes.setPlainText("new")
+    app.expected_calls[("test-red", "admin.vm.notes.Set", None, b"new")] = b""
+    errors = dialog.__save_changes__()
+    assert errors[0] == "Notes tab:"
+    assert "TypeError" not in "".join(errors)
