@@ -641,27 +641,97 @@ li.checked::marker { content: "\2612"; }
     <context>
         <name>ManagerUtils</name>
         <message>
-            <location filename="../utils.py" line="484" />
+            <location filename="../utils.py" line="200" />
+            <location filename="../utils.py" line="163" />
+            <source> (current)</source>
+            <translation> (נוכחי)</translation>
+        </message>
+        <message>
+            <location filename="../utils.py" line="347" />
+            <location filename="../utils.py" line="341" />
+            <location filename="../utils.py" line="242" />
+            <location filename="../utils.py" line="237" />
+            <source>default ({})</source>
+            <translation>ברירת מחדל ({})</translation>
+        </message>
+        <message>
+            <location filename="../utils.py" line="356" />
+            <location filename="../utils.py" line="295" />
+            <source>(none)</source>
+            <translation>(ללא)</translation>
+        </message>
+        <message>
+            <location filename="../utils.py" line="354" />
+            <source>default (none)</source>
+            <translation>ברירת מחדל (ללא)</translation>
+        </message>
+        <message>
+            <location filename="../utils.py" line="392" />
+            <source>(provided by qube)</source>
+            <translation>(מסופק על ידי ה-qube)</translation>
+        </message>
+        <message>
+            <location filename="../utils.py" line="414" />
+            <source>red</source>
+            <translation>אדום</translation>
+        </message>
+        <message>
+            <location filename="../utils.py" line="415" />
+            <source>orange</source>
+            <translation>כתום</translation>
+        </message>
+        <message>
+            <location filename="../utils.py" line="416" />
+            <source>yellow</source>
+            <translation>צהוב</translation>
+        </message>
+        <message>
+            <location filename="../utils.py" line="417" />
+            <source>green</source>
+            <translation>ירוק</translation>
+        </message>
+        <message>
+            <location filename="../utils.py" line="418" />
+            <source>gray</source>
+            <translation>אפור</translation>
+        </message>
+        <message>
+            <location filename="../utils.py" line="419" />
+            <source>blue</source>
+            <translation>כחול</translation>
+        </message>
+        <message>
+            <location filename="../utils.py" line="420" />
+            <source>purple</source>
+            <translation>סגול</translation>
+        </message>
+        <message>
+            <location filename="../utils.py" line="421" />
+            <source>black</source>
+            <translation>שחור</translation>
+        </message>
+        <message>
+            <location filename="../utils.py" line="500" />
             <source>Unexpected characters in path.</source>
             <translation>תווים לא צפויים בנתיב.</translation>
         </message>
         <message>
-            <location filename="../utils.py" line="495" />
+            <location filename="../utils.py" line="511" />
             <source>- Global property &lt;b&gt;{}&lt;/b&gt; &lt;br&gt;</source>
             <translation>- מאפיין כללי &lt;b&gt;{}&lt;/b&gt; &lt;br&gt;</translation>
         </message>
         <message>
-            <location filename="../utils.py" line="498" />
+            <location filename="../utils.py" line="514" />
             <source>- &lt;b&gt;{0}&lt;/b&gt; for qube &lt;b&gt;{1}&lt;/b&gt; &lt;br&gt;</source>
             <translation>‏- &lt;b&gt;{0}&lt;/b&gt; עבור ה-qube &lt;b&gt;{1}&lt;/b&gt; &lt;br&gt;</translation>
         </message>
         <message>
-            <location filename="../utils.py" line="532" />
+            <location filename="../utils.py" line="548" />
             <source>Houston, we have a problem...</source>
             <translation>יוסטון, יש לנו בעיה...</translation>
         </message>
         <message>
-            <location filename="../utils.py" line="534" />
+            <location filename="../utils.py" line="550" />
             <source>Whoops. A critical error has occurred. This is most likely a bug in Qubes Manager.&lt;br&gt;&lt;br&gt;&lt;b&gt;&lt;i&gt;{0}&lt;/i&gt;&lt;/b&gt;&lt;br/&gt;at line &lt;b&gt;{1}&lt;/b&gt;&lt;br/&gt;of file {2}.&lt;br/&gt;&lt;br/&gt;</source>
             <translation>אופס. קרתה שגיאה קריטית. סביר להניח שזה באג במנהל ה-qubes.&lt;br&gt;&lt;br&gt;&lt;b&gt;&lt;i&gt;{0}&lt;/i&gt;&lt;/b&gt;&lt;br/&gt;בשורה &lt;b&gt;{1}&lt;/b&gt;&lt;br/&gt;בקובץ {2}.&lt;br/&gt;&lt;br/&gt;</translation>
         </message>
@@ -811,13 +881,33 @@ li.checked::marker { content: "\2612"; }
     <context>
         <name>QGuiApplication</name>
         <message>
-            <location filename="../utils.py" line="557" />
+            <location filename="../utils.py" line="573" />
             <source>QT_LAYOUT_DIRECTION</source>
             <translation>RTL</translation>
         </message>
     </context>
     <context>
         <name>QubesFirewallRulesModel</name>
+        <message>
+            <location filename="../firewall.py" line="204" />
+            <source>Address</source>
+            <translation>כתובת</translation>
+        </message>
+        <message>
+            <location filename="../firewall.py" line="205" />
+            <source>Port/Service</source>
+            <translation>יציאה/שירות</translation>
+        </message>
+        <message>
+            <location filename="../firewall.py" line="206" />
+            <source>Protocol</source>
+            <translation>פרוטוקול</translation>
+        </message>
+        <message>
+            <location filename="../firewall.py" line="207" />
+            <source>Comment</source>
+            <translation>הערה</translation>
+        </message>
         <message>
             <location filename="../firewall.py" line="302" />
             <source>At least one rule must exist.</source>
@@ -852,6 +942,85 @@ li.checked::marker { content: "\2612"; }
             <location filename="../firewall.py" line="349" />
             <source>DNS must be allowed</source>
             <translation>חובה לאפשר DNS</translation>
+        </message>
+    </context>
+    <context>
+        <name>QubesTableModel</name>
+        <message>
+            <location filename="../qube_manager.py" line="463" />
+            <source>Label</source>
+            <translation>תווית</translation>
+        </message>
+        <message>
+            <location filename="../qube_manager.py" line="464" />
+            <source>Name</source>
+            <translation>שם</translation>
+        </message>
+        <message>
+            <location filename="../qube_manager.py" line="465" />
+            <source>State</source>
+            <translation>מצב</translation>
+        </message>
+        <message>
+            <location filename="../qube_manager.py" line="466" />
+            <source>Template</source>
+            <translation>תבנית</translation>
+        </message>
+        <message>
+            <location filename="../qube_manager.py" line="467" />
+            <source>NetVM</source>
+            <translation>‏qube רשת</translation>
+        </message>
+        <message>
+            <location filename="../qube_manager.py" line="468" />
+            <source>Disk Usage</source>
+            <translation>שימוש בדיסק</translation>
+        </message>
+        <message>
+            <location filename="../qube_manager.py" line="469" />
+            <source>Internal</source>
+            <translation>פנימי</translation>
+        </message>
+        <message>
+            <location filename="../qube_manager.py" line="470" />
+            <source>IP Address</source>
+            <translation>כתובת IP</translation>
+        </message>
+        <message>
+            <location filename="../qube_manager.py" line="471" />
+            <source>Backup</source>
+            <translation>גיבוי</translation>
+        </message>
+        <message>
+            <location filename="../qube_manager.py" line="472" />
+            <source>Last backup</source>
+            <translation>גיבוי אחרון</translation>
+        </message>
+        <message>
+            <location filename="../qube_manager.py" line="473" />
+            <source>Default DispVM</source>
+            <translation>‏qube זמני ברירת מחדל</translation>
+        </message>
+        <message>
+            <location filename="../qube_manager.py" line="474" />
+            <source>Is DVM Template</source>
+            <translation>תבנית ל-qubes זמניים</translation>
+        </message>
+        <message>
+            <location filename="../qube_manager.py" line="475" />
+            <source>Virt Mode</source>
+            <translation>מצב וירטואליזציה</translation>
+        </message>
+        <message>
+            <location filename="../qube_manager.py" line="512" />
+            <source>Yes (preloaded)</source>
+            <translation>כן (נטען מראש)</translation>
+        </message>
+        <message>
+            <location filename="../qube_manager.py" line="523" />
+            <location filename="../qube_manager.py" line="514" />
+            <source>Yes</source>
+            <translation>כן</translation>
         </message>
     </context>
     <context>
@@ -1120,7 +1289,7 @@ li.checked::marker { content: "\2612"; }
     <context>
         <name>RunCommandThread</name>
         <message>
-            <location filename="../qube_manager.py" line="736" />
+            <location filename="../qube_manager.py" line="752" />
             <source>Error while running command!</source>
             <translation>שגיאה בהרצת הפקודה!</translation>
         </message>
@@ -1928,7 +2097,7 @@ Prohibition rationale is available in qube settings -&gt; Advanced tab</source>
     <context>
         <name>UpdateVMsThread</name>
         <message>
-            <location filename="../qube_manager.py" line="722" />
+            <location filename="../qube_manager.py" line="738" />
             <source>Error on qube update!</source>
             <translation>שגיאה בעדכון ה-qube!</translation>
         </message>
@@ -2000,6 +2169,16 @@ Prohibition rationale is available in qube settings -&gt; Advanced tab</source>
             <translation>הגדרות: {vm}</translation>
         </message>
         <message>
+            <location filename="../settings.py" line="285" />
+            <source>All available applications</source>
+            <translation>כל היישומים הזמינים</translation>
+        </message>
+        <message>
+            <location filename="../settings.py" line="286" />
+            <source>Applications shown in App Menu</source>
+            <translation>יישומים שמוצגים בתפריט היישומים</translation>
+        </message>
+        <message>
             <location filename="../settings.py" line="327" />
             <source>Qube Settings</source>
             <translation>הגדרות qube</translation>
@@ -2067,146 +2246,206 @@ Prohibition rationale is available in qube settings -&gt; Advanced tab</source>
             <translation>מחיקת ה-qube (אי אפשר למחוק qube פועל)</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="685" />
+            <location filename="../settings.py" line="605" />
+            <source>Shut down when idle (unavailable: package qubes-app-shutdown-idle missing in the template)</source>
+            <translation>כיבוי בזמן חוסר פעילות (לא זמין: החבילה qubes-app-shutdown-idle חסרה בתבנית)</translation>
+        </message>
+        <message>
+            <location filename="../settings.py" line="610" />
+            <source>Shut down when idle (unavailable: package qubes-app-shutdown-idle missing in the qube)</source>
+            <translation>כיבוי בזמן חוסר פעילות (לא זמין: החבילה qubes-app-shutdown-idle חסרה ב-qube)</translation>
+        </message>
+        <message>
+            <location filename="../settings.py" line="633" />
+            <source>App qube</source>
+            <translation>‏qube יישומים</translation>
+        </message>
+        <message>
+            <location filename="../settings.py" line="634" />
+            <source>Template</source>
+            <translation>תבנית</translation>
+        </message>
+        <message>
+            <location filename="../settings.py" line="635" />
+            <source>Standalone qube</source>
+            <translation>‏qube עצמאי</translation>
+        </message>
+        <message>
+            <location filename="../settings.py" line="636" />
+            <source>Disposable qube</source>
+            <translation>‏qube זמני</translation>
+        </message>
+        <message>
+            <location filename="../settings.py" line="637" />
+            <source>Admin qube</source>
+            <translation>‏qube ניהול</translation>
+        </message>
+        <message>
+            <location filename="../settings.py" line="643" />
+            <source>Yes</source>
+            <translation>כן</translation>
+        </message>
+        <message>
+            <location filename="../settings.py" line="645" />
+            <source>No</source>
+            <translation>לא</translation>
+        </message>
+        <message>
+            <location filename="../settings.py" line="651" />
+            <source>none</source>
+            <translation>ללא</translation>
+        </message>
+        <message>
+            <location filename="../settings.py" line="691" />
             <source>To change system storage size, change properties of the underlying template.</source>
             <translation>כדי לשנות את גודל אחסון המערכת, יש לשנות את המאפיינים של התבנית שעליה הוא מבוסס.</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="726" />
+            <location filename="../settings.py" line="732" />
             <source>Qube Start Confirmation</source>
             <translation>אישור הפעלת qube</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="727" />
+            <location filename="../settings.py" line="733" />
             <source>&lt;br&gt;Can not change netvm of a running qubeto a halted Qube.&lt;br&gt;Do you want to start the Qube &lt;b&gt;'{0}'&lt;/b&gt;?</source>
             <translation>&lt;br&gt;אי אפשר לשנות את qube הרשת של qube פועל ל-qube כבוי.&lt;br&gt;להפעיל את ה-qube &lt;b&gt;'{0}'&lt;/b&gt;?</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="893" />
-            <location filename="../settings.py" line="837" />
-            <location filename="../settings.py" line="808" />
+            <location filename="../settings.py" line="899" />
+            <location filename="../settings.py" line="843" />
+            <location filename="../settings.py" line="814" />
             <source>Warning!</source>
             <translation>אזהרה!</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="809" />
+            <location filename="../settings.py" line="815" />
             <source>Max memory can not be less than initial memory.&lt;br&gt;Setting max memory to equal initial memory.</source>
             <translation>הזיכרון המרבי לא יכול להיות קטן מהזיכרון ההתחלתי.&lt;br&gt;הזיכרון המרבי יוגדר שווה לזיכרון ההתחלתי.</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="838" />
+            <location filename="../settings.py" line="844" />
             <source>Connecting a TemplateVM directly to a network is highly discouraged! &lt;br&gt; &lt;small&gt;You are breaking a basic part of Qubes security and there is probably no real need to do so. Continue at your own risk.&lt;/small&gt;</source>
             <translation>לא מומלץ בכלל לחבר תבנית ישירות לרשת! &lt;br&gt; &lt;small&gt;זה פוגע בחלק בסיסי של האבטחה ב-Qubes, וכנראה אין בזה צורך אמיתי. המשך הוא על אחריותך בלבד.&lt;/small&gt;</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="894" />
+            <location filename="../settings.py" line="900" />
             <source>Anonymous qubes must be connected to an anonymous gateway to ensure privacy and anonymity. By changing the net qube to a gateway that does not provide anonymity, your IP address will be leaked on the Internet. Continue at your own risk.</source>
             <translation>‏qubes אנונימיים חייבים להיות מחוברים לשער אנונימי כדי להבטיח פרטיות ואנונימיות. אם תשנה את qube הרשת לשער שלא מספק אנונימיות, כתובת ה-IP שלך תיחשף באינטרנט. המשך הוא על אחריותך בלבד.</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="916" />
+            <location filename="../settings.py" line="922" />
             <source>Qube cannot be renamed!</source>
             <translation>אי אפשר לשנות את שם ה-qube!</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="917" />
+            <location filename="../settings.py" line="923" />
             <source>The following qubes using this qube as a template are running: &lt;br&gt; {}. &lt;br&gt; In order to rename this qube, you must first shut them down.</source>
             <translation>ה-qubes הבאים, שמשתמשים ב-qube הזה כתבנית, פועלים: &lt;br&gt; {}. &lt;br&gt; כדי לשנות את שם ה-qube הזה, יש לכבות אותם קודם.</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="927" />
+            <location filename="../settings.py" line="933" />
             <source>Rename qube</source>
             <translation>שינוי שם ה-qube</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="928" />
+            <location filename="../settings.py" line="934" />
             <source>New name: (WARNING: all other changes will be discarded)</source>
             <translation>שם חדש: (אזהרה: כל שאר השינויים יבוטלו)</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="938" />
+            <location filename="../settings.py" line="944" />
             <source>Renaming Qube...</source>
             <translation>משנה את שם ה-qube...</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="955" />
+            <location filename="../settings.py" line="961" />
             <source>Qube cannot be removed!</source>
             <translation>אי אפשר להסיר את ה-qube!</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="956" />
+            <location filename="../settings.py" line="962" />
             <source>This qube cannot be removed. It is used as: &lt;br&gt; {} &lt;small&gt;If you want to  remove this qube, you should remove or change settings of each qube or setting that uses it.&lt;/small&gt;</source>
             <translation>אי אפשר להסיר את ה-qube הזה. הוא משמש כ: &lt;br&gt; {} &lt;small&gt;כדי להסיר את ה-qube הזה, יש להסיר או לשנות את ההגדרות של כל qube או הגדרה שמשתמשים בו.&lt;/small&gt;</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="968" />
+            <location filename="../settings.py" line="974" />
             <source>Delete qube</source>
             <translation>מחיקת ה-qube</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="969" />
+            <location filename="../settings.py" line="975" />
             <source>Are you absolutely sure you want to delete this qube? &lt;br/&gt; All qube settings and data will be irrevocably deleted. &lt;br/&gt; If you are sure, please enter this qube's name below.</source>
             <translation>האם אתה בטוח לגמרי שברצונך למחוק את ה-qube הזה? &lt;br/&gt; כל ההגדרות והנתונים של ה-qube יימחקו לצמיתות. &lt;br/&gt; אם אתה בטוח, יש להקליד את שם ה-qube למטה.</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="983" />
+            <location filename="../settings.py" line="989" />
             <source>Deleting Qube...</source>
             <translation>מוחק את ה-qube...</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="995" />
+            <location filename="../settings.py" line="1001" />
             <source>Removal cancelled</source>
             <translation>ההסרה בוטלה</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="996" />
+            <location filename="../settings.py" line="1002" />
             <source>The qube will not be removed.</source>
             <translation>ה-qube לא יוסר.</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="1166" />
+            <location filename="../settings.py" line="1172" />
             <source>Cannot change this setting while this qube is used as a NetVM by the following qubes:
 </source>
             <translation>אי אפשר לשנות את ההגדרה הזו כל עוד ה-qube משמש כ-qube רשת של ה-qubes הבאים:
 </translation>
         </message>
         <message>
-            <location filename="../settings.py" line="1230" />
+            <location filename="../settings.py" line="1236" />
             <source>Failed to set seamless mode</source>
             <translation>הגדרת מצב חלק נכשלה</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="1243" />
+            <location filename="../settings.py" line="1249" />
             <source>Failed to set fullscreen mode</source>
             <translation>הגדרת מצב מסך מלא נכשלה</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="1763" />
+            <location filename="../settings.py" line="1540" />
+            <source>Available devices</source>
+            <translation>התקנים זמינים</translation>
+        </message>
+        <message>
+            <location filename="../settings.py" line="1541" />
+            <source>Devices always connected to this qube</source>
+            <translation>התקנים שמחוברים תמיד ל-qube הזה</translation>
+        </message>
+        <message>
+            <location filename="../settings.py" line="1769" />
             <source>Refresh in progress...</source>
             <translation>מרענן...</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="1774" />
+            <location filename="../settings.py" line="1780" />
             <source>Refresh applications</source>
             <translation>רענון היישומים</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="1859" />
+            <location filename="../settings.py" line="1865" />
             <source>(custom...)</source>
             <translation>(מותאם אישית...)</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="1895" />
+            <location filename="../settings.py" line="1901" />
             <source>Custom service name</source>
             <translation>שם שירות מותאם אישית</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="1896" />
+            <location filename="../settings.py" line="1902" />
             <source>Name of the service:</source>
             <translation>שם השירות:</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="1904" />
+            <location filename="../settings.py" line="1910" />
             <source>Service already on the list!</source>
             <translation>השירות כבר ברשימה!</translation>
         </message>
@@ -2214,8 +2453,8 @@ Prohibition rationale is available in qube settings -&gt; Advanced tab</source>
     <context>
         <name>VmManagerWindow</name>
         <message>
-            <location filename="../qube_manager.py" line="1188" />
-            <location filename="../qube_manager.py" line="1133" />
+            <location filename="../qube_manager.py" line="1205" />
+            <location filename="../qube_manager.py" line="1150" />
             <location filename="../../ui/qubemanager.ui" line="0" />
             <source>Qube Manager</source>
             <translation>מנהל ה-qubes</translation>
@@ -2653,227 +2892,227 @@ Prohibition rationale is available in qube settings -&gt; Advanced tab</source>
             <translation>End</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="866" />
+            <location filename="../qube_manager.py" line="883" />
             <source>Show internal qubes</source>
             <translation>הצגת qubes פנימיים</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="904" />
+            <location filename="../qube_manager.py" line="921" />
             <source>Manager settings unreadable</source>
             <translation>אי אפשר לקרוא את הגדרות המנהל</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="990" />
+            <location filename="../qube_manager.py" line="1007" />
             <source>Template Change Confirmation</source>
             <translation>אישור החלפת תבנית</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="991" />
+            <location filename="../qube_manager.py" line="1008" />
             <source>Do you want to change '{0}'&lt;br&gt;to Template &lt;b&gt;'{1}'&lt;/b&gt;?</source>
             <translation>להחליף את התבנית של '{0}'&lt;br&gt;לתבנית &lt;b&gt;'{1}'&lt;/b&gt;?</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1005" />
+            <location filename="../qube_manager.py" line="1022" />
             <source>{0} template change failed!</source>
             <translation>החלפת התבנית של {0} נכשלה!</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1566" />
-            <location filename="../qube_manager.py" line="1029" />
+            <location filename="../qube_manager.py" line="1583" />
+            <location filename="../qube_manager.py" line="1046" />
             <source>Warning!</source>
             <translation>אזהרה!</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1030" />
+            <location filename="../qube_manager.py" line="1047" />
             <source>Anonymous qubes must be connected to an anonymous gateway to ensure privacy and anonymity. By changing the net qube to a gateway that does not provide anonymity, your IP address will be leaked on the Internet. Continue at your own risk.</source>
             <translation>‏qubes אנונימיים חייבים להיות מחוברים לשער אנונימי כדי להבטיח פרטיות ואנונימיות. אם תחליף את qube הרשת לשער שלא מספק אנונימיות, כתובת ה-IP שלך תיחשף באינטרנט. ההמשך על אחריותך.</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1039" />
+            <location filename="../qube_manager.py" line="1056" />
             <source>Network Change Confirmation</source>
             <translation>אישור החלפת רשת</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1040" />
+            <location filename="../qube_manager.py" line="1057" />
             <source>Do you want to change '{0}'&lt;br&gt;to Network &lt;b&gt;'{1}'&lt;/b&gt;?</source>
             <translation>להחליף את הרשת של '{0}'&lt;br&gt;לרשת &lt;b&gt;'{1}'&lt;/b&gt;?</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1050" />
+            <location filename="../qube_manager.py" line="1067" />
             <source>Qube Start Confirmation</source>
             <translation>אישור הפעלת qube</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1051" />
+            <location filename="../qube_manager.py" line="1068" />
             <source>&lt;br&gt;Can not change netvm to a halted Qube.&lt;br&gt;Do you want to start the Qube &lt;b&gt;'{0}'&lt;/b&gt;?</source>
             <translation>&lt;br&gt;אי אפשר להגדיר כ-netvm qube כבוי.&lt;br&gt;להפעיל את ה-qube &lt;b&gt;'{0}'&lt;/b&gt;?</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1073" />
+            <location filename="../qube_manager.py" line="1090" />
             <source>{0} network change failed!</source>
             <translation>החלפת הרשת של {0} נכשלה!</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1130" />
+            <location filename="../qube_manager.py" line="1147" />
             <source>Loading Qube Manager...</source>
             <translation>טוען את מנהל ה-qubes...</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1176" />
+            <location filename="../qube_manager.py" line="1193" />
             <source>None</source>
             <translation>ללא</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1178" />
+            <location filename="../qube_manager.py" line="1195" />
             <source>default ({0})</source>
             <translation>ברירת מחדל ({0})</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1220" />
+            <location filename="../qube_manager.py" line="1237" />
             <source>No finished thread found</source>
             <translation>לא נמצא תהליכון שהסתיים</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1568" />
+            <location filename="../qube_manager.py" line="1585" />
             <source>This qube cannot be removed. It is used as: &lt;br&gt; {} &lt;small&gt;If you want to  remove this qube, you should remove or change settings of each qube or setting that uses it.&lt;/small&gt;</source>
             <translation>אי אפשר להסיר את ה-qube הזה. הוא משמש בתור: &lt;br&gt; {} &lt;small&gt;כדי להסיר את ה-qube הזה, יש להסיר או לשנות את ההגדרות של כל qube או הגדרה שמשתמשים בו.&lt;/small&gt;</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1578" />
+            <location filename="../qube_manager.py" line="1595" />
             <source>Qube Removal Confirmation</source>
             <translation>אישור הסרת qube</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1579" />
+            <location filename="../qube_manager.py" line="1596" />
             <source>Are you sure you want to remove the Qube &lt;b&gt;'{0}'&lt;/b&gt;?&lt;br&gt; All data on this Qube's private storage will be lost!&lt;br&gt;&lt;br&gt;Type the name of the Qube (&lt;b&gt;{1}&lt;/b&gt;) below to confirm:</source>
             <translation>להסיר את ה-qube &lt;b&gt;'{0}'&lt;/b&gt;?&lt;br&gt; כל הנתונים באחסון הפרטי של ה-qube יאבדו!&lt;br&gt;&lt;br&gt;יש להקליד למטה את שם ה-qube (&lt;b&gt;{1}&lt;/b&gt;) לאישור:</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1594" />
+            <location filename="../qube_manager.py" line="1611" />
             <source>Qube removal confirmation failed</source>
             <translation>אישור הסרת ה-qube נכשל</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1595" />
+            <location filename="../qube_manager.py" line="1612" />
             <source>Entered name did not match! Not removing {0}.</source>
             <translation>השם שהוקלד לא תואם! {0} לא יוסר.</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1626" />
+            <location filename="../qube_manager.py" line="1643" />
             <source>Error unpausing Qube!</source>
             <translation>שגיאה בביטול ההשהיה של ה-qube!</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1777" />
-            <location filename="../qube_manager.py" line="1742" />
-            <location filename="../qube_manager.py" line="1670" />
-            <location filename="../qube_manager.py" line="1627" />
+            <location filename="../qube_manager.py" line="1794" />
+            <location filename="../qube_manager.py" line="1759" />
+            <location filename="../qube_manager.py" line="1687" />
+            <location filename="../qube_manager.py" line="1644" />
             <source>ERROR: {0}</source>
             <translation>שגיאה: {0}</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1653" />
+            <location filename="../qube_manager.py" line="1670" />
             <source>QWT not found</source>
             <translation>‏QWT לא נמצא</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1654" />
+            <location filename="../qube_manager.py" line="1671" />
             <source>'qubes-windows-tools' is not installed in dom0.</source>
             <translation>‏'qubes-windows-tools' לא מותקן ב-dom0.</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1669" />
+            <location filename="../qube_manager.py" line="1686" />
             <source>Error pausing Qube!</source>
             <translation>שגיאה בהשהיית ה-qube!</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1679" />
+            <location filename="../qube_manager.py" line="1696" />
             <source>Are you sure you want to power down the Qube &lt;b&gt;'{0}'&lt;/b&gt;?&lt;br&gt;&lt;small&gt;This will shutdown all the running applications within this Qube.&lt;/small&gt;</source>
             <translation>לכבות את ה-qube &lt;b&gt;'{0}'&lt;/b&gt;?&lt;br&gt;&lt;small&gt;כל היישומים שפועלים ב-qube הזה ייסגרו.&lt;/small&gt;</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1685" />
+            <location filename="../qube_manager.py" line="1702" />
             <source>Are you sure you want to power down the following Qubes?&lt;br&gt;&lt;b&gt;{0}&lt;/b&gt;&lt;br&gt;&lt;small&gt;This will shutdown all the running applications within these Qubes.&lt;/small&gt;</source>
             <translation>לכבות את ה-qubes הבאים?&lt;br&gt;&lt;b&gt;{0}&lt;/b&gt;&lt;br&gt;&lt;small&gt;כל היישומים שפועלים ב-qubes האלה ייסגרו.&lt;/small&gt;</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1716" />
-            <location filename="../qube_manager.py" line="1691" />
+            <location filename="../qube_manager.py" line="1733" />
+            <location filename="../qube_manager.py" line="1708" />
             <source>Qube Shutdown Confirmation</source>
             <translation>אישור כיבוי qube</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1717" />
+            <location filename="../qube_manager.py" line="1734" />
             <source>There are some qubes connected to &lt;b&gt;'{0}'&lt;/b&gt;!&lt;br&gt;&lt;small&gt;Do you want to shutdown: &lt;/small&gt;&lt;b&gt;'{1}'&lt;/b&gt;?</source>
             <translation>יש qubes שמחוברים ל-&lt;b&gt;'{0}'&lt;/b&gt;!&lt;br&gt;&lt;small&gt;לכבות את: &lt;/small&gt;&lt;b&gt;'{1}'&lt;/b&gt;?</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1741" />
+            <location filename="../qube_manager.py" line="1758" />
             <source>Error shutting down Qube!</source>
             <translation>שגיאה בכיבוי ה-qube!</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1759" />
+            <location filename="../qube_manager.py" line="1776" />
             <source>Qube Restart Confirmation</source>
             <translation>אישור הפעלה מחדש של qube</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1760" />
+            <location filename="../qube_manager.py" line="1777" />
             <source>Are you sure you want to restart the Qube &lt;b&gt;'{0}'&lt;/b&gt;?&lt;br&gt;&lt;small&gt;This will shutdown all the running applications within this Qube.&lt;/small&gt;</source>
             <translation>להפעיל מחדש את ה-qube &lt;b&gt;'{0}'&lt;/b&gt;?&lt;br&gt;&lt;small&gt;כל היישומים שפועלים ב-qube הזה ייסגרו.&lt;/small&gt;</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1776" />
+            <location filename="../qube_manager.py" line="1793" />
             <source>Error restarting Qube!</source>
             <translation>שגיאה בהפעלה מחדש של ה-qube!</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1791" />
+            <location filename="../qube_manager.py" line="1808" />
             <source>Qube &lt;b&gt;'{0}'&lt;/b&gt; is not running. Are you absolutely sure you want to try to kill it?&lt;br&gt;&lt;small&gt;This will end &lt;b&gt;(not shutdown!)&lt;/b&gt; all the running applications within this Qube.&lt;/small&gt;</source>
             <translation>ה-qube &lt;b&gt;'{0}'&lt;/b&gt; לא פועל. בטוח שברצונך לנסות לעצור אותו בכוח?&lt;br&gt;&lt;small&gt;כל היישומים שפועלים ב-qube הזה ייעצרו &lt;b&gt;(בלי כיבוי מסודר!)&lt;/b&gt;.&lt;/small&gt;</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1797" />
+            <location filename="../qube_manager.py" line="1814" />
             <source>Are you sure you want to kill the Qube &lt;b&gt;'{0}'&lt;/b&gt;?&lt;br&gt;&lt;small&gt;This will end &lt;b&gt;(not shutdown!)&lt;/b&gt; all the running applications within this Qube.&lt;/small&gt;</source>
             <translation>לעצור בכוח את ה-qube &lt;b&gt;'{0}'&lt;/b&gt;?&lt;br&gt;&lt;small&gt;כל היישומים שפועלים ב-qube הזה ייעצרו &lt;b&gt;(בלי כיבוי מסודר!)&lt;/b&gt;.&lt;/small&gt;</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1803" />
+            <location filename="../qube_manager.py" line="1820" />
             <source>Qube Kill Confirmation</source>
             <translation>אישור עצירה בכוח של qube</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1813" />
+            <location filename="../qube_manager.py" line="1830" />
             <source>Error while killing Qube!</source>
             <translation>שגיאה בעצירה בכוח של ה-qube!</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1814" />
+            <location filename="../qube_manager.py" line="1831" />
             <source>&lt;b&gt;An exception occurred while killing {0}.&lt;/b&gt;&lt;br&gt;ERROR: {1}</source>
             <translation>&lt;b&gt;אירעה חריגה בעצירה בכוח של {0}.&lt;/b&gt;&lt;br&gt;שגיאה: {1}</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1829" />
+            <location filename="../qube_manager.py" line="1846" />
             <source>Qube settings unavailable</source>
             <translation>הגדרות ה-qube לא זמינות</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1867" />
+            <location filename="../qube_manager.py" line="1884" />
             <source>Qubes command entry</source>
             <translation>הזנת פקודה ל-Qubes</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="1868" />
+            <location filename="../qube_manager.py" line="1885" />
             <source>Run command in &lt;b&gt;{}&lt;/b&gt;:</source>
             <translation>הרצת פקודה ב-&lt;b&gt;{}&lt;/b&gt;:</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="2012" />
+            <location filename="../qube_manager.py" line="2029" />
             <source>Error</source>
             <translation>שגיאה</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="2013" />
+            <location filename="../qube_manager.py" line="2030" />
             <source>No log files were found for the selected qubes.</source>
             <translation>לא נמצאו קובצי יומן ל-qubes שנבחרו.</translation>
         </message>
@@ -2881,27 +3120,27 @@ Prohibition rationale is available in qube settings -&gt; Advanced tab</source>
     <context>
         <name>VmShutdownMonitor</name>
         <message>
-            <location filename="../qube_manager.py" line="640" />
+            <location filename="../qube_manager.py" line="656" />
             <source>Qube Shutdown</source>
             <translation>כיבוי qube</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="641" />
+            <location filename="../qube_manager.py" line="657" />
             <source>The Qube &lt;b&gt;'{0}'&lt;/b&gt; hasn't shutdown within the last {1} seconds, do you want to kill it?&lt;br&gt;</source>
             <translation>ה-qube &lt;b&gt;'{0}'&lt;/b&gt; לא כבה ב-{1} השניות האחרונות. לעצור אותו בכוח?&lt;br&gt;</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="646" />
+            <location filename="../qube_manager.py" line="662" />
             <source>Kill it!</source>
             <translation>עצירה בכוח!</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="648" />
+            <location filename="../qube_manager.py" line="664" />
             <source>Wait another {0} seconds...</source>
             <translation>המתנה {0} שניות נוספות...</translation>
         </message>
         <message>
-            <location filename="../qube_manager.py" line="652" />
+            <location filename="../qube_manager.py" line="668" />
             <source>Don't ask again</source>
             <translation>לא לשאול שוב</translation>
         </message>

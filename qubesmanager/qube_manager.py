@@ -458,6 +458,22 @@ class QubesTableModel(QAbstractTableModel):
                 "Is DVM Template",
                 "Virt Mode"
                 ]
+        # display names; columns_indices stay English, they are keys in settings
+        self.columns_names = {
+            "Label": self.tr("Label"),
+            "Name": self.tr("Name"),
+            "State": self.tr("State"),
+            "Template": self.tr("Template"),
+            "NetVM": self.tr("NetVM"),
+            "Disk Usage": self.tr("Disk Usage"),
+            "Internal": self.tr("Internal"),
+            "IP Address": self.tr("IP Address"),
+            "Backup": self.tr("Backup"),
+            "Last backup": self.tr("Last backup"),
+            "Default DispVM": self.tr("Default DispVM"),
+            "Is DVM Template": self.tr("Is DVM Template"),
+            "Virt Mode": self.tr("Virt Mode"),
+        }
 
     # pylint: disable=invalid-name
     def rowCount(self, _):
@@ -493,9 +509,9 @@ class QubesTableModel(QAbstractTableModel):
                 return vm.disk
             if col_name == "Internal":
                 if vm.state["is_preload"]:
-                    return "Yes (preloaded)"
+                    return self.tr("Yes (preloaded)")
                 if vm.internal:
-                    return "Yes"
+                    return self.tr("Yes")
                 return ""
             if col_name == "IP Address":
                 return vm.ip
@@ -504,7 +520,7 @@ class QubesTableModel(QAbstractTableModel):
             if col_name == "Default DispVM":
                 return vm.dvm
             if col_name == "Is DVM Template":
-                return "Yes" if vm.dvm_template else ""
+                return self.tr("Yes") if vm.dvm_template else ""
             if col_name == "Virt Mode":
                 return vm.virt_mode
             return None
@@ -570,7 +586,7 @@ class QubesTableModel(QAbstractTableModel):
             return None
         if (orientation == Qt.Orientation.Horizontal and role ==
                 Qt.ItemDataRole.DisplayRole):
-            return self.columns_indices[col]
+            return self.columns_names[self.columns_indices[col]]
         return None
 
     def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
@@ -856,7 +872,8 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
 
         # Create view menu
         for col_no, column in enumerate(self.qubes_model.columns_indices):
-            action = self.menu_view.addAction(column)
+            action = self.menu_view.addAction(
+                self.qubes_model.columns_names[column])
             action.setData(column)
             action.setCheckable(True)
             action.toggled.connect(partial(self.showhide_column, col_no))
