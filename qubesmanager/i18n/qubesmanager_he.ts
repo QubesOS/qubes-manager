@@ -2256,196 +2256,196 @@ Prohibition rationale is available in qube settings -&gt; Advanced tab</source>
             <translation>כיבוי בזמן חוסר פעילות (לא זמין: החבילה qubes-app-shutdown-idle חסרה ב-qube)</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="633" />
-            <source>App qube</source>
-            <translation>‏qube יישומים</translation>
-        </message>
-        <message>
             <location filename="../settings.py" line="634" />
-            <source>Template</source>
-            <translation>תבנית</translation>
+            <source>AppVM</source>
+            <translation>qube יישומים</translation>
         </message>
         <message>
             <location filename="../settings.py" line="635" />
-            <source>Standalone qube</source>
-            <translation>‏qube עצמאי</translation>
+            <source>TemplateVM</source>
+            <translation>תבנית</translation>
         </message>
         <message>
             <location filename="../settings.py" line="636" />
-            <source>Disposable qube</source>
-            <translation>‏qube זמני</translation>
+            <source>StandaloneVM</source>
+            <translation>qube עצמאי</translation>
         </message>
         <message>
             <location filename="../settings.py" line="637" />
-            <source>Admin qube</source>
-            <translation>‏qube ניהול</translation>
+            <source>DispVM</source>
+            <translation>qube זמני</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="643" />
+            <location filename="../settings.py" line="638" />
+            <source>AdminVM</source>
+            <translation>qube ניהול</translation>
+        </message>
+        <message>
+            <location filename="../settings.py" line="644" />
             <source>Yes</source>
             <translation>כן</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="645" />
+            <location filename="../settings.py" line="646" />
             <source>No</source>
             <translation>לא</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="651" />
+            <location filename="../settings.py" line="652" />
             <source>none</source>
             <translation>ללא</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="691" />
+            <location filename="../settings.py" line="692" />
             <source>To change system storage size, change properties of the underlying template.</source>
             <translation>כדי לשנות את גודל אחסון המערכת, יש לשנות את המאפיינים של התבנית שעליה הוא מבוסס.</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="732" />
+            <location filename="../settings.py" line="733" />
             <source>Qube Start Confirmation</source>
             <translation>אישור הפעלת qube</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="733" />
+            <location filename="../settings.py" line="734" />
             <source>&lt;br&gt;Can not change netvm of a running qubeto a halted Qube.&lt;br&gt;Do you want to start the Qube &lt;b&gt;'{0}'&lt;/b&gt;?</source>
             <translation>&lt;br&gt;אי אפשר לשנות את qube הרשת של qube פועל ל-qube כבוי.&lt;br&gt;להפעיל את ה-qube &lt;b&gt;'{0}'&lt;/b&gt;?</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="899" />
-            <location filename="../settings.py" line="843" />
-            <location filename="../settings.py" line="814" />
+            <location filename="../settings.py" line="900" />
+            <location filename="../settings.py" line="844" />
+            <location filename="../settings.py" line="815" />
             <source>Warning!</source>
             <translation>אזהרה!</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="815" />
+            <location filename="../settings.py" line="816" />
             <source>Max memory can not be less than initial memory.&lt;br&gt;Setting max memory to equal initial memory.</source>
             <translation>הזיכרון המרבי לא יכול להיות קטן מהזיכרון ההתחלתי.&lt;br&gt;הזיכרון המרבי יוגדר שווה לזיכרון ההתחלתי.</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="844" />
+            <location filename="../settings.py" line="845" />
             <source>Connecting a TemplateVM directly to a network is highly discouraged! &lt;br&gt; &lt;small&gt;You are breaking a basic part of Qubes security and there is probably no real need to do so. Continue at your own risk.&lt;/small&gt;</source>
             <translation>לא מומלץ בכלל לחבר תבנית ישירות לרשת! &lt;br&gt; &lt;small&gt;זה פוגע בחלק בסיסי של האבטחה ב-Qubes, וכנראה אין בזה צורך אמיתי. המשך הוא על אחריותך בלבד.&lt;/small&gt;</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="900" />
+            <location filename="../settings.py" line="901" />
             <source>Anonymous qubes must be connected to an anonymous gateway to ensure privacy and anonymity. By changing the net qube to a gateway that does not provide anonymity, your IP address will be leaked on the Internet. Continue at your own risk.</source>
             <translation>‏qubes אנונימיים חייבים להיות מחוברים לשער אנונימי כדי להבטיח פרטיות ואנונימיות. אם תשנה את qube הרשת לשער שלא מספק אנונימיות, כתובת ה-IP שלך תיחשף באינטרנט. המשך הוא על אחריותך בלבד.</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="922" />
+            <location filename="../settings.py" line="923" />
             <source>Qube cannot be renamed!</source>
             <translation>אי אפשר לשנות את שם ה-qube!</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="923" />
+            <location filename="../settings.py" line="924" />
             <source>The following qubes using this qube as a template are running: &lt;br&gt; {}. &lt;br&gt; In order to rename this qube, you must first shut them down.</source>
             <translation>ה-qubes הבאים, שמשתמשים ב-qube הזה כתבנית, פועלים: &lt;br&gt; {}. &lt;br&gt; כדי לשנות את שם ה-qube הזה, יש לכבות אותם קודם.</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="933" />
+            <location filename="../settings.py" line="934" />
             <source>Rename qube</source>
             <translation>שינוי שם ה-qube</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="934" />
+            <location filename="../settings.py" line="935" />
             <source>New name: (WARNING: all other changes will be discarded)</source>
             <translation>שם חדש: (אזהרה: כל שאר השינויים יבוטלו)</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="944" />
+            <location filename="../settings.py" line="945" />
             <source>Renaming Qube...</source>
             <translation>משנה את שם ה-qube...</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="961" />
+            <location filename="../settings.py" line="962" />
             <source>Qube cannot be removed!</source>
             <translation>אי אפשר להסיר את ה-qube!</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="962" />
+            <location filename="../settings.py" line="963" />
             <source>This qube cannot be removed. It is used as: &lt;br&gt; {} &lt;small&gt;If you want to  remove this qube, you should remove or change settings of each qube or setting that uses it.&lt;/small&gt;</source>
             <translation>אי אפשר להסיר את ה-qube הזה. הוא משמש כ: &lt;br&gt; {} &lt;small&gt;כדי להסיר את ה-qube הזה, יש להסיר או לשנות את ההגדרות של כל qube או הגדרה שמשתמשים בו.&lt;/small&gt;</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="974" />
+            <location filename="../settings.py" line="975" />
             <source>Delete qube</source>
             <translation>מחיקת ה-qube</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="975" />
+            <location filename="../settings.py" line="976" />
             <source>Are you absolutely sure you want to delete this qube? &lt;br/&gt; All qube settings and data will be irrevocably deleted. &lt;br/&gt; If you are sure, please enter this qube's name below.</source>
             <translation>האם אתה בטוח לגמרי שברצונך למחוק את ה-qube הזה? &lt;br/&gt; כל ההגדרות והנתונים של ה-qube יימחקו לצמיתות. &lt;br/&gt; אם אתה בטוח, יש להקליד את שם ה-qube למטה.</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="989" />
+            <location filename="../settings.py" line="990" />
             <source>Deleting Qube...</source>
             <translation>מוחק את ה-qube...</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="1001" />
+            <location filename="../settings.py" line="1002" />
             <source>Removal cancelled</source>
             <translation>ההסרה בוטלה</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="1002" />
+            <location filename="../settings.py" line="1003" />
             <source>The qube will not be removed.</source>
             <translation>ה-qube לא יוסר.</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="1172" />
+            <location filename="../settings.py" line="1173" />
             <source>Cannot change this setting while this qube is used as a NetVM by the following qubes:
 </source>
             <translation>אי אפשר לשנות את ההגדרה הזו כל עוד ה-qube משמש כ-qube רשת של ה-qubes הבאים:
 </translation>
         </message>
         <message>
-            <location filename="../settings.py" line="1236" />
+            <location filename="../settings.py" line="1237" />
             <source>Failed to set seamless mode</source>
             <translation>הגדרת מצב חלק נכשלה</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="1249" />
+            <location filename="../settings.py" line="1250" />
             <source>Failed to set fullscreen mode</source>
             <translation>הגדרת מצב מסך מלא נכשלה</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="1540" />
+            <location filename="../settings.py" line="1541" />
             <source>Available devices</source>
             <translation>התקנים זמינים</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="1541" />
+            <location filename="../settings.py" line="1542" />
             <source>Devices always connected to this qube</source>
             <translation>התקנים שמחוברים תמיד ל-qube הזה</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="1769" />
+            <location filename="../settings.py" line="1770" />
             <source>Refresh in progress...</source>
             <translation>מרענן...</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="1780" />
+            <location filename="../settings.py" line="1781" />
             <source>Refresh applications</source>
             <translation>רענון היישומים</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="1865" />
+            <location filename="../settings.py" line="1866" />
             <source>(custom...)</source>
             <translation>(מותאם אישית...)</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="1901" />
+            <location filename="../settings.py" line="1902" />
             <source>Custom service name</source>
             <translation>שם שירות מותאם אישית</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="1902" />
+            <location filename="../settings.py" line="1903" />
             <source>Name of the service:</source>
             <translation>שם השירות:</translation>
         </message>
         <message>
-            <location filename="../settings.py" line="1910" />
+            <location filename="../settings.py" line="1911" />
             <source>Service already on the list!</source>
             <translation>השירות כבר ברשימה!</translation>
         </message>

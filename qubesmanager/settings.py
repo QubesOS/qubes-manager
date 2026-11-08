@@ -629,12 +629,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.autostart_vm.setVisible(False)
 
         # type
+        # the English text stays the class name; translations may differ
         klass_names = {
-            "AppVM": self.tr("App qube"),
-            "TemplateVM": self.tr("Template"),
-            "StandaloneVM": self.tr("Standalone qube"),
-            "DispVM": self.tr("Disposable qube"),
-            "AdminVM": self.tr("Admin qube"),
+            "AppVM": self.tr("AppVM"),
+            "TemplateVM": self.tr("TemplateVM"),
+            "StandaloneVM": self.tr("StandaloneVM"),
+            "DispVM": self.tr("DispVM"),
+            "AdminVM": self.tr("AdminVM"),
         }
         self.type_label.setText(klass_names.get(self.vm.klass, self.vm.klass))
 
