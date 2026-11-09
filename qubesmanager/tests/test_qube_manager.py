@@ -313,6 +313,59 @@ def test_004_hide_column(mock_settings, qubes_manager):
     mock_settings.assert_called_with('columns/Is DVM Template', False)
 
 
+def _set_volume_pool(qapp, vm_name, volume_name, pool):
+    call = (vm_name, "admin.vm.volume.Info", volume_name, None)
+    qapp.expected_calls[call] = qapp.expected_calls[call].replace(
+        b"pool=vm-pool\n", f"pool={pool}\n".encode())
+
+
+def test_005_pool_column(qubes_manager):
+    model = qubes_manager.qubes_model
+    for row in range(model.rowCount(None)):
+        vm = model.data(model.index(row, 0), Qt.ItemDataRole.UserRole)
+        pool = model.data(model.index(row, model.columns_indices.index(
+            "Pool")), Qt.ItemDataRole.DisplayRole)
+        if vm.klass == 'AdminVM':
+            assert pool == ""
+        else:
+            assert pool == "vm-pool"
+
+
+def test_006_pool_column_volume_choice(qapp, test_qubes_app):
+    # template-based qube: private volume
+    _set_volume_pool(test_qubes_app, 'test-blue', 'root', 'pool-root')
+    _set_volume_pool(test_qubes_app, 'test-blue', 'private', 'pool-blue')
+    # template: root volume
+    _set_volume_pool(test_qubes_app, FEDORA_LATEST, 'root', 'pool-tpl')
+    _set_volume_pool(test_qubes_app, FEDORA_LATEST, 'private', 'pool-other')
+    # standalone: both, if different
+    _set_volume_pool(test_qubes_app, 'test-standalone', 'root', 'pool1')
+    _set_volume_pool(test_qubes_app, 'test-standalone', 'private', 'pool2')
+
+    qm = qube_manager.VmManagerWindow(
+        qapp, test_qubes_app, MockDispatcher(test_qubes_app))
+
+    assert _get_column_value(qm, "Pool", 'test-blue') == 'pool-blue'
+    assert _get_column_value(qm, "Pool", FEDORA_LATEST) == 'pool-tpl'
+    assert _get_column_value(qm, "Pool", 'test-standalone') == 'pool1, pool2'
+    assert _get_column_value(qm, "Pool", 'test-red') == 'vm-pool'
+
+    qm.table.sortByColumn(qm.qubes_model.columns_indices.index("Pool"),
+                          Qt.SortOrder.AscendingOrder)
+    _check_sorting(qm, "Pool")
+
+
+def test_007_pool_column_no_access(qapp, test_qubes_app):
+    test_qubes_app.expected_calls[
+        ('test-blue', 'admin.vm.volume.Info', 'private', None)] = b''
+
+    qm = qube_manager.VmManagerWindow(
+        qapp, test_qubes_app, MockDispatcher(test_qubes_app))
+
+    assert _get_column_value(qm, "Pool", 'test-blue') == ""
+    assert _get_column_value(qm, "Pool", 'test-red') == 'vm-pool'
+
+
 @mock.patch('qubesmanager.settings.VMSettingsWindow')
 def test_200_vm_open_settings(mock_window, qubes_manager):
     _select_vm(qubes_manager, 'test-blue')
