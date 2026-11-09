@@ -44,6 +44,7 @@ class CloneVMDlg(QtWidgets.QDialog, Ui_CloneVMDlg):
     def __init__(self, qtapp, app, parent=None, src_vm=None):
         super().__init__(parent)
         self.setupUi(self)
+        utils.style_dialog_buttons(self.buttonBox)
 
         self.qtapp = qtapp
         self.app = app

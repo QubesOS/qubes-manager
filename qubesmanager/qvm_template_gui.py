@@ -536,7 +536,7 @@ class TemplateInstallConfirmDialog(
         PyQt6.QtWidgets.QDialog):
     # pylint: disable=too-few-public-methods
     def __init__(self, question: str, operation_name: str,
-                 palette: PyQt6.QtGui.QPalette, enable_warn: bool = False):
+                 enable_warn: bool = False):
         super().__init__()
         self.setupUi(self)
 
@@ -546,9 +546,7 @@ class TemplateInstallConfirmDialog(
         ok_button = self.button_box.addButton(
             operation_name,
             PyQt6.QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole)
-        ok_button.setPalette(palette)
-        ok_button.setFlat(True)
-        ok_button.setAutoFillBackground(True)
+        utils.style_primary_button(ok_button)
 
         self.button_box.addButton(
             "Cancel",
@@ -559,7 +557,6 @@ class TemplateInstallProgressDialog(
         ui_templateinstallprogressdlg.Ui_TemplateInstallProgressDlg,
         PyQt6.QtWidgets.QDialog):
     def __init__(self, command: typing.List[str],
-                 palette: PyQt6.QtGui.QPalette,
                  window_title: typing.Optional[str] = None):
         """
         :param command: a list of strings containing the command to be used
@@ -568,7 +565,6 @@ class TemplateInstallProgressDialog(
         super().__init__()
         self.setupUi(self)
         self.command = command
-        self.qubes_palette = palette
         self.window().setWindowTitle(window_title)
 
         # currently this button does nothing
@@ -583,7 +579,7 @@ class TemplateInstallProgressDialog(
             "Close" if error else "OK",
             PyQt6.QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole)
         if not error:
-            ok_button.setPalette(self.qubes_palette)
+            utils.style_primary_button(ok_button)
 
     @staticmethod
     def _process_cr(text):
@@ -673,23 +669,9 @@ class QvmTemplateWindow(
         self.actionRepository_settings.triggered.connect(
             self.open_global_config)
 
-        self.qubes_palette = self.initialize_styles()
-
-    def initialize_styles(self):
-        qubes_style_buttons = [self.upgrade_button, self.install_button,
-                               self.reinstall_button, self.uninstall_button]
-        palette = self.qt_app.palette()
-        palette.setColor(PyQt6.QtGui.QPalette.ColorRole.Button,
-                         PyQt6.QtGui.QColor("#4488df"))
-        palette.setColor(PyQt6.QtGui.QPalette.ColorRole.ButtonText,
-                         PyQt6.QtGui.QColor("#ffffff"))
-
-        for button in qubes_style_buttons:
-            button.setPalette(palette)
-            button.setFlat(True)
-            button.setAutoFillBackground(True)
-
-        return palette
+        for button in (self.upgrade_button, self.install_button,
+                       self.reinstall_button, self.uninstall_button):
+            utils.style_primary_button(button)
 
     def show_help(self):
         """Action on pressing Help button"""
@@ -756,11 +738,9 @@ class QvmTemplateWindow(
         :param window_title: title of the window
         """
         confirm = TemplateInstallConfirmDialog(question, operation_name,
-                                               self.qubes_palette,
                                                enable_warn)
         if confirm.exec():
             progress = TemplateInstallProgressDialog(command,
-                                                     self.qubes_palette,
                                                      window_title)
             progress.install()
             progress.exec()

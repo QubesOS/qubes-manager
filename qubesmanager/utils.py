@@ -633,3 +633,51 @@ def tint_qimage(source: QtGui.QImage, color: str) -> QtGui.QImage:
         QtGui.QImage.Format.Format_RGBA8888,
     )
     return destination
+
+
+# Rules apply only to enabled buttons; disabled ones keep the theme's look.
+PRIMARY_BUTTON_STYLE = """
+QPushButton:enabled {
+    background: #4488df;
+    color: white;
+    font-weight: 600;
+    border: 1px solid #4488df;
+    border-radius: 2px;
+    padding: 0 12px;
+}
+QPushButton:enabled:hover {
+    background: #5c98e4;
+    border-color: #5c98e4;
+}
+QPushButton:enabled:pressed {
+    background: #2f6fbf;
+    border-color: #2f6fbf;
+}
+QPushButton:enabled:focus {
+    border-color: #1d4f91;
+}
+"""
+
+
+def style_primary_button(button: QtWidgets.QAbstractButton):
+    """Make a button look like the "confirm" button from the Qubes OS UX
+    guidelines: blue, with white semi-bold text and slightly rounded
+    corners. Other buttons keep the theme's look."""
+    # the theme's "OK" icon (a green arrow) is unclear, more so on blue
+    button.setIcon(QtGui.QIcon())
+    button.setMinimumSize(button.sizeHint())
+    button.setStyleSheet(PRIMARY_BUTTON_STYLE)
+
+
+def style_dialog_buttons(buttons):
+    """Style the main button of a QDialogButtonBox (the accept button) or of
+    a QWizard (the next and finish buttons) as primary."""
+    if isinstance(buttons, QtWidgets.QWizard):
+        primary = [buttons.button(QtWidgets.QWizard.WizardButton.NextButton),
+                   buttons.button(QtWidgets.QWizard.WizardButton.FinishButton)]
+    else:
+        primary = [button for button in buttons.buttons()
+                   if buttons.buttonRole(button) ==
+                   QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole]
+    for button in primary:
+        style_primary_button(button)

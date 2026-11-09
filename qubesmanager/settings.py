@@ -204,6 +204,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.buttonBox.button(
             QtWidgets.QDialogButtonBox.StandardButton.Apply
         ).clicked.connect(self.apply)
+        utils.style_dialog_buttons(self.buttonBox)
 
         self.tabWidget.currentChanged.connect(self.current_tab_changed)
 
