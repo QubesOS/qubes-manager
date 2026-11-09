@@ -73,6 +73,7 @@ class VMBootFromDeviceWindow(ui_bootfromdevice.Ui_BootDialog, QtWidgets.QDialog)
 
         self.buttonBox.accepted.connect(self.save_and_apply)
         self.buttonBox.rejected.connect(self.reject)
+        utils.style_dialog_buttons(self.buttonBox)
 
         # populate buttons and such
         self.__init_buttons__()

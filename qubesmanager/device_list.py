@@ -16,6 +16,7 @@
 #
 
 from . import ui_devicelist  # pylint: disable=no-name-in-module
+from . import utils
 from PyQt6 import QtWidgets  # pylint: disable=import-error
 
 # this is needed for icons to actually work
@@ -37,6 +38,7 @@ class PCIDeviceListWindow(ui_devicelist.Ui_Dialog, QtWidgets.QDialog):
 
         self.buttonBox.accepted.connect(self.save_and_apply)
         self.buttonBox.rejected.connect(self.reject)
+        utils.style_dialog_buttons(self.buttonBox)
 
         self.ident_list = {}
         self.fill_device_list()

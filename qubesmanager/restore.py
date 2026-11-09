@@ -112,6 +112,7 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
         self.target_appvm = None
 
         self.setupUi(self)
+        utils.style_dialog_buttons(self)
 
         self.dom0_restored_label.setVisible(False)
 

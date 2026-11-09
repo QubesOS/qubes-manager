@@ -24,6 +24,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets  # pylint: disable=import-error
 import qubesadmin.firewall
 
 from . import ui_newfwruledlg  # pylint: disable=no-name-in-module
+from . import utils
 # this is needed for icons to actually work
 # pylint: disable=unused-import, no-name-in-module
 from . import resources
@@ -37,6 +38,7 @@ class NewFwRuleDlg(QtWidgets.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setupUi(self)
+        utils.style_dialog_buttons(self.buttonBox)
 
         # Match the character whitelist in qubes.firewall.Comment.
         self.commentLineEdit.setValidator(QtGui.QRegularExpressionValidator(
