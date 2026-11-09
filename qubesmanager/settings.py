@@ -28,6 +28,7 @@ import functools
 import re
 import subprocess
 import sys
+import threading
 import traceback
 import datetime
 from qubesadmin.tools import QubesArgumentParser
@@ -49,6 +50,13 @@ from PyQt6 import QtCore, QtWidgets, QtGui  # pylint: disable=import-error
 
 from . import ui_settingsdlg  # pylint: disable=no-name-in-module
 
+try:
+    # pylint: disable=import-error
+    from qrexec.policy.admin_client import PolicyClient
+    from qrexec.policy.parser import Allow, Deny, StringPolicy
+except ImportError:
+    PolicyClient = None
+
 # this is needed for icons to actually work
 # pylint: disable=unused-import, no-name-in-module
 from . import resources
@@ -67,6 +75,49 @@ def get_default_bootmode_name(vm, bootmode):
     if bootmode == "default":
         return vm.features.check_with_template("boot-mode.name.default", "")
     return vm.features.check_with_template(f"boot-mode.name.{bootmode}", bootmode)
+
+
+UPDATES_PROXY_SERVICE = "qubes.UpdatesProxy"
+
+
+def uses_update_proxy(vm):
+    """Check if the qube gets updates through an update proxy; same check
+    as in the update proxy settings of Global Config."""
+    if vm.klass not in ("TemplateVM", "StandaloneVM"):
+        return False
+    return bool(
+        vm.features.get("service.updates-proxy-setup", vm.klass == "TemplateVM")
+    )
+
+
+def find_update_proxy(vm, policy_client):
+    """Find the update proxy of the given qube in the qubes.UpdatesProxy
+    policy, matching rules with the qrexec policy parser. Return None if the
+    policy denies updates. Raise ValueError if it cannot be found here."""
+    system_info = {"domains": {vm.name: {"tags": list(vm.tags), "type": vm.klass}}}
+    for file_name in policy_client.policy_get_files(UPDATES_PROXY_SERVICE):
+        if "/" in file_name:
+            # included or legacy policy file
+            raise ValueError(f"cannot check policy file {file_name}")
+        if not file_name:
+            continue
+        text, _token = policy_client.policy_get(file_name)
+        for rule in StringPolicy(policy={"__main__": text}).rules:
+            if (
+                rule.service not in (None, UPDATES_PROXY_SERVICE)
+                or rule.argument not in (None, "+")
+                or not rule.source.match(vm.name, system_info=system_info)
+                or not rule.target.match(
+                    "@default", system_info=system_info, source=vm.name
+                )
+            ):
+                continue
+            if isinstance(rule.action, Deny):
+                return None
+            if isinstance(rule.action, Allow) and rule.action.target:
+                return str(rule.action.target)
+            raise ValueError(f"cannot check policy rule: {rule}")
+    return None
 
 
 # pylint: disable=too-few-public-methods
@@ -213,6 +264,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         ###### basic tab
         self.__init_basic_tab__()
+        self.__init_update_proxy__()
         self.rename_vm_button.clicked.connect(self.rename_vm)
         self.delete_vm_button.clicked.connect(self.remove_vm)
         self.clone_vm_button.clicked.connect(self.clone_vm)
@@ -692,6 +744,32 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.root_resize.setEnabled(False)
 
         self.warn_template_missing_apps.setVisible(False)
+
+    def __init_update_proxy__(self):
+        try:
+            show = uses_update_proxy(self.vm)
+        except qubesadmin.exc.QubesException:
+            show = False
+        self.update_proxy_label.setVisible(show)
+        self.update_proxy.setVisible(show)
+        self.update_proxy_button.setVisible(show)
+        if not show:
+            return
+        self.update_proxy_button.clicked.connect(self.open_global_config_updates)
+
+        text = self.tr("unknown")
+        if PolicyClient is not None:
+            try:
+                text = find_update_proxy(self.vm, PolicyClient()) or self.tr("none")
+            except Exception:  # pylint: disable=broad-except
+                pass
+        self.update_proxy.setText(text)
+
+    @staticmethod
+    def open_global_config_updates():
+        # pylint: disable=consider-using-with
+        proc = subprocess.Popen(["qubes-global-config", "-o", "updates#update_proxy"])
+        threading.Thread(target=proc.wait, daemon=True).start()
 
     def __apply_basic_tab__(self):
         msg = []
