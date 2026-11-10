@@ -24,6 +24,7 @@
 
 
 import collections
+import contextlib
 import functools
 import re
 import subprocess
@@ -380,9 +381,10 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         # these signals must be disconnected to avoid unintended behavior
         # on refreshing the drop-downs
-        self.netVM.currentIndexChanged.disconnect()
-        self.kernel.currentIndexChanged.disconnect()
-        self.default_dispvm.currentIndexChanged.disconnect()
+        for widget in (self.netVM, self.kernel, self.default_dispvm):
+            # Not connected when its choices were refused
+            with contextlib.suppress(TypeError):
+                widget.currentIndexChanged.disconnect()
 
         self.__init_basic_tab__()
         self.__init_advanced_tab__()
@@ -1088,6 +1090,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             except qubesadmin.exc.QubesDaemonAccessError:
                 self.kernel_groupbox.setVisible(False)
                 self.kernel.setEnabled(False)
+                self.bootmode.setEnabled(False)
+                self.appvm_default_bootmode.setEnabled(False)
         else:
             self.kernel.setEnabled(False)
             self.kernel_groupbox.setVisible(False)
@@ -1396,9 +1400,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             vm=self.vm, qapp=self.qapp, qubesapp=self.qubesapp, parent=self
         )
         if boot_dialog.exec() and self.save_and_apply():
-            admin_utils.start_expert(
-                domain=self.vm, drive="cdrom:" + boot_dialog.cdrom_location
-            )
+            error = utils.start_from_cdrom(self.vm, boot_dialog.cdrom_location)
+            if error:
+                QtWidgets.QMessageBox.warning(
+                    self,
+                    self.tr("Error starting Qube!"),
+                    self.tr("ERROR: {0}").format(error),
+                )
 
     def virt_mode_changed(self, new_idx):  # pylint: disable=unused-argument
         self.update_pv_warning()
@@ -1883,7 +1891,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 if self.notes.toPlainText() != self.vm.get_notes():
                     self.vm.set_notes(self.notes.toPlainText())
         except qubesadmin.exc.QubesException as ex:
-            return str(ex)
+            return [str(ex)]
 
     def __add_service__(self):
         srv = str(self.service_line_edit.currentText()).strip()

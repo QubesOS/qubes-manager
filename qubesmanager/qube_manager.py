@@ -731,8 +731,11 @@ class RunCommandThread(common_threads.QubesThread):
     def run(self):
         try:
             self.vm.run(self.command_to_run)
-        except (ChildProcessError, subprocess.CalledProcessError,
-                exc.QubesException) as ex:
+        except subprocess.CalledProcessError as ex:
+            text = self.tr("Cannot run command due to qrexec policy") \
+                if ex.returncode == 126 else str(ex)
+            self.msg = (self.tr("Error while running command!"), text)
+        except (ChildProcessError, exc.QubesException) as ex:
             self.msg = (self.tr("Error while running command!"), str(ex))
 
 class QubesProxyModel(QSortFilterProxyModel):
@@ -1066,7 +1069,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     delattr(info.vm, 'netvm')
                 else:
                     info.vm.netvm = netvm_name
-            except exc.QubesValueError as ex:
+            except exc.QubesException as ex:
                 errors.append((info.name, str(ex)))
 
         for error in errors:
@@ -1608,9 +1611,15 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
     def action_clonevm_triggered(self):
         for vm_info in self.get_selected_vms():
             vm = vm_info.vm
-            with common_threads.busy_cursor():
-                clone_window = clone_vm.CloneVMDlg(
-                    self.qt_app, self.qubes_app, src_vm=vm)
+            try:
+                with common_threads.busy_cursor():
+                    clone_window = clone_vm.CloneVMDlg(
+                        self.qt_app, self.qubes_app, src_vm=vm)
+            except exc.QubesException as ex:
+                QMessageBox.warning(
+                    self, self.tr("Cannot clone '{0}'").format(vm.name),
+                    self.tr("ERROR: {0}").format(ex))
+                return
             clone_window.exec()
 
     # noinspection PyArgumentList
@@ -1652,11 +1661,16 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     self,
                     self.tr("QWT not found"),
                     self.tr("'qubes-windows-tools' is not installed in dom0."))
+            return
         for vm_info in self.get_selected_vms():
-            vm = vm_info.vm
-            utils.start_expert(
-                domain=vm, drive="cdrom:dom0:/usr/lib/qubes/qubes-windows-tools.iso"
-            )
+            error = manager_utils.start_from_cdrom(
+                vm_info.vm, "dom0:/usr/lib/qubes/qubes-windows-tools.iso")
+            if error:
+                QMessageBox.warning(
+                    self,
+                    self.tr("Error starting Qube!"),
+                    self.tr("ERROR: {0}").format(error))
+                return
 
     @pyqtSlot(name='on_action_pausevm_triggered')
     def action_pausevm_triggered(self):

@@ -76,7 +76,7 @@ class AppmenuSelectManager:
                 .split("\n")
                 if line
             ]
-        except exc.QubesException:
+        except (exc.QubesException, subprocess.CalledProcessError):
             self.whitelisted = []
 
         currently_selected = [
@@ -152,7 +152,7 @@ class AppmenuSelectManager:
                 app_item.setIcon(icon)
                 available_appmenus.append(app_item)
 
-        except exc.QubesException:
+        except (exc.QubesException, subprocess.CalledProcessError):
             available_appmenus = []
 
         for app in available_appmenus:

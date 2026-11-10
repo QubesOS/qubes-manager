@@ -200,9 +200,11 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
                     # Internal info
                     continue
                 self.select_vms_widget.available_list.addItem(vmname)
-        except exc.QubesException as ex:
+        except (exc.QubesException, OSError) as ex:
             QtWidgets.QMessageBox.warning(
                 self, self.tr("Restore error!"), str(ex))
+            self.backup_restore = None
+            self.vms_to_restore = None
             self.restart()
 
     def append_output(self, text):
@@ -212,6 +214,9 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
         if self.currentPage() is self.select_vms_page:
             self.__fill_vms_list__()
         elif self.currentPage() is self.confirm_page:
+            if self.backup_restore is None:
+                self.restart()
+                return
             # pylint: disable=assignment-from-no-return
             self.vms_to_restore = self.backup_restore.get_restore_info()
 
@@ -292,6 +297,8 @@ class RestoreVMsWindow(ui_restoredlg.Ui_Restore, QtWidgets.QWizard):
             pass
 
     def all_vms_good(self):
+        if self.vms_to_restore is None:
+            return False
         for vm_info in self.vms_to_restore.values():
             if not vm_info.vm:
                 continue
