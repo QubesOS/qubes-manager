@@ -1400,9 +1400,13 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             vm=self.vm, qapp=self.qapp, qubesapp=self.qubesapp, parent=self
         )
         if boot_dialog.exec() and self.save_and_apply():
-            admin_utils.start_expert(
-                domain=self.vm, drive="cdrom:" + boot_dialog.cdrom_location
-            )
+            error = utils.start_from_cdrom(self.vm, boot_dialog.cdrom_location)
+            if error:
+                QtWidgets.QMessageBox.warning(
+                    self,
+                    self.tr("Error starting Qube!"),
+                    self.tr("ERROR: {0}").format(error),
+                )
 
     def virt_mode_changed(self, new_idx):  # pylint: disable=unused-argument
         self.update_pv_warning()

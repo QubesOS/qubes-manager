@@ -26,7 +26,6 @@ from . import ui_bootfromdevice  # pylint: disable=no-name-in-module
 from PyQt6 import QtWidgets, QtGui, QtCore  # pylint: disable=import-error
 from qubesadmin import tools
 from qubesadmin import exc
-from qubesadmin import utils as admin_utils
 from qubesadmin.app import QubesBase
 from qubesadmin.vm import QubesVM
 
@@ -216,7 +215,11 @@ def main(args=None):
 
     window = utils.run_synchronous(functools.partial(VMBootFromDeviceWindow, vm))
     if window.result() == 1 and window.cdrom_location is not None:
-        admin_utils.start_expert(domain=vm, drive="cdrom:" + window.cdrom_location)
+        error = utils.start_from_cdrom(vm, window.cdrom_location)
+        if error:
+            print(error, file=sys.stderr)
+            return 1
+    return 0
 
 
 if __name__ == "__main__":

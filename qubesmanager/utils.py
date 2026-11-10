@@ -32,6 +32,7 @@ from contextlib import suppress
 import sys
 from qubesadmin import events
 from qubesadmin import exc
+from qubesadmin import utils as admin_utils
 import qubesimgconverter
 import xdg.BaseDirectory
 import pathlib
@@ -153,6 +154,17 @@ def get_boolean_feature(vm, feature_name):
     if result is not None:
         result = bool(result)
     return result
+
+
+def start_from_cdrom(vm, cdrom):
+    """
+    Start qube from cdrom and return error on failure
+    """
+    try:
+        admin_utils.start_expert(domain=vm, drive="cdrom:" + cdrom)
+    except (exc.QubesException, OSError, ValueError) as ex:
+        return str(ex) or translate("Failed to start qube")
+    return None
 
 
 def did_widget_selection_change(widget):

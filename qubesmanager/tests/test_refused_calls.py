@@ -20,7 +20,14 @@ import subprocess
 from unittest import mock
 
 import pytest
+
+from qubesadmin import exc
+from qubesadmin.tests.mock_app import MockAsyncDispatcher
+
+from .. import bootfromdevice
+from .. import qube_manager
 from .. import settings as vm_settings
+from .. import utils
 
 
 @pytest.fixture
@@ -66,3 +73,51 @@ def test_refused_appmenus(settings_for, test_qubes_app):
     with mock.patch("subprocess.check_output", side_effect=refused):
         dialog.app_list_manager.fill_apps_list(template=None)
     assert dialog.app_list.available_list.count() == 0
+
+
+def manager(qapp, app):
+    return qube_manager.VmManagerWindow(qapp, app, MockAsyncDispatcher(app))
+
+
+def select(window, name):
+    window.table.clearSelection()
+    proxy = window.proxy
+    for row in range(proxy.rowCount()):
+        source = proxy.mapToSource(proxy.index(row, 0))
+        if window.qubes_cache.get_vm(row=source.row()).name == name:
+            window.table.selectRow(row)
+            return
+    raise KeyError(name)
+
+
+def test_cdrom_failure(test_qubes_app):
+    vm = test_qubes_app.domains["test-red"]
+
+    fail = exc.QubesException("Error: no such device")
+    with mock.patch("qubesadmin.utils.start_expert", side_effect=fail):
+        assert utils.start_from_cdrom(vm, "sys-usb:sda") == "Error: no such device"
+    with mock.patch("qubesadmin.utils.start_expert"):
+        assert utils.start_from_cdrom(vm, "sys-usb:sda") is None
+
+
+@mock.patch("qubesadmin.Qubes")
+@mock.patch("qubesmanager.bootfromdevice.utils.run_synchronous")
+def test_boot_from_device_failure(run, qubes, test_qubes_app, capsys):
+    qubes.return_value = test_qubes_app
+    run.return_value = mock.Mock(cdrom_location="sys-usb:sda")
+    run.return_value.result.return_value = 1
+    fail = exc.QubesException("Error: no such device")
+    with mock.patch("qubesadmin.utils.start_expert", side_effect=fail):
+        assert bootfromdevice.main(["test-red"]) == 1
+    assert "no such device" in capsys.readouterr().err
+
+
+@mock.patch("qubesadmin.utils.start_expert")
+@mock.patch("PyQt6.QtWidgets.QMessageBox.warning")
+def test_no_windows_tools(warning, start, qapp, test_qubes_app):
+    window = manager(qapp, test_qubes_app)
+    select(window, "test-red")
+    with mock.patch("os.path.exists", return_value=False):
+        window.action_startvm_tools_install_triggered()
+    warning.assert_called_once()
+    start.assert_not_called()
