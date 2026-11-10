@@ -1652,6 +1652,7 @@ class VmManagerWindow(ui_qubemanager.Ui_VmManagerWindow, QMainWindow):
                     self,
                     self.tr("QWT not found"),
                     self.tr("'qubes-windows-tools' is not installed in dom0."))
+            return
         for vm_info in self.get_selected_vms():
             vm = vm_info.vm
             utils.start_expert(
