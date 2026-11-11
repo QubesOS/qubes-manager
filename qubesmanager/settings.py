@@ -65,8 +65,12 @@ INTERNAL_SUPPORTED_FEATURES = [IDLE_SUPPORTED_SERVICE]
 
 def get_default_bootmode_name(vm, bootmode):
     if bootmode == "default":
-        return vm.features.check_with_template("boot-mode.name.default", "")
-    return vm.features.check_with_template(f"boot-mode.name.{bootmode}", bootmode)
+        return vm.features.check_with_template(
+            "boot-mode.name.default", "", active=False
+        )
+    return vm.features.check_with_template(
+        f"boot-mode.name.{bootmode}", bootmode, active=False
+    )
 
 
 # pylint: disable=too-few-public-methods
@@ -120,7 +124,7 @@ class RefreshAppsVMThread(common_threads.QubesThread):
 
     def run(self):
         vms_to_refresh = [self.vm]
-        template = getattr(self.vm, "template", None)
+        template = self.vm.get_active_template()
         if template:
             vms_to_refresh.append(template)
 
@@ -175,6 +179,15 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         DeviceCategory.Processor: "cpu",
         DeviceCategory.PCI_USB: "usb",
     }
+
+    template_deferred_tooltip = (
+        "Pending template change, requires qube restart to take effect."
+    )
+    template_missing_apps_tooltip = (
+        "Some applications enabled in the Applications tab cannot be found in the\n"
+        "current template. The most likely cause is a template change - to restore\n"
+        "them, install them in the template."
+    )
 
     # pylint: disable=too-many-positional-arguments
     def __init__(
@@ -279,49 +292,39 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.remove_srv_button.clicked.connect(self.__remove_service__)
 
         ####### apps tab
-        if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
-            self.app_list = multiselectwidget.MultiSelectWidget(self)
-            self.app_list.change_labels(
-                available="All available applications",
-                selected="Applications shown in App Menu",
-            )
-            self.apps_layout.addWidget(self.app_list)
-            self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
-            self.refresh_apps_button.clicked.connect(self.refresh_apps_button_pressed)
-
-            self.app_search.textChanged.connect(self.filter_apps)
-
-            # Enable Drag & Drop between between two panels
-            # ToDo: Disable D&D between multiple instances of qubes-vm-settings
-            # - by overriding QListWidget.dragMoveEvent event
-            self.app_list.available_list.setDragEnabled(True)
-            self.app_list.available_list.setAcceptDrops(True)
-            self.app_list.available_list.setDragDropMode(
-                QtWidgets.QListWidget.DragDropMode.DragDrop
-            )
-            self.app_list.available_list.setDefaultDropAction(
-                QtCore.Qt.DropAction.MoveAction
-            )
-            self.app_list.selected_list.setDragEnabled(True)
-            self.app_list.selected_list.setAcceptDrops(True)
-            self.app_list.selected_list.setDragDropMode(
-                QtWidgets.QListWidget.DragDropMode.DragDrop
-            )
-            self.app_list.selected_list.setDefaultDropAction(
-                QtCore.Qt.DropAction.MoveAction
-            )
-
-            # template change
-            if self.template_name.isEnabled():
-                self.template_name.currentIndexChanged.connect(
-                    self.template_apps_change
-                )
-            self.warn_template_missing_apps.setVisible(
-                self.app_list_manager.has_missing
-            )
+        self.__applications_initialized = False
+        self.__init_applications_tab__()
 
         ####### notes tab
         self.__init_notes_tab__()
+
+    def _set_template_tooltip(self):
+        missing_apps = (
+            hasattr(self, "app_list_manager")
+            and self.app_list_manager.has_missing
+        )
+        deferred_template = (
+            hasattr(self.vm, "active_template")
+            and not self.vm.property_is_default("active_template")
+        )
+        if not deferred_template and not missing_apps:
+            self.warn_template_missing_apps.setVisible(False)
+        elif deferred_template or missing_apps:
+            self.warn_template_missing_apps.setVisible(True)
+            if deferred_template and missing_apps:
+                self.warn_template_missing_apps.setToolTip(
+                    self.template_deferred_tooltip
+                    + "\n\n"
+                    + self.template_missing_apps_tooltip
+                )
+            elif deferred_template:
+                self.warn_template_missing_apps.setToolTip(
+                    self.template_deferred_tooltip
+                )
+            elif missing_apps:
+                self.warn_template_missing_apps.setToolTip(
+                    self.template_missing_apps_tooltip
+                )
 
     def setup_application(self):
         self.qapp.setApplicationName(self.tr("Qube Settings"))
@@ -386,6 +389,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         self.__init_basic_tab__()
         self.__init_advanced_tab__()
+        self.__init_applications_tab__()
 
     def save_and_apply(self):
         if not self.save_changes():
@@ -482,7 +486,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             )
             subject = subject.template
         bootmode_names = [
-            self.vm.features.check_with_template(f"boot-mode.name.{x}", x)
+            self.vm.features.check_with_template(f"boot-mode.name.{x}", x, active=False)
             for x in bootmode_ids
         ]
         return bootmode_names, bootmode_ids
@@ -503,6 +507,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
     # hvm -> include_in_balancing
 
     def __init_basic_tab__(self):
+        # pylint: disable=too-many-statements
         self.vmname.setText(self.vm.name)
         self.vmname.setValidator(
             QtGui.QRegularExpressionValidator(
@@ -565,9 +570,6 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         else:
             self.template_name.setEnabled(False)
 
-        if utils.is_running(self.vm, False):
-            self.template_name.setEnabled(False)
-
         try:
             utils.initialize_widget_with_vms(
                 widget=self.netVM,
@@ -594,7 +596,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
         try:
             has_shutdown_idle = self.vm.features.check_with_template(
-                IDLE_SUPPORTED_SERVICE, False
+                IDLE_SUPPORTED_SERVICE, False, active=False
             )
             if has_shutdown_idle:
                 self.idle_shutdown_checkbox.setChecked(
@@ -691,7 +693,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         except qubesadmin.exc.QubesException:
             self.root_resize.setEnabled(False)
 
-        self.warn_template_missing_apps.setVisible(False)
+        self._set_template_tooltip()
 
     def __apply_basic_tab__(self):
         msg = []
@@ -816,7 +818,9 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         # max_mem_size/10.79 in order to allow scaling up to
         # max_mem_size (or else "add_memory() failed: -17" problem)
         try:
-            is_linux = self.vm.features.check_with_template("os", None) == "Linux"
+            is_linux = self.vm.features.check_with_template(
+                "os", None, active=False
+            ) == "Linux"
         except qubesadmin.exc.QubesException:
             is_linux = False
 
@@ -1079,7 +1083,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 if self.vm.bootmode != "default":
                     self.bootmode_kernel_opts.setText(
                         self.vm.features.check_with_template(
-                            f"boot-mode.kernelopts.{self.vm.bootmode}", ""
+                            f"boot-mode.kernelopts.{self.vm.bootmode}", "", active=False
                         )
                     )
                 else:
@@ -1508,7 +1512,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         if isinstance(active_bootmode, str):
             self.bootmode_kernel_opts.setText(
                 self.vm.features.check_with_template(
-                    f"boot-mode.kernelopts.{active_bootmode}", ""
+                    f"boot-mode.kernelopts.{active_bootmode}", "", active=False
                 )
             )
         else:
@@ -1518,7 +1522,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             else:
                 self.bootmode_kernel_opts.setText(
                     self.vm.features.check_with_template(
-                        f"boot-mode.kernelopts.{default_bootmode}", ""
+                        f"boot-mode.kernelopts.{default_bootmode}", "", active=False
                     )
                 )
 
@@ -1757,6 +1761,63 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
     ######## applications tab
 
+    def __init_applications_tab__(self):
+        idx = self.tabs_indices["applications"]
+        if (
+            self.vm.active_template
+            and not self.vm.property_is_default("active_template")
+        ):
+            self.tabWidget.setTabEnabled(idx, False)
+            self.tabWidget.setTabToolTip(
+                idx, "Can't modify apps while the template change is deferred"
+            )
+        else:
+            self.tabWidget.setTabEnabled(idx, True)
+            self.tabWidget.setTabToolTip(idx, "")
+
+        if not self.tabWidget.isTabEnabled(idx):
+            return
+        if self.__applications_initialized:
+            return
+        self.__applications_initialized = True
+        self.app_list = multiselectwidget.MultiSelectWidget(self)
+        self.app_list.change_labels(
+            available="All available applications",
+            selected="Applications shown in App Menu",
+        )
+        self.apps_layout.addWidget(self.app_list)
+        self.app_list_manager = AppmenuSelectManager(self.vm, self.app_list)
+        self.refresh_apps_button.clicked.connect(self.refresh_apps_button_pressed)
+
+        self.app_search.textChanged.connect(self.filter_apps)
+
+        # Enable Drag & Drop between between two panels
+        # ToDo: Disable D&D between multiple instances of qubes-vm-settings
+        # - by overriding QListWidget.dragMoveEvent event
+        self.app_list.available_list.setDragEnabled(True)
+        self.app_list.available_list.setAcceptDrops(True)
+        self.app_list.available_list.setDragDropMode(
+            QtWidgets.QListWidget.DragDropMode.DragDrop
+        )
+        self.app_list.available_list.setDefaultDropAction(
+            QtCore.Qt.DropAction.MoveAction
+        )
+        self.app_list.selected_list.setDragEnabled(True)
+        self.app_list.selected_list.setAcceptDrops(True)
+        self.app_list.selected_list.setDragDropMode(
+            QtWidgets.QListWidget.DragDropMode.DragDrop
+        )
+        self.app_list.selected_list.setDefaultDropAction(
+            QtCore.Qt.DropAction.MoveAction
+        )
+
+        # template change
+        if self.template_name.isEnabled():
+            self.template_name.currentIndexChanged.connect(
+                self.template_apps_change
+            )
+        self._set_template_tooltip()
+
     def refresh_apps_button_pressed(self):
 
         self.refresh_apps_button.setEnabled(False)
@@ -1775,13 +1836,14 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
 
     def template_apps_change(self):
         if self.tabWidget.isTabEnabled(self.tabs_indices["applications"]):
-            self.app_list_manager.fill_apps_list(
-                template=self.template_name.currentData()
-            )
-            # add a label to show
-            self.warn_template_missing_apps.setVisible(
-                self.app_list_manager.has_missing
-            )
+            # Defer application change till deferred template is applied,
+            # guaranteeing that it always shows usable entries.
+            if utils.is_running(self.vm, False):
+                template = self.vm.get_active_template()
+            else:
+                template = self.template_name.currentData()
+            self.app_list_manager.fill_apps_list(template=template)
+            self._set_template_tooltip()
 
     def filter_apps(self):
         keywords = [word for word in self.app_search.text().split(" ") if word]

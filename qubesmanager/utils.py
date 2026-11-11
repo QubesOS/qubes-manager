@@ -287,7 +287,15 @@ def initialize_widget_with_vms(
             continue
         if not filter_function(vm):
             continue
-        choices.append((vm.name, vm))
+        name = vm.name
+        if (
+            holder
+            and property_name == "template"
+            and hasattr(holder, "template")
+            and holder.active_template == vm
+        ):
+            name += " (active)"
+        choices.append((name, vm))
 
     if allow_none:
         choices.append((translate("(none)"), None))

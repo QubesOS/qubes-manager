@@ -200,7 +200,7 @@ def test_001_model_correctness(qapp, test_qubes_app):
             "Template"))
         template_data = model.data(index_template, Qt.ItemDataRole.DisplayRole)
         if hasattr(vm_object, 'template'):
-            assert vm_object.template == template_data
+            assert vm_object.active_template == template_data
         else:
             assert vm_object.klass == template_data
 
