@@ -50,6 +50,9 @@
           </property>
           <item row="0" column="0" colspan="2">
            <widget class="QRadioButton" name="blockDeviceRadioButton">
+            <property name="toolTip">
+             <string>Boot from a block device of another qube, such as a USB drive</string>
+            </property>
             <property name="text">
              <string>from existing block device</string>
             </property>
@@ -57,6 +60,9 @@
           </item>
           <item row="1" column="0">
            <widget class="QRadioButton" name="fileRadioButton">
+            <property name="toolTip">
+             <string>Boot from a disk image file, such as an installer ISO, stored in another qube</string>
+            </property>
             <property name="text">
              <string>from file in qube</string>
             </property>
@@ -64,6 +70,9 @@
           </item>
           <item row="1" column="1">
            <widget class="QComboBox" name="fileVM">
+            <property name="toolTip">
+             <string>Qube that has the file</string>
+            </property>
             <property name="sizePolicy">
              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -81,10 +90,17 @@
           <item row="1" column="2">
            <layout class="QHBoxLayout" name="horizontalLayout">
             <item>
-             <widget class="QLineEdit" name="pathText"/>
+             <widget class="QLineEdit" name="pathText">
+              <property name="toolTip">
+               <string>Path of the file in that qube</string>
+              </property>
+             </widget>
             </item>
             <item>
              <widget class="QPushButton" name="selectFileButton">
+              <property name="toolTip">
+               <string>Choose the file</string>
+              </property>
               <property name="sizePolicy">
                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                 <horstretch>0</horstretch>
