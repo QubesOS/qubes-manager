@@ -458,6 +458,48 @@ class QubesTableModel(QAbstractTableModel):
                 "Is DVM Template",
                 "Virt Mode"
                 ]
+        self.column_tooltips = {
+                "Label": self.tr("Qube type and label color"),
+                "State": self.tr("Power state and update status"),
+                "Template": self.tr(
+                    "Template the qube is based on, or the qube's type if it "
+                    "has no template"),
+                "NetVM": self.tr("Qube that provides network access"),
+                "Disk Usage": self.tr("Disk space used by the qube"),
+                "Internal": self.tr(
+                    "Internal qubes are hidden from most Qubes tools"),
+                "IP Address": self.tr("IP address of the qube"),
+                "Backup": self.tr("Include the qube in backups by default"),
+                "Last backup": self.tr(
+                    "Date of the last backup that included the qube"),
+                "Default DispVM": self.tr(
+                    "Disposable template used when the qube opens a "
+                    "disposable"),
+                "Is DVM Template": self.tr(
+                    "Whether the qube can be used as a disposable template"),
+                "Virt Mode": self.tr("Virtualization mode: PVH, HVM or PV"),
+                }
+        self.qube_types = {
+                "appvm": self.tr("App qube"),
+                "templatevm": self.tr("Template"),
+                "dispvm": self.tr("Disposable"),
+                "standalonevm": self.tr("Standalone qube"),
+                "servicevm": self.tr("Service qube"),
+                "adminvm": self.tr("Admin qube"),
+                "remotevm": self.tr("Remote qube"),
+                }
+
+    def label_tooltip(self, vm):
+        qube_type = vm.icon.split("-", 1)[0]
+        if qube_type == "templatevm" and vm.klass == "AppVM":
+            text = self.tr("Disposable template")
+        else:
+            text = self.qube_types.get(qube_type)
+        if text is None:
+            return None
+        if vm.label is not None:
+            text += "\n" + self.tr("Label: {}").format(vm.label.name)
+        return text
 
     # pylint: disable=invalid-name
     def rowCount(self, _):
@@ -516,6 +558,9 @@ class QubesTableModel(QAbstractTableModel):
                     icon = QIcon.fromTheme(vm.icon)
                     self.label_pixmap[vm.icon] = icon.pixmap(icon_size)
                     return self.label_pixmap[vm.icon]
+        if role == Qt.ItemDataRole.ToolTipRole:
+            if col_name == "Label":
+                return self.label_tooltip(vm)
         if role == Qt.ItemDataRole.CheckStateRole:
             if col_name == "Backup":
                 return Qt.CheckState.Checked if vm.inc_backup else (
@@ -566,10 +611,13 @@ class QubesTableModel(QAbstractTableModel):
 
     # pylint: disable=invalid-name
     def headerData(self, col, orientation, role):
+        if orientation != Qt.Orientation.Horizontal:
+            return None
+        if role == Qt.ItemDataRole.ToolTipRole:
+            return self.column_tooltips.get(self.columns_indices[col])
         if col < 1:
             return None
-        if (orientation == Qt.Orientation.Horizontal and role ==
-                Qt.ItemDataRole.DisplayRole):
+        if role == Qt.ItemDataRole.DisplayRole:
             return self.columns_indices[col]
         return None
 

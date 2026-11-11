@@ -313,6 +313,34 @@ def test_004_hide_column(mock_settings, qubes_manager):
     mock_settings.assert_called_with('columns/Is DVM Template', False)
 
 
+def test_005_tooltips(qapp, test_qubes_app):
+    dispatcher = MockDispatcher(test_qubes_app)
+    qm = qube_manager.VmManagerWindow(qapp, test_qubes_app, dispatcher)
+    model = qm.qubes_model
+
+    for col, name in enumerate(model.columns_indices):
+        tooltip = model.headerData(col, Qt.Orientation.Horizontal,
+                                   Qt.ItemDataRole.ToolTipRole)
+        if name == "Name":
+            assert tooltip is None
+        else:
+            assert tooltip
+
+    label_col = model.columns_indices.index("Label")
+    name_col = model.columns_indices.index("Name")
+    tooltips = {}
+    for row in range(model.rowCount(None)):
+        vm_name = model.data(model.index(row, name_col),
+                             Qt.ItemDataRole.DisplayRole)
+        tooltips[vm_name] = model.data(model.index(row, label_col),
+                                       Qt.ItemDataRole.ToolTipRole)
+
+    assert tooltips["dom0"] == "Admin qube\nLabel: black"
+    assert tooltips["test-standalone"].startswith("Standalone qube\n")
+    assert tooltips["default-dvm"].startswith("Disposable template\n")
+    assert tooltips["fedora-36"].startswith("Template\n")
+
+
 @mock.patch('qubesmanager.settings.VMSettingsWindow')
 def test_200_vm_open_settings(mock_window, qubes_manager):
     _select_vm(qubes_manager, 'test-blue')
