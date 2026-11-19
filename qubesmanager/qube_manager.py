@@ -38,7 +38,7 @@ from PyQt6 import QtWidgets
 # pylint: disable=import-error
 from PyQt6.QtCore import (Qt, QAbstractTableModel, QObject, pyqtSlot, QEvent,
                           QSettings, QRegularExpression, QSortFilterProxyModel,
-                          QSize, QProcess, QPoint, QTimer)
+                          QSize, QProcess, QPoint, QTimer, QT_TRANSLATE_NOOP)
 
 # pylint: disable=import-error
 from PyQt6.QtWidgets import (QLineEdit, QStyledItemDelegate, QToolTip,
@@ -436,6 +436,47 @@ class QubesCache(QAbstractTableModel):
         return iter(self._info_list)
 
 
+COLUMN_TOOLTIPS = {
+    "Label": QT_TRANSLATE_NOOP("QubesTableModel", "Qube type and label color"),
+    "State": QT_TRANSLATE_NOOP("QubesTableModel",
+                               "Power state and update status"),
+    "Template": QT_TRANSLATE_NOOP(
+        "QubesTableModel",
+        "Template the qube is based on, or the qube's type if it has no "
+        "template"),
+    "NetVM": QT_TRANSLATE_NOOP("QubesTableModel",
+                               "Qube that provides network access"),
+    "Disk Usage": QT_TRANSLATE_NOOP("QubesTableModel",
+                                    "Disk space used by the qube"),
+    "Internal": QT_TRANSLATE_NOOP(
+        "QubesTableModel", "Internal qubes are hidden from most Qubes tools"),
+    "IP Address": QT_TRANSLATE_NOOP("QubesTableModel",
+                                    "IP address of the qube"),
+    "Backup": QT_TRANSLATE_NOOP("QubesTableModel",
+                                "Include the qube in backups by default"),
+    "Last backup": QT_TRANSLATE_NOOP(
+        "QubesTableModel", "Date of the last backup that included the qube"),
+    "Default DispVM": QT_TRANSLATE_NOOP(
+        "QubesTableModel",
+        "Disposable template used when the qube opens a disposable"),
+    "Is DVM Template": QT_TRANSLATE_NOOP(
+        "QubesTableModel",
+        "Whether the qube can be used as a disposable template"),
+    "Virt Mode": QT_TRANSLATE_NOOP("QubesTableModel",
+                                   "Virtualization mode: PVH, HVM or PV"),
+}
+
+QUBE_TYPES = {
+    "appvm": QT_TRANSLATE_NOOP("QubesTableModel", "App qube"),
+    "templatevm": QT_TRANSLATE_NOOP("QubesTableModel", "Template"),
+    "dispvm": QT_TRANSLATE_NOOP("QubesTableModel", "Disposable"),
+    "standalonevm": QT_TRANSLATE_NOOP("QubesTableModel", "Standalone qube"),
+    "servicevm": QT_TRANSLATE_NOOP("QubesTableModel", "Service qube"),
+    "adminvm": QT_TRANSLATE_NOOP("QubesTableModel", "Admin qube"),
+    "remotevm": QT_TRANSLATE_NOOP("QubesTableModel", "Remote qube"),
+}
+
+
 class QubesTableModel(QAbstractTableModel):
     def __init__(self, qubes_cache):
         QAbstractTableModel.__init__(self)
@@ -458,6 +499,18 @@ class QubesTableModel(QAbstractTableModel):
                 "Is DVM Template",
                 "Virt Mode"
                 ]
+
+    def label_tooltip(self, vm):
+        if vm.dvm_template:
+            text = self.tr("Disposable template")
+        else:
+            text = QUBE_TYPES.get(vm.icon.split("-", 1)[0])
+            if text is None:
+                return None
+            text = self.tr(text)
+        if vm.label is not None:
+            text += "\n" + self.tr("Label: {}").format(vm.label.name)
+        return text
 
     # pylint: disable=invalid-name
     def rowCount(self, _):
@@ -516,6 +569,9 @@ class QubesTableModel(QAbstractTableModel):
                     icon = QIcon.fromTheme(vm.icon)
                     self.label_pixmap[vm.icon] = icon.pixmap(icon_size)
                     return self.label_pixmap[vm.icon]
+        if role == Qt.ItemDataRole.ToolTipRole:
+            if col_name == "Label":
+                return self.label_tooltip(vm)
         if role == Qt.ItemDataRole.CheckStateRole:
             if col_name == "Backup":
                 return Qt.CheckState.Checked if vm.inc_backup else (
@@ -566,6 +622,10 @@ class QubesTableModel(QAbstractTableModel):
 
     # pylint: disable=invalid-name
     def headerData(self, col, orientation, role):
+        if (orientation == Qt.Orientation.Horizontal and role ==
+                Qt.ItemDataRole.ToolTipRole):
+            tooltip = COLUMN_TOOLTIPS.get(self.columns_indices[col])
+            return self.tr(tooltip) if tooltip else None
         if col < 1:
             return None
         if (orientation == Qt.Orientation.Horizontal and role ==
