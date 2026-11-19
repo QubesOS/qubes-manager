@@ -548,9 +548,10 @@ class TemplateInstallConfirmDialog(
             PyQt6.QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole)
         utils.style_primary_button(ok_button)
 
-        self.button_box.addButton(
+        cancel_button = self.button_box.addButton(
             "Cancel",
             PyQt6.QtWidgets.QDialogButtonBox.ButtonRole.RejectRole)
+        utils.style_secondary_button(cancel_button)
 
 
 class TemplateInstallProgressDialog(
@@ -578,7 +579,9 @@ class TemplateInstallProgressDialog(
         ok_button: PyQt6.QtWidgets.QPushButton = self.button_box.addButton(
             "Close" if error else "OK",
             PyQt6.QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole)
-        if not error:
+        if error:
+            utils.style_secondary_button(ok_button)
+        else:
             utils.style_primary_button(ok_button)
 
     @staticmethod

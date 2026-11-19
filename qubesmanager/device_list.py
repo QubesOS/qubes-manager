@@ -38,7 +38,7 @@ class PCIDeviceListWindow(ui_devicelist.Ui_Dialog, QtWidgets.QDialog):
 
         self.buttonBox.accepted.connect(self.save_and_apply)
         self.buttonBox.rejected.connect(self.reject)
-        utils.style_dialog_buttons(self.buttonBox)
+        utils.style_dialog_buttons(buttonbox=self.buttonBox)
 
         self.ident_list = {}
         self.fill_device_list()

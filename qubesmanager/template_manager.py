@@ -72,7 +72,7 @@ class TemplateManagerWindow(
         self.buttonBox.button(
             QtWidgets.QDialogButtonBox.StandardButton.Reset).clicked.connect(
             self.reset)
-        utils.style_dialog_buttons(self.buttonBox)
+        utils.style_dialog_buttons(buttonbox=self.buttonBox)
 
         self.change_all_combobox.currentIndexChanged.connect(
             self.change_all_changed)

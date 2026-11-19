@@ -38,7 +38,7 @@ class NewFwRuleDlg(QtWidgets.QDialog, ui_newfwruledlg.Ui_NewFwRuleDlg):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setupUi(self)
-        utils.style_dialog_buttons(self.buttonBox)
+        utils.style_dialog_buttons(buttonbox=self.buttonBox)
 
         # Match the character whitelist in qubes.firewall.Comment.
         self.commentLineEdit.setValidator(QtGui.QRegularExpressionValidator(

@@ -85,7 +85,7 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
         self.thread = None
 
         self.setupUi(self)
-        utils.style_dialog_buttons(self)
+        utils.style_dialog_buttons(wizard=self)
 
         self.setWindowFlags(self.windowFlags() |
                             QtCore.Qt.WindowType.WindowMaximizeButtonHint |
