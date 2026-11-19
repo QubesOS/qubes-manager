@@ -633,3 +633,88 @@ def tint_qimage(source: QtGui.QImage, color: str) -> QtGui.QImage:
         QtGui.QImage.Format.Format_RGBA8888,
     )
     return destination
+
+
+# Rules apply only to enabled buttons; disabled ones keep the theme's look.
+PRIMARY_BUTTON_STYLE = """
+QPushButton:enabled {
+    background: #4488df;
+    color: white;
+    font-weight: 600;
+    border: 1px solid #4488df;
+    border-radius: 2px;
+    padding: 0 12px;
+}
+QPushButton:enabled:hover {
+    background: #5c98e4;
+    border-color: #5c98e4;
+}
+QPushButton:enabled:pressed {
+    background: #2f6fbf;
+    border-color: #2f6fbf;
+}
+QPushButton:enabled:focus {
+    border-color: #1d4f91;
+}
+"""
+
+# Theme colors instead of the guidelines' grays, so dark themes still work.
+SECONDARY_BUTTON_STYLE = """
+QPushButton {
+    background: palette(button);
+    font-weight: 600;
+    border: 1px solid palette(mid);
+    border-radius: 2px;
+    padding: 0 12px;
+}
+QPushButton:hover {
+    background: palette(midlight);
+}
+QPushButton:pressed {
+    background: palette(mid);
+}
+QPushButton:focus {
+    border-color: palette(highlight);
+}
+"""
+
+
+def _style_button(button: QtWidgets.QAbstractButton, style: str):
+    # theme icons (such as the green arrow on "OK") clash with flat buttons
+    button.setIcon(QtGui.QIcon())
+    button.setMinimumSize(button.sizeHint())
+    button.setStyleSheet(style)
+
+
+def style_primary_button(button: QtWidgets.QAbstractButton):
+    """Make a button look like the "confirm" button from the Qubes OS UX
+    guidelines: blue, with white semi-bold text and slightly rounded
+    corners."""
+    _style_button(button, PRIMARY_BUTTON_STYLE)
+
+
+def style_secondary_button(button: QtWidgets.QAbstractButton):
+    """Make a button look like the "cancel" button from the Qubes OS UX
+    guidelines: flat, with semi-bold text, a thin border and slightly
+    rounded corners."""
+    _style_button(button, SECONDARY_BUTTON_STYLE)
+
+
+def style_dialog_buttons(buttonbox: QtWidgets.QDialogButtonBox | None = None,
+                         wizard: QtWidgets.QWizard | None = None):
+    """Style the main buttons of a button box (the accept button) or of a
+    wizard (the next and finish buttons) as primary, and the others as
+    secondary."""
+    if buttonbox is not None:
+        for button in buttonbox.buttons():
+            if buttonbox.buttonRole(button) == \
+                    QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole:
+                style_primary_button(button)
+            else:
+                style_secondary_button(button)
+    if wizard is not None:
+        which = QtWidgets.QWizard.WizardButton
+        for primary in (which.NextButton, which.FinishButton):
+            style_primary_button(wizard.button(primary))
+        for secondary in (which.BackButton, which.CancelButton):
+            style_secondary_button(wizard.button(secondary))
