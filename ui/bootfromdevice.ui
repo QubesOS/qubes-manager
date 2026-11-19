@@ -92,7 +92,7 @@
             <item>
              <widget class="QLineEdit" name="pathText">
               <property name="toolTip">
-               <string>Path of the file in that qube</string>
+               <string>Location of the boot image in the destination qube</string>
               </property>
              </widget>
             </item>

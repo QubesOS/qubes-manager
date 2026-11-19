@@ -266,7 +266,7 @@
        <item row="0" column="0" colspan="2">
         <widget class="QCheckBox" name="save_profile_checkbox">
          <property name="toolTip">
-          <string>The backup window opens with these settings next time.</string>
+          <string>The backup window will open with the saved settings in the future</string>
          </property>
          <property name="text">
           <string>Save settings as default backup profile</string>

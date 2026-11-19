@@ -314,6 +314,10 @@ def test_004_hide_column(mock_settings, qubes_manager):
 
 
 def test_005_tooltips(qapp, test_qubes_app):
+    """Column headings and qube icons have tooltips."""
+    test_qubes_app._qubes['test-standalone'].properties[
+        'template_for_dispvms'].value = 'True'
+    test_qubes_app.update_vm_calls()
     dispatcher = MockDispatcher(test_qubes_app)
     qm = qube_manager.VmManagerWindow(qapp, test_qubes_app, dispatcher)
     model = qm.qubes_model
@@ -336,7 +340,8 @@ def test_005_tooltips(qapp, test_qubes_app):
                                        Qt.ItemDataRole.ToolTipRole)
 
     assert tooltips["dom0"] == "Admin qube\nLabel: black"
-    assert tooltips["test-standalone"].startswith("Standalone qube\n")
+    assert tooltips["test-standalone"].startswith("Disposable template\n")
+    assert tooltips["test-red"].startswith("App qube\n")
     assert tooltips["default-dvm"].startswith("Disposable template\n")
     assert tooltips["fedora-36"].startswith("Template\n")
 
