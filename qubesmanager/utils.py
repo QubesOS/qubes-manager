@@ -663,7 +663,7 @@ SECONDARY_BUTTON_STYLE = """
 QPushButton {
     background: palette(button);
     font-weight: 600;
-    border: 1px solid palette(mid);
+    border: 1px solid palette(dark);
     border-radius: 2px;
     padding: 0 12px;
 }
