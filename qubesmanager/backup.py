@@ -33,8 +33,6 @@ from qubesmanager import multiselectwidget
 from qubesmanager import backup_utils
 from qubesmanager import utils
 
-import grp
-import pwd
 import os
 import shutil
 
@@ -300,10 +298,9 @@ class BackupVMsWindow(ui_backupdlg.Ui_Backup, QtWidgets.QWizard):
             self.vm = vm
             if vm.klass == 'AdminVM':
                 try:
-                    local_user = grp.getgrnam('qubes').gr_mem[0]
-                    home_dir = pwd.getpwnam(local_user).pw_dir
-                    self.size = shutil.disk_usage(home_dir)[1]
-                except KeyError:
+                    self.size = int(vm.app.qubesd_call(
+                        'dom0', 'admin.backup.Dom0HomeSize').decode())
+                except (exc.QubesException, ValueError):
                     self.size = None
             else:
                 try:
