@@ -20,7 +20,7 @@
 import re
 import socket
 
-from PyQt6 import QtWidgets  # pylint: disable=import-error
+from PyQt6 import QtCore, QtWidgets  # pylint: disable=import-error
 
 import subprocess
 from . import utils
@@ -62,6 +62,44 @@ def enable_dir_line_edit(dialog, boolean):
     dialog.select_path_button.setEnabled(boolean)
 
 
+# pylint: disable=too-few-public-methods
+class PathFromVMThread(QtCore.QThread):
+    def __init__(self, vm, service_name):
+        super().__init__()
+        self.vm = vm
+        self.service_name = service_name
+        self.path = None
+        self.error = None
+
+    def run(self):
+        try:
+            self.path = utils.get_path_from_vm(self.vm, self.service_name)
+        except Exception as ex:  # pylint: disable=broad-except
+            self.error = ex
+
+
+def get_path_from_vm(dialog, vm, service_name):
+    """
+    Same as utils.get_path_from_vm, but keeps the Qt event loop running
+    while the qube shows its dialog, so other windows still work. The given
+    dialog is disabled until the path is selected.
+    """
+    thread = PathFromVMThread(vm, service_name)
+    loop = QtCore.QEventLoop()
+    thread.finished.connect(loop.quit)
+    was_enabled = dialog.isEnabled()
+    dialog.setEnabled(False)
+    try:
+        thread.start()
+        loop.exec()
+        thread.wait()
+    finally:
+        dialog.setEnabled(was_enabled)
+    if thread.error:
+        raise thread.error
+    return thread.path
+
+
 def select_path_button_clicked(dialog, select_file=False, read_only=False):
     """
     Helper function that displays a file/directory selection wizard. Used by
@@ -98,8 +136,8 @@ def select_path_button_clicked(dialog, select_file=False, read_only=False):
                 new_path = result
         else:
             try:
-                new_path = utils.get_path_from_vm(
-                    vm,
+                new_path = get_path_from_vm(
+                    dialog, vm,
                     "qubes.SelectFile" if select_file
                     else "qubes.SelectDirectory")
             except ValueError:
