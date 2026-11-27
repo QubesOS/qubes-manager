@@ -29,6 +29,15 @@ from qubesadmin.tests.mock_app import MockAsyncDispatcher, MockQube, \
 from qubesmanager import backup
 
 
+DOM0_HOME_SIZE_CALL = ('dom0', 'admin.backup.Dom0HomeSize', None, None)
+
+
+@pytest.fixture(autouse=True)
+def dom0_home_size(test_qubes_app):
+    test_qubes_app.expected_calls[DOM0_HOME_SIZE_CALL] = b'0\x00' + \
+        str(2**20).encode()
+
+
 @pytest.fixture
 def backup_dlg(qapp, test_qubes_app):
     test_qubes_app._qubes['test-backup'] = MockQube(
@@ -190,6 +199,33 @@ def test_04_vm_size(qapp, test_qubes_app):
         widget.selected_list.item(i).size
         for i in range(widget.selected_list.count()))
     assert backup_dlg.total_size == expected_total
+
+
+def _get_dom0_item(qapp, test_qubes_app):
+    dispatcher = MockAsyncDispatcher(test_qubes_app)
+    backup_dlg = backup.BackupVMsWindow(qapp, test_qubes_app, dispatcher)
+    widget = backup_dlg.select_vms_widget
+    for lst in (widget.selected_list, widget.available_list):
+        for i in range(lst.count()):
+            if lst.item(i).vm.name == 'dom0':
+                return lst.item(i)
+    raise AssertionError('dom0 not listed')
+
+
+def test_05_dom0_size(qapp, test_qubes_app):
+    """dom0 size comes from admin.backup.Dom0HomeSize"""
+    item = _get_dom0_item(qapp, test_qubes_app)
+    assert item.size == 2**20
+    assert item.text().endswith("(1.0 MiB)")
+    assert DOM0_HOME_SIZE_CALL in test_qubes_app.actual_calls
+
+
+def test_06_dom0_size_unavailable(qapp, test_qubes_app):
+    """dom0 size is shown as unavailable when the call is denied"""
+    test_qubes_app.expected_calls[DOM0_HOME_SIZE_CALL] = b''
+    item = _get_dom0_item(qapp, test_qubes_app)
+    assert item.size == 0
+    assert item.text().endswith("(size unavailable)")
 
 
 @mock.patch('builtins.open', new_callable=mock.mock_open)
