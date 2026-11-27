@@ -729,6 +729,46 @@ def test_109_renamevm(mock_warning, mock_thread, mock_input, settings_fixture):
     assert mock_warning.call_count == 0
 
 
+@pytest.mark.parametrize(
+    "settings_fixture",
+    [{"vm": "test-vm-set", "page": "advanced"}],
+    indirect=True,
+)
+@pytest.mark.parametrize("renamed", [True, False])
+def test_109a_renamevm_reopens_settings(settings_fixture, renamed):
+    """Settings reopen on the same tab for the new name only after a full rename."""
+    settings_window, page, vm_name = settings_fixture
+    thread = mock.Mock(spec=vm_settings.RenameVMThread)
+    thread.isFinished.return_value = True
+    thread.msg = None
+    thread.renamed = renamed
+    thread.new_vm_name = "test-blue"
+    settings_window.threads_list.append(thread)
+    settings_window.thread_closes = True
+    qubesapp = settings_window.qubesapp
+    qubesapp.expected_calls[("test-blue", "admin.vm.notes.Get", None, None)] = (
+        b"0\x00"
+    )
+    qubesapp.expected_calls[
+        ("test-blue", "admin.vm.feature.Get", "preload-dispvm-max", None)
+    ] = b"0\x00"
+
+    with mock.patch("subprocess.check_output") as mock_subprocess:
+        mock_subprocess.side_effect = mock_subprocess_complex
+        settings_window.clear_threads()
+
+    if not renamed:
+        assert settings_window.renamed_window is None
+        return
+    new_window = settings_window.renamed_window
+    assert new_window.vm.name == "test-blue"
+    assert new_window.isVisible()
+    assert new_window.tabWidget.currentIndex() == (
+        vm_settings.VMSettingsWindow.tabs_indices["advanced"]
+    )
+    new_window.done(0)
+
+
 @mock.patch("PyQt6.QtWidgets.QInputDialog.getText")
 @mock.patch("qubesmanager.common_threads.RemoveVMThread")
 @mock.patch("PyQt6.QtWidgets.QMessageBox.warning")
