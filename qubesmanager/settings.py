@@ -75,6 +75,7 @@ class RenameVMThread(common_threads.QubesThread):
         super().__init__(vm)
         self.new_vm_name = new_vm_name
         self.dependencies = dependencies
+        self.renamed = False
 
     def run(self):
         try:
@@ -92,6 +93,7 @@ class RenameVMThread(common_threads.QubesThread):
                     failed_props += [(holder, prop)]
             if not failed_props:
                 del self.vm.app.domains[self.vm.name]
+                self.renamed = True
             else:
                 list_text = utils.format_dependencies_list(failed_props)
                 self.msg = (
@@ -188,6 +190,7 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
         self.threads_list = []
         self.progress = None
         self.thread_closes = False
+        self.renamed_window = None
 
         self.setupUi(self)
         self.setWindowTitle(self.tr("Settings: {vm}").format(vm=self.vm.name))
@@ -343,6 +346,8 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
                 self.threads_list.remove(thread)
 
                 if self.thread_closes:
+                    if isinstance(thread, RenameVMThread) and thread.renamed:
+                        self.open_renamed_vm(thread.new_vm_name)
                     self.done(0)
 
                 return
@@ -944,6 +949,17 @@ class VMSettingsWindow(ui_settingsdlg.Ui_SettingsDialog, QtWidgets.QDialog):
             self.progress.show()
 
             thread.start()
+
+    def open_renamed_vm(self, vm_name):
+        tab = list(self.tabs_indices)[self.tabWidget.currentIndex()]
+        try:
+            self.renamed_window = VMSettingsWindow(
+                vm_name, tab, self.qapp, self.qubesapp, self.parent()
+            )
+        except (qubesadmin.exc.QubesException, KeyError):
+            return
+        self.renamed_window.setGeometry(self.geometry())
+        self.renamed_window.show()
 
     def remove_vm(self):
 
