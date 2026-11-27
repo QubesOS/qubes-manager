@@ -540,6 +540,20 @@ def handle_exception(exc_type, exc_value, exc_traceback):
     msg_box.exec()
 
 
+def release_clipboard(qt_app):
+    """Replace owned clipboard data with plain text before Qt teardown.
+
+    Qt hands it to the clipboard manager while QApplication is being
+    destroyed; rendering text widget data then aborts (qubes-issues#11297).
+    """
+    clipboard = qt_app.clipboard()
+    for mode, owned in (
+            (QtGui.QClipboard.Mode.Clipboard, clipboard.ownsClipboard()),
+            (QtGui.QClipboard.Mode.Selection, clipboard.ownsSelection())):
+        if owned:
+            clipboard.setText(clipboard.text(mode), mode)
+
+
 def run_asynchronous(window_class):
     set_organization()
     qt_app = QtWidgets.QApplication(sys.argv)
@@ -581,6 +595,8 @@ def run_asynchronous(window_class):
         exc_type, exc_value, exc_traceback = sys.exc_info()[:3]
         handle_exception(exc_type, exc_value, exc_traceback)
 
+    release_clipboard(qt_app)
+
 
 def run_synchronous(window_class):
     set_organization()
@@ -607,6 +623,7 @@ def run_synchronous(window_class):
     window.show()
 
     qt_app.exec()
+    release_clipboard(qt_app)
     qt_app.exit()
 
     return window
