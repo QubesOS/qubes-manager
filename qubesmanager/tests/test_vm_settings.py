@@ -832,6 +832,179 @@ def test_113_change_netvm_anon(mock_warning, settings_fixture):
 # ADVANCED TAB
 
 
+DEFAULT_UPDATES_POLICY = """
+# comment
+qubes.UpdatesProxy  *  @tag:whonix-updatevm  @default  allow target=sys-whonix
+qubes.UpdatesProxy  *  @tag:whonix-updatevm  @anyvm    deny
+qubes.UpdatesProxy  *  @type:TemplateVM      @default  allow target=sys-net
+qubes.UpdatesProxy  *  @anyvm                @anyvm    deny
+"""
+
+CONFIG_UPDATES_POLICY = """
+qubes.UpdatesProxy  *  fedora-35         @default  allow target=sys-firewall
+qubes.UpdatesProxy  *  test-proxy-standalone  @default  allow target=sys-firewall
+qubes.UpdatesProxy  *  @tag:whonix-updatevm  @default  allow target=sys-whonix
+qubes.UpdatesProxy  *  @tag:whonix-updatevm  @anyvm  deny
+qubes.UpdatesProxy  *  @type:TemplateVM  @default  allow target=sys-usb
+"""
+
+
+class MockPolicyClient:
+    def __init__(self, files):
+        self.files = files
+
+    def policy_get_files(self, service):
+        assert service == "qubes.UpdatesProxy"
+        return list(self.files)
+
+    def policy_get(self, name):
+        return self.files[name], "sha256:token"
+
+
+def _mock_vm(name, klass="TemplateVM", tags=()):
+    vm = mock.Mock(klass=klass, tags=set(tags))
+    vm.name = name
+    return vm
+
+
+@pytest.mark.parametrize(
+    "vm, files, expected",
+    [
+        # default policy
+        (_mock_vm("fedora-35"), {"90-default": DEFAULT_UPDATES_POLICY}, "sys-net"),
+        (
+            _mock_vm("whonix-gw", tags=["whonix-updatevm"]),
+            {"90-default": DEFAULT_UPDATES_POLICY},
+            "sys-whonix",
+        ),
+        (
+            _mock_vm("standalone", klass="StandaloneVM"),
+            {"90-default": DEFAULT_UPDATES_POLICY},
+            None,
+        ),
+        # policy from Global Config comes first
+        (
+            _mock_vm("fedora-35"),
+            {
+                "50-config-updates": CONFIG_UPDATES_POLICY,
+                "90-default": DEFAULT_UPDATES_POLICY,
+            },
+            "sys-firewall",
+        ),
+        (
+            _mock_vm("debian-12"),
+            {
+                "50-config-updates": CONFIG_UPDATES_POLICY,
+                "90-default": DEFAULT_UPDATES_POLICY,
+            },
+            "sys-usb",
+        ),
+        # rules for other services or other targets do not count
+        (
+            _mock_vm("fedora-35"),
+            {
+                "30-user": "qubes.Filecopy * @anyvm @default allow target=vault\n"
+                "qubes.UpdatesProxy * @anyvm sys-usb allow\n"
+                "qubes.UpdatesProxy * fedora-35 @default deny\n",
+                "90-default": DEFAULT_UPDATES_POLICY,
+            },
+            None,
+        ),
+        # no policy at all
+        (_mock_vm("fedora-35"), {}, None),
+    ],
+)
+def test_114_find_update_proxy(vm, files, expected):
+    pytest.importorskip("qrexec.policy.parser")
+    assert vm_settings.find_update_proxy(vm, MockPolicyClient(files)) == expected
+
+
+@pytest.mark.parametrize(
+    "files",
+    [
+        {"/etc/qubes/policy.d/include/updates": "", "90-default": ""},
+        {"30-user": "qubes.UpdatesProxy * @anyvm @default ask default_target=x\n"},
+        {"30-user": "qubes.UpdatesProxy * @anyvm\n"},
+        {"30-user": "!include include/updates\n"},
+    ],
+)
+def test_115_find_update_proxy_unknown(files):
+    pytest.importorskip("qrexec.policy.parser")
+    with pytest.raises(Exception):
+        vm_settings.find_update_proxy(_mock_vm("fedora-35"), MockPolicyClient(files))
+
+
+@pytest.fixture
+def update_policy(test_qubes_app):
+    """Mock qrexec policy client; must come before settings_fixture"""
+    test_qubes_app._qubes["test-proxy-standalone"] = MockQube(
+        name="test-proxy-standalone",
+        qapp=test_qubes_app,
+        klass="StandaloneVM",
+        features={"service.updates-proxy-setup": "1"},
+    )
+    test_qubes_app._qubes["whonix-gateway-17"] = MockQube(
+        name="whonix-gateway-17",
+        qapp=test_qubes_app,
+        klass="TemplateVM",
+        netvm="",
+        tags=["whonix-updatevm"],
+    )
+    files = {
+        "50-config-updates": CONFIG_UPDATES_POLICY,
+        "90-default": DEFAULT_UPDATES_POLICY,
+    }
+    with mock.patch.object(
+        vm_settings, "PolicyClient", lambda: MockPolicyClient(files)
+    ):
+        yield files
+
+
+@check_errors
+@pytest.mark.parametrize(
+    "settings_fixture, expected",
+    [
+        ("fedora-35", "sys-firewall"),
+        ("whonix-gateway-17", "sys-whonix"),
+        ("test-proxy-standalone", "sys-firewall"),
+        ("test-standalone", None),
+        ("test-red", None),
+        ("sys-net", None),
+    ],
+    indirect=["settings_fixture"],
+)
+def test_116_update_proxy(update_policy, settings_fixture, expected):
+    pytest.importorskip("qrexec.policy.parser")
+    settings_window, page, vm_name = settings_fixture
+
+    assert settings_window.update_proxy_label.isHidden() == (expected is None)
+    assert settings_window.update_proxy.isHidden() == (expected is None)
+    assert settings_window.update_proxy_button.isHidden() == (expected is None)
+    assert not settings_window.update_proxy.isEnabled()
+    if expected is None:
+        return
+    assert settings_window.update_proxy.text() == expected
+
+    with mock.patch("subprocess.Popen") as mock_popen:
+        settings_window.update_proxy_button.click()
+        mock_popen.assert_called_once_with(
+            ["qubes-global-config", "-o", "updates#update_proxy"]
+        )
+
+
+@check_errors
+@pytest.mark.parametrize("settings_fixture", ["fedora-35"], indirect=True)
+def test_117_update_proxy_unknown(settings_fixture):
+    settings_window, page, vm_name = settings_fixture
+
+    # without qrexec, or when the policy cannot be read
+    for client in (None, mock.Mock(side_effect=OSError)):
+        with mock.patch.object(vm_settings, "PolicyClient", client):
+            settings_window.__init_update_proxy__()
+        assert not settings_window.update_proxy.isHidden()
+        assert settings_window.update_proxy.text() == "unknown"
+
+
 @check_errors
 @pytest.mark.parametrize("settings_fixture", TEST_VMS, indirect=True)
 def test_200_init_memory(settings_fixture):
