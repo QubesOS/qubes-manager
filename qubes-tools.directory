@@ -3,4 +3,6 @@ Type=Directory
 Icon=qubes-manager
 
 Name=Qubes Tools
+Name[he]=כלי Qubes
 GenericName=Qubes Tools
+GenericName[he]=כלי Qubes
